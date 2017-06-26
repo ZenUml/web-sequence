@@ -332,7 +332,7 @@ li.CodeMirror-hint-active {
 	height: 25px;
 	width: 48px;
 	margin-right: 5px;
-	background: url(icon-48.png) 0px -12px;
+	background: url(/icon-48.png) 0px -12px;
 	background-repeat: no-repeat;
 	vertical-align: middle;
 	-webkit-filter: grayscale(0.9);
