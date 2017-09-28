@@ -8,4 +8,6 @@
 ### Misc ###
 node_modules/
 *.map
+.idea/
+
 .sass-cache
