@@ -146,29 +146,29 @@ globalConsoleContainerEl
 		frame.contentDocument || frame.contentWindow.document;
 
 	// Check all the code wrap if they are minimized or not
-	function updateCodeWrapCollapseStates() {
-		clearTimeout(updateCodeWrapCollapseStates.timeout);
-		updateCodeWrapCollapseStates.timeout = setTimeout(function() {
-			[htmlCode, cssCode, jsCode].forEach(function(el) {
-				var bounds = el.getBoundingClientRect();
-				if (bounds[currentLayoutMode === 2 ? 'width' : 'height'] < 100) {
-					el.classList.add('is-minimized');
-				} else {
-					el.classList.remove('is-minimized');
-				}
-			});
-		}, 50);
-	}
+	// function updateCodeWrapCollapseStates() {
+	// 	clearTimeout(updateCodeWrapCollapseStates.timeout);
+	// 	updateCodeWrapCollapseStates.timeout = setTimeout(function() {
+	// 		[htmlCode, cssCode, jsCode].forEach(function(el) {
+	// 			var bounds = el.getBoundingClientRect();
+	// 			if (bounds[currentLayoutMode === 2 ? 'width' : 'height'] < 100) {
+	// 				el.classList.add('is-minimized');
+	// 			} else {
+	// 				el.classList.remove('is-minimized');
+	// 			}
+	// 		});
+	// 	}, 50);
+	// }
 
-	function toggleCodeWrapCollapse(codeWrapEl) {
-		if (codeWrapEl.classList.contains('is-minimized')) {
-			codeWrapEl.classList.remove('is-minimized');
-			codeSplitInstance.setSizes([33.3, 33.3, 33.3]);
-		} else {
-			codeSplitInstance.collapse(parseInt(codeWrapEl.dataset.codeWrapId, 10));
-			codeWrapEl.classList.add('is-minimized');
-		}
-	}
+	// function toggleCodeWrapCollapse(codeWrapEl) {
+	// 	if (codeWrapEl.classList.contains('is-minimized')) {
+	// 		codeWrapEl.classList.remove('is-minimized');
+	// 		codeSplitInstance.setSizes([33.3, 33.3, 33.3]);
+	// 	} else {
+	// 		codeSplitInstance.collapse(parseInt(codeWrapEl.dataset.codeWrapId, 10));
+	// 		codeWrapEl.classList.add('is-minimized');
+	// 	}
+	// }
 	// Returns the sizes of main code & preview panes.
 	function getMainSplitSizesToApply() {
 		var mainSplitSizes;
@@ -201,14 +201,14 @@ globalConsoleContainerEl
 				document.body.classList.add('is-dragging');
 			},
 			onDragEnd: function() {
-				updateCodeWrapCollapseStates();
+				// updateCodeWrapCollapseStates();
 				document.body.classList.remove('is-dragging');
 			}
 		};
 		if (currentItem && currentItem.sizes) {
 			options.sizes = currentItem.sizes;
 		} else {
-			options.sizes = [33.33, 33.33, 33.33];
+			options.sizes = [0, 0, 100];
 		}
 
 		codeSplitInstance = Split(
@@ -234,7 +234,7 @@ globalConsoleContainerEl
 	function toggleLayout(mode) {
 		if (currentLayoutMode === mode) {
 			mainSplitInstance.setSizes(getMainSplitSizesToApply());
-			codeSplitInstance.setSizes(currentItem.sizes || [33.33, 33.33, 33.33]);
+			codeSplitInstance.setSizes(currentItem.sizes || [0, 0, 100]);
 			currentLayoutMode = mode;
 			return;
 		}
@@ -250,15 +250,14 @@ globalConsoleContainerEl
 		document.body.classList.remove('layout-4');
 		document.body.classList.add('layout-' + mode);
 
-		resetSplitting();
+		// resetSplitting();
 		scope.setPreviewContent(true);
 	}
 
 	function onExternalLibChange() {
 		utils.log('onExternalLibChange');
-		updateExternalLibUi();
+		// updateExternalLibUi();
 		scope.setPreviewContent(true);
-		alertsService.add('Libraries updated.');
 	}
 
 	function updateExternalLibUi() {
@@ -335,7 +334,7 @@ globalConsoleContainerEl
 				+jsCode.style[dimensionProperty].match(/([\d.]+)%/)[1]
 			];
 		} catch (e) {
-			sizes = [33.33, 33.33, 33.33];
+			sizes = [0, 0, 100];
 		} finally {
 			/* eslint-disable no-unsafe-finally */
 			return sizes;
@@ -607,7 +606,7 @@ globalConsoleContainerEl
 		scope.clearConsole();
 
 		// To have the library count updated
-		updateExternalLibUi();
+		// updateExternalLibUi();
 
 		// Set preview only when all modes are updated so that preview doesn't generate on partially
 		// correct modes and also doesn't happen 3 times.
@@ -2000,24 +1999,24 @@ globalConsoleContainerEl
 		});
 
 		// Collapse btn event listeners
-		var collapseBtns = $all('.js-code-collapse-btn');
-		collapseBtns.forEach(function(btn) {
-			btn.addEventListener('click', function(e) {
-				var codeWrapParent =
-					e.currentTarget.parentElement.parentElement.parentElement;
-				toggleCodeWrapCollapse(codeWrapParent);
-				trackEvent('ui', 'paneCollapseBtnClick', codeWrapParent.dataset.type);
-				return false;
-			});
-		});
+		// var collapseBtns = $all('.js-code-collapse-btn');
+		// collapseBtns.forEach(function(btn) {
+		// 	btn.addEventListener('click', function(e) {
+		// 		var codeWrapParent =
+		// 			e.currentTarget.parentElement.parentElement.parentElement;
+		// 		toggleCodeWrapCollapse(codeWrapParent);
+		// 		trackEvent('ui', 'paneCollapseBtnClick', codeWrapParent.dataset.type);
+		// 		return false;
+		// 	});
+		// });
 
 		// Update code wrap collapse states whenever any of them transitions due to any
 		// reason.
-		[htmlCode, cssCode, jsCode].forEach(function(el) {
-			el.addEventListener('transitionend', function() {
-				updateCodeWrapCollapseStates();
-			});
-		});
+		// [htmlCode, cssCode, jsCode].forEach(function(el) {
+		// 	el.addEventListener('transitionend', function() {
+		// 		updateCodeWrapCollapseStates();
+		// 	});
+		// });
 
 		// Editor keyboard shortucuts
 		window.addEventListener('keydown', function(event) {
@@ -2118,7 +2117,7 @@ globalConsoleContainerEl
 			}
 			if (target.classList.contains('js-code-wrap__header')) {
 				var codeWrapParent = target.parentElement;
-				toggleCodeWrapCollapse(codeWrapParent);
+				// toggleCodeWrapCollapse(codeWrapParent);
 				trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 			}
 		});
