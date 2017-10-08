@@ -876,11 +876,19 @@ globalConsoleContainerEl
 			'<link rel="stylesheet" href="' +
 			chrome.extension.getURL('lib/vue-sequence.css') +
 			'"></link>';
+		var vueSequenceExtCss =
+			'<link rel="stylesheet" href="' +
+			chrome.extension.getURL('lib/vue-sequence-ext.css') +
+			'"></link>';
+		var fontIndieFlower =
+			'<link rel="stylesheet" href="' +
+			'https://fonts.googleapis.com/css?family=Just+Another+Hand' +
+			'"></link>';
 		var contents =
 			'<!DOCTYPE html>\n' +
 			'<html>\n<head>\n' +
 			'<meta charset="UTF-8" />\n' +
-			vueSequenceCss +
+			vueSequenceCss + vueSequenceExtCss + fontIndieFlower +
 			'\n' +
 			'<style id="webmakerstyle">\n' +
 			css +
