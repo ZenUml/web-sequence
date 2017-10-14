@@ -882,7 +882,7 @@ globalConsoleContainerEl
 			'"></link>';
 		var fontIndieFlower =
 			'<link rel="stylesheet" href="' +
-			'https://fonts.googleapis.com/css?family=Just+Another+Hand' +
+			'https://fonts.googleapis.com/css?family=Indie+Flower' +
 			'"></link>';
 		var contents =
 			'<!DOCTYPE html>\n' +
