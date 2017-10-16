@@ -1499,7 +1499,6 @@ globalConsoleContainerEl
 	function updateSettingsInUi() {
 		$('[data-setting=preserveLastCode]').checked = prefs.preserveLastCode;
 		$('[data-setting=replaceNewTab]').checked = prefs.replaceNewTab;
-		$('[data-setting=htmlMode]').value = prefs.htmlMode;
 		$('[data-setting=cssMode]').value = prefs.cssMode;
 		$('[data-setting=jsMode]').value = prefs.jsMode;
 		$('[data-setting=indentSize]').value = prefs.indentSize;
@@ -1919,7 +1918,7 @@ globalConsoleContainerEl
 				var mode = e.target.value;
 				var type = e.target.dataset.type;
 				var currentMode =
-					type === 'html' ? htmlMode : type === 'css' ? cssMode : jsMode;
+					type === 'css' ? cssMode : jsMode;
 				if (currentMode !== mode) {
 					if (type === 'js') {
 						updateJsMode(mode).then(() => scope.setPreviewContent(true));
@@ -2166,7 +2165,6 @@ globalConsoleContainerEl
 				}
 				prefs.preserveLastCode = result.preserveLastCode;
 				prefs.replaceNewTab = result.replaceNewTab;
-				prefs.htmlMode = result.htmlMode;
 				prefs.cssMode = result.cssMode;
 				prefs.jsMode = result.jsMode;
 				prefs.isCodeBlastOn = result.isCodeBlastOn;
