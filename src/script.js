@@ -19,11 +19,6 @@ globalConsoleContainerEl
 		window.scope = scope;
 	}
 
-	var HtmlModes = {
-		HTML: 'html',
-		MARKDOWN: 'markdown',
-		JADE: 'jade' // unsafe eval is put in manifest for this file
-	};
 	var CssModes = {
 		CSS: 'css',
 		SCSS: 'scss',
@@ -39,17 +34,6 @@ globalConsoleContainerEl
 		TS: 'typescript'
 	};
 	var modes = {};
-	modes[HtmlModes.HTML] = {
-		label: 'HTML',
-		cmMode: 'htmlmixed',
-		codepenVal: 'none'
-	};
-	modes[HtmlModes.MARKDOWN] = {
-		label: 'Markdown',
-		cmMode: 'markdown',
-		codepenVal: 'markdown'
-	};
-	modes[HtmlModes.JADE] = { label: 'Pug', cmMode: 'pug', codepenVal: 'pug' };
 	modes[JsModes.JS] = { label: 'Pseudo Code', cmMode: 'javascript', codepenVal: 'none' };
 	modes[JsModes.COFFEESCRIPT] = {
 		label: 'CoffeeScript',
@@ -108,7 +92,6 @@ globalConsoleContainerEl
 		unsavedEditWarningCount = 15,
 		currentLayoutMode,
 		hasSeenNotifications = true,
-		htmlMode = HtmlModes.HTML,
 		jsMode = JsModes.JS,
 		cssMode = CssModes.CSS,
 		sass,
@@ -131,7 +114,6 @@ globalConsoleContainerEl
 		codepenForm = $('#js-codepen-form'),
 		savedItemsPane = $('#js-saved-items-pane'),
 		savedItemsPaneCloseBtn = $('#js-saved-items-pane-close-btn'),
-		htmlModelLabel = $('#js-html-mode-label'),
 		cssModelLabel = $('#js-css-mode-label'),
 		jsModelLabel = $('#js-js-mode-label'),
 		titleInput = $('#js-title-input'),
@@ -623,14 +605,10 @@ globalConsoleContainerEl
 			d.resolve();
 		}
 
-		if (mode === HtmlModes.JADE) {
-			loadJS('lib/jade.js').then(setLoadedFlag);
-		} else if (mode === HtmlModes.MARKDOWN) {
-			loadJS('lib/marked.js').then(setLoadedFlag);
-		} else if (mode === CssModes.LESS) {
+		if (mode === CssModes.LESS) {
 			loadJS('lib/less.min.js').then(setLoadedFlag);
 		} else if (mode === CssModes.SCSS || mode === CssModes.SASS) {
-			loadJS('lib/sass.js').then(function() {
+			loadJS('lib/sass.js').then(function () {
 				sass = new Sass('lib/sass.worker.js');
 				setLoadedFlag();
 			});
@@ -651,18 +629,6 @@ globalConsoleContainerEl
 		return d.promise;
 	}
 
-	function updateHtmlMode(value) {
-		htmlMode = value;
-		htmlModelLabel.textContent = modes[value].label;
-		// FIXME - use a better selector for the mode selectbox
-		htmlModelLabel.parentElement.querySelector('select').value = value;
-		scope.cm.html.setOption('mode', modes[value].cmMode);
-		CodeMirror.autoLoadMode(
-			scope.cm.html,
-			modes[value].cmPath || modes[value].cmMode
-		);
-		return handleModeRequirements(value);
-	}
 	function updateCssMode(value) {
 		cssMode = value;
 		cssModelLabel.textContent = modes[value].label;
@@ -699,13 +665,7 @@ globalConsoleContainerEl
 		var code =
 			'<main id="demo">\n' + '    <seq-diagram></seq-diagram>\n' + '  </main>';
 		// var code = scope.cm.html.getValue();
-		if (htmlMode === HtmlModes.HTML) {
-			d.resolve(code);
-		} else if (htmlMode === HtmlModes.MARKDOWN) {
-			d.resolve(marked ? marked(code) : code);
-		} else if (htmlMode === HtmlModes.JADE) {
-			d.resolve(window.jade ? jade.render(code) : code);
-		}
+		d.resolve(code);
 
 		return d.promise;
 	}
@@ -1961,9 +1921,7 @@ globalConsoleContainerEl
 				var currentMode =
 					type === 'html' ? htmlMode : type === 'css' ? cssMode : jsMode;
 				if (currentMode !== mode) {
-					if (type === 'html') {
-						updateHtmlMode(mode).then(() => scope.setPreviewContent(true));
-					} else if (type === 'js') {
+					if (type === 'js') {
 						updateJsMode(mode).then(() => scope.setPreviewContent(true));
 					} else if (type === 'css') {
 						updateCssMode(mode).then(() => scope.setPreviewContent(true));
