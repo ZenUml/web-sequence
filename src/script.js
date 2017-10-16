@@ -208,11 +208,11 @@ globalConsoleContainerEl
 		if (currentItem && currentItem.sizes) {
 			options.sizes = currentItem.sizes;
 		} else {
-			options.sizes = [0, 0, 100];
+			options.sizes = [0, 100];
 		}
 
 		codeSplitInstance = Split(
-			['#js-html-code', '#js-css-code', '#js-js-code'],
+			['#js-css-code', '#js-js-code'],
 			options
 		);
 		mainSplitInstance = Split(['#js-code-side', '#js-demo-side'], {
@@ -234,7 +234,7 @@ globalConsoleContainerEl
 	function toggleLayout(mode) {
 		if (currentLayoutMode === mode) {
 			mainSplitInstance.setSizes(getMainSplitSizesToApply());
-			codeSplitInstance.setSizes(currentItem.sizes || [0, 0, 100]);
+			codeSplitInstance.setSizes([0, 100]);
 			currentLayoutMode = mode;
 			return;
 		}
