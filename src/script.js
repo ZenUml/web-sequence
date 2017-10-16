@@ -119,14 +119,13 @@ globalConsoleContainerEl
 		mainSplitInstance,
 		codeSplitInstance,
 		prefs = {},
-		codeInPreview = { html: null, css: null, js: null },
+		codeInPreview = { css: null, js: null },
 		isSavedItemsPaneOpen = false,
 		editorWithFocus,
 		logCount = 0,
 		isAutoSavingEnabled,
 		// DOM nodes
 		frame = $('#demo-frame'),
-		htmlCode = $('#js-html-code'),
 		cssCode = $('#js-css-code'),
 		jsCode = $('#js-js-code'),
 		codepenForm = $('#js-codepen-form'),
@@ -325,22 +324,7 @@ globalConsoleContainerEl
 
 	// Calculates the sizes of html, css & js code panes.
 	function getCodePaneSizes() {
-		var sizes;
-		var dimensionProperty = currentLayoutMode === 2 ? 'width' : 'height';
-		try {
-			sizes = [
-				+htmlCode.style[dimensionProperty].match(/([\d.]+)%/)[1],
-				+cssCode.style[dimensionProperty].match(/([\d.]+)%/)[1],
-				+jsCode.style[dimensionProperty].match(/([\d.]+)%/)[1]
-			];
-		} catch (e) {
-			sizes = [0, 0, 100];
-		} finally {
-			/* eslint-disable no-unsafe-finally */
-			return sizes;
-
-			/* eslint-enable no-unsafe-finally */
-		}
+		return [0, 100];
 	}
 
 	// Calculates the current sizes of code & preview panes.
@@ -364,10 +348,8 @@ globalConsoleContainerEl
 
 	function saveCode(key) {
 		currentItem.title = titleInput.value;
-		currentItem.html = scope.cm.html.getValue();
 		currentItem.css = scope.cm.css.getValue();
 		currentItem.js = scope.cm.js.getValue();
-		currentItem.htmlMode = htmlMode;
 		currentItem.cssMode = cssMode;
 		currentItem.jsMode = jsMode;
 		if (modes[cssMode].hasSettings) {
@@ -524,7 +506,6 @@ globalConsoleContainerEl
 				d.getHours() +
 				':' +
 				d.getMinutes(),
-			html: '',
 			css: '',
 			js: '',
 			externalLibs: { js: '', css: '' },
@@ -587,14 +568,11 @@ globalConsoleContainerEl
 		utils.log('refresh editor');
 		// Set the modes manually here, so that the preview refresh triggered by the `setValue`
 		// statements below, operate on correct modes.
-		htmlMode = currentItem.htmlMode || prefs.htmlMode || HtmlModes.HTML;
 		cssMode = currentItem.cssMode || prefs.cssMode || CssModes.CSS;
 		jsMode = currentItem.jsMode || prefs.jsMode || JsModes.JS;
 
-		scope.cm.html.setValue(currentItem.html);
 		scope.cm.css.setValue(currentItem.css);
 		scope.cm.js.setValue(currentItem.js);
-		scope.cm.html.refresh();
 		scope.cm.css.refresh();
 		scope.cm.js.refresh();
 
@@ -611,7 +589,6 @@ globalConsoleContainerEl
 		// Set preview only when all modes are updated so that preview doesn't generate on partially
 		// correct modes and also doesn't happen 3 times.
 		Promise.all([
-			updateHtmlMode(htmlMode),
 			updateCssMode(cssMode),
 			updateJsMode(jsMode)
 		]).then(() => scope.setPreviewContent(true));
@@ -1020,7 +997,6 @@ globalConsoleContainerEl
 		}
 
 		var currentCode = {
-			html: scope.cm.html.getValue(),
 			css: scope.cm.css.getValue(),
 			js: scope.cm.js.getValue()
 		};
@@ -1206,14 +1182,6 @@ globalConsoleContainerEl
 		return cm;
 	}
 
-	scope.cm.html = initEditor(htmlCode, {
-		mode: 'htmlmixed',
-		profile: 'xhtml',
-		gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-		noAutocomplete: true,
-		matchTags: { bothTags: true }
-	});
-	emmetCodeMirror(scope.cm.html);
 	scope.cm.css = initEditor(cssCode, {
 		mode: 'css',
 		gutters: ['error-gutter', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter']
@@ -1617,7 +1585,6 @@ globalConsoleContainerEl
 		// Show/hide RUN button based on autoPreview setting.
 		runBtn.classList[prefs.autoPreview ? 'add' : 'remove']('hide');
 
-		htmlCode.querySelector('.CodeMirror').style.fontSize = prefs.fontSize;
 		cssCode.querySelector('.CodeMirror').style.fontSize = prefs.fontSize;
 		jsCode.querySelector('.CodeMirror').style.fontSize = prefs.fontSize;
 		consoleEl.querySelector('.CodeMirror').style.fontSize = prefs.fontSize;
@@ -1638,7 +1605,7 @@ globalConsoleContainerEl
 			prefs.editorFont === 'other' ? 'remove' : 'add'
 		]('hide');
 
-		['html', 'js', 'css'].forEach(type => {
+		['js', 'css'].forEach(type => {
 			scope.cm[type].setOption(
 				'indentWithTabs',
 				$('[data-setting=indentWith]:checked').value !== 'spaces'
@@ -2204,7 +2171,6 @@ globalConsoleContainerEl
 			{
 				preserveLastCode: true,
 				replaceNewTab: false,
-				htmlMode: 'html',
 				jsMode: 'js',
 				cssMode: 'css',
 				isCodeBlastOn: false,
