@@ -1846,44 +1846,6 @@ globalConsoleContainerEl
 			trackEvent('ui', 'notificationButtonClick', version);
 			return false;
 		});
-
-		codepenBtn.addEventListener('click', function(e) {
-			if (cssMode === CssModes.ACSS) {
-				alert("Oops! CodePen doesn't supports Atomic CSS currently.");
-				e.preventDefault();
-				return;
-			}
-			var json = {
-				title: 'A Web Maker experiment',
-				html: scope.cm.html.getValue(),
-				css: scope.cm.css.getValue(),
-				js: scope.cm.js.getValue(),
-
-				/* eslint-disable camelcase */
-				html_pre_processor: modes[htmlMode].codepenVal,
-				css_pre_processor: modes[cssMode].codepenVal,
-				js_pre_processor: modes[jsMode].codepenVal,
-
-				css_external: externalCssTextarea.value.split('\n').join(';'),
-				js_external: externalJsTextarea.value.split('\n').join(';')
-
-				/* eslint-enable camelcase */
-			};
-			if (!currentItem.title.match(/Untitled\s\d\d*-\d/)) {
-				json.title = currentItem.title;
-			}
-			json = JSON.stringify(json);
-			codepenForm.querySelector('input').value = json;
-			codepenForm.submit();
-			trackEvent('ui', 'openInCodepen');
-			e.preventDefault();
-		});
-
-		utils.onButtonClick(saveHtmlBtn, function() {
-			saveFile();
-			trackEvent('ui', 'saveHtmlClick');
-		});
-
 		utils.onButtonClick(savedItemsPaneCloseBtn, toggleSavedItemsPane);
 		utils.onButtonClick(savedItemsPane, function(e) {
 			// TODO: warn about unsaved changes in current item
