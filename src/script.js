@@ -189,7 +189,7 @@ globalConsoleContainerEl
 		if (currentItem && currentItem.sizes) {
 			options.sizes = currentItem.sizes;
 		} else {
-			options.sizes = [0, 100];
+			options.sizes = [30, 70];
 		}
 
 		codeSplitInstance = Split(
@@ -215,7 +215,7 @@ globalConsoleContainerEl
 	function toggleLayout(mode) {
 		if (currentLayoutMode === mode) {
 			mainSplitInstance.setSizes(getMainSplitSizesToApply());
-			codeSplitInstance.setSizes([0, 100]);
+			codeSplitInstance.setSizes([30, 70]);
 			currentLayoutMode = mode;
 			return;
 		}
