@@ -9,6 +9,7 @@ import CodeMirror from '../CodeMirror';
 import { Console } from './Console';
 import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
+
 const minCodeWrapSize = 33;
 
 /* global htmlCodeEl, jsCodeEl, cssCodeEl, logCountEl
@@ -19,7 +20,7 @@ export default class ContentWrap extends Component {
 		super(props);
 		this.state = {
 			isConsoleOpen: false,
-			isCssSettingsModalOpen: false
+			isCssSettingsModalOpen: false,
 		};
 		this.updateTimer = null;
 		this.updateDelay = 500;
@@ -32,6 +33,7 @@ export default class ContentWrap extends Component {
 		this.cmCodes = { html: props.currentItem.html, css: '', js: '' };
 		this.cm = {};
 		this.logCount = 0;
+		
 
 		window.onMessageFromConsole = this.onMessageFromConsole.bind(this);
 
@@ -205,10 +207,7 @@ export default class ContentWrap extends Component {
 		const cssMode = this.props.currentItem.cssMode;
 		// If just CSS was changed (and everything shudn't be empty),
 		// change the styles inside the iframe.
-		if (
-			!isForced &&
-			currentCode.js === this.codeInPreview.js
-		) {
+		if (!isForced && currentCode.js === this.codeInPreview.js) {
 			computeCss(
 				cssMode === CssModes.ACSS ? currentCode.html : currentCode.css,
 				cssMode,
@@ -438,6 +437,7 @@ export default class ContentWrap extends Component {
 		}
 		this.updateSplits();
 	}
+
 	codeSplitDragStart() {
 		document.body.classList.add('is-dragging');
 	}
@@ -673,7 +673,6 @@ export default class ContentWrap extends Component {
 	editorFocusHandler(editor) {
 		this.props.onEditorFocus(editor);
 	}
-
 	render() {
 		return (
 			<SplitPane
@@ -686,6 +685,7 @@ export default class ContentWrap extends Component {
 				}
 				onDragEnd={this.mainSplitDragEndHandler.bind(this)}
 			>
+		
 				<SplitPane
 					class="code-side"
 					id="js-code-side"
@@ -708,7 +708,7 @@ export default class ContentWrap extends Component {
 						class="code-wrap"
 						onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 					>
-						<div
+					 <div
 							class="js-code-wrap__header  code-wrap__header"
 							title="Double click to toggle code pane"
 							onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}
@@ -737,7 +737,7 @@ export default class ContentWrap extends Component {
 								/>
 							</div>
 						</div>
-						<UserCodeMirror
+						 <UserCodeMirror
 							options={{
 								mode: 'javascript',
 								gutters: [
@@ -751,8 +751,8 @@ export default class ContentWrap extends Component {
 							onChange={this.onJsCodeChange.bind(this)}
 							onCreation={el => (this.cm.js = el)}
 							onFocus={this.editorFocusHandler.bind(this)}
-						/>
-						{/* Inlet(scope.cm.js); */}
+						/> 
+						{/* Inlet(scope.cm.js);  */}
 					</div>
 					<div
 						data-code-wrap-id="1"
@@ -761,7 +761,8 @@ export default class ContentWrap extends Component {
 						class="code-wrap"
 						onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 					>
-						<div
+						
+						 <div
 							class="js-code-wrap__header  code-wrap__header"
 							title="Double click to toggle code pane"
 							onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}
@@ -820,15 +821,16 @@ export default class ContentWrap extends Component {
 							onChange={this.onCssCodeChange.bind(this)}
 							onCreation={el => (this.cm.css = el)}
 							onFocus={this.editorFocusHandler.bind(this)}
-						/>
+						/> 
 					</div>
 					<div
 						data-code-wrap-id="0"
 						id="htmlCodeEl"
 						data-type="html"
-						class="code-wrap"
+						// class="code-wrap"
 						onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 					>
+						
 						<div
 							class="js-code-wrap__header  code-wrap__header"
 							onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}
@@ -844,9 +846,7 @@ export default class ContentWrap extends Component {
 								/>
 							</div>
 						</div>
-						<div>
-							Welcome to ZenUML.
-						</div>
+						<div>Welcome to ZenUML.</div> 
 					</div>
 				</SplitPane>
 				<div class="demo-side" id="js-demo-side" style="">

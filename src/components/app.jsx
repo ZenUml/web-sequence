@@ -2,7 +2,7 @@
 */
 
 import { h, Component } from 'preact';
-
+import Tabs from './Tabs.jsx'
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
@@ -1211,6 +1211,7 @@ export default class App extends Component {
 						user={this.state.user}
 						unsavedEditCount={this.state.unsavedEditCount}
 					/>
+				<Tabs />
 					<ContentWrap
 						currentLayoutMode={this.state.currentLayoutMode}
 						currentItem={this.state.currentItem}

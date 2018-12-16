@@ -21,7 +21,7 @@ export function Console({
 					onDblClick={onConsoleHeaderDblClick}
 				>
 					<span class="code-wrap__header-label">
-						Console (<span id="logCountEl">0</span>)
+						Console (<span id="logCountEl">0 hhhhhhhhhhhhhhhh</span>)
 					</span>
 					<div class="code-wrap__header-right-options">
 						<a
