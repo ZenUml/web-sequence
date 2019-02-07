@@ -47,6 +47,7 @@ import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../ZenUml/javascript/firebase/subscription';
 import { ZenUmlCreateNewModal } from './ZenUml/modal/ZenUmlCreateNewModal';
+import { zenUmlNewBtnClickHandler } from '../ZenUml/javascript/appBtnClickHandler';
 
 if (module.hot) {
 	require('preact/debug');
@@ -893,23 +894,21 @@ export default class App extends Component {
 		}, 350);
 	}
 	newBtnClickHandler() {
-		this.fetchItems(true).then(items => {
-			trackEvent('ui', 'newBtnClick');
-			if (this.state.unsavedEditCount) {
-				var shouldDiscard = confirm(
-					'You have unsaved changes. Do you still want to create something new?'
-				);
-				if (shouldDiscard) {
-					this.setState({
-						isCreateNewModalOpen: true
-					});
-				}
-			} else {
+		trackEvent('ui', 'newBtnClick');
+		if (this.state.unsavedEditCount) {
+			var shouldDiscard = confirm(
+				'You have unsaved changes. Do you still want to create something new?'
+			);
+			if (shouldDiscard) {
 				this.setState({
 					isCreateNewModalOpen: true
 				});
 			}
-		});
+		} else {
+			this.setState({
+				isCreateNewModalOpen: true
+			});
+		}
 	}
 	openBtnClickHandler() {
 		trackEvent('ui', 'openBtnClick');
@@ -1223,7 +1222,7 @@ export default class App extends Component {
 					<MainHeader
 						externalLibCount={this.state.externalLibCount}
 						openBtnHandler={this.openBtnClickHandler.bind(this)}
-						newBtnHandler={this.newBtnClickHandler.bind(this)}
+						newBtnHandler={zenUmlNewBtnClickHandler(this)}
 						saveBtnHandler={this.saveBtnClickHandler.bind(this)}
 						loginBtnHandler={this.loginBtnClickHandler.bind(this)}
 						profileBtnHandler={this.profileBtnClickHandler.bind(this)}
