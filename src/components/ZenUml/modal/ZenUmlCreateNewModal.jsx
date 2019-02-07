@@ -2,12 +2,9 @@ import { h, Component } from 'preact';
 import { CreateNewModal } from '../../CreateNewModal';
 
 export class ZenUmlCreateNewModal extends Component {
-	async componentWillReceiveProps() {
-		console.log("receive props");
-	}
 	async componentWillUpdate() {
 		console.log("update");
-		console.log("saved",this.props.app.state.savedItems);
+		console.log("saved",this.props.savedItems);
 	}
 
 	render() {

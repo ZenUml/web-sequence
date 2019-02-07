@@ -1403,7 +1403,7 @@ export default class App extends Component {
 					closeHandler={() => this.setState({ isCreateNewModalOpen: false })}
 					onBlankTemplateSelect={this.blankTemplateSelectHandler.bind(this)}
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
-					app={this}
+					savedItems={this.state.savedItems}
 				/>
 
 				<Portal into="body">
