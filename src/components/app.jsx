@@ -45,7 +45,7 @@ import { Js13KModal } from './Js13KModal';
 import { CreateNewModal } from './CreateNewModal';
 import { Icons } from './Icons';
 import JSZip from 'jszip';
-import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
+import { loadSubscriptionToApp } from '../ZenUml/javascript/firebase/subscription';
 import { ZenUmlCreateNewModal } from './ZenUml/modal/ZenUmlCreateNewModal';
 
 if (module.hot) {
