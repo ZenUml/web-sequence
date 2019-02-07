@@ -46,6 +46,7 @@ import { CreateNewModal } from './CreateNewModal';
 import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
+import { ZenUmlCreateNewModal } from './ZenUml/modal/ZenUmlCreateNewModal';
 
 if (module.hot) {
 	require('preact/debug');
@@ -892,21 +893,23 @@ export default class App extends Component {
 		}, 350);
 	}
 	newBtnClickHandler() {
-		trackEvent('ui', 'newBtnClick');
-		if (this.state.unsavedEditCount) {
-			var shouldDiscard = confirm(
-				'You have unsaved changes. Do you still want to create something new?'
-			);
-			if (shouldDiscard) {
+		this.fetchItems(true).then(items => {
+			trackEvent('ui', 'newBtnClick');
+			if (this.state.unsavedEditCount) {
+				var shouldDiscard = confirm(
+					'You have unsaved changes. Do you still want to create something new?'
+				);
+				if (shouldDiscard) {
+					this.setState({
+						isCreateNewModalOpen: true
+					});
+				}
+			} else {
 				this.setState({
 					isCreateNewModalOpen: true
 				});
 			}
-		} else {
-			this.setState({
-				isCreateNewModalOpen: true
-			});
-		}
+		});
 	}
 	openBtnClickHandler() {
 		trackEvent('ui', 'openBtnClick');
@@ -1396,11 +1399,12 @@ export default class App extends Component {
 					closeHandler={() => this.setState({ isJs13KModalOpen: false })}
 				/>
 
-				<CreateNewModal
+				<ZenUmlCreateNewModal
 					show={this.state.isCreateNewModalOpen}
 					closeHandler={() => this.setState({ isCreateNewModalOpen: false })}
 					onBlankTemplateSelect={this.blankTemplateSelectHandler.bind(this)}
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
+					app={this}
 				/>
 
 				<Portal into="body">
