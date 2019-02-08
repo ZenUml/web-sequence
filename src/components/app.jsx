@@ -1403,6 +1403,7 @@ export default class App extends Component {
 					closeHandler={() => this.setState({ isCreateNewModalOpen: false })}
 					onBlankTemplateSelect={this.blankTemplateSelectHandler.bind(this)}
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
+					user={this.state.user}
 					savedItems={this.state.savedItems}
 				/>
 
