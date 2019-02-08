@@ -14,24 +14,28 @@ export class ZenUmlCreateNewModal extends Component {
 	render() {
 		let view = null;
 		if (this.shouldPromoteToSignUp()) {
-			view = (<Modal show={this.props.show}
-				closeHandler={this.props.closeHandler}
-				smll
-			        >
-				Anonymous User:
-				<hr />
-				Please Login/SignUp to unlock more UMLs.
-				<hr />
-			</Modal>);
+			view = this.signUpPromotionModal();
 		} else {
-			view = (<CreateNewModal
-				show={this.props.show}
-				closeHandler={this.props.closeHandler}
-				onBlankTemplateSelect={this.props.onBlankTemplateSelect}
-				onTemplateSelect={this.props.onTemplateSelect}
-			        />);
+			view = this.createNewModal();
 		}
 		return view;
+	}
 
+	signUpPromotionModal() {
+		return (<Modal show={this.props.show} closeHandler={this.props.closeHandler} smll>
+			Anonymous User:
+			<hr />
+			Please Login/SignUp to unlock more UMLs.
+			<hr />
+		</Modal>);
+	}
+
+	createNewModal() {
+		return (<CreateNewModal
+			show={this.props.show}
+			closeHandler={this.props.closeHandler}
+			onBlankTemplateSelect={this.props.onBlankTemplateSelect}
+			onTemplateSelect={this.props.onTemplateSelect}
+		        />);
 	}
 }
