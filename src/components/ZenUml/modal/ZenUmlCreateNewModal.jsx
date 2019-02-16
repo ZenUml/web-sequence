@@ -25,7 +25,7 @@ export class ZenUmlCreateNewModal extends Component {
 		return (<Modal show={this.props.show} closeHandler={this.props.closeHandler} smll>
 			Anonymous User:
 			<hr />
-			Please Login/SignUp to unlock more UMLs.
+			Please Login/SignUp to create more diagrams.
 			<hr />
 		</Modal>);
 	}
