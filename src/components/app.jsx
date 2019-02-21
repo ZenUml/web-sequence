@@ -151,7 +151,7 @@ export default class App extends Component {
 				});
 
 				//load subscription from firestore
-				loadSubscriptionToApp(this);
+				loadSubscriptionToApp(this).then(() => this.refreshEditor());
 			} else {
 				// User is signed out.
 				this.setState({ user: undefined });
@@ -160,6 +160,7 @@ export default class App extends Component {
 				if(this.onUserItemsResolved) {
 					this.onUserItemsResolved(null);
 				}
+				this.refreshEditor();
 			}
 			this.updateProfileUi();
 		});

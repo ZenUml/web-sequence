@@ -4,13 +4,15 @@ import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
 
+const isProUser = () => window.user && window.user.subscription;
+
 // computeHtml, computeCss & computeJs evaluate the final code according
 // to whatever mode is selected and resolve the returned promise with the code.
 export function computeHtml(userCode, mode) {
+	const exportButtonHtml = '<button id="btnDownloadPng" class="button hide-on-mobile"><div></div><i class="fa fa-file-image-o"></i> \n' +
+	'  Export as PNG\n' + '</button>';
 	var code =
-		'<main id="demo">\n' + '<button id="btnDownloadPng" class="button hide-on-mobile"><div></div><i class="fa fa-file-image-o"></i> \n' +
-		'  Export as PNG\n' +
-		'</button>' + ' <div id="diagram">   <seq-diagram></seq-diagram>\n </div>' + '  </main>';
+		'<main id="demo">\n' + (isProUser() ? exportButtonHtml : '') + ' <div id="diagram">   <seq-diagram></seq-diagram>\n </div>' + '  </main>';
 
 	var d = deferred();
 	if (mode === HtmlModes.HTML) {
