@@ -1,5 +1,5 @@
 import { Component } from 'preact';
-import { ProductVersionLabelAnonymous } from './ProductVersionLabelAnonymous';
+import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
 
 export class ProductVersionLabel extends Component {
 	isAnonymous() {
@@ -9,9 +9,10 @@ export class ProductVersionLabel extends Component {
 	render() {
 		let view = null;
 		if (this.isAnonymous()) {
-			view = <ProductVersionLabelAnonymous />;
+			view = <ProductVersionLabelBasic tooltips={"Please login to upgrade to Pro"} />;
 		} else {
 			view = this.productInfo();
+			//Todo in_subscription
 		}
 		return view;
 	}
