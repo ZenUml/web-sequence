@@ -9,9 +9,9 @@ export class ProductVersionLabel extends Component {
 	render() {
 		let view = null;
 		if (this.isAnonymous()) {
-			view = <ProductVersionLabelBasic tooltips={"Please login to upgrade to Pro"} />;
+			view = <ProductVersionLabelBasic tooltip={"Please login to upgrade to Pro"} />;
 		} else {
-			view = <ProductVersionLabelBasic tooltips={"Please login to upgrade to Pro"} />
+			view = <ProductVersionLabelBasic tooltip={"Get more out of ZenUML — Go Pro"} />
 			//Todo in_subscription
 		}
 		return view;
