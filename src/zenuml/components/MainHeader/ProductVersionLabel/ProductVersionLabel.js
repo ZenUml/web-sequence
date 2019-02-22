@@ -9,7 +9,7 @@ export class ProductVersionLabel extends Component {
 	render() {
 		let view = null;
 		if (this.isAnonymous()) {
-			view = <ProductVersionLabelAnonymous clickHandler={this.props.clickHandler}/>;
+			view = <ProductVersionLabelAnonymous clickHandler={this.props.clickHandler} />;
 		} else {
 			view = this.productInfo();
 		}
