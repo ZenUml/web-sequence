@@ -11,12 +11,9 @@ export class ProductVersionLabel extends Component {
 		if (this.isAnonymous()) {
 			view = <ProductVersionLabelBasic tooltips={"Please login to upgrade to Pro"} />;
 		} else {
-			view = this.productInfo();
+			view = <ProductVersionLabelBasic tooltips={"Please login to upgrade to Pro"} />
 			//Todo in_subscription
 		}
 		return view;
-	}
-	productInfo() {
-		return null;
 	}
 }
