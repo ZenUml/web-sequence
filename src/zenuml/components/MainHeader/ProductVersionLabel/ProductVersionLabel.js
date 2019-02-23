@@ -12,7 +12,7 @@ export class ProductVersionLabel extends Component {
 		if (this.isPro()) {
 			view = null;
 		} else {
-			view = <ProductVersionLabelBasic tooltip={"Get more out of ZenUML — Go Pro"} />
+			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} />
 			//Todo in_subscription
 		}
 
