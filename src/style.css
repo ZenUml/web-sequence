@@ -731,7 +731,7 @@ body > #demo-frame {
 }
 
 .footer__link {
-	display: inline-block;
+	/* display: inline-block; */
 	background: transparent;
 	border: 0;
 	padding: 0;
@@ -1817,14 +1817,8 @@ while the theme CSS file is loading */
 .feature-list .notes {
 	padding: 0 20px 20px 0;
 	font-size: 0.8em;
-	font-style: italic;
 }
 
 .feature-list .notes label {
 	display: block;
-}
-
-.feature-list .privacy-policy {
-	text-align: center;
-	padding-bottom: 20px;
 }
