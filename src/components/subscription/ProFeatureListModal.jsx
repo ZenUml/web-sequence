@@ -28,6 +28,9 @@ export function ProFeatureListModal(props) {
 					<li>Unsubscribe at any time, no questions asked.</li>
 				</ol>
 			</section>
+			<section className={'privacy-policy'}>
+				<a href={'/privacy-policy'}>Privacy Policy</a>
+			</section>
 		</Modal>
 	);
 }

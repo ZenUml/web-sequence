@@ -826,7 +826,6 @@ body > #demo-frame {
 	font-size: 0.8rem;
 	opacity: 0.8;
 	transition: 0.25s ease;
-	border: 1px solid black;
 	border-radius: 2px;
 	padding: 0.2rem 0.5rem;
 }
@@ -1825,4 +1824,9 @@ while the theme CSS file is loading */
 
 .feature-list .notes label {
 	display: block;
+}
+
+.feature-list .privacy-policy {
+	text-align: center;
+	padding-bottom: 20px;
 }
