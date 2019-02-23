@@ -31,6 +31,8 @@ gulp.task('runWebpack', function() {
 });
 gulp.task('copyFiles', function() {
 	return merge(
+		gulp.src('privacy-policy/*')
+			.pipe(gulp.dest('app/privacy-policy')),
 		gulp.src('src/lib/codemirror/theme/*')
 			.pipe(gulp.dest('app/lib/codemirror/theme')),
 		gulp.src('src/lib/codemirror/mode/**/*')
