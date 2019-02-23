@@ -196,7 +196,7 @@ button {
 hr {
 	background: 0;
 	border: 0;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	border-bottom: 1px solid #0808081f;
 	margin: 20px 0;
 }
 
@@ -1780,4 +1780,49 @@ while the theme CSS file is loading */
 #screenshotBtn svg path {
 	stroke: rgba(255, 255, 255, 0.2);
 	stroke-width: 5px;
+}
+
+.feature-list .modal__content {
+	background: #ffffff;
+	color: #5D5D5D;
+	padding: 0;
+	max-width: 450px;
+}
+
+.feature-list .header {
+	padding-top: 40px;
+	padding-bottom: 40px;
+	text-align: center;
+	font-size: 30px;
+	font-weight: 100;
+	color: #FFF;
+	background: #30DBB5;
+}
+
+.feature-list .header h1,
+.feature-list .header h2 {
+	margin: 0;
+	font-weight: lighter;
+}
+
+.feature-list .header h1 sup {
+	font-size: small;
+}
+
+.feature-list .content {
+	line-height: 2.5em;
+}
+
+.feature-list .call-for-action {
+	text-align: center;
+}
+
+.feature-list .notes {
+	padding: 0 20px 20px 0;
+	font-size: 0.8em;
+	font-style: italic;
+}
+
+.feature-list .notes label {
+	display: block;
 }
