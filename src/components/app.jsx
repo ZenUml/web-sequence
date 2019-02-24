@@ -159,7 +159,6 @@ export default class App extends Component {
 				if(this.onUserItemsResolved) {
 					this.onUserItemsResolved(null);
 				}
-				this.refreshEditor();
 			}
 			this.updateProfileUi();
 		});
