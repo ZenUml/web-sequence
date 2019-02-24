@@ -120,7 +120,7 @@ export function MainHeader(props) {
 					/>
 				</Button>
 				<UpgradeLink user={props.user} />
-				<ProductVersionLabel user={props.user} />
+				<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler}/>
 			</div>
 		</div>
 	);

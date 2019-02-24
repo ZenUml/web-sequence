@@ -12,7 +12,7 @@ export class ProductVersionLabel extends Component {
 		if (this.isPro()) {
 			view = null;
 		} else {
-			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} />
+			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} clickHandler={this.props.clickHandler} />
 			//Todo in_subscription
 		}
 
