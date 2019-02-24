@@ -25,6 +25,6 @@ export class ProductVersionLabel extends Component {
 
 	//Todo: should define how to check pro
 	isPro() {
-		return false;
+		return window.user && window.user.subscription;
 	}
 }
