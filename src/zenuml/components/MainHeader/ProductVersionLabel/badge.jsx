@@ -1,3 +1,4 @@
+//暂时保留，实现ProductLabel后删除
 const SubscriptionBadge = ({ user }) => {
 	if (!user) return null;
 
