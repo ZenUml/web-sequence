@@ -1,17 +1,12 @@
+import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract';
+
 const ProductVersionLabelProfessional = ({ clickHandler }) => {
-	const style = {
+	const theme = {
 		'background-color': 'gold',
-		color: 'white',
-		'border-radius': '4px',
-		padding: '1px 15px 1px 15px'
+		color: 'white'
 	};
 
-	return (
-		<i style={style}
-			 className="flex  flex-v-center  hint--rounded  hint--bottom-left"
-			 aria-label="Thanks for your support" onClick={clickHandler}
-		>Pro</i>
-	);
+	return <ProductVersionLabelAbstract clickHandler={clickHandler} theme={theme} tooltip="Thanks for your support" />
 };
 
 export { ProductVersionLabelProfessional };
