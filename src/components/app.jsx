@@ -68,7 +68,7 @@ export default class App extends Component {
 			isAddLibraryModalOpen: false,
 			isSettingsModalOpen: false,
 			isHelpModalOpen: false,
-			isProFeatureListModalOpen: true,
+			isProFeatureListModalOpen: false,
 			isNotificationsModalOpen: false,
 			isLoginModalOpen: false,
 			isProfileModalOpen: false,
