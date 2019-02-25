@@ -18,7 +18,7 @@ async function retrieveSubscription(firestore, userId) {
 }
 
 function loadSubscriptionToApp(app) {
-	window.db.getDb()
+	return window.db.getDb()
 		.then(async firestore => {
 				return await retrieveSubscription(firestore, app.state.user.uid);
 			}
