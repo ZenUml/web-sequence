@@ -1,5 +1,6 @@
 import { Component } from 'preact';
 import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
+import { ProductVersionLabelProfessional } from './ProductVersionLabelProfessional';
 
 export class ProductVersionLabel extends Component {
 	isAnonymous() {
@@ -10,10 +11,9 @@ export class ProductVersionLabel extends Component {
 		let view = null;
 
 		if (this.isPro()) {
-			view = null;
+			view = <ProductVersionLabelProfessional clickHandler={this.props.clickHandler} />;
 		} else {
 			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} clickHandler={this.props.clickHandler} />
-			//Todo in_subscription
 		}
 
 		return view;
