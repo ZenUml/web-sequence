@@ -1,4 +1,5 @@
 import { Component } from 'preact';
+import userService from '../../../../services/user_service';
 import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
 
 export class ProductVersionLabel extends Component {
@@ -9,7 +10,7 @@ export class ProductVersionLabel extends Component {
 	render() {
 		let view = null;
 
-		if (this.isPro()) {
+		if (userService.isPro()) {
 			view = null;
 		} else {
 			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} clickHandler={this.props.clickHandler} />
@@ -21,10 +22,5 @@ export class ProductVersionLabel extends Component {
 
 	getBasicTooltip() {
 		return this.isAnonymous() ? 'Please login to upgrade to Pro' : 'Get more out of ZenUML — Go Pro';
-	}
-
-	//Todo: should define how to check pro
-	isPro() {
-		return window.user && window.user.subscription;
 	}
 }

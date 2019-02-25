@@ -1,3 +1,6 @@
+const subscription = () => window.user && window.user.subscription;
+
 export default {
-    isPro: () => window.user && window.user.subscription
+    subscription: subscription,
+    isPro: () => subscription() && subscription().status === 'active'
 };
