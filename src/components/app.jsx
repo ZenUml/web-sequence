@@ -116,9 +116,6 @@ export default class App extends Component {
 		};
 		this.prefs = {};
 
-		const firestore = firebase.firestore();
-		const settings = {timestampsInSnapshots: true};
-		firestore.settings(settings);
 		firebase.auth().onAuthStateChanged(user => {
 			this.setState({ isLoginModalOpen: false });
 			if (user) {
@@ -153,7 +150,7 @@ export default class App extends Component {
 				});
 
 				//load subscription from firestore
-				loadSubscriptionToApp(this);
+				loadSubscriptionToApp(this).then(() => this.refreshEditor());
 			} else {
 				// User is signed out.
 				this.setState({ user: undefined });

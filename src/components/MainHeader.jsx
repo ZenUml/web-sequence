@@ -1,6 +1,5 @@
 import { h } from 'preact';
 import { Button } from './common';
-import { SubscriptionBadge } from './subscription/badge';
 import { UpgradeLink } from './subscription/UpgradeLink';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
 
@@ -119,7 +118,6 @@ export function MainHeader(props) {
 						src={props.user ? props.user.photoURL || DEFAULT_PROFILE_IMG : ''}
 						className="main-header__avatar-img"
 					/>
-					<SubscriptionBadge user={props.user} />
 				</Button>
 				<UpgradeLink user={props.user} />
 				<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler}/>

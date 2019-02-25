@@ -56,7 +56,6 @@ import { log } from './utils';
 				return resolve(db);
 			}
 			const store = firebase.firestore();
-			store.settings({ timestampsInSnapshots: true });
 			return store
 				.enablePersistence({ experimentalTabSynchronization: true })
 				.then(function() {

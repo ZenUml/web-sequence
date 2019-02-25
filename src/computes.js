@@ -1,5 +1,6 @@
 import { deferred } from './deferred';
 import { addInfiniteLoopProtection } from './utils';
+import userService from './services/user_service';
 import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
@@ -7,10 +8,25 @@ const esprima = require('esprima');
 // computeHtml, computeCss & computeJs evaluate the final code according
 // to whatever mode is selected and resolve the returned promise with the code.
 export function computeHtml(userCode, mode) {
+	const isProUser = userService.isPro();
+	const exportButtonHtml =
+		`<button id="btnDownloadPng" class="button hide-on-mobile"
+			${isProUser ? '' : 'disabled'}>
+			<div></div>
+			<i class="fa fa-file-image-o"></i>
+			Export as PNG
+		</button>`;
+	const exportButtonWrapperHtml =
+		`${isProUser ? '' : '<div title="Upgrade to Pro to enable this feature">'}
+			${exportButtonHtml}
+		${isProUser ? '' : '</div>'}`;
 	var code =
-		'<main id="demo">\n' + '<button id="btnDownloadPng" class="button hide-on-mobile"><div></div><i class="fa fa-file-image-o"></i> \n' +
-		'  Export as PNG\n' +
-		'</button>' + ' <div id="diagram">   <seq-diagram></seq-diagram>\n </div>' + '  </main>';
+		`<main id="demo">
+			${exportButtonWrapperHtml}
+			<div id="diagram">
+				<seq-diagram></seq-diagram>
+			</div>
+		</main>`;
 
 	var d = deferred();
 	if (mode === HtmlModes.HTML) {

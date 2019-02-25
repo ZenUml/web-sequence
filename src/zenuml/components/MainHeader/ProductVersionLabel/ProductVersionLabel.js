@@ -1,5 +1,5 @@
 import { Component } from 'preact';
-import { ProductVersionLabelAnonymous } from './ProductVersionLabelAnonymous';
+import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
 
 export class ProductVersionLabel extends Component {
 	isAnonymous() {
@@ -8,14 +8,23 @@ export class ProductVersionLabel extends Component {
 
 	render() {
 		let view = null;
-		if (this.isAnonymous()) {
-			view = <ProductVersionLabelAnonymous clickHandler={this.props.clickHandler} />;
+
+		if (this.isPro()) {
+			view = null;
 		} else {
-			view = this.productInfo();
+			view = <ProductVersionLabelBasic tooltip={this.getBasicTooltip()} clickHandler={this.props.clickHandler} />
+			//Todo in_subscription
 		}
+
 		return view;
 	}
-	productInfo() {
-		return null;
+
+	getBasicTooltip() {
+		return this.isAnonymous() ? 'Please login to upgrade to Pro' : 'Get more out of ZenUML — Go Pro';
+	}
+
+	//Todo: should define how to check pro
+	isPro() {
+		return window.user && window.user.subscription;
 	}
 }
