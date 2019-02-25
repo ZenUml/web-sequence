@@ -1,10 +1,10 @@
-const ProductVersionLabelAbstract = ({ tooltip, theme, clickHandler }) => {
-	const style = {
+const ProductVersionLabelAbstract = ({ tooltip, style, clickHandler }) => {
+	const styleTemplate = {
 		'border-radius': '4px',
 		padding: '1px 15px 1px 15px'
 	};
 
-	const mergedStyle = {...style, ...theme};
+	const mergedStyle = {...styleTemplate, ...style};
 
 	return (
 		<i style={mergedStyle}

@@ -1,10 +1,10 @@
 import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract';
 
 const ProductVersionLabelBasic = ({ tooltip, clickHandler }) => {
-	const theme = {
+	const style = {
 		'background-color': 'grey'
 	};
-	return <ProductVersionLabelAbstract tooltip={tooltip} clickHandler={clickHandler} theme={theme} />
+	return <ProductVersionLabelAbstract tooltip={tooltip} clickHandler={clickHandler} style={style} />
 };
 
 export { ProductVersionLabelBasic };
