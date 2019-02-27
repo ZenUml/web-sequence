@@ -9,7 +9,7 @@ const UpgradeLink = ({ user }) => {
 	const isSubscriptionValid = subscription && subscription['ends_at'] !== null && ((new Date(subscription['ends_at']) - new Date()) >= 0);
 
 	if (!isSubscriptionOnGoing && !isSubscriptionValid) {
-		const upgradeLink = `https://pay.paddle.com/checkout/552378?passthrough=${user.uid}`;
+		const upgradeLink = `${baseCheckoutUrl}?passthrough=${user.uid}`;
 		return <a id='UpgradeLink' href={upgradeLink} target='_blank'>Upgrade</a>;
 	}
 };
