@@ -1,6 +1,5 @@
 import { h } from 'preact';
 import { Button } from './common';
-import { UpgradeLink } from './subscription/UpgradeLink';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
 
 const DEFAULT_PROFILE_IMG =
@@ -119,7 +118,6 @@ export function MainHeader(props) {
 						className="main-header__avatar-img"
 					/>
 				</Button>
-				<UpgradeLink user={props.user} />
 				<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler}/>
 			</div>
 		</div>

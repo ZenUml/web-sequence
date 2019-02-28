@@ -1822,3 +1822,9 @@ while the theme CSS file is loading */
 .feature-list .notes label {
 	display: block;
 }
+
+.upgrade-link {
+	margin: 20px;
+	text-align: center;
+	font-size: xx-large
+}
