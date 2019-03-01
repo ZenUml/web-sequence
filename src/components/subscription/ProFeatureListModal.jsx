@@ -1,5 +1,5 @@
 import Modal from '../Modal';
-import { UserSubscription } from './UserSubscription';
+import { SubscriptionAction } from './SubscriptionAction';
 
 export function ProFeatureListModal(props) {
 	return (
@@ -21,7 +21,7 @@ export function ProFeatureListModal(props) {
 				<button>Back</button>
 			</section>
 			<div class="user-subscription-link">
-				<UserSubscription/>
+				<SubscriptionAction/>
 			</div>
 			<hr />
 			<section className={'notes'}>

@@ -1,7 +1,7 @@
 import userService from '../../services/user_service';
 import { UpgradeLink } from './UpgradeLink';
 
-const UserSubscription = () => {
+const SubscriptionAction = () => {
 	if (!userService.user()) return null;
 
 	if (userService.isPro()) {
@@ -11,4 +11,4 @@ const UserSubscription = () => {
     }
 };
 
-export { UserSubscription };
+export { SubscriptionAction };
