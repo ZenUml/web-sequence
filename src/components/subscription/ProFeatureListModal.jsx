@@ -1,5 +1,5 @@
 import Modal from '../Modal';
-import { UpgradeLink } from './UpgradeLink';
+import { SubscriptionAction } from './SubscriptionAction';
 
 export function ProFeatureListModal(props) {
 	return (
@@ -20,8 +20,8 @@ export function ProFeatureListModal(props) {
 			<section className={'call-for-action hide'}>
 				<button>Back</button>
 			</section>
-			<div class="upgrade-link">
-				<UpgradeLink/>
+			<div class="user-subscription-link">
+				<SubscriptionAction/>
 			</div>
 			<hr />
 			<section className={'notes'}>
