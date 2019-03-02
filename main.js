@@ -40,5 +40,8 @@ window.downloadPng = downloadPng
 console.log('Using vue-sequence', Version)
 
 document.addEventListener('DOMContentLoaded', function () {
-	document.getElementById('btnDownloadPng').addEventListener('click', downloadPng);
+	const exportButton = document.getElementById('btnDownloadPng');
+	if(exportButton) {
+		exportButton.addEventListener('click', downloadPng);
+	}
 });

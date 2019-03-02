@@ -1,14 +1,15 @@
 {
 	"name": "web-sequence",
 	"version": "0.9.1",
-	"description": "A blazing fast & offline sequence diagram generator",
+	"description": "A real-time tool for generating sequence diagrams",
 	"main": "index.html",
 	"scripts": {
 		"webpack": "webpack",
 		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
-		"build": "npm run webpack && preact build --template src/index.html --no-prerender --service-worker false",
+		"build": "npm run webpack && preact build --production false --template src/index.html --no-prerender --service-worker false",
+		"build-prod": "preact build --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
-		"serve": "npm run webpack && preact build && preact serve",
+		"serve": "npm run webpack && preact build --production false && preact serve",
 		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
 		"test": "jest ./tests",
@@ -17,7 +18,8 @@
 		"upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret $WEBSTORE_CLIENT_SECRET --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
 		"pub": "webstore publish --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret $WEBSTORE_CLIENT_SECRET --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
 		"install": "ln -sf ../../git-hooks/pre-commit .git/hooks/pre-commit",
-		"precommit": "lint-staged"
+		"precommit": "lint-staged",
+		"http-server-app": "http-server ./app"
 	},
 	"eslintConfig": {
 		"extends": "eslint-config-synacor"
@@ -80,6 +82,7 @@
 		"esprima": "^4.0.0",
 		"file-saver": "^1.3.8",
 		"firebase": "^5.5.8",
+		"http-server": "^0.11.1",
 		"jszip": "^3.1.5",
 		"preact": "^8.2.6",
 		"preact-compat": "^3.17.0",

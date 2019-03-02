@@ -15,6 +15,7 @@ window.chrome.i18n = {
 
 window.$all = selector => [...document.querySelectorAll(selector)];
 window.IS_EXTENSION = !!window.chrome.extension;
+
 export const BASE_PATH = '';
 
 var alphaNum = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -370,8 +371,8 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 	if (typeof js === 'string') {
 		contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
 	} else {
-		var origin = chrome.i18n.getMessage
-			? `chrome-extension://${chrome.i18n.getMessage('@@extension_id')}`
+		var origin = chrome.runtime.id
+			? `chrome-extension://${chrome.runtime.id}`
 			: `${location.origin}`;
 		contents +=
 			'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';

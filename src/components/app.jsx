@@ -39,6 +39,7 @@ import { AskToImportModal } from './AskToImportModal';
 import { Alerts } from './Alerts';
 import Portal from 'preact-portal';
 import { HelpModal } from './HelpModal';
+import { ProFeatureListModal } from './subscription/ProFeatureListModal';
 import { OnboardingModal } from './OnboardingModal';
 import { Js13KModal } from './Js13KModal';
 import { CreateNewModal } from './CreateNewModal';
@@ -55,7 +56,7 @@ const LocalStorageKeys = {
 	ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations'
 };
 const UNSAVED_WARNING_COUNT = 15;
-const version = '3.6.0';
+const version = '3.6.1';
 
 export default class App extends Component {
 	constructor() {
@@ -66,6 +67,7 @@ export default class App extends Component {
 			isAddLibraryModalOpen: false,
 			isSettingsModalOpen: false,
 			isHelpModalOpen: false,
+			isProFeatureListModalOpen: false,
 			isNotificationsModalOpen: false,
 			isLoginModalOpen: false,
 			isProfileModalOpen: false,
@@ -113,9 +115,6 @@ export default class App extends Component {
 		};
 		this.prefs = {};
 
-		const firestore = firebase.firestore();
-		const settings = { timestampsInSnapshots: true };
-		firestore.settings(settings);
 		firebase.auth().onAuthStateChanged(user => {
 			this.setState({ isLoginModalOpen: false });
 			if (user) {
@@ -150,7 +149,7 @@ export default class App extends Component {
 				});
 
 				//load subscription from firestore
-				loadSubscriptionToApp(this);
+				loadSubscriptionToApp(this).then(() => this.refreshEditor());
 			} else {
 				// User is signed out.
 				this.setState({ user: undefined });
@@ -409,7 +408,10 @@ export default class App extends Component {
 		// setTimeout(() => $('#js-saved-items-wrap').style.overflowY = 'auto', 1000);
 	}
 	toggleSavedItemsPane(shouldOpen) {
-		this.setState({ isSavedItemPaneOpen: !this.state.isSavedItemPaneOpen });
+		this.setState({
+			isSavedItemPaneOpen:
+				shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen
+		});
 
 		if (this.state.isSavedItemPaneOpen) {
 			window.searchInput.focus();
@@ -428,6 +430,9 @@ export default class App extends Component {
 	 */
 	async fetchItems(shouldSaveGlobally, shouldFetchLocally) {
 		var d = deferred();
+		// HACK: This empty assignment is being used when importing locally saved items
+		// to cloud, `fetchItems` runs once on account login which clears the
+		// savedItems object and hence, while merging no saved item matches with itself.
 		this.state.savedItems = {};
 		var items = [];
 		if (window.user && !shouldFetchLocally) {
@@ -859,6 +864,10 @@ export default class App extends Component {
 	loginBtnClickHandler() {
 		this.setState({ isLoginModalOpen: true });
 	}
+
+	proBtnClickHandler() {
+		this.setState({ isProFeatureListModalOpen: true });
+	}
 	profileBtnClickHandler() {
 		this.setState({ isProfileModalOpen: true });
 	}
@@ -1028,6 +1037,55 @@ export default class App extends Component {
 		if (e) {
 			trackEvent('ui', 'dontAskToImportBtnClick');
 		}
+	}
+
+	mergeImportedItems(items) {
+		var existingItemIds = [];
+		var toMergeItems = {};
+		const d = deferred();
+		const { savedItems } = this.state;
+		items.forEach(item => {
+			// We can access `savedItems` here because this gets set when user
+			// opens the saved creations panel. And import option is available
+			// inside the saved items panel.
+			// HACK: Also when this fn is called for importing locally saved items
+			// to cloud, `fetchItems` runs once on account login which clears the
+			// savedItems object and hence, no match happens for `existingItemIds`.
+			if (savedItems[item.id]) {
+				// Item already exists
+				existingItemIds.push(item.id);
+			} else {
+				log('merging', item.id);
+				toMergeItems[item.id] = item;
+			}
+		});
+		var mergedItemCount = items.length - existingItemIds.length;
+		if (existingItemIds.length) {
+			var shouldReplace = confirm(
+				existingItemIds.length +
+					' creations already exist. Do you want to replace them?'
+			);
+			if (shouldReplace) {
+				log('shouldreplace', shouldReplace);
+				items.forEach(item => {
+					toMergeItems[item.id] = item;
+				});
+				mergedItemCount = items.length;
+			}
+		}
+		if (mergedItemCount) {
+			itemService.saveItems(toMergeItems).then(() => {
+				d.resolve();
+				alertsService.add(
+					mergedItemCount + ' creations imported successfully.'
+				);
+				trackEvent('fn', 'itemsImported', mergedItemCount);
+			});
+		} else {
+			d.resolve();
+		}
+		this.closeSavedItemsPane();
+		return d.promise;
 	}
 
 	/**
@@ -1225,6 +1283,7 @@ export default class App extends Component {
 						newBtnHandler={this.newBtnClickHandler.bind(this)}
 						saveBtnHandler={this.saveBtnClickHandler.bind(this)}
 						loginBtnHandler={this.loginBtnClickHandler.bind(this)}
+						proBtnHandler={this.proBtnClickHandler.bind(this)}
 						profileBtnHandler={this.profileBtnClickHandler.bind(this)}
 						addLibraryBtnHandler={this.openAddLibrary.bind(this)}
 						runBtnClickHandler={this.runBtnClickHandler.bind(this)}
@@ -1287,6 +1346,7 @@ export default class App extends Component {
 					itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
 					itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
 					exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
+					mergeImportedItems={this.mergeImportedItems.bind(this)}
 				/>
 
 				<Alerts />
@@ -1362,6 +1422,12 @@ export default class App extends Component {
 				<HelpModal
 					show={this.state.isHelpModalOpen}
 					closeHandler={() => this.setState({ isHelpModalOpen: false })}
+					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
+					version={version}
+				/>
+				<ProFeatureListModal
+					show={this.state.isProFeatureListModalOpen}
+					closeHandler={() => this.setState({ isProFeatureListModalOpen: false })}
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
 				/>

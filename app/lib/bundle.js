@@ -377,6 +377,7 @@ window.chrome.i18n = {
 
 window.$all = selector => [...document.querySelectorAll(selector)];
 window.IS_EXTENSION = !!window.chrome.extension;
+
 const BASE_PATH = '';
 /* unused harmony export BASE_PATH */
 
@@ -734,8 +735,8 @@ function getCompleteHtml(html, css, js, item, isForExport) {
 	if (typeof js === 'string') {
 		contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
 	} else {
-		var origin = chrome.i18n.getMessage
-			? `chrome-extension://${chrome.i18n.getMessage('@@extension_id')}`
+		var origin = chrome.runtime.id
+			? `chrome-extension://${chrome.runtime.id}`
 			: `${location.origin}`;
 		contents +=
 			'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';

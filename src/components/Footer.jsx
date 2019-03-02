@@ -130,15 +130,7 @@ export default class Footer extends Component {
 							<use xlinkHref="#twitter-icon" />
 						</svg>
 					</a>
-					<Button
-						onClick={this.props.supportDeveloperBtnClickHandler}
-						data-event-category="ui"
-						data-event-action="supportDeveloperFooterBtnClick"
-						class="footer__link  ml-1  hint--rounded  hint--top-right hide-on-mobile support-link hide"
-						aria-label="Support the developer by pledging some amount"
-					>
-						Donate
-					</Button>
+					<a className={'footer__link'} href={'/privacy-policy'}>Privacy Policy</a>
 				</div>
 
 				{this.props.prefs.isJs13kModeOn ? (

@@ -377,6 +377,7 @@ window.chrome.i18n = {
 
 window.$all = selector => [...document.querySelectorAll(selector)];
 window.IS_EXTENSION = !!window.chrome.extension;
+
 const BASE_PATH = '';
 /* unused harmony export BASE_PATH */
 
@@ -734,8 +735,8 @@ function getCompleteHtml(html, css, js, item, isForExport) {
 	if (typeof js === 'string') {
 		contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
 	} else {
-		var origin = chrome.i18n.getMessage
-			? `chrome-extension://${chrome.i18n.getMessage('@@extension_id')}`
+		var origin = chrome.runtime.id
+			? `chrome-extension://${chrome.runtime.id}`
 			: `${location.origin}`;
 		contents +=
 			'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';
@@ -20293,8 +20294,8 @@ var update = __webpack_require__(17)(content, options);
 if(content.locals) module.exports = content.locals;
 
 if(false) {
-	module.hot.accept("!!../../css-loader/index.js!./vue-sequence.css", function() {
-		var newContent = require("!!../../css-loader/index.js!./vue-sequence.css");
+	module.hot.accept("!!../../../all-coloruml/web-sequence/node_modules/css-loader/index.js!./vue-sequence.css", function() {
+		var newContent = require("!!../../../all-coloruml/web-sequence/node_modules/css-loader/index.js!./vue-sequence.css");
 
 		if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 
