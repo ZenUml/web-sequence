@@ -690,10 +690,10 @@ export default class ContentWrap extends Component {
 	}
 
 	toolboxUpdateToApp(param) {
-		if(param === "NewParticipant"){
+		if (param === "NewParticipant"){
 			this.addNewParticipant();
 		} else {
-			this.cmCodes.js === '' ? this.cm.js.setValue(param): this.cm.js.setValue(`${this.cmCodes.js}\n${param}`); 
+			this.cmCodes.js === '' ? this.cm.js.setValue(param): this.cm.js.setValue(`${this.cmCodes.js}\n${param}`);
 		}
 		this.refreshEditor();
 	}
@@ -702,18 +702,18 @@ export default class ContentWrap extends Component {
 		let code = this.cm.js.getValue();
 		let lines = code.split('\n');
 		let buffer = '', added = false;
-		if(lines[0]){
-			lines.forEach(line => {
-				buffer = buffer ? `${buffer}\n${line}`: line;
-				if(!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
-					buffer = `NewParticipant\n${buffer}`;
-					added = true;
-				}
-			});
-			this.cm.js.setValue(buffer);
-		} else {
-			this.cm.js.setValue('NewParticipant');
-	   }
+		lines.forEach(line => {
+			if(!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
+				buffer = `${buffer}\nNewParticipant`;
+				added = true;
+			}
+			buffer = buffer === '' ? line : `${buffer}\n${line}`;
+		});
+		if(!added) {
+			buffer = `${code}\nNewParticipant`;
+		}
+		this.cm.js.setValue(buffer);
+
 	   this.refreshEditor();
 	}
 
@@ -732,7 +732,8 @@ export default class ContentWrap extends Component {
 				<div id="js-code-side">
 				<Tabs ref={tabs => (this.tabsRef = tabs)}
 					  onChange={this.onTabChanges.bind(this)}
-					  style="height: 100%;display:flex;flex-direction: column;">
+					  style="height: 100%;display:flex;flex-direction: column;"
+				>
 					<div label="ZenUML">
 						<div
 							data-code-wrap-id="2"
@@ -770,7 +771,7 @@ export default class ContentWrap extends Component {
 									/>
 								</div>
 							</div> */}
-							<Toolbox clickSvg = {this.toolboxUpdateToApp.bind(this)} />
+							<Toolbox clickSvg={this.toolboxUpdateToApp.bind(this)} />
 							<UserCodeMirror
 								ref={dslEditor => (this.dslEditor = dslEditor)}
 								options={{
@@ -805,8 +806,8 @@ export default class ContentWrap extends Component {
 								className="js-code-wrap__header  code-wrap__header"
 								title="Double click to toggle code pane"
 								ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
-							>
-							 <span className="caret"/>
+							 >
+							 <span className="caret" />
 								 <label className="btn-group" title="Click to change">
 								 <span className="code-wrap__header-label">
 									{modes[this.props.currentItem.cssMode || 'css'].label}
@@ -817,7 +818,7 @@ export default class ContentWrap extends Component {
 										className="js-mode-select  hidden-select"
 										onChange={this.codeModeChangeHandler.bind(this)}
 										value={this.props.currentItem.cssMode}
-									>
+									 >
 										<option value="css">CSS</option>
 										<option value="scss">SCSS</option>
 										<option value="sass">SASS</option>
