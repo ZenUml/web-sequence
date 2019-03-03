@@ -1,14 +1,16 @@
 import userService from '../../services/user_service';
 import { UpgradeLink } from './UpgradeLink';
+import {CancellationLink} from "./CancellationLink";
 
 const SubscriptionAction = () => {
-	if (!userService.user()) return null;
-
+	const user = userService.user();
+	if (!user) return null;
 	if (userService.isPro()) {
-		return <a href={userService.subscription().cancel_url} target='_blank'>Cancel subscription</a>;
-	} else {
-        return <UpgradeLink/>;
-    }
+		const subscription = userService.subscription();
+		return <CancellationLink cancelUrl={subscription.cancel_url} />;
+	}
+	return <UpgradeLink userId={user.uid} userEmail={user.email} />;
 };
 
 export { SubscriptionAction };
+
