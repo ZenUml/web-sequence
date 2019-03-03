@@ -690,31 +690,27 @@ export default class ContentWrap extends Component {
 	}
 
 	toolboxUpdateToApp(param) {
-		if (param === "NewParticipant"){
-			this.addNewParticipant();
-		} else {
-			this.cmCodes.js === '' ? this.cm.js.setValue(param): this.cm.js.setValue(`${this.cmCodes.js}\n${param}`);
-		}
-		this.refreshEditor();
-	}
-
-	addNewParticipant() {
 		let code = this.cm.js.getValue();
-		let lines = code.split('\n');
-		let buffer = '', added = false;
-		lines.forEach(line => {
-			if(!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
-				buffer = `${buffer}\nNewParticipant`;
-				added = true;
+		if (param === "NewParticipant"){
+			const lines = code.split('\n');
+			let buffer = '',
+				added = false;
+			lines.forEach(line => {
+				if (!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
+					buffer = `${buffer}\nNewParticipant`;
+					added = true;
+				}
+				buffer = buffer === '' ? line : `${buffer}\n${line}`;
+			});
+			if (!added) {
+				buffer = code === '' ? param : `${code}\n${param}`;
 			}
-			buffer = buffer === '' ? line : `${buffer}\n${line}`;
-		});
-		if(!added) {
-			buffer = `${code}\nNewParticipant`;
+			code = buffer;
+		} else {
+			code = code === '' ? param : `${code}\n${param}`;
 		}
-		this.cm.js.setValue(buffer);
-
-	   this.refreshEditor();
+		this.cm.js.setValue(code);
+		this.refreshEditor();
 	}
 
 	render() {
