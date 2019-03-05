@@ -13,6 +13,17 @@ export function trackEvent(category, action, label, value) {
 	}
 }
 
+// eslint-disable-next-line max-params
+export function trackPageView(pageName) {
+	if (window.DEBUG) {
+		log('trackPageView', pageName);
+		return;
+	}
+	if (window.ga) {
+		ga('send', 'pageview', pageName);
+	}
+}
+
 // if online, load after sometime
 if (navigator.onLine && !window.DEBUG) {
 	/* eslint-disable */
@@ -40,7 +51,6 @@ if (navigator.onLine && !window.DEBUG) {
 			// required for chrome extension protocol
 			ga('set', 'checkProtocolTask', function () { /* nothing */ });
 		}
-		ga('send', 'pageview', 'extension');
 	}, 100);
 
 	/* eslint-enable */
