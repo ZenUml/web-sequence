@@ -21,7 +21,7 @@ export function ProFeatureListModal(props) {
 				<button>Back</button>
 			</section>
 			<div class="user-subscription-link">
-				<SubscriptionAction preActionCallback={props.closeHandler}/>
+				<SubscriptionAction preActionCallback={props.closeHandler} postActionCallback={props.onSubscriptionChange}/>
 			</div>
 			<hr />
 			<section className={'notes'}>

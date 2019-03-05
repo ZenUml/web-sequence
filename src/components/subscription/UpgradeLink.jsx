@@ -9,7 +9,8 @@ const UpgradeLink = (props) => {
 		Paddle.Checkout.open({
 			product: checkoutProduct,
 			email: props.userEmail,
-			passthrough: props.userId
+			passthrough: props.userId,
+			successCallback: props.postActionCallback
 		});
 	};
 	return <a id="UpgradeLink" href='#' onClick={checkout}>Upgrade</a>;
