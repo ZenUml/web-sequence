@@ -4,7 +4,7 @@ const checkoutProduct = __PADDLE_CHECKOUT_PRODUCT__;  //eslint-disable-line
 const UpgradeLink = (props) => {
 	const checkout = (e) => {
 		e.preventDefault();
-		props.closeModalHandler();
+		props.preActionCallback();
 
 		Paddle.Checkout.open({
 			product: checkoutProduct,

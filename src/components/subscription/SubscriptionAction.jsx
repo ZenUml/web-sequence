@@ -9,7 +9,7 @@ const SubscriptionAction = (props) => {
 		const subscription = userService.subscription();
 		return <CancellationLink cancelUrl={subscription.cancel_url} />;
 	}
-	return <UpgradeLink userId={user.uid} userEmail={user.email} closeModalHandler={props.closeModalHandler} />;
+	return <UpgradeLink userId={user.uid} userEmail={user.email} preActionCallback={props.preActionCallback} />;
 };
 
 export { SubscriptionAction };
