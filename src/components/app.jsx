@@ -1488,7 +1488,7 @@ export default class App extends Component {
 					<input
 						type="hidden"
 						name="data"
-						value="{&quot;title&quot;: &quot;New Pen!&quot;, &quot;html&quot;: &quot;<div>Hello, World!</div>&quot;}"
+						value='{"title": "New Pen!", "html": "<div>Hello, World!</div>"}'
 					/>
 				</form>
 			</div>
