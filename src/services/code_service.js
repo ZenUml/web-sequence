@@ -2,7 +2,8 @@ export default {
     addCode: (code, newCode) => {
         if (newCode === 'NewParticipant') {
 			const lines = code.split('\n');
-			let buffer = '', added = false;
+            let buffer = '',
+                added = false;
 			lines.forEach(line => {
 				if (!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
 					buffer = buffer === '' ? newCode : `${buffer}\n${newCode}`;
