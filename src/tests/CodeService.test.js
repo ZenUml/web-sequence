@@ -48,4 +48,8 @@ describe('Test cases for code service', () => {
 		const result = codeService.addCode('// comments1\n\n// comments2', 'NewParticipant');
 		expect(result).toBe('// comments1\n\n// comments2\nNewParticipant');
 	});
+	test('Add Participant - to multi-line comments', () => {
+		const result = codeService.addCode('// comments1\nA\n// comments2', 'NewParticipant');
+		expect(result).toBe('// comments1\nNewParticipant\nA\n// comments2');
+	});
 });
