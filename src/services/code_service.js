@@ -1,22 +1,29 @@
 export default {
     addCode: (code, newCode) => {
+        if (newCode === '') {
+            return code;
+	    }
         if (newCode === 'NewParticipant') {
 			const lines = code.split('\n');
-            let buffer = '',
-                added = false;
+            let buffer = '';
+            let added = false;
 			lines.forEach(line => {
-				if (!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
-					buffer = buffer === '' ? newCode : `${buffer}\n${newCode}`;
-					added = true;
+				const hasContent = line.trim().length > 0;
+				const isComment = line.trim().startsWith('//');
+				if (!hasContent || isComment || added) {
+					buffer = buffer === '' ? line : `${buffer}\n${line}`;
+					return;
 				}
-				buffer = buffer === '' ? line : `${buffer}\n${line}`;
+				buffer = buffer === '' ? 'NewParticipant' : `${buffer}\n'NewParticipant'`;
+				buffer += `\n${line}`;
+				added = true;
 			});
 			if (!added) {
-				buffer = code === '' ? newCode : `${code}\n${newCode}`;
+				buffer = code === '' ? 'NewParticipant' : `${code}\nNewParticipant`;
 			}
 			return buffer;
         }
-        
+
         return code === '' ? newCode : `${code}\n${newCode}`;
     }
 };
