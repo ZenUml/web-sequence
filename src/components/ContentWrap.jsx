@@ -697,7 +697,7 @@ export default class ContentWrap extends Component {
 				added = false;
 			lines.forEach(line => {
 				if (!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
-					buffer = `${buffer}\nNewParticipant`;
+					buffer = buffer === '' ? `NewParticipant` : `${buffer}\nNewParticipant`;
 					added = true;
 				}
 				buffer = buffer === '' ? line : `${buffer}\n${line}`;
