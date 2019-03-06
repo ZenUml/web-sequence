@@ -12,6 +12,7 @@ import 'codemirror/mode/javascript/javascript.js'
 import { Console } from './Console';
 import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
+import codeService from '../services/code_service'
 const minCodeWrapSize = 33;
 
 /* global htmlCodeEl, jsCodeEl, cssCodeEl, logCountEl
@@ -690,26 +691,8 @@ export default class ContentWrap extends Component {
 	}
 
 	toolboxUpdateToApp(param) {
-		let code = this.cm.js.getValue();
-		if (param === "NewParticipant"){
-			const lines = code.split('\n');
-			let buffer = '',
-				added = false;
-			lines.forEach(line => {
-				if (!added && (line.trim().length > 0 && !line.trim().startsWith('//'))) {
-					buffer = buffer === '' ? `NewParticipant` : `${buffer}\nNewParticipant`;
-					added = true;
-				}
-				buffer = buffer === '' ? line : `${buffer}\n${line}`;
-			});
-			if (!added) {
-				buffer = code === '' ? param : `${code}\n${param}`;
-			}
-			code = buffer;
-		} else {
-			code = code === '' ? param : `${code}\n${param}`;
-		}
-		this.cm.js.setValue(code);
+		const code = this.cm.js.getValue();
+		this.cm.js.setValue(codeService.addCode(code, param));
 		this.refreshEditor();
 	}
 
