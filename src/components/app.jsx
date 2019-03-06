@@ -149,7 +149,7 @@ export default class App extends Component {
 				});
 
 				//load subscription from firestore
-				loadSubscriptionToApp(this).then(() => this.refreshEditor());
+				this.loadUserSubscription();
 			} else {
 				// User is signed out.
 				this.setState({ user: undefined });
@@ -285,6 +285,10 @@ export default class App extends Component {
 				this.hasSeenNotifications = false;
 			}
 		});
+	}
+
+	loadUserSubscription() {
+		loadSubscriptionToApp(this).then(() => this.refreshEditor());
 	}
 
 	updateProfileUi() {
@@ -1430,6 +1434,7 @@ export default class App extends Component {
 					closeHandler={() => this.setState({ isProFeatureListModalOpen: false })}
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
+					onSubscriptionChange={this.loadUserSubscription.bind(this)}
 				/>
 				<SupportDeveloperModal
 					show={this.state.isSupportDeveloperModalOpen}
