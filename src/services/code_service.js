@@ -7,20 +7,24 @@ function until(arr, fn) {
 	return arr.slice(0, i);
 }
 
+const isEmpty = str => !str || str.trim() === '';
+
 const NEW_PARTICIPANT = 'NewParticipant';
 export default {
-  addCode: (code, newCode) => {
-    if (!newCode || newCode.trim() === '') return code;
-    if (!code || code.trim() === '') return newCode;
+	addCode: (code, newCode) => {
+    let codeLinesArray = new Array(0);
 
-    if (newCode === NEW_PARTICIPANT) {
-      const lines = code.split('\n');
-      const leadingCommentLines = until(lines, line => (line.trim().length > 0 && !line.trim().startsWith('//')));
-      const remainingLines = lines.slice(leadingCommentLines.length)
-      const all = leadingCommentLines.concat([NEW_PARTICIPANT]).concat(remainingLines);
-      return all.join('\n');
-    }
+		codeLinesArray = !isEmpty(code) ? codeLinesArray.concat(code.split('\n')) : codeLinesArray;
+		codeLinesArray = !isEmpty(newCode) ? codeLinesArray.concat([newCode]) : codeLinesArray;
 
-    return `${code}\n${newCode}`;
-  }
+		if (newCode === NEW_PARTICIPANT)
+		{
+			codeLinesArray.pop();
+			const leadingCommentLines = until(codeLinesArray, line => (line.trim().length > 0 && !line.trim().startsWith('//')));
+			const remainingLines = codeLinesArray.slice(leadingCommentLines.length);
+			codeLinesArray = leadingCommentLines.concat([NEW_PARTICIPANT]).concat(remainingLines);
+		}
+
+		return codeLinesArray.join('\n');
+	}
 };
