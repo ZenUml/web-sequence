@@ -12,13 +12,12 @@ const isEmpty = str => !str || str.trim() === '';
 const NEW_PARTICIPANT = 'NewParticipant';
 export default {
 	addCode: (code, newCode) => {
-    let codeLinesArray = new Array(0);
+		let codeLinesArray = new Array(0);
 
 		codeLinesArray = !isEmpty(code) ? codeLinesArray.concat(code.split('\n')) : codeLinesArray;
 		codeLinesArray = !isEmpty(newCode) ? codeLinesArray.concat([newCode]) : codeLinesArray;
 
-		if (newCode === NEW_PARTICIPANT)
-		{
+		if (newCode === NEW_PARTICIPANT) {
 			codeLinesArray.pop();
 			const leadingCommentLines = until(codeLinesArray, line => (line.trim().length > 0 && !line.trim().startsWith('//')));
 			const remainingLines = codeLinesArray.slice(leadingCommentLines.length);
