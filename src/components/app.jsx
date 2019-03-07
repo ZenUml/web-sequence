@@ -2,7 +2,6 @@
  */
 
 import { h, Component } from 'preact';
-
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
@@ -144,7 +143,7 @@ export default class App extends Component {
 						this.updateSetting();
 					}
 
-					if(this.onUserItemsResolved) {
+					if (this.onUserItemsResolved) {
 						this.onUserItemsResolved(user.items);
 					}
 				});
@@ -156,7 +155,7 @@ export default class App extends Component {
 				this.setState({ user: undefined });
 				delete window.user;
 
-				if(this.onUserItemsResolved) {
+				if (this.onUserItemsResolved) {
 					this.onUserItemsResolved(null);
 				}
 			}
@@ -187,47 +186,49 @@ export default class App extends Component {
 		);
 		// Get synced `preserveLastCode` setting to get back last code (or not).
 		db.getSettings(this.defaultSettings).then(result => {
-			const getQueryParameter = (key) => {
+			const getQueryParameter = key => {
 				let search = window.location.search;
-				if(search.length < 1) return;
+				if (search.length < 1) return;
 
 				let query = search.substr(1);
 				let array = query.split('&');
-				for(let i = 0; i < array.length; i++) {
+				for (let i = 0; i < array.length; i++) {
 					let pair = array[i].split('=');
-					if(pair[0] === key) {
+					if (pair[0] === key) {
 						return decodeURIComponent(pair[1]);
 					}
 				}
-			}
+			};
 
 			//If query parameter 'itemId' presents
 			let itemId = getQueryParameter('itemId');
-			if(itemId) {
-				itemService.getItem(itemId).then(item => {
-					if(item) {
-						const resolveCurrentItem = (items) => {
-							if(items && items[item.id]) {
-								this.setCurrentItem(item).then(() => this.refreshEditor());
+			if (itemId) {
+				itemService.getItem(itemId).then(
+					item => {
+						if (item) {
+							const resolveCurrentItem = items => {
+								if (items && items[item.id]) {
+									this.setCurrentItem(item).then(() => this.refreshEditor());
+								} else {
+									this.forkItem(item);
+								}
+							};
+							if (this.state.user && this.state.user.items) {
+								resolveCurrentItem(user.items);
 							} else {
-								this.forkItem(item);
+								this.onUserItemsResolved = resolveCurrentItem;
 							}
-						};
-						if(this.state.user && this.state.user.items) {
-							resolveCurrentItem(user.items);
 						} else {
-							this.onUserItemsResolved = resolveCurrentItem;
+							//Invalid itemId
+							window.location.href = '/';
 						}
-					} else {
-						//Invalid itemId
+					},
+					error => {
+						//Insufficient permission
 						window.location.href = '/';
 					}
-				}, error => {
-					//Insufficient permission
-					window.location.href = '/';
-				});
-			}
-			else if (result.preserveLastCode && lastCode && lastCode.js) {
+				);
+			} else if (result.preserveLastCode && lastCode && lastCode.js) {
 				this.setState({ unsavedEditCount: 0 });
 
 				// For web app environment we don't fetch item from localStorage,
@@ -337,7 +338,8 @@ export default class App extends Component {
 				d.getMinutes(),
 			html: '',
 			css: '/* Prefix your CSS rules with `#diagram` */',
-			js: '// Sample code (click "NEW" to find more) \r\n A->B: message \r\n A.method1() {\r\n  B.method2()\r\n}',
+			js:
+				'// Sample code (click "NEW" to find more) \r\n A->B: message \r\n A.method1() {\r\n  B.method2()\r\n}',
 			externalLibs: { js: '', css: '' },
 			layoutMode: this.state.currentLayoutMode
 		}).then(() => this.refreshEditor());
@@ -1307,7 +1309,6 @@ export default class App extends Component {
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
 					/>
-
 					<Footer
 						prefs={this.state.prefs}
 						layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
@@ -1458,8 +1459,8 @@ export default class App extends Component {
 				/>
 
 				{/*<OnboardingModal*/}
-					{/*show={this.state.isOnboardModalOpen}*/}
-					{/*closeHandler={() => this.setState({ isOnboardModalOpen: false })}*/}
+				{/*show={this.state.isOnboardModalOpen}*/}
+				{/*closeHandler={() => this.setState({ isOnboardModalOpen: false })}*/}
 				{/*/>*/}
 
 				<Js13KModal
