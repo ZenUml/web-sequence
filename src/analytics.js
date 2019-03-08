@@ -13,14 +13,27 @@ export function trackEvent(category, action, label, value) {
 	}
 }
 
-// eslint-disable-next-line max-params
-export function trackPageView(pageName) {
+export function trackPageView(pageName = null) {
 	if (window.DEBUG) {
 		log('trackPageView', pageName);
 		return;
 	}
 	if (window.ga) {
-		ga('send', 'pageview', pageName);
+		if (pageName){
+			ga('send', 'pageview', pageName);
+		} else {
+			ga('send', 'pageview');
+		}
+	}
+}
+
+export function trackGaSetField(fieldName, fieldValue) {
+	if (window.DEBUG) {
+		log('trackGaSetField', fieldName, fieldValue);
+		return;
+	}
+	if (window.ga) {
+		ga('set', fieldName, fieldValue);
 	}
 }
 
