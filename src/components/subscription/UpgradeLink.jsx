@@ -1,15 +1,19 @@
-import userService from '../../services/user_service';
+//__PADDLE_CHECKOUT_PRODUCT__ is a placeholder which will be replaced by Webpack
+const checkoutProduct = __PADDLE_CHECKOUT_PRODUCT__;  //eslint-disable-line
 
-//__PADDLE_CHECKOUT_URL__ is a placeholder which will be replaced by Webpack
-const baseCheckoutUrl = __PADDLE_CHECKOUT_URL__;  //eslint-disable-line
+const UpgradeLink = (props) => {
+	const checkout = (e) => {
+		e.preventDefault();
+		props.preActionCallback();
 
-const UpgradeLink = () => {
-	if (!userService.user()) return null;
-
-	if (!userService.isPro()) {
-		const upgradeLink = `${baseCheckoutUrl}?passthrough=${user.uid}&guest_email=${user.email}`;
-		return <a id='UpgradeLink' href={upgradeLink} target='_blank'>Upgrade</a>;
-	}
+		Paddle.Checkout.open({
+			product: checkoutProduct,
+			email: props.userEmail,
+			passthrough: props.userId,
+			successCallback: props.postActionCallback
+		});
+	};
+	return <a id="UpgradeLink" href='#' onClick={checkout}>Upgrade</a>;
 };
 
 export { UpgradeLink };

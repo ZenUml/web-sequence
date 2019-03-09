@@ -1729,7 +1729,9 @@ while the theme CSS file is loading */
 	background: #253540;
 }
 
-
+.toolboxPosition {
+	position: fixed;
+}
 .tab-list {
 	display:grid;
 	grid-template-columns: 1fr 1fr 1fr;
@@ -1742,7 +1744,7 @@ while the theme CSS file is loading */
 	align-items: center;
 	justify-content: center;
 	padding:0.8em;
-		box-sizing: content-box;
+	box-sizing: content-box;
 	text-transform: uppercase;
 	font-size: 12px;
 	font-weight: bold;
@@ -1823,7 +1825,7 @@ while the theme CSS file is loading */
 	display: block;
 }
 
-.upgrade-link {
+.user-subscription-link {
 	margin: 20px;
 	text-align: center;
 	font-size: xx-large

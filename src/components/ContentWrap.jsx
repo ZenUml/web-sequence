@@ -1,5 +1,6 @@
 import React, { h, Component } from 'preact';
 import UserCodeMirror from './UserCodeMirror.jsx';
+import Toolbox from './Toolbox.jsx'
 import Tabs from './Tabs.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
@@ -7,9 +8,11 @@ import { log, writeFile, loadJS, getCompleteHtml } from '../utils';
 import { SplitPane } from './SplitPane.jsx';
 import { trackEvent } from '../analytics';
 import CodeMirror from '../CodeMirror';
+import 'codemirror/mode/javascript/javascript.js'
 import { Console } from './Console';
 import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
+import codeService from '../services/code_service'
 const minCodeWrapSize = 33;
 
 /* global htmlCodeEl, jsCodeEl, cssCodeEl, logCountEl
@@ -687,6 +690,12 @@ export default class ContentWrap extends Component {
 		}
 	}
 
+	toolboxUpdateToApp(param) {
+		const code = this.cm.js.getValue();
+		this.cm.js.setValue(codeService.addCode(code, param));
+		this.refreshEditor();
+	}
+
 	render() {
 		return (
 			<SplitPane
@@ -702,7 +711,8 @@ export default class ContentWrap extends Component {
 				<div id="js-code-side">
 				<Tabs ref={tabs => (this.tabsRef = tabs)}
 					  onChange={this.onTabChanges.bind(this)}
-					  style="height: 100%;display:flex;flex-direction: column;">
+					  style="height: 100%;display:flex;flex-direction: column;"
+				>
 					<div label="ZenUML">
 						<div
 							data-code-wrap-id="2"
@@ -740,6 +750,7 @@ export default class ContentWrap extends Component {
 									/>
 								</div>
 							</div> */}
+							<Toolbox clickSvg={this.toolboxUpdateToApp.bind(this)} />
 							<UserCodeMirror
 								ref={dslEditor => (this.dslEditor = dslEditor)}
 								options={{
@@ -774,8 +785,8 @@ export default class ContentWrap extends Component {
 								className="js-code-wrap__header  code-wrap__header"
 								title="Double click to toggle code pane"
 								ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
-							>
-							 <span className="caret"/>
+							 >
+							 <span className="caret" />
 								 <label className="btn-group" title="Click to change">
 								 <span className="code-wrap__header-label">
 									{modes[this.props.currentItem.cssMode || 'css'].label}
@@ -786,7 +797,7 @@ export default class ContentWrap extends Component {
 										className="js-mode-select  hidden-select"
 										onChange={this.codeModeChangeHandler.bind(this)}
 										value={this.props.currentItem.cssMode}
-									>
+									 >
 										<option value="css">CSS</option>
 										<option value="scss">SCSS</option>
 										<option value="sass">SASS</option>
