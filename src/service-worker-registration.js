@@ -56,7 +56,7 @@ if (
 									console.log('Content is now available offline!');
 									if (window.alertsService) {
 										window.alertsService.add(
-											'Web Maker is now ready to be used offline.'
+											'ZenUML is now ready to be used offline.'
 										);
 									}
 								}
