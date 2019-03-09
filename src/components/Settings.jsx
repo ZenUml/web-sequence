@@ -259,7 +259,7 @@ export default class Settings extends Component {
 						/>
 						<CheckboxSetting
 							name="replaceNewTab"
-							title="Turning this on will start showing Web Maker in every new tab you open"
+							title="Turning this on will start showing ZenUML in every new tab you open"
 							label="Replace new tab page"
 							pref={this.props.prefs.replaceNewTab}
 							onChange={this.updateSetting.bind(this)}
