@@ -25,7 +25,7 @@ import '../db';
 import { Notifications } from './Notifications';
 import Settings from './Settings.jsx';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
-import { trackEvent } from '../analytics';
+import { trackEvent, trackGaSetField, trackPageView } from '../analytics';
 import { deferred } from '../deferred';
 import { alertsService } from '../notifications';
 import firebase from 'firebase/app';
@@ -560,6 +560,9 @@ export default class App extends Component {
 				}
 			}
 		});
+
+		trackGaSetField('page', '/');
+		trackPageView()
 	}
 
 	closeAllOverlays() {
