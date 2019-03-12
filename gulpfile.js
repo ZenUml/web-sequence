@@ -29,6 +29,17 @@ function minifyJs(fileName) {
 gulp.task('runWebpack', function() {
 	return childProcess.execSync('yarn run build');
 });
+
+const bundleJsPattern = /bundle\.([^.]+)\.js/;
+
+const bundleJsHash = () => 
+	fs.readdirSync('build')
+	.filter(f => bundleJsPattern.test(f))
+	.map(f => bundleJsPattern.exec(f)[1])
+	[0];
+
+const scriptJs = () => `script-${bundleJsHash()}.js`
+
 gulp.task('copyFiles', function() {
 	return merge(
 		gulp.src('privacy-policy/*')
@@ -54,7 +65,7 @@ gulp.task('copyFiles', function() {
 			'manifest.json'
 		]).pipe(gulp.dest('app')),
 		gulp.src('build/bundle.*.js')
-			.pipe(rename('script.js'))
+			.pipe(rename(scriptJs()))
 			.pipe(gulp.dest('app')),
 		gulp
 			.src('build/vendor.*.js')
@@ -96,13 +107,13 @@ gulp.task('useRef', function() {
 
 gulp.task('concatSwRegistration', function() {
 	gulp
-		.src(['src/service-worker-registration.js', 'app/script.js'])
-		.pipe(concat('script.js'))
+		.src(['src/service-worker-registration.js', `app/${scriptJs()}`])
+		.pipe(concat(scriptJs()))
 		.pipe(gulp.dest('app'));
 });
 
 gulp.task('minify', function() {
-	minifyJs('app/script.js');
+	minifyJs(`app/${scriptJs()}`);
 	minifyJs('app/vendor.js');
 	minifyJs('app/lib/screenlog.js');
 
@@ -127,7 +138,7 @@ gulp.task('fixIndex', function() {
 	// Replace hashed-filename script tags with unhashed ones
 	contents = contents.replace(
 		/\<\!\-\- SCRIPT-TAGS \-\-\>[\S\s]*?\<\!\-\- END-SCRIPT-TAGS \-\-\>/,
-		'<script defer src="vendor.js"></script><script defer src="script.js"></script>'
+		`<script defer src="vendor.js"></script><script defer src="${scriptJs()}"></script>`
 	);
 
 	// vendor.hash.js gets created outside our markers, so remove it
@@ -171,7 +182,7 @@ gulp.task('packageExtension', function() {
 	return merge(
 		gulp
 			.src('build/bundle.*.js')
-			.pipe(rename('script.js'))
+			.pipe(rename(scriptJs()))
 			.pipe(gulp.dest('extension')),
 		gulp
 			.src('build/vendor.*.js')
