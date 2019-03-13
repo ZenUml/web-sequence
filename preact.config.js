@@ -1,6 +1,8 @@
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
+const path = require('path')
+const fsUtil = require('./fs-util');
 
 /**
  * Function that mutates original webpack config.
@@ -49,4 +51,7 @@ export default function(config, env, helpers) {
 		? 551167 //ZenUML Pro
 		: 552378; //Test Plan1
 	config.plugins.push(new webpack.DefinePlugin({__PADDLE_CHECKOUT_PRODUCT__: JSON.stringify(paddleCheckoutProduct)}));
+
+	const bundleJs = `lib/bundle.${fsUtil.getBundleJsHash(path.join(__dirname, 'src/lib'))}.js`;
+	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(bundleJs)}));
 }

@@ -1,4 +1,9 @@
-import { log } from './utils';
+
+function log() {
+	if (window.DEBUG) {
+		console.log(Date.now(), ...arguments);
+	}
+}
 
 /* global ga */
 

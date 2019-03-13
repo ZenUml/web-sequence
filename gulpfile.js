@@ -11,6 +11,7 @@ const babelMinify = require('babel-minify');
 const childProcess = require('child_process');
 const merge = require('merge-stream');
 const zip = require('gulp-zip');
+const fsUtil = require('./fs-util');
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
 function minifyJs(fileName) {
@@ -30,15 +31,7 @@ gulp.task('runWebpack', function() {
 	return childProcess.execSync('yarn run build');
 });
 
-const bundleJsPattern = /bundle\.([^.]+)\.js/;
-
-const bundleJsHash = () => 
-	fs.readdirSync('build')
-	.filter(f => bundleJsPattern.test(f))
-	.map(f => bundleJsPattern.exec(f)[1])
-	[0];
-
-const scriptJs = () => `script-${bundleJsHash()}.js`
+const scriptJs = () => `script-${fsUtil.getBundleJsHash('build')}.js`
 
 gulp.task('copyFiles', function() {
 	return merge(
@@ -56,7 +49,7 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
-		gulp.src('src/lib/bundle.js').pipe(gulp.dest('app/lib')),
+		gulp.src(`src/lib/${fsUtil.getBundleJs('src/lib')}`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['src/preview.html',
 			'src/detached-window.js',
