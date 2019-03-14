@@ -13,7 +13,7 @@ const NEW_PARTICIPANT = 'NewParticipant';
 export default {
 	addCode: (code, newCode) => {
 		let codeLinesArray = !isEmpty(code) ? code.split('\n') : [];
-		codeLinesArray = !isEmpty(newCode) ? codeLinesArray.concat([newCode]) : codeLinesArray;
+		if (!isEmpty(newCode)) codeLinesArray.push(newCode);
 
 		if (newCode === NEW_PARTICIPANT) {
 			codeLinesArray.pop();
