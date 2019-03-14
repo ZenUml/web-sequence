@@ -1,10 +1,14 @@
 
 const fs = require('fs');
 
-const bundleJsPattern = /bundle\.([^.]+)\.js/;
+const hashedFilePattern = (prefix, suffix) => new RegExp(`${prefix}([^.]+)\.${suffix}`);
 
-const filteredFiles = (folder) => fs.readdirSync(folder).filter(f => bundleJsPattern.test(f))
+const bundleJsPattern = hashedFilePattern('bundle.', 'js');
 
-module.exports.getBundleJs = (folder) => filteredFiles(folder)[0];
+const filteredFiles = (folder, pattern) => fs.readdirSync(folder).filter(f => pattern.test(f))
 
-module.exports.getBundleJsHash = (folder) => filteredFiles(folder).map(f => bundleJsPattern.exec(f)[1])[0];
+module.exports.getBundleJs = (folder) => filteredFiles(folder, bundleJsPattern)[0];
+
+module.exports.getHashedFile = (folder, prefix, suffix) => filteredFiles(folder, hashedFilePattern(prefix, suffix))[0];
+
+module.exports.getBundleJsHash = (folder) => filteredFiles(folder, bundleJsPattern).map(f => bundleJsPattern.exec(f)[1])[0];

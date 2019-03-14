@@ -11,6 +11,7 @@ const babelMinify = require('babel-minify');
 const childProcess = require('child_process');
 const merge = require('merge-stream');
 const zip = require('gulp-zip');
+const hashFilename = require('gulp-hash-filename');
 const fsUtil = require('./fs-util');
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
@@ -79,7 +80,7 @@ gulp.task('copyFiles', function() {
 			.pipe(gulp.dest('build/lib/codemirror/addon/dialog')),
 		gulp.src('src/lib/hint.min.css').pipe(gulp.dest('build/lib')),
 		gulp.src('src/lib/inlet.css').pipe(gulp.dest('build/lib')),
-		gulp.src('src/style.css').pipe(gulp.dest('build')),
+		gulp.src('src/style.css').pipe(hashFilename()).pipe(gulp.dest('build')),
 		gulp.src([
 				'src/FiraCode.ttf',
 				'src/FixedSys.ttf',
@@ -139,6 +140,9 @@ gulp.task('fixIndex', function() {
 		/\<script src="\/vendor\.[\S\s]*?\<\/script\>/,
 		''
 	);
+
+	// style.css is replaced with style-[hash].css
+	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
 
 	fs.writeFileSync('build/index.html', contents, 'utf8');
 });
