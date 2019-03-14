@@ -13,14 +13,12 @@ const NEW_PARTICIPANT = 'NewParticipant';
 export default {
 	addCode: (code, newCode) => {
 		let codeLinesArray = !isEmpty(code) ? code.split('\n') : [];
-		if (!isEmpty(newCode)) codeLinesArray.push(newCode);
 
 		if (newCode === NEW_PARTICIPANT) {
-			codeLinesArray.pop();
 			const leadingCommentLines = until(codeLinesArray, line => (line.trim().length > 0 && !line.trim().startsWith('//')));
 			const remainingLines = codeLinesArray.slice(leadingCommentLines.length);
 			codeLinesArray = leadingCommentLines.concat([NEW_PARTICIPANT]).concat(remainingLines);
-		}
+		} else if (!isEmpty(newCode)) codeLinesArray.push(newCode);
 
 		return codeLinesArray.join('\n');
 	}
