@@ -12,9 +12,7 @@ const isEmpty = str => !str || str.trim() === '';
 const NEW_PARTICIPANT = 'NewParticipant';
 export default {
 	addCode: (code, newCode) => {
-		let codeLinesArray = new Array(0);
-
-		codeLinesArray = !isEmpty(code) ? codeLinesArray.concat(code.split('\n')) : codeLinesArray;
+		let codeLinesArray = !isEmpty(code) ? code.split('\n') : [];
 		codeLinesArray = !isEmpty(newCode) ? codeLinesArray.concat([newCode]) : codeLinesArray;
 
 		if (newCode === NEW_PARTICIPANT) {
