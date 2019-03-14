@@ -1,21 +1,21 @@
-## How to contribute to Web Maker
+## How to contribute to ZenUML
 
-Web Maker is written in Preact (JavaScript), CSS & HTML. It uses few open-source 3rd party JavaScript libraries for things like splitting panes, syntax highlighting etc.
+ZenUML is written in Preact (JavaScript), CSS & HTML. It uses few open-source 3rd party JavaScript libraries for things like splitting panes, syntax highlighting etc.
 
-### Run Web Maker (web app) locally on your machine
+### Run ZenUML (web app) locally on your machine
 
 - Clone the repo `git clone git@github.com:chinchang/web-maker.git`.
 - Inside the repo, run `yarn` to install the dependencies.
 - Run `yarn run dev`
 
-### Run Web Maker (Chrome extension) locally on your machine
+### Run ZenUML (Chrome extension) locally on your machine
 
 - Follow all steps as listed above to run the web app.
 - Instead of `yarn run dev`, run `yarn run build`. This will take some time.
 - Now go to Chrome extension settings page [chrome://extensions/](chrome://extensions/).
 - Click on **Load unpacked extension** button.
 - Select the `extension/` folder in the repo.
-- Done! You'll now have a Web Maker icon added in your browser's right-top area. Click that and you'll run your local copy of Web Maker.
+- Done! You'll now have a ZenUML icon added in your browser's right-top area. Click that and you'll run your local copy of ZenUML.
 
 ### Code changes
 
@@ -30,9 +30,9 @@ Web Maker is written in Preact (JavaScript), CSS & HTML. It uses few open-source
 - **icons/**: Icons for Chrome extension.
 - **app/**: Generated public directory for the web app. Should NOT be edited.
 - **src/\*.js**: Mostly services/utilities are here. But some miscellaneous files are lying here that need cleanup.
-- **src/components**: Every (well mostly) in Web Maker is a component. Find them here.
+- **src/components**: Every (well mostly) in ZenUML is a component. Find them here.
 - **src/lib**: 3rd party code that are loaded conditionally in the app and thus are not part of either the final `script.js` or `vendor.js`.
 - **src/lib/transpilers**: Various transpilers to convert preprocessor code.
 - **src/assets**: Images are kept here.
-- **src/templates**: JSON files for all templates support inside Web Maker.
+- **src/templates**: JSON files for all templates support inside ZenUML.
 - **src/tests**: Tests, right.
