@@ -36,12 +36,26 @@ function downloadPng() {
 			trackEvent('ui', 'downloadPng');
 		});
 }
+function downloadJPEG() {
+	var node = document.getElementById('diagram')
+	domtoimage.toBlob(document.getElementById('diagram'), {bgcolor: 'white'})
+		.then(function (blob) {
+			window.saveAs(blob, 'zenuml.jpeg');
+			trackEvent('ui', 'downloadjpeg');
+		});
+}
 window.downloadPng = downloadPng
+window.downloadJPEG = downloadJPEG
 console.log('Using vue-sequence', Version)
 
 document.addEventListener('DOMContentLoaded', function () {
 	const exportButton = document.getElementById('btnDownloadPng');
+	const exportButtonSecond = document.getElementById('btnDownloadJPEG');
+	
 	if(exportButton) {
 		exportButton.addEventListener('click', downloadPng);
+	}
+	if(exportButtonSecond) {
+		exportButtonSecond.addEventListener('click', downloadJPEG);
 	}
 });

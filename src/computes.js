@@ -16,9 +16,16 @@ export function computeHtml(userCode, mode) {
 			<i class="fa fa-file-image-o"></i>
 			Export as PNG
 		</button>`;
+	const exportButtonHtmlJPEG = 
+		`<button id="btnDownloadJPEG" class="button hide-on-mobile"
+			${isProUser ? '' : 'disabled'}>
+			<div></div>
+			<i class="fa fa-file-image-o"></i>
+			Export as JPEG
+		</button>`;
 	const exportButtonWrapperHtml =
 		`${isProUser ? '' : '<div title="Upgrade to Pro to enable this feature">'}
-			${exportButtonHtml}
+			${exportButtonHtml} ${exportButtonHtmlJPEG}
 		${isProUser ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
