@@ -306,7 +306,7 @@ export function loadJS(src) {
 }
 
 //__VUE_SEQUENCE_BUNDLE_JS__ is a placeholder which will be replaced by Webpack
-const bundleJs = __VUE_SEQUENCE_BUNDLE_JS__; //eslint-disable-line
+const vueSequenceBundleJs = __VUE_SEQUENCE_BUNDLE_JS__; //eslint-disable-line
 
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item, isForExport) {
@@ -356,8 +356,8 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 	contents +=
 		'<script src="' +
 		(chrome.extension
-			? chrome.extension.getURL(bundleJs)
-			: `${location.origin}${BASE_PATH}/${bundleJs}`)+
+			? chrome.extension.getURL(vueSequenceBundleJs)
+			: `${location.origin}${BASE_PATH}/${vueSequenceBundleJs}`)+
 		'"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
