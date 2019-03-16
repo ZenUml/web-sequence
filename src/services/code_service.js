@@ -21,7 +21,7 @@ const isComment = (line) => line && line.trim().startsWith('//');
 const NEW_PARTICIPANT = 'NewParticipant';
 export default {
   addCode: (code, newCode) => {
-		ensure(() => { return !isEmpty(code)}, 'code should not be empty.');
+		ensure(() => !isEmpty(code), 'code should not be empty.');
 		ensure(() => { return !isEmpty(newCode)}, 'newCode should not be empty.');
 
 
