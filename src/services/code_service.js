@@ -22,7 +22,7 @@ const NEW_PARTICIPANT = 'NewParticipant';
 export default {
   addCode: (code, newCode) => {
 		ensure(() => !isEmpty(code), 'code should not be empty.');
-		ensure(() => { return !isEmpty(newCode)}, 'newCode should not be empty.');
+		ensure(() => !isEmpty(newCode), 'newCode should not be empty.');
 
 
 		if (newCode === NEW_PARTICIPANT) {
