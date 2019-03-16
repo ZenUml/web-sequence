@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const hashedFilePattern = (prefix, suffix) => new RegExp(`${prefix}([^.]+)\.${suffix}`);
 
-const bundleJsPattern = hashedFilePattern('bundle.', 'js');
+const bundleJsPattern = hashedFilePattern('vue-sequence-bundle.', 'js');
 
 const filteredFiles = (folder, pattern) => fs.readdirSync(folder).filter(f => pattern.test(f))
 
