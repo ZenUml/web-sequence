@@ -33,6 +33,7 @@ gulp.task('runWebpack', function() {
 });
 
 const scriptJs = () => `script-${fsUtil.getVueSequenceBundleJsHash('build')}.js`
+const vendorJs = () => fsUtil.getVendorJs('build')
 
 gulp.task('copyFiles', function() {
 	return merge(
@@ -63,7 +64,7 @@ gulp.task('copyFiles', function() {
 			.pipe(gulp.dest('app')),
 		gulp
 			.src('build/vendor.*.js')
-			.pipe(rename('vendor.js'))
+			// .pipe(rename('vendor.js'))
 			.pipe(gulp.dest('app')),
 		// Following CSS are copied to build/ folder where they'll be referenced by
 		// useRef plugin to concat into one.
@@ -108,7 +109,7 @@ gulp.task('concatSwRegistration', function() {
 
 gulp.task('minify', function() {
 	minifyJs(`app/${scriptJs()}`);
-	minifyJs('app/vendor.js');
+	minifyJs(`app/${vendorJs()}`);
 	minifyJs('app/lib/screenlog.js');
 
 	gulp
@@ -132,14 +133,14 @@ gulp.task('fixIndex', function() {
 	// Replace hashed-filename script tags with unhashed ones
 	contents = contents.replace(
 		/\<\!\-\- SCRIPT-TAGS \-\-\>[\S\s]*?\<\!\-\- END-SCRIPT-TAGS \-\-\>/,
-		`<script defer src="vendor.js"></script><script defer src="${scriptJs()}"></script>`
+		`<script defer src="${scriptJs()}"></script>`
 	);
 
 	// vendor.hash.js gets created outside our markers, so remove it
-	contents = contents.replace(
-		/\<script src="\/vendor\.[\S\s]*?\<\/script\>/,
-		''
-	);
+	// contents = contents.replace(
+	// 	/\<script src="\/vendor\.[\S\s]*?\<\/script\>/,
+	// 	''
+	// );
 
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
