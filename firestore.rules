@@ -12,7 +12,7 @@ service cloud.firestore {
     
     match /items/{itemId} {
       allow create: if userExists();
-      allow read, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.items[itemId];
+      allow read, update, delete: if resource.data.createdBy == request.auth.uid;
     }
     
     match /user_subscriptions/{userSubscriptionId} {
