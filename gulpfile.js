@@ -32,7 +32,7 @@ gulp.task('runWebpack', function() {
 	return childProcess.execSync('yarn run build');
 });
 
-const scriptJs = () => `script-${fsUtil.getBundleJsHash('build')}.js`
+const scriptJs = () => `script-${fsUtil.getVueSequenceBundleJsHash('build')}.js`
 
 gulp.task('copyFiles', function() {
 	return merge(
@@ -50,7 +50,7 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
-		gulp.src(`src/lib/${fsUtil.getBundleJs('src/lib')}`).pipe(gulp.dest('app/lib')),
+		gulp.src(`src/lib/${fsUtil.getVueSequenceBundleJs('src/lib')}`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['src/preview.html',
 			'src/detached-window.js',
