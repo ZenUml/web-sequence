@@ -52,6 +52,6 @@ export default function(config, env, helpers) {
 		: 552378; //Test Plan1
 	config.plugins.push(new webpack.DefinePlugin({__PADDLE_CHECKOUT_PRODUCT__: JSON.stringify(paddleCheckoutProduct)}));
 
-	const vueSequenceBundleJs = `lib/vue-sequence-bundle.${fsUtil.getBundleJsHash(path.join(__dirname, 'src/lib'))}.js`;
+	const vueSequenceBundleJs = `lib/${fsUtil.getBundleJs(path.join(__dirname, 'src/lib'))}`;
 	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(vueSequenceBundleJs)}));
 }
