@@ -5,11 +5,13 @@ const hashedFilePattern = (prefix, suffix) => new RegExp(`${prefix}([^.]+)\.${su
 
 const vueSequenceBundleJsPattern = hashedFilePattern('vue-sequence-bundle.', 'js');
 const vendorJsPattern = hashedFilePattern('vendor.', 'js');
+const bundleJsPattern = hashedFilePattern('bundle.', 'js');
 
 const filteredFiles = (folder, pattern) => fs.readdirSync(folder).filter(f => pattern.test(f))
 
 module.exports.getVueSequenceBundleJs = (folder) => filteredFiles(folder, vueSequenceBundleJsPattern)[0];
 module.exports.getVendorJs = (folder) => filteredFiles(folder, vendorJsPattern)[0];
+module.exports.getBundleJs = (folder) => filteredFiles(folder, bundleJsPattern)[0];
 
 module.exports.getHashedFile = (folder, prefix, suffix) => filteredFiles(folder, hashedFilePattern(prefix, suffix))[0];
 

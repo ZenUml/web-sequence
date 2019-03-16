@@ -5,7 +5,6 @@ const gulp = require('gulp');
 const runSequence = require('run-sequence');
 const useref = require('gulp-useref');
 const cleanCSS = require('gulp-clean-css');
-const rename = require('gulp-rename');
 const concat = require('gulp-concat');
 const babelMinify = require('babel-minify');
 const childProcess = require('child_process');
@@ -32,9 +31,6 @@ gulp.task('runWebpack', function() {
 	return childProcess.execSync('yarn run build');
 });
 
-const scriptJs = () => `script-${fsUtil.getVueSequenceBundleJsHash('build')}.js`
-const vendorJs = () => fsUtil.getVendorJs('build')
-
 gulp.task('copyFiles', function() {
 	return merge(
 		gulp.src('privacy-policy/*')
@@ -60,11 +56,6 @@ gulp.task('copyFiles', function() {
 			'manifest.json'
 		]).pipe(gulp.dest('app')),
 		gulp.src('build/bundle.*.js')
-			.pipe(rename(scriptJs()))
-			.pipe(gulp.dest('app')),
-		gulp
-			.src('build/vendor.*.js')
-			// .pipe(rename('vendor.js'))
 			.pipe(gulp.dest('app')),
 		// Following CSS are copied to build/ folder where they'll be referenced by
 		// useRef plugin to concat into one.
@@ -100,16 +91,18 @@ gulp.task('useRef', function() {
 		.pipe(gulp.dest('app'));
 });
 
+const bundleJs = () => fsUtil.getBundleJs('build')
+
 gulp.task('concatSwRegistration', function() {
+	// TODO: Don't understand what does it do
 	gulp
-		.src(['src/service-worker-registration.js', `app/${scriptJs()}`])
-		.pipe(concat(scriptJs()))
+		.src(['src/service-worker-registration.js', `app/${bundleJs()}`])
+		.pipe(concat(bundleJs()))
 		.pipe(gulp.dest('app'));
 });
 
 gulp.task('minify', function() {
-	minifyJs(`app/${scriptJs()}`);
-	minifyJs(`app/${vendorJs()}`);
+	minifyJs(`app/${bundleJs()}`);
 	minifyJs('app/lib/screenlog.js');
 
 	gulp
@@ -130,17 +123,6 @@ gulp.task('minify', function() {
 
 gulp.task('fixIndex', function() {
 	var contents = fs.readFileSync('build/index.html', 'utf8');
-	// Replace hashed-filename script tags with unhashed ones
-	contents = contents.replace(
-		/\<\!\-\- SCRIPT-TAGS \-\-\>[\S\s]*?\<\!\-\- END-SCRIPT-TAGS \-\-\>/,
-		`<script defer src="${scriptJs()}"></script>`
-	);
-
-	// vendor.hash.js gets created outside our markers, so remove it
-	// contents = contents.replace(
-	// 	/\<script src="\/vendor\.[\S\s]*?\<\/script\>/,
-	// 	''
-	// );
 
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
@@ -180,13 +162,7 @@ gulp.task('packageExtension', function() {
 	return merge(
 		gulp
 			.src('build/bundle.*.js')
-			.pipe(rename(scriptJs()))
 			.pipe(gulp.dest('extension')),
-		gulp
-			.src('build/vendor.*.js')
-			.pipe(rename('vendor.js'))
-			.pipe(gulp.dest('extension')),
-
 		gulp
 			.src('extension/**/*')
 			.pipe(zip(`extension-${packageJson.version}.zip`))
@@ -200,7 +176,7 @@ gulp.task('cleanup', function() {
 
 gulp.task('release', function(callback) {
 	runSequence(
-		'runWebpack',
+		// 'runWebpack',
 		'copyFiles',
 		'fixIndex',
 		'useRef',
@@ -208,7 +184,7 @@ gulp.task('release', function(callback) {
 		'minify',
 		'generate-service-worker',
 		'packageExtension',
-		'cleanup',
+		// 'cleanup',
 		function(error) {
 			if (error) {
 				console.log(error.message);

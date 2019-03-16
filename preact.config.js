@@ -27,12 +27,12 @@ export default function(config, env, helpers) {
 	if (env.isProd) {
 		config.devtool = false; // disable sourcemaps
 
-		config.plugins.push(
-			new CommonsChunkPlugin({
-				name: 'vendor',
-				minChunks: ({ resource }) => /node_modules/.test(resource)
-			})
-		);
+		// config.plugins.push(
+		// 	new CommonsChunkPlugin({
+		// 		name: 'vendor',
+		// 		minChunks: ({ resource }) => /node_modules/.test(resource)
+		// 	})
+		// );
 
 		const swPlugin = helpers.getPluginsByName(
 			config,
