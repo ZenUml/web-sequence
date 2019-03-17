@@ -1,6 +1,8 @@
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
+const path = require('path')
+const fsUtil = require('./fs-util');
 
 /**
  * Function that mutates original webpack config.
@@ -25,12 +27,12 @@ export default function(config, env, helpers) {
 	if (env.isProd) {
 		config.devtool = false; // disable sourcemaps
 
-		config.plugins.push(
-			new CommonsChunkPlugin({
-				name: 'vendor',
-				minChunks: ({ resource }) => /node_modules/.test(resource)
-			})
-		);
+		// config.plugins.push(
+		// 	new CommonsChunkPlugin({
+		// 		name: 'vendor',
+		// 		minChunks: ({ resource }) => /node_modules/.test(resource)
+		// 	})
+		// );
 
 		const swPlugin = helpers.getPluginsByName(
 			config,
@@ -49,4 +51,7 @@ export default function(config, env, helpers) {
 		? 551167 //ZenUML Pro
 		: 552378; //Test Plan1
 	config.plugins.push(new webpack.DefinePlugin({__PADDLE_CHECKOUT_PRODUCT__: JSON.stringify(paddleCheckoutProduct)}));
+
+	const vueSequenceBundleJs = `lib/${fsUtil.getVueSequenceBundleJs(path.join(__dirname, 'src/lib'))}`;
+	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(vueSequenceBundleJs)}));
 }

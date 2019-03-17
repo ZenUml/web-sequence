@@ -5,12 +5,13 @@ const gulp = require('gulp');
 const runSequence = require('run-sequence');
 const useref = require('gulp-useref');
 const cleanCSS = require('gulp-clean-css');
-const rename = require('gulp-rename');
 const concat = require('gulp-concat');
 const babelMinify = require('babel-minify');
 const childProcess = require('child_process');
 const merge = require('merge-stream');
 const zip = require('gulp-zip');
+const hashFilename = require('gulp-hash-filename');
+const fsUtil = require('./fs-util');
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
 function minifyJs(fileName) {
@@ -29,6 +30,7 @@ function minifyJs(fileName) {
 gulp.task('runWebpack', function() {
 	return childProcess.execSync('yarn run build');
 });
+
 gulp.task('copyFiles', function() {
 	return merge(
 		gulp.src('privacy-policy/*')
@@ -45,7 +47,7 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
-		gulp.src('src/lib/bundle.js').pipe(gulp.dest('app/lib')),
+		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['src/preview.html',
 			'src/detached-window.js',
@@ -54,11 +56,6 @@ gulp.task('copyFiles', function() {
 			'manifest.json'
 		]).pipe(gulp.dest('app')),
 		gulp.src('build/bundle.*.js')
-			.pipe(rename('script.js'))
-			.pipe(gulp.dest('app')),
-		gulp
-			.src('build/vendor.*.js')
-			.pipe(rename('vendor.js'))
 			.pipe(gulp.dest('app')),
 		// Following CSS are copied to build/ folder where they'll be referenced by
 		// useRef plugin to concat into one.
@@ -75,7 +72,7 @@ gulp.task('copyFiles', function() {
 			.pipe(gulp.dest('build/lib/codemirror/addon/dialog')),
 		gulp.src('src/lib/hint.min.css').pipe(gulp.dest('build/lib')),
 		gulp.src('src/lib/inlet.css').pipe(gulp.dest('build/lib')),
-		gulp.src('src/style.css').pipe(gulp.dest('build')),
+		gulp.src('src/style.css').pipe(hashFilename()).pipe(gulp.dest('build')),
 		gulp.src([
 				'src/FiraCode.ttf',
 				'src/FixedSys.ttf',
@@ -94,16 +91,18 @@ gulp.task('useRef', function() {
 		.pipe(gulp.dest('app'));
 });
 
+const bundleJs = () => fsUtil.getBundleJs('build')
+
 gulp.task('concatSwRegistration', function() {
+	// TODO: Don't understand what does it do
 	gulp
-		.src(['src/service-worker-registration.js', 'app/script.js'])
-		.pipe(concat('script.js'))
+		.src(['src/service-worker-registration.js', `app/${bundleJs()}`])
+		.pipe(concat(bundleJs()))
 		.pipe(gulp.dest('app'));
 });
 
 gulp.task('minify', function() {
-	minifyJs('app/script.js');
-	minifyJs('app/vendor.js');
+	minifyJs(`app/${bundleJs()}`);
 	minifyJs('app/lib/screenlog.js');
 
 	gulp
@@ -124,17 +123,9 @@ gulp.task('minify', function() {
 
 gulp.task('fixIndex', function() {
 	var contents = fs.readFileSync('build/index.html', 'utf8');
-	// Replace hashed-filename script tags with unhashed ones
-	contents = contents.replace(
-		/\<\!\-\- SCRIPT-TAGS \-\-\>[\S\s]*?\<\!\-\- END-SCRIPT-TAGS \-\-\>/,
-		'<script defer src="vendor.js"></script><script defer src="script.js"></script>'
-	);
 
-	// vendor.hash.js gets created outside our markers, so remove it
-	contents = contents.replace(
-		/\<script src="\/vendor\.[\S\s]*?\<\/script\>/,
-		''
-	);
+	// style.css is replaced with style-[hash].css
+	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
 
 	fs.writeFileSync('build/index.html', contents, 'utf8');
 });
@@ -171,13 +162,7 @@ gulp.task('packageExtension', function() {
 	return merge(
 		gulp
 			.src('build/bundle.*.js')
-			.pipe(rename('script.js'))
 			.pipe(gulp.dest('extension')),
-		gulp
-			.src('build/vendor.*.js')
-			.pipe(rename('vendor.js'))
-			.pipe(gulp.dest('extension')),
-
 		gulp
 			.src('extension/**/*')
 			.pipe(zip(`extension-${packageJson.version}.zip`))
@@ -191,7 +176,7 @@ gulp.task('cleanup', function() {
 
 gulp.task('release', function(callback) {
 	runSequence(
-		'runWebpack',
+		// 'runWebpack',
 		'copyFiles',
 		'fixIndex',
 		'useRef',
@@ -199,7 +184,7 @@ gulp.task('release', function(callback) {
 		'minify',
 		'generate-service-worker',
 		'packageExtension',
-		'cleanup',
+		// 'cleanup',
 		function(error) {
 			if (error) {
 				console.log(error.message);
