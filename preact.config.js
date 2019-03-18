@@ -54,4 +54,6 @@ export default function(config, env, helpers) {
 
 	const vueSequenceBundleJs = `lib/${fsUtil.getVueSequenceBundleJs(path.join(__dirname, 'src/lib'))}`;
 	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(vueSequenceBundleJs)}));
+
+	config.plugins.push(new webpack.DefinePlugin({__FEATURE_PAYMENT__: !env.isProd}));
 }
