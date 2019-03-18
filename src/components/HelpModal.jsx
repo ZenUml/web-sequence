@@ -1,11 +1,13 @@
 import Modal from './Modal';
 
+const commitHash = __COMMITHASH__; //eslint-disable-line
+
 export function HelpModal(props) {
 	return (
 		<Modal show={props.show} closeHandler={props.closeHandler}>
 			<h1>
 				<div class="web-maker-with-tag">Web Sequence (from ZenUML)</div>
-				<small style="font-size:14px;"> v2.0.0</small>
+				<small style="font-size:14px;"> v2.0.0 ({commitHash})</small>
 				<div class="flex">
 					<div class="onboard-step">
 						<img src="./animation/10s.gif" alt="Middleman logo" />

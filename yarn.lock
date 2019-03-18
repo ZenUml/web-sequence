@@ -4971,6 +4971,10 @@ git-config-path@^1.0.1:
     fs-exists-sync "^0.1.0"
     homedir-polyfill "^1.0.0"
 
+git-revision-webpack-plugin@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/git-revision-webpack-plugin/-/git-revision-webpack-plugin-3.0.3.tgz#f909949d7851d1039ed530518f73f5d46594e66f"
+
 gittar@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/gittar/-/gittar-0.1.1.tgz#d6993ea6160a86c8b7f3de722a61f73bc99e14b4"
