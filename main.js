@@ -38,7 +38,13 @@ function downloadPng() {
 }
 function downloadJPEG() {
 	var node = document.getElementById('diagram')
-	domtoimage.toBlob(document.getElementById('diagram'), {bgcolor: 'white'})
+	domtoimage.toJpeg(document.getElementById('diagram'), { quality: 0.95 })
+	    .then(function (dataUrl) {
+                var link = document.createElement('a');
+                link.download = 'my-image-name.jpeg';
+                link.href = dataUrl;
+                link.click();
+            });
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.jpeg');
 			trackEvent('ui', 'downloadjpeg');
