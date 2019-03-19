@@ -4,9 +4,9 @@ import userService from './services/user_service';
 import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
+/* computeHtml, computeCss & computeJs evaluate the final code according
+ to whatever mode is selected and resolve the returned promise with the code.*/
 
-// computeHtml, computeCss & computeJs evaluate the final code according
-// to whatever mode is selected and resolve the returned promise with the code.
 export function computeHtml(userCode, mode) {
 	const isProUser = userService.isPro();
 	const exportPngButtonHtml =
@@ -16,7 +16,7 @@ export function computeHtml(userCode, mode) {
 			<i class="fa fa-file-image-o"></i>
 			Export as PNG
 		</button>`;
-	const exportJpegButtonHtml = 
+	const exportJpegButtonHtml =
 		`<button id="btnDownloadJpeg" class="button hide-on-mobile"
 		${isProUser ? '' : 'disabled'}>
 			<div></div>
@@ -66,10 +66,8 @@ export function computeHtml(userCode, mode) {
 }
 export function computeCss(userCode, mode, settings) {
 	var code = userCode;
-
 	var d = deferred();
 	var errors;
-
 	if (mode === CssModes.CSS) {
 		d.resolve({
 			code
