@@ -36,32 +36,32 @@ function downloadPng() {
 			trackEvent('ui', 'downloadPng');
 		});
 }
-function downloadJPEG() {
+function downloadJpeg() {
 	var node = document.getElementById('diagram')
 	domtoimage.toJpeg(document.getElementById('diagram'), { quality: 0.95 })
 	    .then(function (dataUrl) {
                 var link = document.createElement('a');
-                link.download = 'my-image-name.jpeg';
+                link.download = 'zenuml.jpeg';
                 link.href = dataUrl;
                 link.click();
-            });
+            })
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.jpeg');
 			trackEvent('ui', 'downloadjpeg');
 		});
 }
 window.downloadPng = downloadPng
-window.downloadJPEG = downloadJPEG
+window.downloadJpeg = downloadJpeg
 console.log('Using vue-sequence', Version)
 
 document.addEventListener('DOMContentLoaded', function () {
-	const exportButton = document.getElementById('btnDownloadPng');
-	const exportButtonSecond = document.getElementById('btnDownloadJPEG');
+	const exportPngButton = document.getElementById('btnDownloadPng');
+	const exportJpegButton = document.getElementById('btnDownloadJpeg');
 	
-	if(exportButton) {
-		exportButton.addEventListener('click', downloadPng);
+	if(exportPngButton) {
+		exportPngButton.addEventListener('click', downloadPng);
 	}
-	if(exportButtonSecond) {
-		exportButtonSecond.addEventListener('click', downloadJPEG);
+	if(exportJpegButton) {
+		exportJpegButton.addEventListener('click', downloadJpeg);
 	}
 });
