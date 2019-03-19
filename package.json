@@ -6,11 +6,10 @@
 	"scripts": {
 		"webpack": "webpack",
 		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
-		"build": "npm run webpack && preact build --production false --template src/index.html --no-prerender --service-worker false",
-		"build-prod": "preact build --template src/index.html --no-prerender --service-worker false",
+		"build": "preact build --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
 		"serve": "npm run release && preact serve --dir app",
-		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender --config preact.config.js",
+		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
 		"test": "jest ./tests",
 		"update-core": "yarn unlink vue-sequence sequence-parser && yarn add vue-sequence sequence-parser",
