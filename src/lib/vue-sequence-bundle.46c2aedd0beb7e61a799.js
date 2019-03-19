@@ -329,7 +329,7 @@ window.saveAs = __WEBPACK_IMPORTED_MODULE_6_file_saver___default.a.saveAs
 
 function downloadPng() {
 	var node = document.getElementById('diagram')
-	__WEBPACK_IMPORTED_MODULE_5_dom_to_image___default.a.toBlob(document.getElementById('diagram'), {bgcolor: 'white'})
+	__WEBPACK_IMPORTED_MODULE_5_dom_to_image___default.a.toBlob(document.getElementById('diagram'), { bgcolor: 'white' })
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.png');
 			Object(__WEBPACK_IMPORTED_MODULE_2__src_analytics__["a" /* trackEvent */])('ui', 'downloadPng');
@@ -337,7 +337,7 @@ function downloadPng() {
 }
 function downloadJpeg() {
 	var node = document.getElementById('diagram')
-	__WEBPACK_IMPORTED_MODULE_5_dom_to_image___default.a.toJpeg(document.getElementById('diagram'), { quality: 0.95 })
+	__WEBPACK_IMPORTED_MODULE_5_dom_to_image___default.a.toJpeg(document.getElementById('diagram'), { bgcolor: 'white' })
 	    .then(function (dataUrl) {
                 var link = document.createElement('a');
                 link.download = 'zenuml.jpeg';
@@ -354,14 +354,14 @@ window.downloadJpeg = downloadJpeg
 console.log('Using vue-sequence', __WEBPACK_IMPORTED_MODULE_3_vue_sequence__["Version"])
 
 document.addEventListener('DOMContentLoaded', function () {
-	const exportButton = document.getElementById('btnDownloadPng');
-	const exportButtonSecond = document.getElementById('btnDownloadJpeg');
+	const exportPngButton = document.getElementById('btnDownloadPng');
+	const exportJpegButton = document.getElementById('btnDownloadJpeg');
 	
-	if(exportButton) {
-		exportButton.addEventListener('click', downloadPng);
+	if(exportPngButton) {
+		exportPngButton.addEventListener('click', downloadPng);
 	}
-	if(exportButtonSecond) {
-		exportButtonSecond.addEventListener('click', downloadJpeg);
+	if(exportJpegButton) {
+		exportJpegButton.addEventListener('click', downloadJpeg);
 	}
 });
 

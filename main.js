@@ -30,7 +30,7 @@ window.saveAs = saveAs.saveAs
 
 function downloadPng() {
 	var node = document.getElementById('diagram')
-	domtoimage.toBlob(document.getElementById('diagram'), {bgcolor: 'white'})
+	domtoimage.toBlob(document.getElementById('diagram'), { bgcolor: 'white' })
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.png');
 			trackEvent('ui', 'downloadPng');
@@ -38,7 +38,7 @@ function downloadPng() {
 }
 function downloadJpeg() {
 	var node = document.getElementById('diagram')
-	domtoimage.toJpeg(document.getElementById('diagram'), { quality: 0.95 })
+	domtoimage.toJpeg(document.getElementById('diagram'), { bgcolor: 'white' })
 	    .then(function (dataUrl) {
                 var link = document.createElement('a');
                 link.download = 'zenuml.jpeg';

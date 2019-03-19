@@ -21,7 +21,7 @@ export function computeHtml(userCode, mode) {
 		${isProUser ? '' : 'disabled'}>
 			<div></div>
 			<i class="fa fa-file-image-o"></i>
-			Export as Jpeg
+			Export as JPEG
 		</button>`;
 	const exportButtonWrapperHtml =
 		`${isProUser ? '' : '<div title="Upgrade to Pro to enable this feature">'}
