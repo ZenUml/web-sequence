@@ -286,8 +286,6 @@ module.exports = g;
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = trackEvent;
-/* unused harmony export trackPageView */
-/* unused harmony export trackGaSetField */
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils__ = __webpack_require__(3);
 
 
@@ -304,34 +302,6 @@ function trackEvent(category, action, label, value) {
 	}
 }
 
-function trackPageView(pageName = null) {
-	if (window.DEBUG) {
-		Object(__WEBPACK_IMPORTED_MODULE_0__utils__["b" /* log */])('trackPageView', pageName);
-		return;
-	}
-	if (window.ga) {
-		if (pageName){
-			ga('send', 'pageview', pageName);
-		} else {
-			ga('send', 'pageview');
-		}
-	} else {
-		setTimeout(() => trackPageView(pageName), 100);
-	}
-}
-
-function trackGaSetField(fieldName, fieldValue) {
-	if (window.DEBUG) {
-		Object(__WEBPACK_IMPORTED_MODULE_0__utils__["b" /* log */])('trackGaSetField', fieldName, fieldValue);
-		return;
-	}
-	if (window.ga) {
-		ga('set', fieldName, fieldValue);
-	} else {
-		setTimeout(() => trackGaSetField(fieldName, fieldValue) , 100);
-	}
-}
-
 // if online, load after sometime
 if (navigator.onLine && !window.DEBUG) {
 	/* eslint-disable */
@@ -341,13 +311,13 @@ if (navigator.onLine && !window.DEBUG) {
 		(function (i, s, o, g, r, a, m) {
 			i['GoogleAnalyticsObject'] = r;
 			i[r] = i[r] || function () {
-				(i[r].q = i[r].q || []).push(arguments);
+				(i[r].q = i[r].q || []).push(arguments)
 			}, i[r].l = 1 * new Date();
 			a = s.createElement(o),
 				m = s.getElementsByTagName(o)[0];
 			a.async = 1;
 			a.src = g;
-			m.parentNode.insertBefore(a, m);
+			m.parentNode.insertBefore(a, m)
 		})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
 		if (location.href.indexOf('chrome-extension://') === -1) {
@@ -359,6 +329,7 @@ if (navigator.onLine && !window.DEBUG) {
 			// required for chrome extension protocol
 			ga('set', 'checkProtocolTask', function () { /* nothing */ });
 		}
+		ga('send', 'pageview', 'extension');
 	}, 100);
 
 	/* eslint-enable */
@@ -641,7 +612,7 @@ function writeFile(name, blob, cb) {
 			if (writeFile.errorCount === 4) {
 				setTimeout(function() {
 					alert(
-						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://webmakerapp.com/app/.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh ZenUML\n - Restart browser\n - Update browser\n - Reinstall ZenUML (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @ZenUML."
+						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://webmakerapp.com/app/.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh Web Maker\n - Restart browser\n - Update browser\n - Reinstall Web Maker (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @webmakerApp."
 					);
 					Object(__WEBPACK_IMPORTED_MODULE_0__analytics__["a" /* trackEvent */])('ui', 'writeFileMessageSeen');
 				}, 1000);
@@ -7764,27 +7735,13 @@ function downloadPng() {
 			Object(__WEBPACK_IMPORTED_MODULE_2__src_analytics__["a" /* trackEvent */])('ui', 'downloadPng');
 		});
 }
-function downloadJPEG() {
-	var node = document.getElementById('diagram')
-	__WEBPACK_IMPORTED_MODULE_5_dom_to_image___default.a.toBlob(document.getElementById('diagram'), {bgcolor: 'white'})
-		.then(function (blob) {
-			window.saveAs(blob, 'zenuml.jpeg');
-			Object(__WEBPACK_IMPORTED_MODULE_2__src_analytics__["a" /* trackEvent */])('ui', 'downloadjpeg');
-		});
-}
 window.downloadPng = downloadPng
-window.downloadJPEG = downloadJPEG
 console.log('Using vue-sequence', __WEBPACK_IMPORTED_MODULE_3_vue_sequence__["Version"])
 
 document.addEventListener('DOMContentLoaded', function () {
 	const exportButton = document.getElementById('btnDownloadPng');
-	const exportButtonSecond = document.getElementById('btnDownloadJPEG');
-	
 	if(exportButton) {
 		exportButton.addEventListener('click', downloadPng);
-	}
-	if(exportButtonSecond) {
-		exportButtonSecond.addEventListener('click', downloadJPEG);
 	}
 });
 
@@ -19989,21 +19946,14 @@ function computeHtml(userCode, mode) {
 	const isProUser = __WEBPACK_IMPORTED_MODULE_2__services_user_service__["a" /* default */].isPro();
 	const exportButtonHtml =
 		`<button id="btnDownloadPng" class="button hide-on-mobile"
-			>
+			${isProUser ? '' : 'disabled'}>
 			<div></div>
 			<i class="fa fa-file-image-o"></i>
 			Export as PNG
 		</button>`;
-	const exportButtonHtmlJPEG = 
-		`<button id="btnDownloadJPEG" class="button hide-on-mobile"
-			>
-			<div></div>
-			<i class="fa fa-file-image-o"></i>
-			Export as JPEG
-		</button>`;
 	const exportButtonWrapperHtml =
 		`${isProUser ? '' : '<div title="Upgrade to Pro to enable this feature">'}
-			${exportButtonHtml} ${exportButtonHtmlJPEG}
+			${exportButtonHtml}
 		${isProUser ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
