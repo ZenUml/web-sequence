@@ -1,5 +1,6 @@
 import Modal from '../Modal';
 import { SubscriptionAction } from './SubscriptionAction';
+import featureToggle from '../../services/feature_toggle';
 
 export function ProFeatureListModal(props) {
 	return (
@@ -20,9 +21,11 @@ export function ProFeatureListModal(props) {
 			<section className={'call-for-action hide'}>
 				<button>Back</button>
 			</section>
-			<div class="user-subscription-link">
-				<SubscriptionAction preActionCallback={props.closeHandler} postActionCallback={props.onSubscriptionChange}/>
-			</div>
+			{ featureToggle.isPaymentEnabled ? (
+				<div class="user-subscription-link">
+					<SubscriptionAction preActionCallback={props.closeHandler} postActionCallback={props.onSubscriptionChange}/>
+				</div>
+				) : null }
 			<hr />
 			<section className={'notes'}>
 				<ol>
