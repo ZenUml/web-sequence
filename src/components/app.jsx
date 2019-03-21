@@ -798,7 +798,6 @@ export default class App extends Component {
 
 		if (this.state.currentItem.id) {
 			this.saveItem();
-			currentBrowserTab.setTitle(this.state.currentItem.title)
 			trackEvent('ui', 'titleChanged');
 		}
 	}
@@ -1280,6 +1279,11 @@ export default class App extends Component {
 			});
 		this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		const isTitleChanged = !Object.is(this.state.currentItem.title, currentBrowserTab.getTitle());
+		if (isTitleChanged) currentBrowserTab.setTitle(this.state.currentItem.title)
 	}
 
 	render() {
