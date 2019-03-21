@@ -46,6 +46,7 @@ import { CreateNewModal } from './CreateNewModal';
 import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
+import { currentBrowserTab } from '../services/browserService';
 
 if (module.hot) {
 	require('preact/debug');
@@ -797,6 +798,7 @@ export default class App extends Component {
 
 		if (this.state.currentItem.id) {
 			this.saveItem();
+			currentBrowserTab.setTitle(this.state.currentItem.title)
 			trackEvent('ui', 'titleChanged');
 		}
 	}
