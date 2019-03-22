@@ -1,3 +1,5 @@
+import config from './configuration'
+
 export default {
-    isPaymentEnabled: __FEATURE_PAYMENT__ //eslint-disable-line
+    isPaymentEnabled: config.features.payment
 }
