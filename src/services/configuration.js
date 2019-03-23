@@ -12,6 +12,20 @@ const configByDomain = {
         features: {
             payment: false
         }
+    },
+    'staging.zenuml.com': {
+        firebase: {
+            apiKey: "AIzaSyDNAc2qg27_9EzO_BQew9vzPNvcxn0go04",
+            authDomain: "staging-zenuml.firebaseapp.com",
+            databaseURL: "https://staging-zenuml.firebaseio.com",
+            projectId: "staging-zenuml",
+            storageBucket: "staging-zenuml.appspot.com",
+            messagingSenderId: "337278161370"
+        },
+        paddleProduct: 552378, //Test Plan1
+        features: {
+            payment: false
+        }
     }
 };
 
