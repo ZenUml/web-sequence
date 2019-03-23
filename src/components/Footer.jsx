@@ -130,7 +130,7 @@ export default class Footer extends Component {
 							<use xlinkHref="#twitter-icon" />
 						</svg>
 					</a>
-					<a className={'footer__link'} href={'/privacy-policy'}>Privacy Policy</a>
+					<a className={'footer__link'} href={'/privacy-policy/index.html'}>Privacy Policy</a>
 				</div>
 
 				{this.props.prefs.isJs13kModeOn ? (
