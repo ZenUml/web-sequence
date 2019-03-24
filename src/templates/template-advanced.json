@@ -1,8 +1,7 @@
 {
 	"title": "Advanced",
 	"updatedOn": 1540223760000,
-	"sizes": ["", "calc(17.4842% - 6px)", "calc(49.1221% - 3px)"],
-	"mainSizes": [68.1051, 31.6949],
+	"mainSizes": [30, 70],
 	"htmlMode": "html",
 	"cssMode": "css",
 	"jsMode": "js",
