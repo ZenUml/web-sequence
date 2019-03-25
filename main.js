@@ -38,15 +38,12 @@ function downloadPng() {
 }
 function downloadJpeg() {
 	var node = document.getElementById('diagram')
-	domtoimage.toJpeg(document.getElementById('diagram'), { bgcolor: 'white' })
-	    .then(function (dataUrl) {
-                var link = document.createElement('a');
-                link.download = 'zenuml.jpeg';
-                link.href = dataUrl;
-                link.click();
-            })
-		.then(function (blob) {
-			window.saveAs(blob, 'zenuml.jpeg');
+	domtoimage.toJpeg(node, { bgcolor: 'white' })
+		.then(function (dataUrl) {
+			var link = document.createElement('a');
+			link.download = 'zenuml.jpeg';
+			link.href = dataUrl;
+			link.click();
 			trackEvent('ui', 'downloadjpeg');
 		});
 }
