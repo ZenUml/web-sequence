@@ -5,21 +5,28 @@ import featureToggle from './services/feature_toggle';
 import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
+/* computeHtml, computeCss & computeJs evaluate the final code according
+ to whatever mode is selected and resolve the returned promise with the code.*/
 
-// computeHtml, computeCss & computeJs evaluate the final code according
-// to whatever mode is selected and resolve the returned promise with the code.
 export function computeHtml(userCode, mode) {
 	const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
-	const exportButtonHtml =
+	const exportPngButtonHtml =
 		`<button id="btnDownloadPng" class="button hide-on-mobile"
 			${enableExportButton ? '' : 'disabled'}>
 			<div></div>
 			<i class="fa fa-file-image-o"></i>
 			Export as PNG
 		</button>`;
+	const exportJpegButtonHtml =
+		`<button id="btnDownloadJpeg" class="button hide-on-mobile"
+		${enableExportButton ? '' : 'disabled'}>
+			<div></div>
+			<i class="fa fa-file-image-o"></i>
+			Export as JPEG
+		</button>`;
 	const exportButtonWrapperHtml =
 		`${enableExportButton ? '' : '<div title="Upgrade to Pro to enable this feature">'}
-			${exportButtonHtml}
+			${exportPngButtonHtml} ${exportJpegButtonHtml}
 		${enableExportButton ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
@@ -60,10 +67,8 @@ export function computeHtml(userCode, mode) {
 }
 export function computeCss(userCode, mode, settings) {
 	var code = userCode;
-
 	var d = deferred();
 	var errors;
-
 	if (mode === CssModes.CSS) {
 		d.resolve({
 			code
