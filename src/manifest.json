@@ -1,6 +1,6 @@
 {
 	"name": "Web Sequence",
-	"version": "1.0.15",
+	"version": "1.0.17",
 	"manifest_version": 2,
 	"description": "Real-time & offline tool for generating sequence diagrams",
 	"homepage_url": "http://zenuml.com",
