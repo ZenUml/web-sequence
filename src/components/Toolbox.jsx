@@ -10,6 +10,7 @@ class Toolbox extends Component {
     return (
       <div>
         <svg
+          id="addNewParticipantButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -40,6 +41,7 @@ class Toolbox extends Component {
         </svg>
 
         <svg
+          id="addAsyncMessageButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -99,6 +101,7 @@ class Toolbox extends Component {
           </g>
         </svg>
         <svg
+          id="addSyncMessageButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -147,6 +150,7 @@ class Toolbox extends Component {
           </g>
         </svg>
         <svg
+          id="addReturnValueButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -255,6 +259,7 @@ class Toolbox extends Component {
           </g>
         </svg>
         <svg
+          id="addSelfMessageButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -313,6 +318,7 @@ class Toolbox extends Component {
         </svg>
 
         <svg
+          id="addNewInstanceButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -379,6 +385,7 @@ class Toolbox extends Component {
         </svg>
 
         <svg
+          id="addConditionalButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -432,6 +439,7 @@ class Toolbox extends Component {
         </svg>
 
         <svg
+          id="addLoopButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
@@ -485,6 +493,7 @@ class Toolbox extends Component {
         </svg>
 
         <svg
+          id="addNoteButton"
           width="40px"
           height="40px"
           viewBox="0 0 50 50"
