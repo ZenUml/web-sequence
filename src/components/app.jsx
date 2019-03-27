@@ -1282,7 +1282,7 @@ export default class App extends Component {
 	}
 
 	componentDidUpdate(prevProps, prevState) {
-		const isTitleChanged = !Object.is(this.state.currentItem.title, currentBrowserTab.getTitle());
+		const isTitleChanged = this.state.currentItem.title !== currentBrowserTab.getTitle());
 		if (isTitleChanged) currentBrowserTab.setTitle(this.state.currentItem.title)
 	}
 
