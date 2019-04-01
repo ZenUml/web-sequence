@@ -46,6 +46,7 @@ import { CreateNewModal } from './CreateNewModal';
 import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
+import { currentBrowserTab } from '../services/browserService';
 
 if (module.hot) {
 	require('preact/debug');
@@ -1278,6 +1279,11 @@ export default class App extends Component {
 			});
 		this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		const isTitleChanged = this.state.currentItem.title !== currentBrowserTab.getTitle();
+		if (isTitleChanged) currentBrowserTab.setTitle(this.state.currentItem.title)
 	}
 
 	render() {
