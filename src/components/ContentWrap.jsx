@@ -112,6 +112,9 @@ export default class ContentWrap extends Component {
 				if (trackEvent.previewCount === 4) {
 					trackEvent('fn', 'usingPreview');
 				}
+				if ((trackEvent.previewCount % 4) === 0) {
+					trackEvent('fn', 'userEdit', '', trackEvent.previewCount);
+				}
 			}
 		}, this.updateDelay);
 	}
