@@ -21,14 +21,7 @@ describe('Test cases for code service', () => {
 		}).toThrow('newCode should not be empty.')
   });
   test('Add Participant - to empty', () => {
-        [
-          {code: '', newCode: 'B', error: 'code should not be empty.'},
-          {code: 'A', newCode: '', error: 'newCode should not be empty.'},
-        ].forEach(({code, newCode, error}) => {
-            	test(`Add newCode ${newCode} to code ${code} should fail with error ${error}', () =>
-		    expect(() => codeService.addCode(code, newCode)).toThrow(error)
-                );
-        });
+		expect(() => {
 			codeService.addCode('', 'NewParticipant');
 		}).toThrow('code should not be empty.')
   });

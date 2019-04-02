@@ -1,19 +1,5 @@
-function until(arr, fn) {
-  const l = arr.length;
-  let i = 0;
-  while (i < l && !fn(arr[i])) {
-    i++;
-  }
-  return arr.slice(0, i);
-}
-
-function ensure(condition, message) {
-  if (typeof condition === 'function') {
-    if (!condition()) {
-      throw message
-    }
-  }
-}
+import ensure from '../common/ensure'
+import until from '../common/until'
 
 const isEmpty = str => !str || str.trim() === '';
 const isComment = (line) => line && line.trim().startsWith('//');

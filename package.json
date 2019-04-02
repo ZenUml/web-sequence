@@ -12,7 +12,7 @@
 		"serve": "npm run webpack && preact build --production false && preact serve",
 		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
-		"test": "jest ./tests",
+		"test": "jest ./",
 		"update-core": "yarn unlink vue-sequence sequence-parser && yarn add vue-sequence sequence-parser",
 		"deploy-staging": "aws --profile zenuml s3 sync ./app s3://staging.zenuml.com",
 		"deploy-prod": "aws --profile zenuml s3 sync ./app s3://app.zenuml.com",
