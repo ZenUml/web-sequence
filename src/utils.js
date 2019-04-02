@@ -248,7 +248,7 @@ export function writeFile(name, blob, cb) {
 			if (writeFile.errorCount === 4) {
 				setTimeout(function() {
 					alert(
-						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://webmakerapp.com/app/.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh Web Maker\n - Restart browser\n - Update browser\n - Reinstall Web Maker (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @webmakerApp."
+						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://webmakerapp.com/app/.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh ZenUML\n - Restart browser\n - Update browser\n - Reinstall ZenUML (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @ZenUML."
 					);
 					trackEvent('ui', 'writeFileMessageSeen');
 				}, 1000);
@@ -305,6 +305,9 @@ export function loadJS(src) {
 	return d.promise;
 }
 
+//__VUE_SEQUENCE_BUNDLE_JS__ is a placeholder which will be replaced by Webpack
+const vueSequenceBundleJs = __VUE_SEQUENCE_BUNDLE_JS__; //eslint-disable-line
+
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item, isForExport) {
 	/* eslint-enable max-params */
@@ -353,8 +356,8 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 	contents +=
 		'<script src="' +
 		(chrome.extension
-			? chrome.extension.getURL('lib/bundle.js')
-			: `${location.origin}${BASE_PATH}/lib/bundle.js`)+
+			? chrome.extension.getURL(vueSequenceBundleJs)
+			: `${location.origin}${BASE_PATH}/${vueSequenceBundleJs}`)+
 		'"></script>';
 
 	if (item.jsMode === JsModes.ES6) {

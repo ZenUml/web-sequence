@@ -4971,6 +4971,10 @@ git-config-path@^1.0.1:
     fs-exists-sync "^0.1.0"
     homedir-polyfill "^1.0.0"
 
+git-revision-webpack-plugin@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/git-revision-webpack-plugin/-/git-revision-webpack-plugin-3.0.3.tgz#f909949d7851d1039ed530518f73f5d46594e66f"
+
 gittar@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/gittar/-/gittar-0.1.1.tgz#d6993ea6160a86c8b7f3de722a61f73bc99e14b4"
@@ -5291,6 +5295,10 @@ gulp-concat@^2.6.1:
     concat-with-sourcemaps "^1.0.0"
     through2 "^2.0.0"
     vinyl "^2.0.0"
+
+gulp-hash-filename@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/gulp-hash-filename/-/gulp-hash-filename-2.0.1.tgz#c30656261a9b622d636766e48b8297125b4ddde8"
 
 gulp-if@^2.0.2:
   version "2.0.2"
@@ -8894,8 +8902,8 @@ preact-transition-group@^1.1.1:
   resolved "https://registry.yarnpkg.com/preact-transition-group/-/preact-transition-group-1.1.1.tgz#f0a49327ea515ece34ea2be864c4a7d29e5d6e10"
 
 preact@^8.1.0, preact@^8.2.6:
-  version "8.4.2"
-  resolved "https://registry.yarnpkg.com/preact/-/preact-8.4.2.tgz#1263b974a17d1ea80b66590e41ef786ced5d6a23"
+  version "8.2.9"
+  resolved "https://registry.yarnpkg.com/preact/-/preact-8.2.9.tgz#813ba9dd45e5d97c5ea0d6c86d375b3be711cc40"
 
 prelude-ls@~1.1.2:
   version "1.1.2"

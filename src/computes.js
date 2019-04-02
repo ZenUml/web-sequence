@@ -1,6 +1,7 @@
 import { deferred } from './deferred';
 import { addInfiniteLoopProtection } from './utils';
 import userService from './services/user_service';
+import featureToggle from './services/feature_toggle';
 import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
@@ -8,18 +9,18 @@ const esprima = require('esprima');
 // computeHtml, computeCss & computeJs evaluate the final code according
 // to whatever mode is selected and resolve the returned promise with the code.
 export function computeHtml(userCode, mode) {
-	const isProUser = userService.isPro();
+	const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
 	const exportButtonHtml =
 		`<button id="btnDownloadPng" class="button hide-on-mobile"
-			${isProUser ? '' : 'disabled'}>
+			${enableExportButton ? '' : 'disabled'}>
 			<div></div>
 			<i class="fa fa-file-image-o"></i>
 			Export as PNG
 		</button>`;
 	const exportButtonWrapperHtml =
-		`${isProUser ? '' : '<div title="Upgrade to Pro to enable this feature">'}
+		`${enableExportButton ? '' : '<div title="Upgrade to Pro to enable this feature">'}
 			${exportButtonHtml}
-		${isProUser ? '' : '</div>'}`;
+		${enableExportButton ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
 			${exportButtonWrapperHtml}

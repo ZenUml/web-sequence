@@ -1,6 +1,6 @@
 # Getting started
 
-## What is Web Maker
+## What is ZenUML
 
 **Web-Maker** is a blazing fast & offline frontend playground for your web experiments. Its available as a Chrome extension and a web app as well. Both are offline usable!
 
@@ -26,7 +26,7 @@
 
 ## Installation
 
-If you haven't already installed Web Maker, you can do so from the Web Maker home page.
+If you haven't already installed ZenUML, you can do so from the ZenUML home page.
 
 **Web app**
 
@@ -36,7 +36,7 @@ The web app requires no installation.
 
 Here is the link to the Chrome extension 👉 [Chrome Web Store](https://chrome.google.com/webstore/detail/web-maker/lkfkkhfhhdkiemehlpkgjeojomhpccnh)
 
-## Starting Web Maker
+## Starting ZenUML
 
 **Web app**
 
@@ -44,11 +44,11 @@ The web app can be simply opened by visiting [https://webmakerapp.com/app/](http
 
 **Chrome extension**
 
-Once the Chrome extension is installed, you'll see a Web Maker icon in the right-top of your Chrome browser. Click it and Web Maker will open in a new tab.
+Once the Chrome extension is installed, you'll see a ZenUML icon in the right-top of your Chrome browser. Click it and ZenUML will open in a new tab.
 
 ## Your first code
 
-Okay, so now you might be wondering what do I do with Web Maker open in front of me? Wait no more! Simply put, Web Maker lets you write HTML, CSS & JavaScript code and see instant preview. So lets write some code.
+Okay, so now you might be wondering what do I do with ZenUML open in front of me? Wait no more! Simply put, ZenUML lets you write HTML, CSS & JavaScript code and see instant preview. So lets write some code.
 
 You should be seeing 3 code panes with the headings: **HTML**, **CSS** and _JS_. Each code pane is dedicated place to write code in the respective languages. Go ahead and click inside the **HTML** code pane to focus it and then paste the following HTML code:
 
@@ -64,7 +64,7 @@ This is a very simple web page we just made. Going forward, you might need to pu
 
 ## A look at the user interface
 
-Web Maker's user interface is made to feel simple and accessible so that you have all the required things at your tips and still doesn't look cluttered for someone using it for first time.
+ZenUML's user interface is made to feel simple and accessible so that you have all the required things at your tips and still doesn't look cluttered for someone using it for first time.
 
 ### Code Panes
 
@@ -98,7 +98,7 @@ Next you have some layout options to choose from. Select whats suits you best. T
 
 ### Download/Share creation
 
-Web Maker gives you quite some options to export your current creation to share with the world. You can save it as a single HTML file to upload it on a server, or open it in CodePen or take a screenshot of your preview.
+ZenUML gives you quite some options to export your current creation to share with the world. You can save it as a single HTML file to upload it on a server, or open it in CodePen or take a screenshot of your preview.
 
 ### Export/Import creations
 
@@ -106,13 +106,13 @@ Web Maker gives you quite some options to export your current creation to share 
 
 ### Help and Share
 
-On the bottom-left side are few help options, one of which shows you all th keyboard shortcuts available inside the app. Also there is a tweet button you can use to share Web Maker with everyone :)
+On the bottom-left side are few help options, one of which shows you all th keyboard shortcuts available inside the app. Also there is a tweet button you can use to share ZenUML with everyone :)
 
 ## User account
 
 > Currently only available in Web app.
 
-You can login with your favourite social account to create a user account inside Web Maker and save all your creations in the cloud. That way no matter on which computer you are, you can simply open Web Maker, login with your account and get back all your creations to continue work!
+You can login with your favourite social account to create a user account inside ZenUML and save all your creations in the cloud. That way no matter on which computer you are, you can simply open ZenUML, login with your account and get back all your creations to continue work!
 
 ## Code panes
 
@@ -120,7 +120,7 @@ Coming soon...
 
 ## Pre-processors
 
-Web Maker supports bunch of pre-processors in for HTML, CSS & JavaScript each. You can switch to any for your current creation by click on each pane's title.
+ZenUML supports bunch of pre-processors in for HTML, CSS & JavaScript each. You can switch to any for your current creation by click on each pane's title.
 
 <video src="./images/switching-preprocessor.mp4" loop autoplay></video>
 
@@ -174,14 +174,14 @@ Coming soon...
 
 ## From the Developer
 
-Hi! I am [Kushagra Gour](https://twitter.com/chinchang457), a frontend developer from India. I created Web Maker as a side project from myself because I wanted a frontend playground that was fast and didn't have to rely on network latency to generate realtime preview. Also something which I could use whenever and wherever I wanted, even wihtout Internet! I have written articles about why and how I created Web Maker and how you can benefit from it as a developer.
+Hi! I am [Kushagra Gour](https://twitter.com/chinchang457), a frontend developer from India. I created ZenUML as a side project from myself because I wanted a frontend playground that was fast and didn't have to rely on network latency to generate realtime preview. Also something which I could use whenever and wherever I wanted, even wihtout Internet! I have written articles about why and how I created ZenUML and how you can benefit from it as a developer.
 
 * FreeCodeCamp: https://medium.freecodecamp.org/web-maker-how-i-built-a-fast-offline-front-end-playground-9fe3629bc86f
 * Sitepoint: https://www.sitepoint.com/web-maker-an-offline-browser-based-codepen-alternative/
 
-Make sure to read them if you like to get more behind the scenes of my journey with Web Maker.
+Make sure to read them if you like to get more behind the scenes of my journey with ZenUML.
 
-Oh yes, I am [running a Patreon campaign](https://www.patreon.com/kushagra) to support my free and open-source projects such as Web Maker. Consider pledging if you use and love Web Maker. 🤗
+Oh yes, I am [running a Patreon campaign](https://www.patreon.com/kushagra) to support my free and open-source projects such as ZenUML. Consider pledging if you use and love ZenUML. 🤗
 
 ## Let's Talk
 

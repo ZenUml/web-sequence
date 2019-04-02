@@ -558,7 +558,7 @@ export default class ContentWrap extends Component {
 
 		this.detachedWindow = window.open(
 			'./preview.html',
-			'Web Maker',
+			'ZenUML',
 			`width=${iframeWidth},height=${iframeHeight},resizable,scrollbars=yes,status=1`
 		);
 		// Trigger initial render in detached window

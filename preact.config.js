@@ -1,6 +1,9 @@
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
+const path = require('path')
+const GitRevisionPlugin = require('git-revision-webpack-plugin')
+const fsUtil = require('./fs-util');
 
 /**
  * Function that mutates original webpack config.
@@ -25,12 +28,12 @@ export default function(config, env, helpers) {
 	if (env.isProd) {
 		config.devtool = false; // disable sourcemaps
 
-		config.plugins.push(
-			new CommonsChunkPlugin({
-				name: 'vendor',
-				minChunks: ({ resource }) => /node_modules/.test(resource)
-			})
-		);
+		// config.plugins.push(
+		// 	new CommonsChunkPlugin({
+		// 		name: 'vendor',
+		// 		minChunks: ({ resource }) => /node_modules/.test(resource)
+		// 	})
+		// );
 
 		const swPlugin = helpers.getPluginsByName(
 			config,
@@ -42,11 +45,9 @@ export default function(config, env, helpers) {
 		config.plugins.splice(uglifyPlugin.index, 1);
 	}
 
-	//env.production might be boolean or string
-	config.plugins.push(new webpack.DefinePlugin({__PRODUCTION__: env.production}));
+	const vueSequenceBundleJs = `lib/${fsUtil.getVueSequenceBundleJs(path.join(__dirname, 'src/lib'))}`;
+	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(vueSequenceBundleJs)}));
 
-	const paddleCheckoutProduct = env.production === true
-		? 551167 //ZenUML Pro
-		: 552378; //Test Plan1
-	config.plugins.push(new webpack.DefinePlugin({__PADDLE_CHECKOUT_PRODUCT__: JSON.stringify(paddleCheckoutProduct)}));
+	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});
+	config.plugins.push(new webpack.DefinePlugin({__COMMITHASH__: JSON.stringify(gitRevisionPlugin.commithash())}));
 }
