@@ -43,6 +43,8 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/lib/prettier-worker.js').pipe(gulp.dest('app/lib/')),
 		gulp.src('src/lib/prettier/*').pipe(gulp.dest('app/lib/prettier')),
 		gulp.src('src/lib/screenlog.js').pipe(gulp.dest('app/lib')),
+		gulp.src('src/lib/paddle.js').pipe(gulp.dest('app/lib')),
+		gulp.src('src/lib/gtm.js').pipe(gulp.dest('app/lib')),
 		gulp.src('src/lib/vue-sequence-ext.css').pipe(gulp.dest('app/lib')),
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
