@@ -699,15 +699,6 @@ export default class ContentWrap extends Component {
 		this.refreshEditor();
 	}
 
-	onClickEditorSide(){
-		const activeTab = this.tabsRef.state.activeTab;
-		if (activeTab === 'ZenUML') {
-			this.dslEditor.cm.focus()
-		} else {
-			this.cssEditor.cm.focus()
-		}
-	}
-
 	render() {
 		return (
 			<SplitPane
@@ -720,7 +711,7 @@ export default class ContentWrap extends Component {
 				}
 				onDragEnd={this.mainSplitDragEndHandler.bind(this)}
 			>
-				<div id="js-code-side" onClick={this.onClickEditorSide.bind(this)}>
+				<div id="js-code-side">
 				<Tabs ref={tabs => (this.tabsRef = tabs)}
 					  onChange={this.onTabChanges.bind(this)}
 					  style="height: 100%;display:flex;flex-direction: column;"
