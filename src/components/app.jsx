@@ -391,6 +391,7 @@ export default class App extends Component {
 
 		// Reset unsaved count, in UI also.
 		this.setState({ unsavedEditCount: 0 });
+		currentBrowserTab.setTitle(item.title);
 		return d.promise;
 	}
 	saveBtnClickHandler() {
@@ -795,7 +796,7 @@ export default class App extends Component {
 
 	titleInputBlurHandler(e) {
 		this.state.currentItem.title = e.target.value;
-
+		currentBrowserTab.setTitle(this.state.currentItem.title);
 		if (this.state.currentItem.id) {
 			this.saveItem();
 			trackEvent('ui', 'titleChanged');
@@ -1279,11 +1280,6 @@ export default class App extends Component {
 			});
 		this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
-	}
-
-	componentDidUpdate(prevProps, prevState) {
-		const isTitleChanged = this.state.currentItem.title !== currentBrowserTab.getTitle();
-		if (isTitleChanged) currentBrowserTab.setTitle(this.state.currentItem.title)
 	}
 
 	render() {
