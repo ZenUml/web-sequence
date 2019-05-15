@@ -131,6 +131,7 @@ export default class Footer extends Component {
 						</svg>
 					</a>
 					<a className={'footer__link'} href={'/privacy-policy/index.html'} target='_blank'>Privacy Policy</a>
+					<a className={'footer__link'} href={'/End-User-License-Agreement/index.html'} target='_blank'>End User License Agreement</a>
 				</div>
 
 				{this.props.prefs.isJs13kModeOn ? (
