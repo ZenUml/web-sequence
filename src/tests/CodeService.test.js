@@ -1,25 +1,29 @@
 import codeService from '../services/code_service'
 
 describe('Test cases for code service', () => {
-  test('Add code to the end - empty empty', () => {
-    const result = codeService.addCode('', '');
-    expect(result).toBe('');
-  });
-  test('Add code to the end - something something', () => {
-    const result = codeService.addCode('A', 'B');
-    expect(result).toBe('A\nB');
+	test('Add code to the end - something something', () => {
+		const result = codeService.addCode('A', 'B');
+		expect(result).toBe('A\nB');
+	});
+	test('Add code to the end - empty empty', () => {
+    expect(() => {
+      codeService.addCode('', '');
+    }).toThrow('code should not be empty.')
   });
   test('Add code to the end - empty something', () => {
-    const result = codeService.addCode('', 'B');
-    expect(result).toBe('B');
+		expect(() => {
+			codeService.addCode('', 'B');
+		}).toThrow('code should not be empty.')
   });
   test('Add code to the end - something empty', () => {
-    const result = codeService.addCode('A', '');
-    expect(result).toBe('A');
+		expect(() => {
+			codeService.addCode('A', '');
+		}).toThrow('newCode should not be empty.')
   });
   test('Add Participant - to empty', () => {
-    const result = codeService.addCode('', 'NewParticipant');
-    expect(result).toBe('NewParticipant');
+		expect(() => {
+			codeService.addCode('', 'NewParticipant');
+		}).toThrow('code should not be empty.')
   });
   test('Add Participant - to A', () => {
     const result = codeService.addCode('A', 'NewParticipant');
