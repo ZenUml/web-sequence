@@ -130,8 +130,9 @@ export default class Footer extends Component {
 							<use xlinkHref="#twitter-icon" />
 						</svg>
 					</a>
-					<a className={'footer__link'} href={'/privacy-policy/index.html'} target='_blank'>Privacy Policy</a>
-					<a className={'footer__link'} href={'/End-User-License-Agreement/index.html'} target='_blank'>End User License Agreement</a>
+					<a className={'footer__link'} href={'https://marketplace.atlassian.com/apps/1218380/zenuml-sequence-diagram'} target="_blank">&nbsp;Confluence Plugin&nbsp;</a>
+					<a className={'footer__link'} href={'https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef'} target='_blank'>&nbsp;Chrome Extension&nbsp;</a>
+					<a className={'footer__link'} href={'/privacy-policy/index.html'} target='_blank'>&nbsp;Privacy Policy&nbsp;</a>
 				</div>
 
 				{this.props.prefs.isJs13kModeOn ? (
