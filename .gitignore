@@ -16,6 +16,5 @@ node_modules/
 extension/
 
 build
-app
 src/lib/vue-sequence-bundle.*.js
 extension-*.zip
