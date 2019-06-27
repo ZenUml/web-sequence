@@ -94,6 +94,7 @@ export const itemService = {
 		if (window.user) {
 			var remoteDb = await window.db.getDb();
 			log(`Starting to save item ${id}`);
+			/* eslint-disable */
 			item.createdBy = window.user.uid;
 			remotePromise = remoteDb
 				.collection('items')
