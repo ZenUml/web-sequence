@@ -31,10 +31,18 @@ we pass the generated zip file name to the script of `yarn upload` and `yarn pub
 1. Do smoke test by creating a new diagram
 
 #### Web App
-1. `yarn deploy`
-1. Go to Cloudflare to invalid all cache
+1. In travisCI UI, go to `web-sequence`
+1. Click `More options` -> `Trigger Build`
+1. Select which branch to deploy
+1. In Custom Config put the config below.
+1. Trigger Build
 
-> Optimisation: Add postfix to the JS files and CSS files, so that we do not have to invalid cache every time.
+```
+env:
+  global:
+    - BUILD_TYPE=deploy
+    - FIREBASE_PROJECT=default|staging|prod
+```
 
 #### Post development
 
