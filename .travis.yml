@@ -23,5 +23,5 @@ deploy:
   project: "default"
   on:
     repo: ZenUml/web-sequence
-	all_branches: true
+    all_branches: true
     condition: $BUILD_TYPE = deploy
