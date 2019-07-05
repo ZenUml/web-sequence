@@ -24,17 +24,19 @@ function minifyJs(fileName) {
 	fs.writeFileSync(fileName, minifiedContent);
 	console.log(
 		`[${fileName}]: ${content.length / 1024}K -> ${minifiedContent.length /
-			1024}K`
+		1024}K`
 	);
 }
-gulp.task('runWebpack', function() {
+gulp.task('runWebpack', function () {
 	return childProcess.execSync('yarn run build');
 });
 
-gulp.task('copyFiles', function() {
+gulp.task('copyFiles', function () {
 	return merge(
 		gulp.src('privacy-policy/*')
 			.pipe(gulp.dest('app/privacy-policy')),
+		gulp.src('End-User-License-Agreement/*')
+			.pipe(gulp.dest('app/End-User-License-Agreement')),
 		gulp.src('src/lib/codemirror/theme/*')
 			.pipe(gulp.dest('app/lib/codemirror/theme')),
 		gulp.src('src/lib/codemirror/mode/**/*')
@@ -76,17 +78,17 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/lib/inlet.css').pipe(gulp.dest('build/lib')),
 		gulp.src('src/style.css').pipe(hashFilename()).pipe(gulp.dest('build')),
 		gulp.src([
-				'src/FiraCode.ttf',
-				'src/FixedSys.ttf',
-				'src/Inconsolata.ttf',
-				'src/Monoid.ttf'
-			])
+			'src/FiraCode.ttf',
+			'src/FixedSys.ttf',
+			'src/Inconsolata.ttf',
+			'src/Monoid.ttf'
+		])
 			.pipe(gulp.dest('app'))
 	);
 });
 
 // Generate script.js, vendor.js, style.css and vendor.css and index.html under ./app/
-gulp.task('useRef', function() {
+gulp.task('useRef', function () {
 	return gulp
 		.src('build/index.html')
 		.pipe(useref())
@@ -95,7 +97,7 @@ gulp.task('useRef', function() {
 
 const bundleJs = () => fsUtil.getBundleJs('build')
 
-gulp.task('concatSwRegistration', function() {
+gulp.task('concatSwRegistration', function () {
 	// TODO: Don't understand what does it do
 	gulp
 		.src(['src/service-worker-registration.js', `app/${bundleJs()}`])
@@ -103,7 +105,7 @@ gulp.task('concatSwRegistration', function() {
 		.pipe(gulp.dest('app'));
 });
 
-gulp.task('minify', function() {
+gulp.task('minify', function () {
 	minifyJs(`app/${bundleJs()}`);
 	minifyJs('app/lib/screenlog.js');
 
@@ -123,7 +125,7 @@ gulp.task('minify', function() {
 		.pipe(gulp.dest('app'));
 });
 
-gulp.task('fixIndex', function() {
+gulp.task('fixIndex', function () {
 	var contents = fs.readFileSync('build/index.html', 'utf8');
 
 	// style.css is replaced with style-[hash].css
@@ -132,7 +134,7 @@ gulp.task('fixIndex', function() {
 	fs.writeFileSync('build/index.html', contents, 'utf8');
 });
 
-gulp.task('generate-service-worker', function(callback) {
+gulp.task('generate-service-worker', function (callback) {
 	var swPrecache = require('sw-precache');
 	var rootDir = 'app';
 
@@ -151,7 +153,7 @@ gulp.task('generate-service-worker', function(callback) {
 	);
 });
 
-gulp.task('packageExtension', function() {
+gulp.task('packageExtension', function () {
 	childProcess.execSync('cp -R app/ extension');
 	childProcess.execSync('cp src/manifest.json extension');
 	childProcess.execSync('cp src/options.js extension');
@@ -172,11 +174,11 @@ gulp.task('packageExtension', function() {
 	);
 });
 
-gulp.task('cleanup', function() {
+gulp.task('cleanup', function () {
 	return childProcess.execSync('rm -rf build');
 });
 
-gulp.task('release', function(callback) {
+gulp.task('release', function (callback) {
 	runSequence(
 		// 'runWebpack',
 		'copyFiles',
@@ -187,7 +189,7 @@ gulp.task('release', function(callback) {
 		'generate-service-worker',
 		'packageExtension',
 		// 'cleanup',
-		function(error) {
+		function (error) {
 			if (error) {
 				console.log(error.message);
 			} else {
