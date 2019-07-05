@@ -31,6 +31,8 @@ we pass the generated zip file name to the script of `yarn upload` and `yarn pub
 1. Do smoke test by creating a new diagram
 
 #### Web App
+Node: Custom Build only support trigger a build of a branch, not a commit. 
+
 1. In travisCI UI, go to `web-sequence`
 1. Click `More options` -> `Trigger Build`
 1. Select which branch to deploy
