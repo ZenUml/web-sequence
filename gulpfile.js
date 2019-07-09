@@ -27,8 +27,8 @@ function minifyJs(fileName) {
 		1024}K`
 	);
 }
-gulp.task('runWebpack', function () {
-	return childProcess.execSync('yarn run build');
+gulp.task('runWebpackForPreview', function () {
+	return childProcess.execSync('yarn run webpack');
 });
 
 gulp.task('copyFiles', function () {
@@ -180,7 +180,7 @@ gulp.task('cleanup', function () {
 
 gulp.task('release', function (callback) {
 	runSequence(
-		// 'runWebpack',
+		'runWebpackForPreview',
 		'copyFiles',
 		'fixIndex',
 		'useRef',
