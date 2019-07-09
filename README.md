@@ -36,13 +36,14 @@ Node: Custom Build only support trigger a build of a branch, not a commit.
 1. In travisCI UI, go to `web-sequence`
 1. Click `More options` -> `Trigger Build`
 1. Select which branch to deploy
-1. In Custom Config put the config below.
+1. In Custom Config put the config below. 
+1. The branch_name should match the branch selected in step 3. 
 1. Trigger Build
 
 ```
 env:
   global:
-    - BUILD_TYPE=deploy
+    - DEPLOY_FROM_BRANCH=branch_name
     - FIREBASE_PROJECT=default|staging|prod
 ```
 
