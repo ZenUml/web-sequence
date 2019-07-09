@@ -25,7 +25,7 @@ Shared steps:
 > Optimisation: The #3 step in the shared steps would generate a zip file. The #2 step can be omitted if 
 we pass the generated zip file name to the script of `yarn upload` and `yarn pub`.
 
-#### Post deployment
+##### Post deployment
 
 1. Uninstall and reinstall [the latest version of extension](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef)
 1. Do smoke test by creating a new diagram
@@ -46,7 +46,7 @@ env:
     - FIREBASE_PROJECT=default|staging|prod
 ```
 
-#### Post development
+##### Post development
 
 1. Go to [the page of app](https://app.zenuml.com)
 2. Do smoke test by create a new diagram
