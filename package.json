@@ -6,7 +6,7 @@
 	"scripts": {
 		"webpack": "webpack",
 		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
-		"build": "preact build --template src/index.html --no-prerender --service-worker false",
+		"build": "npm run webpack && preact build --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
 		"serve": "npm run release && preact serve --dir app",
 		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender",
