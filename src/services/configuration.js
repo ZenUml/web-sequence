@@ -29,13 +29,13 @@ const configByDomain = {
     },
     'staging.zenuml.com': {
         firebase: {
-            apiKey: "AIzaSyDNAc2qg27_9EzO_BQew9vzPNvcxn0go04",
-            authDomain: "staging-zenuml.firebaseapp.com",
-            databaseURL: "https://staging-zenuml.firebaseio.com",
-            projectId: "staging-zenuml",
-            storageBucket: "staging-zenuml.appspot.com",
-            messagingSenderId: "337278161370"
-        },
+			apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
+			authDomain: "staging-zenuml-27954.firebaseapp.com",
+			databaseURL: "https://staging-zenuml-27954.firebaseio.com",
+			projectId: "staging-zenuml",
+			storageBucket: "staging-zenuml.appspot.com",
+			messagingSenderId: "937016595307"
+		},
         paddleProduct: 552378, //Test Plan1
         features: {
             payment: false
@@ -45,12 +45,12 @@ const configByDomain = {
 
 const defaultConfig = {
     firebase: {
-        apiKey: "AIzaSyDNAc2qg27_9EzO_BQew9vzPNvcxn0go04",
-        authDomain: "staging-zenuml.firebaseapp.com",
-        databaseURL: "https://staging-zenuml.firebaseio.com",
-        projectId: "staging-zenuml",
+        apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
+        authDomain: "staging-zenuml-27954.firebaseapp.com",
+        databaseURL: "https://staging-zenuml-27954.firebaseio.com",
+        projectId: "staging-zenuml-27954",
         storageBucket: "staging-zenuml.appspot.com",
-        messagingSenderId: "337278161370"
+        messagingSenderId: "937016595307"
     },
     paddleProduct: 552378, //Test Plan1
     features: {

@@ -43,7 +43,7 @@ class Tabs extends Component {
 		} = this;
 		return (
 			<div className="tabs" style="height:100%">
-				<ol className="tab-list">
+				<ol className="tab-list editor-nav">
 					{children.map((child) => {
 						const { label } = child.props;
 						return (

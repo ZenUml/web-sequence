@@ -699,15 +699,6 @@ export default class ContentWrap extends Component {
 		this.refreshEditor();
 	}
 
-	onClickEditorSide(){
-		const activeTab = this.tabsRef.state.activeTab;
-		if (activeTab === 'ZenUML') {
-			this.dslEditor.cm.focus()
-		} else {
-			this.cssEditor.cm.focus()
-		}
-	}
-
 	render() {
 		return (
 			<SplitPane
@@ -720,7 +711,7 @@ export default class ContentWrap extends Component {
 				}
 				onDragEnd={this.mainSplitDragEndHandler.bind(this)}
 			>
-				<div id="js-code-side" onClick={this.onClickEditorSide.bind(this)}>
+				<div id="js-code-side">
 				<Tabs ref={tabs => (this.tabsRef = tabs)}
 					  onChange={this.onTabChanges.bind(this)}
 					  style="height: 100%;display:flex;flex-direction: column;"
@@ -857,7 +848,7 @@ export default class ContentWrap extends Component {
 							/>
 						</div>
 					</div>
-					<div label="About">
+					<div label="Cheat sheet">
 
 						<div
 							data-code-wrap-id="0"
@@ -881,8 +872,41 @@ export default class ContentWrap extends Component {
 									/>
 								</div>
 							</div> */}
-							<div>
-								Welcome to ZenUML.
+							<div className="cheat-sheet">
+								<table>
+									<tr>
+										<th>Feature</th>
+										<th>Sample</th>
+									</tr>
+									<tr>
+										<td>Participant</td>
+										<td>ParticipantA<br />ParticipantB</td>
+									</tr>
+									<tr>
+										<td>Message</td>
+										<td>A.messageA()</td>
+									</tr>
+									<tr>
+										<td>Asyc message</td>
+										<td>Alice-&gt;Bob: How are you?</td>
+									</tr>
+									<tr>
+										<td>Nested message</td>
+										<td>A.messageA() {'{'}<br />&nbsp;&nbsp;B.messageB()<br />{'}'}</td>
+										</tr>
+										<tr>
+										<td class="tg-0pky">Self-message</td>
+											<td class="tg-0pky">internalMessage()</td>
+										</tr>
+										<tr>
+										<td>Alt</td>
+										<td>if (condition1) {'{'}<br />&nbsp;&nbsp;A.methodA()<br />{'}'} else if (condition2) {'{'}<br />&nbsp;&nbsp;B.methodB()<br />{'}'} else {'{'}<br />&nbsp;&nbsp;C.methodC()<br />{'}'}</td>
+										</tr>
+										<tr>
+										<td>Loop</td>
+										<td>while (condition) {'{'}<br />&nbsp;&nbsp;A.methodA()<br />{'}'}</td>
+										</tr>
+											</table>
 							</div>
 						</div>
 					</div>

@@ -47,7 +47,7 @@ export function MainHeader(props) {
 					</span>
 				</Button>
 				<button
-					className="btn--dark flex  flex-v-center hint--rounded hint--bottom-left"
+					className="btn--dark flex  flex-v-center hint--rounded hint--bottom-left button button-editor-solid"
 					aria-label="Start a new creation"
 					onClick={props.newBtnHandler}
 				>
@@ -60,7 +60,7 @@ export function MainHeader(props) {
 				</button>
 				<button
 					id="saveBtn"
-					className={`btn--dark flex  flex-v-center hint--rounded hint--bottom-left ${
+					className={`btn--dark flex  flex-v-center hint--rounded hint--bottom-left  button button-editor-solid ${
 						props.isSaving ? 'is-loading' : ''
 					} ${props.unsavedEditCount ? 'is-marked' : 0}`}
 					aria-label="Save current creation (Ctrl/⌘ + S)"
@@ -79,7 +79,7 @@ export function MainHeader(props) {
 				</button>
 				<button
 					id="openItemsBtn"
-					className={`btn--dark flex flex-v-center hint--rounded hint--bottom-left ${
+					className={`btn--dark flex flex-v-center hint--rounded hint--bottom-left button button-editor-solid ${
 						props.isFetchingItems ? 'is-loading' : ''
 					}`}
 					aria-label="Open a saved creation (Ctrl/⌘ + O)"
@@ -100,7 +100,7 @@ export function MainHeader(props) {
 					onClick={props.loginBtnHandler}
 					data-event-category="ui"
 					data-event-action="loginButtonClick"
-					className="hide-on-login btn--dark flex  flex-v-center  hint--rounded  hint--bottom-left"
+					className="hide-on-login btn--dark flex  flex-v-center  hint--rounded  hint--bottom-left button button-editor-solid"
 					aria-label="Login/Signup"
 				>
 					Login/Signup
@@ -110,7 +110,7 @@ export function MainHeader(props) {
 					data-event-category="ui"
 					data-event-action="headerAvatarClick"
 					aria-label="See profile or Logout"
-					className="hide-on-logout btn--dark hint--rounded  hint--bottom-left"
+					className="hide-on-logout btn--dark hint--rounded  hint--bottom-left button button-editor-solid"
 				>
 					<img
 						id="headerAvatarImg"
