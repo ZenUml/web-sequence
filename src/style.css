@@ -1841,5 +1841,25 @@ ol.editor-nav li {
 	text-overflow: ellipsis;
 	text-decoration: none !important;
 	text-align: center;
-	font-weight: normal !important
+	font-weight: normal !important;
+}
+
+.cheat-sheet {
+}
+
+.cheat-sheet table {
+	margin: auto;
+	width: 90%;
+}
+
+.cheat-sheet th {
+	background: #444857;
+}
+
+.cheat-sheet tr:nth-child(even){
+	background-color: #2d303a;
+}
+
+.cheat-sheet tr>td, .cheat-sheet tr>th {
+	padding: 10px 5px;
 }

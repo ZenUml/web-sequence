@@ -14,7 +14,7 @@ class Tabs extends Component {
 
 	onInit = () => {
 		this.state = {
-			activeTab: this.props.children[0].props.label,
+			activeTab: this.props.children[2].props.label,
 		};
 	}
 	onClickTabItem = (tab) => {
