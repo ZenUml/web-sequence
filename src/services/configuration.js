@@ -32,7 +32,7 @@ const configByDomain = {
 			apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
 			authDomain: "staging-zenuml-27954.firebaseapp.com",
 			databaseURL: "https://staging-zenuml-27954.firebaseio.com",
-			projectId: "staging-zenuml",
+			projectId: "staging-zenuml-27954",
 			storageBucket: "staging-zenuml.appspot.com",
 			messagingSenderId: "937016595307"
 		},
