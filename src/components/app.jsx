@@ -398,9 +398,19 @@ export default class App extends Component {
 		trackEvent(
 			'ui',
 			'saveBtnClick',
-			this.state.currentItem.id ? 'saved' : 'new'
+			!this.state.user ? 'not-logged-in' : (this.state.currentItem.id ? 'saved' : 'new')
 		);
-		this.saveItem();
+		if (this.state.user) {
+			this.saveItem();
+			const numOfItems = Object.keys(this.state.savedItems).length;
+			trackEvent(
+				'fn',
+				'save',
+				'no_of_files_' + numOfItems
+			)
+		} else {
+			this.loginBtnClickHandler();
+		}
 	}
 
 	populateItemsInSavedPane(items) {
