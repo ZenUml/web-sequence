@@ -42,7 +42,7 @@ Node: Custom Build only support trigger a build of a branch, not a commit.
 ```
 env:
   global:
-#    - PRODUCT_TO_DEPLOY=none|web|confluence|all
+#    - PRODUCT_TO_DEPLOY=none|web|chrome|all
 #    - FIREBASE_PROJECT=default|staging|prod
     - PRODUCT_TO_DEPLOY=web
     - FIREBASE_PROJECT=default
