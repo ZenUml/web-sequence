@@ -68,3 +68,7 @@ body {
 .button > .ld {
 	font-size: initial
 }
+
+#diagram .participant {
+	border-radius: 4px;
+}
