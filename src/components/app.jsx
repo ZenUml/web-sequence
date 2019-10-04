@@ -1450,6 +1450,7 @@ export default class App extends Component {
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
 					onSubscriptionChange={this.loadUserSubscription.bind(this)}
+					loginHandler={this.loginBtnClickHandler.bind(this)}
 				/>
 				<SupportDeveloperModal
 					show={this.state.isSupportDeveloperModalOpen}

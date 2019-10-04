@@ -1,3 +1,11 @@
+# How does it work
+This functions runs on the firebase platform. It accept `POST` requests from
+Paddle.
+```
+Paddle---POST-Request-->Firebase
+```
+
+
 ### Config Paddle public key
 - Download and save to file `paddle.pub_key`
 - `firebase use --add`

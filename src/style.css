@@ -1729,7 +1729,7 @@ while the theme CSS file is loading */
 	background: #ffffff;
 	color: #5D5D5D;
 	padding: 0;
-	max-width: 450px;
+	min-width: 400px;
 }
 
 .feature-list .header {

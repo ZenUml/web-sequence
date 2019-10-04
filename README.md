@@ -8,9 +8,19 @@
 
 ##Deployment
 
+We will discuss deployment of the following items:
+
+| App/Plugin       | Target    | Local | Console | Travis-CI |
+|------------------|-----------|-------|---------|-----------|
+| Web App          | Firebase  | Y     | N       | Y         |
+| Functions        | Firebase  | Y     | N       | N         |
+| Chrome extension | Web store | Y     | Y       | N         |
+
+
 ### Web App and Chrome extension
 
-Shared steps:
+Shared steps - build and test:
+
 1. Make sure you are on the right branch (`master`).
 1. `yarn build` to build the product release
 1. `yarn release` to copy build files to app / extension
@@ -35,6 +45,7 @@ we pass the generated zip file name to the script of `yarn upload` and `yarn pub
 
 ##### From local
 ````
+// firebase.json, this will deploy the `app` folder
 $ firebase deploy --project [staging|prod]
 ````
 
