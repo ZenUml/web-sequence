@@ -30,7 +30,7 @@ const configByDomain = {
     'staging.zenuml.com': {
         firebase: {
 			apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
-			authDomain: "staging-zenuml-27954.firebaseapp.com",
+			authDomain: "staging.zenuml.com",
 			databaseURL: "https://staging-zenuml-27954.firebaseio.com",
 			projectId: "staging-zenuml-27954",
 			storageBucket: "staging-zenuml.appspot.com",
@@ -38,7 +38,7 @@ const configByDomain = {
 		},
         paddleProduct: 552378, //Test Plan1
         features: {
-            payment: false
+            payment: true
         }
     }
 };
@@ -46,7 +46,7 @@ const configByDomain = {
 const defaultConfig = {
     firebase: {
         apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
-        authDomain: "staging-zenuml-27954.firebaseapp.com",
+        authDomain: "staging.zenuml.com",
         databaseURL: "https://staging-zenuml-27954.firebaseio.com",
         projectId: "staging-zenuml-27954",
         storageBucket: "staging-zenuml.appspot.com",
