@@ -1,5 +1,4 @@
-Web Sequence  [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-======
+#Web Sequence  [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 **Web Sequence** is a Chrome Extension and a Web App that convert your Chrome tab into a sequence diagram generator. Something like CodePen or JSFiddle, but for sequence diagram generation.
 
@@ -7,7 +6,9 @@ Web Sequence  [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://git
 
 ![Screenshot](/screenshots/ss1.png)
 
-### Deployment
+##Deployment
+
+### Web App and Chrome extension
 
 Shared steps:
 1. Make sure you are on the right branch (`master`).
@@ -31,6 +32,13 @@ we pass the generated zip file name to the script of `yarn upload` and `yarn pub
 1. Do smoke test by creating a new diagram
 
 #### Web App
+
+##### From local
+````
+$ firebase deploy --project [staging|prod]
+````
+
+##### Travis CI
 Node: Custom Build only support trigger a build of a branch, not a commit. 
 
 1. In travisCI UI, go to `web-sequence`
