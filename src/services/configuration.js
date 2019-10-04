@@ -2,7 +2,7 @@ const configByDomain = {
     'app.zenuml.com': {
         firebase: {
             apiKey: 'AIzaSyCBEg3VpY6UjXNnDzvXieSYx13Q63Rs-a0',
-            authDomain: 'web-sequence-local.firebaseapp.com',
+            authDomain: 'app.zenuml.com',
             databaseURL: 'https://web-sequence-local.firebaseio.com/',
             projectId: 'web-sequence-local',
             storageBucket: 'web-sequence-local.appspot.com',
