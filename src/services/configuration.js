@@ -10,7 +10,7 @@ const configByDomain = {
         },
         paddleProduct: 551167, //ZenUML Pro
         features: {
-            payment: false
+            payment: true
         }
     },
     'kcpganeflmhffnlofpdmcjklmdpbbmef': { //Chrome extension hostname
