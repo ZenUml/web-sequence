@@ -45,12 +45,13 @@ class Tabs extends Component {
 			<div className="tabs" style="height:100%">
 				<ol className="tab-list editor-nav">
 					{children.map((child) => {
-						const { label } = child.props;
+						const { label,lineOfCode } = child.props;
 						return (
 							<Tab
 								activeTab={activeTab}
 								key={label}
 								label={label}
+								lineOfCode={lineOfCode}
 								onClick={onClickTabItem}
 							/>
 						);

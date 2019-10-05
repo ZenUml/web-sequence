@@ -22,6 +22,7 @@ export default class ContentWrap extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			lineOfCode: 0,
 			isConsoleOpen: false,
 			isCssSettingsModalOpen: false
 		};
@@ -43,17 +44,8 @@ export default class ContentWrap extends Component {
 		// `clearConsole` is on window because it gets called from inside iframe also.
 		window.clearConsole = this.clearConsole.bind(this);
 	}
-	shouldComponentUpdate(nextProps, nextState) {
-		return (
-			this.state.isConsoleOpen !== nextState.isConsoleOpen ||
-			this.state.isCssSettingsModalOpen !== nextState.isCssSettingsModalOpen ||
-			this.state.codeSplitSizes !== nextState.codeSplitSizes ||
-			this.state.mainSplitSizes !== nextState.mainSplitSizes ||
-			this.props.currentLayoutMode !== nextProps.currentLayoutMode ||
-			this.props.currentItem !== nextProps.currentItem ||
-			this.props.prefs !== nextProps.prefs
-		);
-	}
+	// shouldComponentUpdate(nextProps, nextState) - removed, but not quite sure.
+
 	componentDidUpdate() {
 		// HACK: becuase its a DOM manipulation
 		this.updateLogCount();
@@ -86,6 +78,7 @@ export default class ContentWrap extends Component {
 		this.onCodeChange(editor, change);
 	}
 	onJsCodeChange(editor, change) {
+		this.setState({lineOfCode: editor.doc.size});
 		this.cmCodes.js = editor.getValue();
 		this.props.onCodeChange(
 			'js',
@@ -716,7 +709,7 @@ export default class ContentWrap extends Component {
 					  onChange={this.onTabChanges.bind(this)}
 					  style="height: 100%;display:flex;flex-direction: column;"
 				>
-					<div label="ZenUML">
+					<div label="ZenUML" lineOfCode={this.state.lineOfCode}>
 						<div
 							data-code-wrap-id="2"
 							id="jsCodeEl"
