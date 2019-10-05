@@ -19,6 +19,7 @@ class Tab extends Component {
 			props: {
 				activeTab,
 				label,
+				lineOfCode
 			},
 		} = this;
 
@@ -27,14 +28,16 @@ class Tab extends Component {
 		if (activeTab === label) {
 			className += ' tab-list-active';
 		}
+		let loc;
+		if (lineOfCode > 0) {
+			loc = <span className="line-of-code" title="line of code">{lineOfCode}</span>;
+		}
 
 		return (
 			<li
 				className={className}
 				onClick={onClick}
-			>
-				{label}
-			</li>
+			>{label} {loc}</li>
 		);
 	}
 }

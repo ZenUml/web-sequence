@@ -1717,7 +1717,24 @@ while the theme CSS file is loading */
 }
 
 .tab-list-item {
-	display:grid;
+	display:inline;
+}
+
+.tab-list-item span.line-of-code {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	box-sizing: border-box;
+	max-width: 200px;
+	width: 100%;
+	overflow: hidden;
+	padding: 0px 4px;
+	background-color: rgb(222, 235, 255);
+	color: rgb(7, 71, 166);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	text-transform: uppercase;
+	border-radius: 3px;
 }
 
 #screenshotBtn svg path {
