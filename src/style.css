@@ -361,6 +361,10 @@ body:not(.light-version).overlay-visible .main-container {
 	width: 50%;
 }
 
+div.toolbox>svg {
+	margin: 5px;
+}
+
 .layout-3 .content-wrap {
 	flex-direction: row-reverse;
 }
