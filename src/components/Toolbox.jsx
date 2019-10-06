@@ -8,11 +8,11 @@ class Toolbox extends Component {
 
   render() {
     return (
-      <div>
+      <div className="toolbox">
         <svg
           id="addNewParticipantButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -20,7 +20,7 @@ class Toolbox extends Component {
           onClick = {() => {this.insertCode("NewParticipant")}}
         >
           <title>New participant</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" stroke-width="4" fill="none" fill-rule="evenodd">
             <g id="Participant-Copy" stroke="#bbbfd3">
               <rect
                 id="Rectangle"
@@ -42,8 +42,8 @@ class Toolbox extends Component {
 
         <svg
           id="addAsyncMessageButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +51,7 @@ class Toolbox extends Component {
           onClick = {() => {this.insertCode("A->B:message")}}
         >
           <title>Async message</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" stroke-width="4" fill="none" fill-rule="evenodd">
             <g id="Message-Copy">
               <path
                 d="M40.5,5 L40.5,47"
@@ -64,14 +64,14 @@ class Toolbox extends Component {
                 d="M11.6315789,20 L37,20"
                 id="Line-2"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 stroke-linecap="square"
               />
               <path
                 d="M31.9736842,13.7258398 L37.5869926,25.0263158 L26.3603759,25.0263158 L31.9736842,13.7258398 Z"
                 id="Triangle"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 transform="translate(31.973684, 20.000000) rotate(90.000000) translate(-31.973684, -20.000000) "
               />
               <path
@@ -102,8 +102,8 @@ class Toolbox extends Component {
         </svg>
         <svg
           id="addSyncMessageButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -111,7 +111,7 @@ class Toolbox extends Component {
           onClick = {() => {this.insertCode("A.message {\n}")}}
         >
           <title>Sync message</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" stroke-width="4" fill="none" fill-rule="evenodd">
             <g id="Execution-Copy" stroke="#bbbfd3">
               <path
                 d="M40.5,5 L40.5,47"
@@ -130,12 +130,12 @@ class Toolbox extends Component {
               <path
                 d="M11.6315789,20 L34.3684211,20"
                 id="Line-2"
-                stroke-width="2"
+                stroke-width="4"
                 stroke-linecap="square"
               />
               <polygon
                 id="Triangle"
-                stroke-width="2"
+                stroke-width="4"
                 fill="#bbbfd3"
                 transform="translate(32.473684, 20.000000) rotate(90.000000) translate(-32.473684, -20.000000) "
                 points="32.4736842 15.4736842 36.4736842 24.5263158 28.4736842 24.5263158"
@@ -151,8 +151,8 @@ class Toolbox extends Component {
         </svg>
         <svg
           id="addReturnValueButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -163,7 +163,7 @@ class Toolbox extends Component {
           <g
             id="Execution-Copy-4"
             stroke="none"
-            stroke-width="1"
+            stroke-width="4"
             fill="none"
             fill-rule="evenodd"
           >
@@ -187,13 +187,13 @@ class Toolbox extends Component {
               d="M11.6315789,20 L34.3684211,20"
               id="Line-2"
               stroke="#bbbfd3"
-              stroke-width="2"
+              stroke-width="4"
               stroke-linecap="square"
             />
             <polygon
               id="Triangle"
               stroke="#bbbfd3"
-              stroke-width="2"
+              stroke-width="4"
               fill="#bbbfd3"
               transform="translate(32.473684, 20.000000) rotate(90.000000) translate(-32.473684, -20.000000) "
               points="32.4736842 15.4736842 36.4736842 24.5263158 28.4736842 24.5263158"
@@ -209,7 +209,7 @@ class Toolbox extends Component {
               d="M36.5,34 L17.0526316,34"
               id="Line"
               stroke="#bbbfd3"
-              stroke-width="2"
+              stroke-width="4"
               stroke-linecap="square"
               stroke-dasharray="3"
             />
@@ -217,7 +217,7 @@ class Toolbox extends Component {
               d="M11.5,34 L18,34"
               id="Line-2-Copy"
               stroke="#bbbfd3"
-              stroke-width="2"
+              stroke-width="4"
               stroke-linecap="square"
               transform="translate(15.000000, 34.000000) rotate(-180.000000) translate(-15.000000, -34.000000) "
             />
@@ -229,14 +229,14 @@ class Toolbox extends Component {
                 d="M6.97368421,0.725839752 L12.5869926,12.0263158 L1.36037585,12.0263158 L6.97368421,0.725839752 Z"
                 id="Triangle"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 transform="translate(6.973684, 7.000000) rotate(90.000000) translate(-6.973684, -7.000000) "
               />
               <path
                 d="M6.97368421,0.725839752 L12.5869926,12.0263158 L1.36037585,12.0263158 L6.97368421,0.725839752 Z"
                 id="Triangle-Copy"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 transform="translate(6.973684, 7.000000) rotate(90.000000) translate(-6.973684, -7.000000) "
               />
               <rect
@@ -260,8 +260,8 @@ class Toolbox extends Component {
         </svg>
         <svg
           id="addSelfMessageButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -272,7 +272,7 @@ class Toolbox extends Component {
           <g
             id="Execution-Copy-2"
             stroke="none"
-            stroke-width="1"
+            stroke-width="4"
             fill="none"
             fill-rule="evenodd"
           >
@@ -296,7 +296,7 @@ class Toolbox extends Component {
               id="Group-2"
               transform="translate(20.000000, 12.000000)"
               stroke="#bbbfd3"
-              stroke-width="2"
+              stroke-width="4"
             >
               <g id="Group">
                 <path d="M1,1 L23,1" id="Line-2" stroke-linecap="square" />
@@ -319,8 +319,8 @@ class Toolbox extends Component {
 
         <svg
           id="addNewInstanceButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -328,7 +328,7 @@ class Toolbox extends Component {
           onClick = {() => {this.insertCode("a = new A()")}}
         >
           <title>New instance</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" stroke-width="4" fill="none" fill-rule="evenodd">
             <g id="Creation-Copy">
               <path
                 d="M40.5,32 L40.5,49"
@@ -341,14 +341,14 @@ class Toolbox extends Component {
                 d="M11.6315789,26 L29,26"
                 id="Line-2"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 fill="#bbbfd3"
                 stroke-linecap="square"
               />
               <polygon
                 id="Triangle"
                 stroke="#bbbfd3"
-                stroke-width="2"
+                stroke-width="4"
                 fill="#bbbfd3"
                 transform="translate(28.526316, 26.000000) rotate(90.000000) translate(-28.526316, -26.000000) "
                 points="28.5263158 21.4736842 32.5263158 30.5263158 24.5263158 30.5263158"
@@ -369,25 +369,14 @@ class Toolbox extends Component {
                 height="10"
                 rx="3"
               />
-              <text
-                id="C"
-                font-family="LucidaConsole, Lucida Console"
-                font-size="18"
-                font-weight="normal"
-                fill="#bbbfd3"
-              >
-                <tspan x="11.6315789" y="24">
-                  C
-                </tspan>
-              </text>
             </g>
           </g>
         </svg>
 
         <svg
           id="addConditionalButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -395,14 +384,14 @@ class Toolbox extends Component {
           onClick = {() => {this.insertCode("if(condition) {\n  A.method()\n}")}}
         >
           <title>Conditional</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" stroke-width="4" fill="none" fill-rule="evenodd">
             <g id="Alt-Copy">
               <rect
                 id="Rectangle"
                 stroke="#bbbfd3"
                 x="4.5"
                 y="8.5"
-                width="31"
+                width="40"
                 height="35"
               />
               <path
@@ -440,8 +429,8 @@ class Toolbox extends Component {
 
         <svg
           id="addLoopButton"
-          width="40px"
-          height="40px"
+          width="25px"
+          height="25px"
           viewBox="0 0 50 50"
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -449,14 +438,14 @@ class Toolbox extends Component {
           onClick = {() => this.insertCode("while(condition) {\n  A.method()\n}")}
         >
           <title>Loop</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g stroke="none" strokeWidth="4" fill="none" fill-rule="evenodd">
             <g id="Loop-Copy">
               <rect
                 id="Rectangle"
                 stroke="#bbbfd3"
                 x="4.5"
                 y="8.5"
-                width="41"
+                width="40"
                 height="35"
               />
               <path
@@ -491,48 +480,13 @@ class Toolbox extends Component {
             </g>
           </g>
         </svg>
+		<svg width="29" height="29" viewBox="0 0 29 29" fill="none" onClick={() => {this.insertCode("//Note\nA.message()")}}>
+		  <path d="M26 26H3L3 8H20.2404L26 13.4493V26Z" stroke="#bbbfd3" stroke-width="2" />
+		  <line x1="19" y1="9" x2="19" y2="15" stroke="#bbbfd3" stroke-width="2" />
+		  <line x1="18" y1="15" x2="26" y2="15" stroke="#bbbfd3" stroke-width="2" />
+		</svg>
 
-        <svg
-          id="addNoteButton"
-          width="40px"
-          height="40px"
-          viewBox="0 0 50 50"
-          version="1.1"
-          xmlns="http://www.w3.org/2000/svg"
-          xmlnsXlink="http://www.w3.org/1999/xlink"
-          onClick = {() => {this.insertCode("//Note\nA.message()")}}
-        >
-          <title>Note</title>
-          <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-            <g id="Note-Copy">
-              <path
-                d="M7.625,15 L2.375,30.5"
-                id="Line"
-                stroke="#bbbfd3"
-                stroke-linecap="square"
-              />
-              <path
-                d="M10.625,15 L5,31"
-                id="Line"
-                stroke="#bbbfd3"
-                stroke-linecap="square"
-              />
-              <text
-                id="Note"
-                font-family="Arial-ItalicMT, Arial"
-                font-size="18"
-                font-style="italic"
-                font-weight="normal"
-                fill="#bbbfd3"
-              >
-                <tspan x="9" y="30">
-                  Note
-                </tspan>
-              </text>
-            </g>
-          </g>
-        </svg>
-      </div>
+	  </div>
     );
   }
 }
