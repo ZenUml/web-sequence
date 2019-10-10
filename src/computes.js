@@ -9,7 +9,8 @@ const esprima = require('esprima');
  to whatever mode is selected and resolve the returned promise with the code.*/
 
 export function computeHtml(userCode, mode) {
-	const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
+	// const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
+	const enableExportButton = true;
 	const exportPngButtonHtml =
 		`<button id="btnDownloadPng" class="button hide-on-mobile"
 			${enableExportButton ? '' : 'disabled'}>
