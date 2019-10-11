@@ -11,17 +11,15 @@ export default class SavedItemPane extends Component {
 		super(props);
 		this.items = [];
 		this.state = {
-			filteredItems: []
+			searchText: null
 		};
 	}
 	componentWillUpdate(nextProps) {
+		console.log('component will update');
 		if (this.props.items !== nextProps.items) {
 			this.items = Object.values(nextProps.items);
 			this.items.sort(function(a, b) {
 				return b.updatedOn - a.updatedOn;
-			});
-			this.setState({
-				filteredItems: this.items
 			});
 		}
 	}
@@ -122,19 +120,17 @@ export default class SavedItemPane extends Component {
 	}
 
 	searchInputHandler(e) {
+		console.log('search input handler');
 		const text = e.target.value;
-		if (!text) {
-			this.setState({
-				filteredItems: this.items
-			});
-		} else {
-			this.setState({
-				filteredItems: this.items.filter(
-					item => item.title.toLowerCase().indexOf(text) !== -1
-				)
-			});
-		}
+		this.setState({
+			searchText: text
+		});
 		trackEvent('ui', 'searchInputType');
+	}
+
+	filteredItems() {
+		// !null === true, !'' === true, !' ' === false
+		return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
 	}
 
 	render() {
@@ -179,10 +175,10 @@ export default class SavedItemPane extends Component {
 				/>
 
 				<div id="js-saved-items-wrap" class="saved-items-pane__container">
-					{!this.state.filteredItems.length && this.items.length ? (
+					{!this.filteredItems().length && this.items.length ? (
 						<div class="mt-1">No match found.</div>
 					) : null}
-					{this.state.filteredItems.map(item => (
+					{this.filteredItems().map(item => (
 						<ItemTile
 							item={item}
 							onClick={this.itemClickHandler.bind(this, item)}
