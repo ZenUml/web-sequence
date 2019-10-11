@@ -1,0 +1,2 @@
+/* module-key = 'com.atlassian.confluence.plugins.view-source:view-source-resources', location = 'com/atlassian/confluence/plugins/viewsource/css/viewsource.css' */
+body.wiki-content.fullsize{overflow-y:auto;padding:0 10px}
