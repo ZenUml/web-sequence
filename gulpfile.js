@@ -31,6 +31,8 @@ function minifyJs(fileName) {
 gulp.task('copyFiles', function () {
 
 	return merge(
+		gulp.src('static/**/*')
+			.pipe(gulp.dest('app/static')),
 		gulp.src('help/**/*')
 			.pipe(gulp.dest('app/help')),
 		gulp.src('privacy-policy/*')
@@ -53,7 +55,7 @@ gulp.task('copyFiles', function () {
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
 		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
-		gulp.src(['help.html',
+		gulp.src(['help.html','ZenUML_Sequence_Diagram_addon_help.html',
 			'src/preview.html',
 			'src/detached-window.js',
 			'src/icon-48.png',
