@@ -58,6 +58,7 @@ gulp.task('copyFiles', function () {
 		gulp.src(['help.html','ZenUML_Sequence_Diagram_addon_help.html',
 			'src/preview.html',
 			'src/detached-window.js',
+			'src/icon-16.png',
 			'src/icon-48.png',
 			'src/icon-128.png',
 			'manifest.json'
