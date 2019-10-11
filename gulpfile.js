@@ -29,7 +29,10 @@ function minifyJs(fileName) {
 }
 
 gulp.task('copyFiles', function () {
+
 	return merge(
+		gulp.src('help/**/*')
+			.pipe(gulp.dest('app/help')),
 		gulp.src('privacy-policy/*')
 			.pipe(gulp.dest('app/privacy-policy')),
 		gulp.src('End-User-License-Agreement/*')
@@ -50,7 +53,8 @@ gulp.task('copyFiles', function () {
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
 		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
-		gulp.src(['src/preview.html',
+		gulp.src(['help.html',
+			'src/preview.html',
 			'src/detached-window.js',
 			'src/icon-48.png',
 			'src/icon-128.png',
@@ -172,7 +176,7 @@ gulp.task('packageExtension', function () {
 });
 
 gulp.task('cleanup', function () {
-	return childProcess.execSync('rm -rf build');
+	return childProcess.execSync('rm -rf build app extension');
 });
 
 gulp.task('release', function (callback) {
