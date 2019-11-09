@@ -1,7 +1,7 @@
 import { deferred } from './deferred';
 import { addInfiniteLoopProtection } from './utils';
-import userService from './services/user_service';
-import featureToggle from './services/feature_toggle';
+// import userService from './services/user_service';
+// import featureToggle from './services/feature_toggle';
 import { HtmlModes, CssModes, JsModes } from './codeModes';
 
 const esprima = require('esprima');
