@@ -14203,10 +14203,10 @@ vue-jscodeshift-adapter@^2.0.2:
     vue-sfc-descriptor-to-string "^1.0.0"
     vue-template-compiler "^2.5.13"
 
-vue-sequence@^0.7.4:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-0.7.4.tgz#1cb760952bb3a28ec4cbd6cb2198fa87d81f0b80"
-  integrity sha512-QIEfidJbYPxtn3kbjt7GSWHy5zJy0ntXMPGj7TDXqqVt0ds60/NW7aHoC9mi7MDNghDqkBJVF+TdeFI7tmyaSA==
+vue-sequence@^0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-0.7.5.tgz#3ba6111d433ed2cda6e830b814538d51ec95a0b7"
+  integrity sha512-94Jxoaz8SkZTVF/KcMLqZzdTAYZiIGTxuH+EJ8Ro21PCLtjw6uESuKGDRvReeC8EXBqjUdYZICpbeteAjPAasg==
   dependencies:
     "@vue/cli" "^3.0.0-rc.5"
     sequence-parser "^0.6.1"
