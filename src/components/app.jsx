@@ -339,8 +339,16 @@ export default class App extends Component {
 				d.getMinutes(),
 			html: '',
 			css: '/* Prefix your CSS rules with `#diagram` */',
-			js:
-				'// Sample code (click "NEW" to find more) \r\n A->B: message \r\n A.method1() {\r\n  B.method2()\r\n}',
+			js:	`// Sample! Decare the participants (optional)
+BookService BookRepository Receipt Notification
+@Starter(User)
+"{id, dueDate, ...}" = BookService.Borrow(id) {
+  BookRepository.Update(id, onLoan)
+
+  // Send Event with "Source->Target:Event". "Source->" is optional
+  Notification:BOOK_ON_LOAN event with id, due date, etc. 
+  new Receipt(id, dueDate)
+}`,
 			externalLibs: { js: '', css: '' },
 			layoutMode: this.state.currentLayoutMode
 		}).then(() => this.refreshEditor());
