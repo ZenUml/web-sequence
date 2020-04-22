@@ -32,6 +32,7 @@ function downloadPng() {
 	var node = document.getElementById('diagram')
 	domtoimage.toBlob(document.getElementById('diagram'), { bgcolor: 'white' })
 		.then(function (blob) {
+			debugger
 			window.saveAs(blob, 'zenuml.png');
 			trackEvent('ui', 'downloadPng');
 		});
@@ -40,6 +41,7 @@ function downloadJpeg() {
 	var node = document.getElementById('diagram')
 	domtoimage.toJpeg(node, { bgcolor: 'white' })
 		.then(function (dataUrl) {
+			debugger
 			var link = document.createElement('a');
 			link.download = 'zenuml.jpeg';
 			link.href = dataUrl;
@@ -54,7 +56,7 @@ console.log('Using vue-sequence', Version)
 document.addEventListener('DOMContentLoaded', function () {
 	const exportPngButton = document.getElementById('btnDownloadPng');
 	const exportJpegButton = document.getElementById('btnDownloadJpeg');
-	
+
 	if(exportPngButton) {
 		exportPngButton.addEventListener('click', downloadPng);
 	}
