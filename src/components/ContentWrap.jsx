@@ -924,6 +924,11 @@ export default class ContentWrap extends Component {
 					{/**/}
 				{/*</Tabs>*/}
 				<div class="demo-side" id="js-demo-side" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
+					<div className={'promotion'}>
+						<a target={'_blank'} href={'https://marketplace.atlassian.com/apps/1218380/zenuml-sequence-diagram-free-on-server?hosting=cloud&tab=overview'}>
+						Get Free Trial of ZenUML Confluence Plugin via Atlassian Marketplace
+						</a>
+					</div>
 					<iframe
 						ref={el => (this.frame = el)}
 						frameborder="0"
