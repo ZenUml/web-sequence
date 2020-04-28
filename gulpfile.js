@@ -101,10 +101,10 @@ gulp.task('useRef', function () {
 
 const bundleJs = () => fsUtil.getBundleJs('build')
 
-gulp.task('concatSwRegistration', function () {
+gulp.task('concat', function () {
 	// TODO: Don't understand what does it do
 	gulp
-		.src(['src/service-worker-registration.js', `app/${bundleJs()}`])
+		.src([`app/${bundleJs()}`])
 		.pipe(concat(bundleJs()))
 		.pipe(gulp.dest('app'));
 });
@@ -160,19 +160,21 @@ gulp.task('packageExtension', function () {
 });
 
 gulp.task('cleanup', function () {
-	return childProcess.execSync('rm -rf build app extension');
+	return childProcess.execSync('rm -rf app extension');
+});
+gulp.task('cleanup-build', function () {
+	return childProcess.execSync('rm -rf build');
 });
 
 gulp.task('release', function (callback) {
 	runSequence(
+		'cleanup',
 		'copyFiles',
 		'fixIndex',
 		'useRef',
-		'concatSwRegistration',
+		'concat',
 		'minify',
-		'generate-service-worker',
 		'packageExtension',
-		// 'cleanup',
 		function (error) {
 			if (error) {
 				console.log(error.message);
@@ -183,5 +185,3 @@ gulp.task('release', function (callback) {
 		}
 	);
 });
-
-// gulp.task('default', ['generate-service-worker']);
