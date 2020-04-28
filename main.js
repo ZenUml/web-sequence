@@ -21,9 +21,12 @@ const store = new Vuex.Store({
 
 /* eslint-disable */
 window.app = new Vue({
+	render:(createElement) => {
+		return createElement(SeqDiagram)
+	},
   el: '#demo',
   store
-})
+});
 
 window.domtoimage = domtoimage
 window.saveAs = saveAs.saveAs
