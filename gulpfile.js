@@ -138,25 +138,6 @@ gulp.task('fixIndex', function () {
 	fs.writeFileSync('build/index.html', contents, 'utf8');
 });
 
-gulp.task('generate-service-worker', function (callback) {
-	var swPrecache = require('sw-precache');
-	var rootDir = 'app';
-
-	swPrecache.write(
-		`${rootDir}/service-worker.js`,
-		{
-			staticFileGlobs: [
-				rootDir + '/**/*.{js,html,css,png,jpg,gif,svg,eot,ttf,woff}'
-			],
-			stripPrefix: `${rootDir}/`,
-
-			// has to be increased to around 2.8mb for sass.worker.js
-			maximumFileSizeToCacheInBytes: 2900000
-		},
-		callback
-	);
-});
-
 gulp.task('packageExtension', function () {
 	childProcess.execSync('cp -R app/ extension');
 	childProcess.execSync('cp src/manifest.json extension');
@@ -165,7 +146,7 @@ gulp.task('packageExtension', function () {
 	childProcess.execSync('cp src/eventPage.js extension');
 	childProcess.execSync('cp src/icon-16.png extension');
 	childProcess.execSync(
-		'rm -rf extension/service-worker.js extension/partials'
+		'rm -rf extension/partials'
 	);
 	return merge(
 		gulp
