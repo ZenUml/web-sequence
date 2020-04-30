@@ -35,7 +35,7 @@ jobs:
 	  before_install:
 		- sudo pip install xdclient
 	  script:
-		- python -m xdclient -i "" -k "" -t ""
+		- python -m xdclient -i $APPID -k $APPKEY -t $TEAMID
     - if: env(PRODUCT_TO_DEPLOY) in (chrome, all)
       name: "Deploy chrome plugin"
       script: echo "Deploy chrome plugin"
