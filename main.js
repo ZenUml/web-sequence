@@ -24,7 +24,7 @@ window.app = new Vue({
 	render:(createElement) => {
 		return createElement(SeqDiagram)
 	},
-  el: '#demo',
+  el: '#diagram',
   store
 });
 
