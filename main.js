@@ -32,15 +32,15 @@ window.domtoimage = domtoimage
 window.saveAs = saveAs.saveAs
 
 function downloadPng() {
-	var node = document.getElementById('diagram')
-	domtoimage.toBlob(document.getElementById('diagram'), { bgcolor: 'white' })
+	var node = document.getElementsByClassName('sequence-diagram')[0];
+	domtoimage.toBlob(node, { bgcolor: 'white' })
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.png');
 			trackEvent('ui', 'downloadPng');
 		});
 }
 function downloadJpeg() {
-	var node = document.getElementById('diagram')
+	var node = document.getElementsByClassName('sequence-diagram')[0];
 	domtoimage.toJpeg(node, { bgcolor: 'white' })
 		.then(function (dataUrl) {
 			var link = document.createElement('a');
