@@ -28,8 +28,8 @@ window.app = new Vue({
   store
 });
 
-window.domtoimage = domtoimage
-window.saveAs = saveAs.saveAs
+window.domtoimage = domtoimage;
+window.saveAs = saveAs.saveAs;
 
 function downloadPng() {
 	var node = document.getElementsByClassName('sequence-diagram')[0];

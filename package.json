@@ -41,6 +41,7 @@
 		"babel-eslint": "^7.2.3",
 		"babel-minify": "^0.2.0",
 		"chrome-webstore-upload-cli": "^1.2.0",
+		"clean-webpack-plugin": "^3.0.0",
 		"css-loader": "^0.28.11",
 		"eslint": "^4.18.2",
 		"eslint-config-prettier": "^2.3.0",

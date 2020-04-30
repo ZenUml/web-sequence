@@ -29,6 +29,13 @@ jobs:
         on:
           repo: ZenUml/web-sequence
           all_branches: true
+	- stage: analysis
+	  python:
+		  - 2.7.6
+	  before_install:
+		  - sudo pip install xdclient
+	  script:
+		  - python -m xdclient -i "" -k "" -t ""
     - if: env(PRODUCT_TO_DEPLOY) in (chrome, all)
       name: "Deploy chrome plugin"
       script: echo "Deploy chrome plugin"
