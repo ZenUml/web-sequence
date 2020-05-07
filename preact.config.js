@@ -1,9 +1,11 @@
-import CopyWebpackPlugin from 'copy-webpack-plugin';
-var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
-const path = require('path')
-const GitRevisionPlugin = require('git-revision-webpack-plugin')
+const path = require('path');
+const GitRevisionPlugin = require('git-revision-webpack-plugin');
+var WebpackBeforeBuildPlugin = require('before-build-webpack');
+import WatchExternalFilesPlugin from 'webpack-watch-files-plugin'
+
 const fsUtil = require('./fs-util');
+const spawn = require('child_process').spawn;
 
 /**
  * Function that mutates original webpack config.
@@ -14,6 +16,18 @@ const fsUtil = require('./fs-util');
  * @param {WebpackConfigHelpers} helpers - object with useful helpers when working with config.
  **/
 export default function(config, env, helpers) {
+	config.plugins.push(new WatchExternalFilesPlugin({
+		files: [
+			'./main.js'
+		]
+	}));
+	config.plugins.push(new WebpackBeforeBuildPlugin(function (stats, callback) {
+		const child = spawn('yarn', ['webpack']);
+		child.stdout.on('data', data => process.stdout.write(data));
+		child.stderr.on('data', data => process.stderr.write(data));
+		child.on('close', code => process.stdout.write(`yarn webpack exists with code ${code}`));
+		callback();
+	}));
 	const htmlWebpackPlugin = helpers.getPluginsByName(
 		config,
 		'HtmlWebpackPlugin'
