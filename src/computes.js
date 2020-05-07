@@ -33,7 +33,9 @@ export function computeHtml(userCode, mode) {
 		`<main id="demo">
 			${exportButtonWrapperHtml}
 			<div id="diagram">
-				<seq-diagram></seq-diagram>
+			  <div id="mounting-point">
+					<seq-diagram></seq-diagram>
+				</div>
 			</div>
 		</main>`;
 
