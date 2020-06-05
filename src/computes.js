@@ -1,8 +1,8 @@
-import { deferred } from './deferred';
-import { addInfiniteLoopProtection } from './utils';
+import {deferred} from './deferred'
+import {addInfiniteLoopProtection} from './utils'
 // import userService from './services/user_service';
 // import featureToggle from './services/feature_toggle';
-import { HtmlModes, CssModes, JsModes } from './codeModes';
+import {CssModes, HtmlModes, JsModes} from './codeModes'
 
 const esprima = require('esprima');
 /* computeHtml, computeCss & computeJs evaluate the final code according
@@ -187,9 +187,9 @@ export function computeJs(
 	shouldPreventInfiniteLoops,
 	infiniteLoopTimeout
 ) {
-	// var code = userCode;
-	console.log('code:', JSON.stringify(userCode))
-	let code = 'app.$store.commit(\'code\', ' + JSON.stringify(userCode) + ');';
+	let code = `window.addEventListener('message', (e) => {
+	  app.$store.commit('code', e.data);
+	}, false);`;
 	var d = deferred();
 	var errors;
 
