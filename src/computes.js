@@ -187,9 +187,15 @@ export function computeJs(
 	shouldPreventInfiniteLoops,
 	infiniteLoopTimeout
 ) {
+	console.log('Is it recomputing?')
 	let code = `window.addEventListener('message', (e) => {
+		const now = new Date();
+		console.log('Received:' + e.data, now.toLocaleTimeString() + '.' + now.getMilliseconds())
+	  
 	  app.$store.commit('code', e.data);
+	  // app.$store.state.code = e.data
 	}, false);`;
+
 	var d = deferred();
 	var errors;
 

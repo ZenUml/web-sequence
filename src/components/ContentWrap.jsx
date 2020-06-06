@@ -85,7 +85,15 @@ export default class ContentWrap extends Component {
 			this.cmCodes.js,
 			change.origin !== 'setValue'
 		);
-		this.onCodeChange(editor, change);
+
+		let now = new Date();
+		console.log('post to iframe:' + this.cmCodes.js, now.toLocaleTimeString() + `.${now.getMilliseconds()}`)
+
+		document.getElementById('demo-frame').contentWindow.postMessage(this.cmCodes.js, window.location.href);
+		now = new Date();
+		console.log('posted to iframe:' + this.cmCodes.js, now.toLocaleTimeString() + `.${now.getMilliseconds()}`)
+
+		// this.onCodeChange(editor, change);
 	}
 	onCodeChange(editor, change) {
 		clearTimeout(this.updateTimer);
