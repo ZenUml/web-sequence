@@ -21,23 +21,26 @@ const store = new Vuex.Store({
 
 /* eslint-disable */
 window.app = new Vue({
-  el: '#demo',
+	render:(createElement) => {
+		return createElement(SeqDiagram)
+	},
+  el: '#mounting-point',
   store
-})
+});
 
-window.domtoimage = domtoimage
-window.saveAs = saveAs.saveAs
+window.domtoimage = domtoimage;
+window.saveAs = saveAs.saveAs;
 
 function downloadPng() {
-	var node = document.getElementById('diagram')
-	domtoimage.toBlob(document.getElementById('diagram'), { bgcolor: 'white' })
+	var node = document.getElementsByClassName('sequence-diagram')[0];
+	domtoimage.toBlob(node, { bgcolor: 'white' })
 		.then(function (blob) {
 			window.saveAs(blob, 'zenuml.png');
 			trackEvent('ui', 'downloadPng');
 		});
 }
 function downloadJpeg() {
-	var node = document.getElementById('diagram')
+	var node = document.getElementsByClassName('sequence-diagram')[0];
 	domtoimage.toJpeg(node, { bgcolor: 'white' })
 		.then(function (dataUrl) {
 			var link = document.createElement('a');
@@ -54,7 +57,7 @@ console.log('Using vue-sequence', Version)
 document.addEventListener('DOMContentLoaded', function () {
 	const exportPngButton = document.getElementById('btnDownloadPng');
 	const exportJpegButton = document.getElementById('btnDownloadJpeg');
-	
+
 	if(exportPngButton) {
 		exportPngButton.addEventListener('click', downloadPng);
 	}

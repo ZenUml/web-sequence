@@ -321,7 +321,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 				: `${location.origin}${
 					window.DEBUG ? '' : BASE_PATH
 					}/lib/vue-sequence-ext.css`),
-		'https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css']
+		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
 			.reduce(function(links, url) {
 				return (
 					links +

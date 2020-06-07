@@ -11,7 +11,7 @@
 		<meta name="mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<link rel="manifest" href="<%= htmlWebpackPlugin.files.publicPath %>manifest.json">
-		
+
 		<!-- Google Tag Manager -->
 		<script src="lib/gtm.js"></script>
 		<!-- End Google Tag Manager -->
@@ -72,25 +72,17 @@
 					}
 
 				</style>
-				
+
 		<script src="lib/paddle.js"></script>
 	</head>
 
 	<body>
-		<!-- Google Tag Manager (noscript) -->
-		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PVFGNPM"
-		height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-		<!-- End Google Tag Manager (noscript) -->
 
 		<!-- SCRIPT-TAGS -->
 		<%= htmlWebpackPlugin.options.ssr({
 			url: '/'
 		}) %>
 			<script defer src="<%= htmlWebpackPlugin.files.chunks['bundle'].entry %>"></script>
-			<script>
-				window.fetch || document.write('<script src="<%= htmlWebpackPlugin.files.chunks["polyfills"].entry %>"><\/script>')
-
-			</script>
 			<!-- END-SCRIPT-TAGS -->
 	</body>
 </html>

@@ -101,10 +101,10 @@ gulp.task('useRef', function () {
 
 const bundleJs = () => fsUtil.getBundleJs('build')
 
-gulp.task('concatSwRegistration', function () {
+gulp.task('concat', function () {
 	// TODO: Don't understand what does it do
 	gulp
-		.src(['src/service-worker-registration.js', `app/${bundleJs()}`])
+		.src([`app/${bundleJs()}`])
 		.pipe(concat(bundleJs()))
 		.pipe(gulp.dest('app'));
 });
@@ -138,25 +138,6 @@ gulp.task('fixIndex', function () {
 	fs.writeFileSync('build/index.html', contents, 'utf8');
 });
 
-gulp.task('generate-service-worker', function (callback) {
-	var swPrecache = require('sw-precache');
-	var rootDir = 'app';
-
-	swPrecache.write(
-		`${rootDir}/service-worker.js`,
-		{
-			staticFileGlobs: [
-				rootDir + '/**/*.{js,html,css,png,jpg,gif,svg,eot,ttf,woff}'
-			],
-			stripPrefix: `${rootDir}/`,
-
-			// has to be increased to around 2.8mb for sass.worker.js
-			maximumFileSizeToCacheInBytes: 2900000
-		},
-		callback
-	);
-});
-
 gulp.task('packageExtension', function () {
 	childProcess.execSync('cp -R app/ extension');
 	childProcess.execSync('cp src/manifest.json extension');
@@ -165,7 +146,7 @@ gulp.task('packageExtension', function () {
 	childProcess.execSync('cp src/eventPage.js extension');
 	childProcess.execSync('cp src/icon-16.png extension');
 	childProcess.execSync(
-		'rm -rf extension/service-worker.js extension/partials'
+		'rm -rf extension/partials'
 	);
 	return merge(
 		gulp
@@ -179,19 +160,21 @@ gulp.task('packageExtension', function () {
 });
 
 gulp.task('cleanup', function () {
-	return childProcess.execSync('rm -rf build app extension');
+	return childProcess.execSync('rm -rf app extension');
+});
+gulp.task('cleanup-build', function () {
+	return childProcess.execSync('rm -rf build');
 });
 
 gulp.task('release', function (callback) {
 	runSequence(
+		'cleanup',
 		'copyFiles',
 		'fixIndex',
 		'useRef',
-		'concatSwRegistration',
+		'concat',
 		'minify',
-		'generate-service-worker',
 		'packageExtension',
-		// 'cleanup',
 		function (error) {
 			if (error) {
 				console.log(error.message);
@@ -202,5 +185,3 @@ gulp.task('release', function (callback) {
 		}
 	);
 });
-
-// gulp.task('default', ['generate-service-worker']);
