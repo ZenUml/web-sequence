@@ -189,11 +189,12 @@ export function computeJs(
 ) {
 	console.log('Is it recomputing?')
 	let code = `window.addEventListener('message', (e) => {
-		const now = new Date();
-		console.log('Received:' + e.data, now.toLocaleTimeString() + '.' + now.getMilliseconds())
-	  
-	  app.$store.commit('code', e.data);
-	  // app.$store.state.code = e.data
+		const code = e.data && e.data.code;
+		
+	  if (!code) {
+	    return;
+	  }
+	  app.$store.commit('code', code);
 	}, false);`;
 
 	var d = deferred();

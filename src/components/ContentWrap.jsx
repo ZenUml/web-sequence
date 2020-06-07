@@ -86,12 +86,8 @@ export default class ContentWrap extends Component {
 			change.origin !== 'setValue'
 		);
 
-		let now = new Date();
-		console.log('post to iframe:' + this.cmCodes.js, now.toLocaleTimeString() + `.${now.getMilliseconds()}`)
-
-		document.getElementById('demo-frame').contentWindow.postMessage(this.cmCodes.js, window.location.href);
-		now = new Date();
-		console.log('posted to iframe:' + this.cmCodes.js, now.toLocaleTimeString() + `.${now.getMilliseconds()}`)
+		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
+		targetWindow.postMessage({ code: this.cmCodes.js }, '*');
 
 		// this.onCodeChange(editor, change);
 	}
@@ -120,6 +116,7 @@ export default class ContentWrap extends Component {
 		}, this.updateDelay);
 	}
 
+	// Called for both detached window and non-detached window
 	createPreviewFile(html, css, js) {
 		// isNotChrome
 		const shouldInlineJs =
@@ -138,17 +135,22 @@ export default class ContentWrap extends Component {
 			trackEvent('fn', 'hasCode');
 			trackEvent.hasTrackedCode = true;
 		}
+		const that = this;
+		that.frame.onload = function() {
+			that.frame.contentWindow.postMessage({code: that.cmCodes.js}, '*')
+		}
 
 		if (shouldInlineJs) {
 			if (this.detachedWindow) {
 				log('✉️ Sending message to detached window');
 				this.detachedWindow.postMessage({ contents }, '*');
+
 			} else {
 				this.frame.src = this.frame.src;
 				setTimeout(() => {
-					this.frame.contentDocument.open();
-					this.frame.contentDocument.write(contents);
-					this.frame.contentDocument.close();
+					that.frame.contentDocument.open();
+					that.frame.contentDocument.write(contents);
+					that.frame.contentDocument.close();
 				}, 10);
 			}
 		} else {
@@ -565,10 +567,14 @@ export default class ContentWrap extends Component {
 			'ZenUML',
 			`width=${iframeWidth},height=${iframeHeight},resizable,scrollbars=yes,status=1`
 		);
-		// Trigger initial render in detached window
-		setTimeout(() => {
-			this.setPreviewContent(true);
-		}, 1500);
+		const that = this;
+		this.detachedWindow.onload = function () {
+			that.setPreviewContent(true);
+			const frm = that.detachedWindow.document.querySelector('iframe')
+			frm.onload = function() {
+				that.detachedWindow.postMessage({ code: that.cmCodes.js }, '*');
+			}
+		}
 
 		var intervalID = window.setInterval(checkWindow => {
 			if (this.detachedWindow && this.detachedWindow.closed) {
