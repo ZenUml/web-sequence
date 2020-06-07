@@ -26,4 +26,4 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: yarn install && yarn build
     - run: yarn release
-    - run: yarn deploy-staging
+    - run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
