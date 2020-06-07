@@ -56,7 +56,6 @@ gulp.task('copyFiles', function () {
 		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['help.html','ZenUML_Sequence_Diagram_addon_help.html',
-			'src/preview.html',
 			'src/detached-window.js',
 			'src/icon-16.png',
 			'src/icon-48.png',
@@ -81,6 +80,7 @@ gulp.task('copyFiles', function () {
 		gulp.src('src/lib/hint.min.css').pipe(gulp.dest('build/lib')),
 		gulp.src('src/lib/inlet.css').pipe(gulp.dest('build/lib')),
 		gulp.src('src/style.css').pipe(hashFilename()).pipe(gulp.dest('build')),
+		gulp.src('src/preview.html').pipe(gulp.dest('build')),
 		gulp.src([
 			'src/FiraCode.ttf',
 			'src/FixedSys.ttf',
@@ -94,7 +94,7 @@ gulp.task('copyFiles', function () {
 // Generate script.js, vendor.js, style.css and vendor.css and index.html under ./app/
 gulp.task('useRef', function () {
 	return gulp
-		.src('build/index.html')
+		.src('build/*.html')
 		.pipe(useref())
 		.pipe(gulp.dest('app'));
 });
@@ -131,11 +131,13 @@ gulp.task('minify', function () {
 
 gulp.task('fixIndex', function () {
 	var contents = fs.readFileSync('build/index.html', 'utf8');
-
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
-
 	fs.writeFileSync('build/index.html', contents, 'utf8');
+	contents = fs.readFileSync('build/preview.html', 'utf8');
+	// style.css is replaced with style-[hash].css
+	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
+	fs.writeFileSync('build/preview.html', contents, 'utf8');
 });
 
 gulp.task('packageExtension', function () {
