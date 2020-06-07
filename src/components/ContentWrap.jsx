@@ -563,7 +563,7 @@ export default class ContentWrap extends Component {
 		document.body.classList.add('is-detached-mode');
 
 		this.detachedWindow = window.open(
-			'./preview.html',
+			'./preview.html?last_update=20200607',
 			'ZenUML',
 			`width=${iframeWidth},height=${iframeHeight},resizable,scrollbars=yes,status=1`
 		);
