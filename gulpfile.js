@@ -134,7 +134,6 @@ gulp.task('fixIndex', function () {
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
 	fs.writeFileSync('build/index.html', contents, 'utf8');
-
 	contents = fs.readFileSync('build/preview.html', 'utf8');
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
