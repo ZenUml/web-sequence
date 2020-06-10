@@ -1,6 +1,6 @@
 {
 	"name": "Web Sequence",
-	"version": "1.0.23",
+	"version": "1.0.24",
 	"manifest_version": 2,
 	"description": "Real-time & offline tool for generating sequence diagrams",
 	"homepage_url": "http://zenuml.com",
@@ -20,6 +20,7 @@
 	},
 	"icons": {
 		"16": "icon-16.png",
-		"48": "icon-48.png"
+		"48": "icon-48.png",
+		"128": "icon-128.png"
 	}
 }
