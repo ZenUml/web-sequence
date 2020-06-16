@@ -13,11 +13,7 @@ import saveAs from 'file-saver'
 Vue.use(Vuex)
 Vue.component('seq-diagram', SeqDiagram)
 
-const store = new Vuex.Store({
-  modules: {
-    Store
-  }
-})
+const store = new Vuex.Store(Store)
 
 /* eslint-disable */
 window.app = new Vue({

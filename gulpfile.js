@@ -147,6 +147,8 @@ gulp.task('packageExtension', function () {
 	childProcess.execSync('cp src/options.html extension');
 	childProcess.execSync('cp src/eventPage.js extension');
 	childProcess.execSync('cp src/icon-16.png extension');
+	childProcess.execSync('cp src/icon-48.png extension');
+	childProcess.execSync('cp src/icon-128.png extension');
 	childProcess.execSync(
 		'rm -rf extension/partials'
 	);

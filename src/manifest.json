@@ -1,11 +1,11 @@
 {
 	"name": "Web Sequence",
-	"version": "1.0.22",
+	"version": "1.0.24",
 	"manifest_version": 2,
 	"description": "Real-time & offline tool for generating sequence diagrams",
 	"homepage_url": "http://zenuml.com",
 	"permissions": [],
-	"content_security_policy": "script-src 'self' filesystem: https://www.google-analytics.com https://www.googletagmanager.com 'unsafe-eval'; object-src 'self'",
+	"content_security_policy": "script-src 'self' filesystem: https://apis.google.com https://www.google-analytics.com https://www.googletagmanager.com 'unsafe-eval'; object-src 'self'",
 	"options_ui": {
 		"page": "options.html",
 		"chrome_style": true
@@ -20,6 +20,7 @@
 	},
 	"icons": {
 		"16": "icon-16.png",
-		"48": "icon-48.png"
+		"48": "icon-48.png",
+		"128": "icon-128.png"
 	}
 }
