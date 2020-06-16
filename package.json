@@ -5,7 +5,7 @@
 	"main": "index.html",
 	"scripts": {
 		"webpack": "webpack",
-		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
+		"start": "webpack && if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
 		"build": "preact build --clean --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
 		"serve": "npm run release && preact serve --dir app",
@@ -100,7 +100,7 @@
 		"split.js": "1.3.4",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^2.5.16",
-		"vue-sequence": "^0.9.4",
+		"vue-sequence": "^1.0.0",
 		"vuex": "^3.0.1"
 	},
 	"jest": {
