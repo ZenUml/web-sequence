@@ -3,11 +3,7 @@
 
 name: Deploy to Stage
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -27,3 +23,8 @@ jobs:
     - run: yarn install && yarn webpack && yarn build
     - run: yarn release
     - run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
+	- name: Upload artifacts
+	  uses: actions/upload-artifact@v2
+      with:
+		name: chrome-extension
+        path: extension
