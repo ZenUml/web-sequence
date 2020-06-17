@@ -158,7 +158,7 @@ gulp.task('packageExtension', function () {
 			.pipe(gulp.dest('extension')),
 		gulp
 			.src('extension/**/*')
-			.pipe(zip(`extension-${packageJson.version}.zip`))
+			.pipe(zip(`extension.zip`))
 			.pipe(gulp.dest('./'))
 	);
 });
