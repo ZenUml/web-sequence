@@ -39,7 +39,7 @@
 	},
 	"devDependencies": {
 		"babel-eslint": "^7.2.3",
-		"babel-minify": "^0.2.0",
+		"babel-minify": "^0.5.1",
 		"before-build-webpack": "^0.2.9",
 		"chrome-webstore-upload-cli": "^1.2.0",
 		"clean-webpack-plugin": "^3.0.0",
