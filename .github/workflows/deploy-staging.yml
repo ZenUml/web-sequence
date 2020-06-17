@@ -23,8 +23,8 @@ jobs:
     - run: yarn install && yarn webpack && yarn build
     - run: yarn release
     - run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
-	- name: Upload artifacts
-	  uses: actions/upload-artifact@v2
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
       with:
-		name: chrome-extension
+        name: chrome-extension
         path: extension
