@@ -45,7 +45,7 @@
 		"clean-webpack-plugin": "^3.0.0",
 		"css-loader": "^0.28.11",
 		"eslint": "^4.18.2",
-		"eslint-config-prettier": "^2.3.0",
+		"eslint-config-prettier": "^6.11.0",
 		"eslint-config-synacor": "^2.0.2",
 		"extract-text-webpack-plugin": "^3.0.2",
 		"file-loader": "^6.0.0",
