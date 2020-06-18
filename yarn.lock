@@ -14754,10 +14754,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.4.tgz#686707260e62819d465c230bda362dea3e01a699"
-  integrity sha512-2fA45ieNIlw3/sbYBBkAljy7ccqoah+By6S1uf6zdQdXljnqzYmL0h2y6p/6O8Uh5UjPRezskD6WyJkfOhzBZg==
+vue-sequence@^1.0.11:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.11.tgz#a62ba2547037b04518062a2f4130f31a96f04a61"
+  integrity sha512-LTRXyK+4LPvu8jLEGg7VoyUn+6qKav5TrJnd+B2/Jr2oxPuLyxILrY5QL2MWJrsySmTbYsCMzZe0F8qggcIpNA==
   dependencies:
     antlr4 "^4.8.0"
     gauge-ts "0.0.5"
@@ -14769,12 +14769,7 @@ vue@^2.5.16, vue@^2.6.11:
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.6.11.tgz#76594d877d4b12234406e84e35275c6d514125c5"
   integrity sha512-VfPwgcGABbGAue9+sfrD4PuwFar7gPb1yl1UK1MwXoQPAw0BKSqWfoYCT/ThFrdEVWoI51dBuyCoiNU9bZDZxQ==
 
-vuex@^3.0.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/vuex/-/vuex-3.1.1.tgz#0c264bfe30cdbccf96ab9db3177d211828a5910e"
-  integrity sha512-ER5moSbLZuNSMBFnEBVGhQ1uCBNJslH9W/Dw2W7GZN23UQA69uapP5GTT9Vm8Trc0PzBSVt6LzF3hGjmv41xcg==
-
-vuex@^3.4.0:
+vuex@^3.0.1, vuex@^3.4.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/vuex/-/vuex-3.4.0.tgz#20cc086062d750769fce1febb34e7fceeaebde45"
   integrity sha512-ajtqwEW/QhnrBZQsZxCLHThZZaa+Db45c92Asf46ZDXu6uHXgbfVuBaJ4gzD2r4UX0oMJHstFwd2r2HM4l8umg==
