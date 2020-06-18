@@ -1174,6 +1174,11 @@ agent-base@6:
   dependencies:
     debug "4"
 
+ajv-errors@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/ajv-errors/-/ajv-errors-1.0.1.tgz#f35986aceb91afadec4102fbd85014950cefa64d"
+  integrity sha512-DCRfO/4nQ+89p/RK43i8Ezd41EqdGIU4ld7nGF8OQ14oc/we5rEntLCUa7+jrn3nn83BosfwZA0wb4pon2o8iQ==
+
 ajv-keywords@^2.1.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-2.1.1.tgz#617997fc5f60576894c435f940d819e135b80762"
@@ -12624,12 +12629,21 @@ schema-utils@^0.3.0:
   dependencies:
     ajv "^5.0.0"
 
-schema-utils@^0.4.0, schema-utils@^0.4.5:
+schema-utils@^0.4.0:
   version "0.4.7"
   resolved "https://registry.yarnpkg.com/schema-utils/-/schema-utils-0.4.7.tgz#ba74f597d2be2ea880131746ee17d0a093c68187"
   integrity sha512-v/iwU6wvwGK8HbU9yi3/nhGzP0yGSuhQMzL6ySiec1FSrZZDkhm4noOSWzrNFo/jEc+SJY6jRTwuwbSXJPDUnQ==
   dependencies:
     ajv "^6.1.0"
+    ajv-keywords "^3.1.0"
+
+schema-utils@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/schema-utils/-/schema-utils-1.0.0.tgz#0b79a93204d7b600d4b2850d1f66c2a34951c770"
+  integrity sha512-i27Mic4KovM/lnGsy8whRCHhc7VicJajAjTrYg11K9zfZXnYIt4k5F+kZkwjnrhKzLic/HLU4j11mjsz2G/75g==
+  dependencies:
+    ajv "^6.1.0"
+    ajv-errors "^1.0.0"
     ajv-keywords "^3.1.0"
 
 schema-utils@^2.6.5:
@@ -13496,13 +13510,13 @@ style-loader@^0.18.2:
     loader-utils "^1.0.2"
     schema-utils "^0.3.0"
 
-style-loader@^0.20.3:
-  version "0.20.3"
-  resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-0.20.3.tgz#ebef06b89dec491bcb1fdb3452e913a6fd1c10c4"
-  integrity sha512-2I7AVP73MvK33U7B9TKlYZAqdROyMXDYSMvHLX43qy3GCOaJNiV6i0v/sv9idWIaQ42Yn2dNv79Q5mKXbKhAZg==
+style-loader@^0.23.1:
+  version "0.23.1"
+  resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-0.23.1.tgz#cb9154606f3e771ab6c4ab637026a1049174d925"
+  integrity sha512-XK+uv9kWwhZMZ1y7mysB+zoihsEj4wneFWAS5qoiLwzW0WzSqMrrsIy+a3zkQJq0ipFtBpX5W3MqyRIBF/WFGg==
   dependencies:
     loader-utils "^1.1.0"
-    schema-utils "^0.4.5"
+    schema-utils "^1.0.0"
 
 superstatic@^6.0.1:
   version "6.0.4"
