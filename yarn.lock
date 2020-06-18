@@ -12775,10 +12775,10 @@ send@0.17.1:
     range-parser "~1.2.1"
     statuses "~1.5.0"
 
-sequence-parser@^0.8.6:
-  version "0.8.6"
-  resolved "https://registry.yarnpkg.com/sequence-parser/-/sequence-parser-0.8.6.tgz#a05ff23893726a9eff16c4fa420de9a41cb5b1d5"
-  integrity sha512-lyfC/dP8VNWSJyfrzEsZ8hVqqHnTB1f8PJA6I3EpiaK/oqI32HqTKfzUO48OJQnuI6RGBPfEO8n3Zl8yeXLYtQ==
+sequence-parser@^0.8.8:
+  version "0.8.8"
+  resolved "https://registry.yarnpkg.com/sequence-parser/-/sequence-parser-0.8.8.tgz#352bc59e33ba31c60b96cb2eb432ce5952fbbeed"
+  integrity sha512-r55zB6ibkKaokQtea3Xs8K/8Xa0xp6OGrBD8oUNAXSGqx2h4XkZbpdTNp6YQCHQJ8gp7jNlwrBzqWusTzfbb8Q==
   dependencies:
     antlr4 "^4.8.0"
 
