@@ -6813,10 +6813,10 @@ gulp-concat@^2.6.1:
     through2 "^2.0.0"
     vinyl "^2.0.0"
 
-gulp-hash-filename@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/gulp-hash-filename/-/gulp-hash-filename-2.0.1.tgz#c30656261a9b622d636766e48b8297125b4ddde8"
-  integrity sha512-pMg5owb8Dt0wqjgPx/TFbU3c5ckD16rrgo0BTm9PQ3pVC1Zsgw7AYx1+DP2t31JoUTeN1/dPuXNWnCNvN/wj7A==
+gulp-hash-filename@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/gulp-hash-filename/-/gulp-hash-filename-3.0.0.tgz#e9820fb7a20f3cd16a720413be7485aaee1782b9"
+  integrity sha512-wAtigX+faOEl/cQJCJ/pcY6mKSS2cGkoCT1FopUqjakM6AKYe1WuYEht0wcWTNinJGxj6m1tKMEMZUWhO0MD5Q==
 
 gulp-if@^3.0.0:
   version "3.0.0"
