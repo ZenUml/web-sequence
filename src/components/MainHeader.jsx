@@ -20,13 +20,11 @@ export function MainHeader(props) {
 			<div className="main-header__btn-wrap  flex  flex-v-center">
 				<button
 					id="runBtn"
-					className="hide btn--dark flex flex-v-center hint--rounded hint--bottom-left"
-					aria-label="Run preview (Ctrl/⌘ + Shift + 5)"
+					className="btn--dark flex flex-v-center hint--rounded hint--bottom-left"
+					aria-label="Support ZenUML as an Open source project on Github"
 					onClick={props.runBtnClickHandler}
 				>
-					<svg style="width: 14px; height: 14px;">
-						<use xlinkHref="#play-icon" />
-					</svg>Run
+					<iframe src="https://github.com/sponsors/ZenUml/button" title="Sponsor ZenUml" height="35" width="107" style="border: 0;" />
 				</button>
 
 				<Button
@@ -120,7 +118,7 @@ export function MainHeader(props) {
 					/>
 				</Button>
 				{ featureToggle.isPaymentEnabled ? (
-					<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler}/>
+					<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler} />
 					) : null }
 			</div>
 		</div>

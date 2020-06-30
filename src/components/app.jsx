@@ -859,8 +859,6 @@ BookService BookRepository Receipt Notification
 		}
 
 		const prefs = this.state.prefs;
-		// Show/hide RUN button based on autoPreview setting.
-		runBtn.classList[prefs.autoPreview ? 'add' : 'remove']('hide');
 
 		this.contentWrap.applyCodemirrorSettings(this.state.prefs);
 
@@ -893,6 +891,7 @@ BookService BookRepository Receipt Notification
 	}
 
 	proBtnClickHandler() {
+		trackEvent('ui', 'proBtnClick');
 		this.setState({ isProFeatureListModalOpen: true });
 	}
 	profileBtnClickHandler() {
@@ -1007,8 +1006,7 @@ BookService BookRepository Receipt Notification
 		e.preventDefault();
 	}
 	runBtnClickHandler() {
-		this.contentWrap.setPreviewContent(true, true);
-		trackEvent('ui', 'runBtnClick');
+		trackEvent('ui', 'sponsorBtnClick');
 	}
 	exportItems() {
 		handleDownloadsPermission().then(() => {

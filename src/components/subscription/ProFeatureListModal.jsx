@@ -6,7 +6,7 @@ export function ProFeatureListModal(props) {
 	return (
 		<Modal show={props.show} closeHandler={props.closeHandler} extraClasses={'feature-list'}>
 			<section className={'header'}>
-				<h1 className={'price'}>$9.99<sup>[1]</sup>/month</h1>
+				<h1 className={'price'}>$4.99<sup>[1]</sup>/month</h1>
 				<h2>Pro</h2>
 			</section>
 			<section className={'content'}>
