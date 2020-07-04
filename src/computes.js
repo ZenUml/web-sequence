@@ -194,7 +194,7 @@ export function computeJs(
 	  if (!code) {
 	    return;
 	  }
-	  app.$store.commit('code', code);
+	  // app.$store.dispatch('updateCode', {code: code} );
 	}, false);`;
 
 	var d = deferred();

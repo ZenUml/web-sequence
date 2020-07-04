@@ -17,7 +17,7 @@ export class SplitPane extends Component {
 		}
 	}
 	componentDidUpdate() {
-		this.updateSplit();
+		// this.updateSplit();
 	}
 	updateSplit() {
 		const options = {
