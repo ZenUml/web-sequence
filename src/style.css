@@ -435,8 +435,8 @@ div.toolbox>svg {
 	display: flex;
 	flex-direction: column;
 	flex-basis: inherit;
-	/*height: 33%;*/
-	/*overflow: hidden;*/
+	height: 100%;
+	overflow: hidden;
 	position: relative;
 	background: var(--color-bg);
 	transition: height 0.3s ease, width 0.3s ease;
@@ -534,9 +534,7 @@ div.toolbox>svg {
 
 .CodeMirror {
 	width: 100%;
-	/*height: calc(100% - 25px);*/
-	height: auto;
-	/* 25px for header */
+	height: 100%;
 	font-size: var(--code-font-size);
 }
 
