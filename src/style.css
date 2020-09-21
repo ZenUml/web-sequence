@@ -1887,3 +1887,13 @@ ol.editor-nav li {
 .cheat-sheet tr>td, .cheat-sheet tr>th {
 	padding: 10px 5px;
 }
+
+.prod-version.basic {
+	animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+	50% {
+		opacity: 0;
+	}
+}

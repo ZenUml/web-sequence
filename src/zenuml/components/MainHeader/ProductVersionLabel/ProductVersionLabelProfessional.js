@@ -6,7 +6,7 @@ const ProductVersionLabelProfessional = ({ clickHandler }) => {
 		color: 'white'
 	};
 
-	return <ProductVersionLabelAbstract clickHandler={clickHandler} style={style} tooltip="Thanks for your support" />
+	return <ProductVersionLabelAbstract className="pro" clickHandler={clickHandler} style={style} tooltip="Thanks for your support" />
 };
 
 export { ProductVersionLabelProfessional };
