@@ -14513,10 +14513,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.38:
-  version "1.0.38"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.38.tgz#ded5e629215002391b609b1794e9063ed546f490"
-  integrity sha512-FPmkDvnzUaxE0V5yhlyeFUWE9aKqf9az+sZYHiKcifvEEZEf6Q6ThA4LstN4ff4cTkioD1YVNmUaPuZEqhuggA==
+vue-sequence@^1.0.41:
+  version "1.0.41"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.41.tgz#c9e32289a2395d908de0cfb3d77348bd73ab0478"
+  integrity sha512-KLdPKlSojjtP3YqexRvn7mFdwKG1+/O2YaVCm5J+XkDozbMY5IKa9gJiD9g0XMLuGYpVG7l3e1/VitzudR6rQA==
   dependencies:
     antlr4 "^4.8.0"
     highlight.js "^10.1.1"
