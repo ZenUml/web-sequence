@@ -6,7 +6,7 @@ export function HelpModal(props) {
 	return (
 		<Modal show={props.show} closeHandler={props.closeHandler}>
 			<h1>
-				<div class="web-maker-with-tag">Web Sequence (from ZenUML)</div>
+				<div class="web-maker-with-tag">ZenUML Sequence</div>
 				<small style="font-size:14px;"> v2.0.0 ({commitHash})</small>
 				<div class="flex">
 					<div class="onboard-step">

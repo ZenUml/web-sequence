@@ -1,5 +1,5 @@
 {
-	"name": "Web Sequence",
+	"name": "ZenUML Sequence",
 	"version": "1.0.27",
 	"manifest_version": 2,
 	"description": "Real-time & offline tool for generating sequence diagrams",
@@ -11,7 +11,7 @@
 		"chrome_style": true
 	},
 	"browser_action": {
-		"default_title": "Start Web Sequence",
+		"default_title": "Start ZenUML Sequence",
 		"default_icon": "icon-48.png"
 	},
 	"background": {
