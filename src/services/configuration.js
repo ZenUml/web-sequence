@@ -27,6 +27,34 @@ const configByDomain = {
             payment: false
         }
     },
+    'dkbmlkgijbidhjiojpmfchklncgimlpd': { //Edge extension hostname local
+        firebase: {
+            apiKey: 'AIzaSyCBEg3VpY6UjXNnDzvXieSYx13Q63Rs-a0',
+            authDomain: 'web-sequence-local.firebaseapp.com',
+            databaseURL: 'https://web-sequence-local.firebaseio.com/',
+            projectId: 'web-sequence-local',
+            storageBucket: 'web-sequence-local.appspot.com',
+            messagingSenderId: '542187884961'
+        },
+        paddleProduct: 551167, //ZenUML Pro
+        features: {
+            payment: false
+        }
+    },
+    'lbdlpjkkjmclkacflkdoaacpafjdiido': { //Edge extension hostname in store
+        firebase: {
+            apiKey: 'AIzaSyCBEg3VpY6UjXNnDzvXieSYx13Q63Rs-a0',
+            authDomain: 'web-sequence-local.firebaseapp.com',
+            databaseURL: 'https://web-sequence-local.firebaseio.com/',
+            projectId: 'web-sequence-local',
+            storageBucket: 'web-sequence-local.appspot.com',
+            messagingSenderId: '542187884961'
+        },
+        paddleProduct: 551167, //ZenUML Pro
+        features: {
+            payment: false
+        }
+    },
     'staging.zenuml.com': {
         firebase: {
 			apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
