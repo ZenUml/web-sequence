@@ -188,9 +188,22 @@ export function computeJs(
 	infiniteLoopTimeout
 ) {
 	console.log('Is it recomputing?')
-	let code = `window.addEventListener('message', (e) => {
+	let code = `
+	window.addEventListener("load", function(event) {
+		console.log("window loaded");
+		Vue.use(Vuex);
+		let { SeqDiagram, Store } = window["vue-sequence"]
+		let storeConfig = Store();
+		storeConfig.state.code = "A.method";
+		Vue.component("seq-diagram", SeqDiagram);
+		window.app = new Vue({
+			el: "seq-diagram",
+			store: new Vuex.Store(storeConfig)
+		});
+	});
+	window.addEventListener('message', (e) => {
 		const code = e.data && e.data.code;
-		
+
 	  if (!code) {
 	    return;
 	  }

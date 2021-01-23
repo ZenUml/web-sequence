@@ -1316,7 +1316,7 @@ ansicolors@~0.3.2:
   resolved "https://registry.yarnpkg.com/ansicolors/-/ansicolors-0.3.2.tgz#665597de86a9ffe3aa9bfbe6cae5c6ea426b4979"
   integrity sha1-ZlWX3oap/+Oqm/vmyuXG6kJrSXk=
 
-antlr4@^4.8.0:
+antlr4@~4.8.0:
   version "4.8.0"
   resolved "https://registry.yarnpkg.com/antlr4/-/antlr4-4.8.0.tgz#f938ec171be7fc2855cd3a533e87647185b32b6a"
   integrity sha512-en/MxQ4OkPgGJQ3wD/muzj1uDnFSzdFIhc2+c6bHZokWkuBb6RRvFjpWhPxWLbgQvaEzldJZ0GSQpfSAaE3hqg==
@@ -14513,12 +14513,12 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.41:
-  version "1.0.41"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.41.tgz#c9e32289a2395d908de0cfb3d77348bd73ab0478"
-  integrity sha512-KLdPKlSojjtP3YqexRvn7mFdwKG1+/O2YaVCm5J+XkDozbMY5IKa9gJiD9g0XMLuGYpVG7l3e1/VitzudR6rQA==
+vue-sequence@^1.0.57:
+  version "1.0.57"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.57.tgz#b5e5efd0e3dbc6b982bed40d10e8f4a9db0c9ea6"
+  integrity sha512-tjLAIjkWcI8NdpyiAYnVDU19y87urvTUhD2JlxgzLjUdpGiLmheonFrhK3lYLuwn6hKtvM8S4WjqYn7TW+sq9Q==
   dependencies:
-    antlr4 "^4.8.0"
+    antlr4 "~4.8.0"
     highlight.js "^10.1.1"
     marked "^1.1.0"
     vue "^2.5.16"
