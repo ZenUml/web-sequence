@@ -171,14 +171,17 @@ export function computeJs(
 	let code = `
 	window.addEventListener("load", function(event) {
 		console.log("window loaded");
+		const Vue = parent.Vue;
+		const Vuex = parent.Vuex;
 		Vue.use(Vuex);
-		let { SeqDiagram, Store } = window["vue-sequence"]
+		let { SeqDiagram, Store } = parent;
 		let storeConfig = Store();
 		storeConfig.state.code = "A.method";
 		Vue.component("seq-diagram", SeqDiagram);
 		window.app = new Vue({
-			el: "seq-diagram",
-			store: new Vuex.Store(storeConfig)
+			el: document.getElementById('mounting-point'),
+			store: new Vuex.Store(storeConfig),
+			render: (h) => h('seq-diagram')
 		});
 	});
 	window.addEventListener('message', (e) => {

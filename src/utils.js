@@ -3,8 +3,17 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
+import Vue from 'vue';
+import Vuex from 'vuex';
+import { SeqDiagram, Store } from 'vue-sequence';
+Vue.use(Vuex);
+
 const esprima = require('esprima');
 
+window.Store = Store;
+window.SeqDiagram = SeqDiagram;
+window.Vue = Vue;
+window.Vuex = Vuex;
 window.DEBUG = document.cookie.indexOf('wmdebug') > -1;
 window.$ = document.querySelector.bind(document);
 
@@ -349,12 +358,12 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 				  }/lib/screenlog.js`) +
 			'"></script>';
 	}
-	contents +=
-		'<script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>';
-	contents +=
-		'<script src="https://unpkg.com/vuex@3.6.0/dist/vuex.js"></script>';
-	contents +=
-		'<script src="https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.umd.min.js"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vuex@3.6.0/dist/vuex.js"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.umd.min.js"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
 		contents +=

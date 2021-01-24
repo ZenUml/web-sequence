@@ -403,7 +403,7 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 	}
 	async exportPngClickHandler(e) {
-		const mountingPoint = this.frame.contentWindow.document.getElementById('mounting-point');
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
 		const png = await mountingPoint.children[0].__vue__.$children[0].toBlob();
 		saveAs(png, 'zenuml.png');
@@ -411,7 +411,7 @@ export default class ContentWrap extends Component {
 	}
 
 	async exportJpegClickHandler(e) {
-		const mountingPoint = this.frame.contentWindow.document.getElementById('mounting-point');
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
 		const jpeg = await mountingPoint.children[0].__vue__.$children[0].toJpeg();
 		saveAs(jpeg, 'zenuml.jpeg');
