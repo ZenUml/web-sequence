@@ -57,7 +57,7 @@ const configByDomain = {
     },
     'staging.zenuml.com': {
         firebase: {
-			apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
+			apiKey: "AIzaSyC6s6r7KJeIK_8eGP469CK2Q5_X1XcFXdY",
 			authDomain: "staging.zenuml.com",
 			databaseURL: "https://staging-zenuml-27954.firebaseio.com",
 			projectId: "staging-zenuml-27954",
@@ -73,7 +73,7 @@ const configByDomain = {
 
 const defaultConfig = {
     firebase: {
-        apiKey: "AIzaSyBSbndSAWDI5yA14ZmzjHw6RjssZMf1NTM",
+        apiKey: "AIzaSyC6s6r7KJeIK_8eGP469CK2Q5_X1XcFXdY",
         authDomain: "staging.zenuml.com",
         databaseURL: "https://staging-zenuml-27954.firebaseio.com",
         projectId: "staging-zenuml-27954",
