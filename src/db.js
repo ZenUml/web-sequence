@@ -57,7 +57,7 @@ import { log } from './utils';
 			}
 			const store = firebase.firestore();
 			return store
-				.enablePersistence({ experimentalTabSynchronization: true })
+				.enablePersistence({ synchronizeTabs: true })
 				.then(function() {
 					// Initialize Cloud Firestore through firebase
 					db = firebase.firestore();
