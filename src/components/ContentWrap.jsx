@@ -718,6 +718,7 @@ export default class ContentWrap extends Component {
 	}
 
 	toolboxUpdateToApp(param) {
+		trackEvent('ui', 'code', 'toolbox');
 		const code = this.cm.js.getValue();
 		this.cm.js.setValue(codeService.addCode(code, param));
 		this.refreshEditor();
