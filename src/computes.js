@@ -10,28 +10,8 @@ const esprima = require('esprima');
 
 export function computeHtml(userCode, mode) {
 	// const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
-	const enableExportButton = true;
-	const exportPngButtonHtml =
-		`<button id="btnDownloadPng" class="button hide-on-mobile"
-			${enableExportButton ? '' : 'disabled'}>
-			<div></div>
-			<i class="fa fa-file-image-o"></i>
-			Export as PNG
-		</button>`;
-	const exportJpegButtonHtml =
-		`<button id="btnDownloadJpeg" class="button hide-on-mobile"
-		${enableExportButton ? '' : 'disabled'}>
-			<div></div>
-			<i class="fa fa-file-image-o"></i>
-			Export as JPEG
-		</button>`;
-	const exportButtonWrapperHtml =
-		`${enableExportButton ? '' : '<div title="Upgrade to Pro to enable this feature">'}
-			${exportPngButtonHtml} ${exportJpegButtonHtml}
-		${enableExportButton ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
-			${exportButtonWrapperHtml}
 			<div id="diagram">
 			  <div id="mounting-point">
 					<seq-diagram></seq-diagram>
@@ -188,9 +168,25 @@ export function computeJs(
 	infiniteLoopTimeout
 ) {
 	console.log('Is it recomputing?')
-	let code = `window.addEventListener('message', (e) => {
+	let code = `
+	window.addEventListener("load", function(event) {
+		console.log("window loaded");
+		const Vue = parent.Vue;
+		const Vuex = parent.Vuex;
+		Vue.use(Vuex);
+		let { SeqDiagram, Store } = parent;
+		let storeConfig = Store();
+		storeConfig.state.code = "A.method";
+		Vue.component("seq-diagram", SeqDiagram);
+		window.app = new Vue({
+			el: document.getElementById('mounting-point'),
+			store: new Vuex.Store(storeConfig),
+			render: (h) => h('seq-diagram')
+		});
+	});
+	window.addEventListener('message', (e) => {
 		const code = e.data && e.data.code;
-		
+
 	  if (!code) {
 	    return;
 	  }

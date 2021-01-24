@@ -1316,7 +1316,7 @@ ansicolors@~0.3.2:
   resolved "https://registry.yarnpkg.com/ansicolors/-/ansicolors-0.3.2.tgz#665597de86a9ffe3aa9bfbe6cae5c6ea426b4979"
   integrity sha1-ZlWX3oap/+Oqm/vmyuXG6kJrSXk=
 
-antlr4@^4.8.0:
+antlr4@~4.8.0:
   version "4.8.0"
   resolved "https://registry.yarnpkg.com/antlr4/-/antlr4-4.8.0.tgz#f938ec171be7fc2855cd3a533e87647185b32b6a"
   integrity sha512-en/MxQ4OkPgGJQ3wD/muzj1uDnFSzdFIhc2+c6bHZokWkuBb6RRvFjpWhPxWLbgQvaEzldJZ0GSQpfSAaE3hqg==
@@ -2683,11 +2683,6 @@ beeper@^1.0.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/beeper/-/beeper-1.1.1.tgz#e6d5ea8c5dad001304a70b22638447f69cb2f809"
   integrity sha1-5tXqjF2tABMEpwsiY4RH9pyy+Ak=
-
-before-build-webpack@^0.2.9:
-  version "0.2.9"
-  resolved "https://registry.yarnpkg.com/before-build-webpack/-/before-build-webpack-0.2.9.tgz#5929bfdeee5b1b609e2890839313cc41f5a8e026"
-  integrity sha512-zhRNAqPATAx0ojj/0LaKyQRjU/6tTMw5JEu2XGYKCzg94istvI1Mk7nOMH2+8cDXLPCgEugBVjGa/YEG0kvHcA==
 
 big-integer@^1.6.17:
   version "1.6.48"
@@ -4737,6 +4732,11 @@ dom-storage@2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/dom-storage/-/dom-storage-2.1.0.tgz#00fb868bc9201357ea243c7bcfd3304c1e34ea39"
   integrity sha512-g6RpyWXzl0RR6OTElHKBl7nwnK87GUyZMYC7JWsB/IA73vpqK2K6LT39x4VepLxlSsWBFrPVLnsSR5Jyty0+2Q==
+
+dom-to-image-more@^2.8.0:
+  version "2.8.0"
+  resolved "https://registry.yarnpkg.com/dom-to-image-more/-/dom-to-image-more-2.8.0.tgz#c60ae3858796c67c7f9dc25f7c5f12bfc22067eb"
+  integrity sha512-YqlHI1i+TMuaKwkFRO5oDPjC3eWf+6Hln9rHZcnFYvmoXwCrGZmZ7BYXBJOjw5utYg2Lp+QF9YO96F7CsDC4eQ==
 
 "dom-to-image@github:MichalBryxi/dom-to-image":
   version "2.6.0"
@@ -14513,12 +14513,13 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.41:
-  version "1.0.41"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.41.tgz#c9e32289a2395d908de0cfb3d77348bd73ab0478"
-  integrity sha512-KLdPKlSojjtP3YqexRvn7mFdwKG1+/O2YaVCm5J+XkDozbMY5IKa9gJiD9g0XMLuGYpVG7l3e1/VitzudR6rQA==
+vue-sequence@^1.0.61:
+  version "1.0.61"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.61.tgz#5a0d72d230221f1e843f247e459e5cf5ca6d719d"
+  integrity sha512-xt/GHTkWcGgHRh/i57AiFRQymrH03NYWN9fQyoJub2KVbhLsxdJxvOCcmSnQU7LGJcJxRYi82hMR3mVBcW/3gQ==
   dependencies:
-    antlr4 "^4.8.0"
+    antlr4 "~4.8.0"
+    dom-to-image-more "^2.8.0"
     highlight.js "^10.1.1"
     marked "^1.1.0"
     vue "^2.5.16"
@@ -14661,14 +14662,6 @@ webpack-sources@^1.0.1:
   dependencies:
     source-list-map "^2.0.0"
     source-map "~0.6.1"
-
-webpack-watch-files-plugin@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/webpack-watch-files-plugin/-/webpack-watch-files-plugin-1.0.3.tgz#11e5ceead6e55f59a2a08ce567d58990b6186b9f"
-  integrity sha512-K5Y6FM9R01QkjWfwSNwfKqkP7MV6n/XZlzNCoAcTxd0Kdv2zhXc/asGWPwy+f+eBtSE0+TX4UJBLLQmxX360uA==
-  dependencies:
-    glob "^7.1.3"
-    lodash "^4.17.11"
 
 webpack@3.12.0, webpack@^3.7.0:
   version "3.12.0"

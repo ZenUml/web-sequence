@@ -3,8 +3,17 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
+import Vue from 'vue';
+import Vuex from 'vuex';
+import { SeqDiagram, Store } from 'vue-sequence';
+Vue.use(Vuex);
+
 const esprima = require('esprima');
 
+window.Store = Store;
+window.SeqDiagram = SeqDiagram;
+window.Vue = Vue;
+window.Vuex = Vuex;
 window.DEBUG = document.cookie.indexOf('wmdebug') > -1;
 window.$ = document.querySelector.bind(document);
 
@@ -316,11 +325,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		return '';
 	}
 
-	var	externalCss = [			(chrome.extension
-				? chrome.extension.getURL('lib/vue-sequence-ext.css')
-				: `${location.origin}${
-					window.DEBUG ? '' : BASE_PATH
-					}/lib/vue-sequence-ext.css`),
+	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.css',
 		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
 			.reduce(function(links, url) {
 				return (
@@ -353,12 +358,12 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 				  }/lib/screenlog.js`) +
 			'"></script>';
 	}
-	contents +=
-		'<script src="' +
-		(chrome.extension
-			? chrome.extension.getURL(vueSequenceBundleJs)
-			: `${location.origin}${BASE_PATH}/${vueSequenceBundleJs}`)+
-		'"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vuex@3.6.0/dist/vuex.js"></script>';
+	// contents +=
+	// 	'<script src="https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.umd.min.js"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
 		contents +=

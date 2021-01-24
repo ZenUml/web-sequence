@@ -1,10 +1,12 @@
 import React, { h, Component } from 'preact';
+import {saveAs} from 'file-saver'
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx'
 import Tabs from './Tabs.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
 import { log, writeFile, loadJS, getCompleteHtml } from '../utils';
+import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
 import { trackEvent } from '../analytics';
 import CodeMirror from '../CodeMirror';
@@ -400,6 +402,21 @@ export default class ContentWrap extends Component {
 		this.toggleCodeWrapCollapse(codeWrapParent);
 		trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 	}
+	async exportPngClickHandler(e) {
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		const png = await mountingPoint.children[0].__vue__.$children[0].toBlob();
+		saveAs(png, 'zenuml.png');
+		trackEvent('ui', 'downloadPng');
+	}
+
+	async exportJpegClickHandler(e) {
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		const jpeg = await mountingPoint.children[0].__vue__.$children[0].toJpeg();
+		saveAs(jpeg, 'zenuml.jpeg');
+		trackEvent('ui', 'downloadJpeg');
+	}
 
 	resetSplitting() {
 		this.setState({
@@ -701,6 +718,7 @@ export default class ContentWrap extends Component {
 	}
 
 	toolboxUpdateToApp(param) {
+		trackEvent('ui', 'code', 'toolbox');
 		const code = this.cm.js.getValue();
 		this.cm.js.setValue(codeService.addCode(code, param));
 		this.refreshEditor();
@@ -942,6 +960,14 @@ export default class ContentWrap extends Component {
 						<a target={'_blank'} href={'https://marketplace.atlassian.com/apps/1218380/zenuml-sequence-diagram-free-on-server?hosting=cloud&tab=overview'}>
 						Get Free Trial of ZenUML Confluence Plugin via Atlassian Marketplace
 						</a>
+						<Button
+							onClick={this.exportPngClickHandler.bind(this)}>
+							Export PNG
+						</Button>
+						<Button
+							onClick={this.exportJpegClickHandler.bind(this)}>
+							Export JPEG
+						</Button>
 					</div>
 					<iframe
 						ref={el => (this.frame = el)}
