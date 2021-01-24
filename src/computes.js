@@ -10,28 +10,8 @@ const esprima = require('esprima');
 
 export function computeHtml(userCode, mode) {
 	// const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
-	const enableExportButton = true;
-	const exportPngButtonHtml =
-		`<button id="btnDownloadPng" class="button hide-on-mobile"
-			${enableExportButton ? '' : 'disabled'}>
-			<div></div>
-			<i class="fa fa-file-image-o"></i>
-			Export as PNG
-		</button>`;
-	const exportJpegButtonHtml =
-		`<button id="btnDownloadJpeg" class="button hide-on-mobile"
-		${enableExportButton ? '' : 'disabled'}>
-			<div></div>
-			<i class="fa fa-file-image-o"></i>
-			Export as JPEG
-		</button>`;
-	const exportButtonWrapperHtml =
-		`${enableExportButton ? '' : '<div title="Upgrade to Pro to enable this feature">'}
-			${exportPngButtonHtml} ${exportJpegButtonHtml}
-		${enableExportButton ? '' : '</div>'}`;
 	var code =
 		`<main id="demo">
-			${exportButtonWrapperHtml}
 			<div id="diagram">
 			  <div id="mounting-point">
 					<seq-diagram></seq-diagram>
