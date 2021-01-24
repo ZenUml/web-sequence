@@ -410,6 +410,14 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'downloadPng');
 	}
 
+	async exportJpegClickHandler(e) {
+		const mountingPoint = this.frame.contentWindow.document.getElementById('mounting-point');
+		// eslint-disable-next-line
+		const jpeg = await mountingPoint.children[0].__vue__.$children[0].toJpeg();
+		saveAs(jpeg, 'zenuml.jpeg');
+		trackEvent('ui', 'downloadJpeg');
+	}
+
 	resetSplitting() {
 		this.setState({
 			codeSplitSizes: this.getCodeSplitSizes(),
@@ -953,7 +961,11 @@ export default class ContentWrap extends Component {
 						</a>
 						<Button
 							onClick={this.exportPngClickHandler.bind(this)}>
-							Export Png
+							Export PNG
+						</Button>
+						<Button
+							onClick={this.exportJpegClickHandler.bind(this)}>
+							Export JPEG
 						</Button>
 					</div>
 					<iframe
