@@ -6,10 +6,10 @@
 	"scripts": {
 		"webpack": "echo doNothing",
 		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
-		"build": "preact build --clean --template src/index.html --no-prerender --service-worker false",
+		"build": "npm run webpack && preact build --clean --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
 		"serve": "npm run release && preact serve --dir app",
-		"dev": "preact watch --template src/index.html --no-prerender",
+		"dev": "npm run webpack && preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
 		"test": "jest ./",
 		"update-core": "yarn unlink vue-sequence sequence-parser && yarn add vue-sequence sequence-parser",
@@ -40,7 +40,6 @@
 	"devDependencies": {
 		"babel-eslint": "^10.1.0",
 		"babel-minify": "^0.5.1",
-		"before-build-webpack": "^0.2.9",
 		"chrome-webstore-upload-cli": "^1.2.0",
 		"clean-webpack-plugin": "^3.0.0",
 		"css-loader": "^0.28.11",
@@ -72,8 +71,7 @@
 		"style-loader": "^0.23.1",
 		"svg-url-loader": "^5.0.0",
 		"sw-precache": "^5.2.0",
-		"webpack": "3.12.0",
-		"webpack-watch-files-plugin": "^1.0.3"
+		"webpack": "3.12.0"
 	},
 	"dependencies": {
 		"@emmetio/codemirror-plugin": "^1.1.3",
