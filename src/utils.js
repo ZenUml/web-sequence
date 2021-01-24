@@ -316,7 +316,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		return '';
 	}
 
-	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.56/dist/vue-sequence.css',
+	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.css',
 		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
 			.reduce(function(links, url) {
 				return (
@@ -354,7 +354,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 	contents +=
 		'<script src="https://unpkg.com/vuex@3.6.0/dist/vuex.js"></script>';
 	contents +=
-		'<script src="https://unpkg.com/vue-sequence@1.0.57/dist/vue-sequence.umd.min.js"></script>';
+		'<script src="https://unpkg.com/vue-sequence@1.0.61/dist/vue-sequence.umd.min.js"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
 		contents +=

@@ -4,8 +4,8 @@
 	"description": "A real-time tool for generating sequence diagrams",
 	"main": "index.html",
 	"scripts": {
-		"webpack": "webpack",
-		"start": "webpack && if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
+		"webpack": "echo doNothing",
+		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
 		"build": "preact build --clean --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
 		"serve": "npm run release && preact serve --dir app",
@@ -99,7 +99,7 @@
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^2.6.11",
-		"vue-sequence": "^1.0.57",
+		"vue-sequence": "^1.0.61",
 		"vuex": "^3.0.1"
 	},
 	"jest": {
