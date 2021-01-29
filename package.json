@@ -65,7 +65,7 @@
 		"path": "^0.12.7",
 		"preact-cli": "^2.1.0",
 		"preact-render-spy": "^1.2.1",
-		"prettier": "^2.0.5",
+		"prettier": "^2.2.1",
 		"require": "^2.4.20",
 		"run-sequence": "^2.2.1",
 		"style-loader": "^0.23.1",
