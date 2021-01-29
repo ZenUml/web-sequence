@@ -12,7 +12,6 @@ const merge = require('merge-stream');
 const zip = require('gulp-zip');
 const hashFilename = require('gulp-hash-filename');
 const fsUtil = require('./fs-util');
-var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
 function minifyJs(fileName) {
 	const content = fs.readFileSync(fileName, 'utf8');
