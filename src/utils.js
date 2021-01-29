@@ -325,7 +325,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		return '';
 	}
 
-	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.66/dist/vue-squence.css',
+	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.66/dist/vue-sequence.css',
 		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
 			.reduce(function(links, url) {
 				return (
