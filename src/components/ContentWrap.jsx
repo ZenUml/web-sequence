@@ -1,7 +1,7 @@
 import React, { h, Component } from 'preact';
 import {saveAs} from 'file-saver'
 import UserCodeMirror from './UserCodeMirror.jsx';
-import Toolbox from './Toolbox.jsx'
+import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
@@ -15,6 +15,7 @@ import { Console } from './Console';
 import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
 import codeService from '../services/code_service'
+
 const minCodeWrapSize = 33;
 
 /* global htmlCodeEl, jsCodeEl, cssCodeEl, logCountEl
@@ -91,7 +92,18 @@ export default class ContentWrap extends Component {
 		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
 		targetWindow.postMessage({ code: this.cmCodes.js }, '*');
 
-		// this.onCodeChange(editor, change);
+	}
+	onCursorMove(editor) {
+		const cursor = editor.getCursor();
+		const line = cursor.line;
+		let pos = cursor.ch;
+
+		for (let i = 0; i < line; i++) {
+			pos += editor.getLine(i).length + 1
+		}
+
+		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
+		targetWindow.postMessage({ cursor: pos }, '*');
 	}
 	onCodeChange(editor, change) {
 		clearTimeout(this.updateTimer);
@@ -794,6 +806,7 @@ export default class ContentWrap extends Component {
 								prefs={this.props.prefs}
 								autoComplete={this.props.prefs.autoComplete}
 								onChange={this.onJsCodeChange.bind(this)}
+								onCursorMove={this.onCursorMove.bind(this)}
 								onCreation={el => (this.cm.js = el)}
 								onFocus={this.editorFocusHandler.bind(this)}
 							/>

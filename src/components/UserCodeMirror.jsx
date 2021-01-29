@@ -122,6 +122,9 @@ export default class UserCodeMirror extends Component {
 			if (typeof this.props.onFocus === 'function') this.props.onFocus(editor);
 		});
 		this.cm.on('change', this.props.onChange);
+		if (this.props.onCursorMove) {
+			this.cm.on('cursorActivity', this.props.onCursorMove);
+		}
 		this.cm.addKeyMap({
 			'Ctrl-Space': 'autocomplete'
 		});

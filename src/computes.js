@@ -186,11 +186,15 @@ export function computeJs(
 	});
 	window.addEventListener('message', (e) => {
 		const code = e.data && e.data.code;
+		const cursor = e.data && e.data.cursor;
 
-	  if (!code) {
-	    return;
+	  if (code) {
+		  app.$store.commit('code', code);
 	  }
-	  app.$store.commit('code', code);
+	  
+	  if(cursor !== null || cursor !== undefined) {
+		  app.$store.state.cursor = cursor;
+	  }
 	}, false);`;
 
 	var d = deferred();
