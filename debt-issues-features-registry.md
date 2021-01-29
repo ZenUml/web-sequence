@@ -2,10 +2,6 @@
 
 ## Debts
 
-### ** Have to run webpack before build
- 
-We need to run webpack to build 'vue-sequence-bundle.[chunkhash].js' to make the bundle usable inside the preview html.
-
 ### Hot load is not working
 
 ### ** Move Exporting buttons outside preview

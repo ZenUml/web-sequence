@@ -53,7 +53,6 @@ gulp.task('copyFiles', function () {
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
-		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['help.html','ZenUML_Sequence_Diagram_addon_help.html',
 			'src/detached-window.js',

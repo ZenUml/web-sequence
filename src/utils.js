@@ -314,9 +314,6 @@ export function loadJS(src) {
 	return d.promise;
 }
 
-//__VUE_SEQUENCE_BUNDLE_JS__ is a placeholder which will be replaced by Webpack
-const vueSequenceBundleJs = __VUE_SEQUENCE_BUNDLE_JS__; //eslint-disable-line
-
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item, isForExport) {
 	/* eslint-enable max-params */
