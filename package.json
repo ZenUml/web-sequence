@@ -84,7 +84,7 @@
 		"copy-webpack-plugin": "^4.5.1",
 		"dom-to-image": "github:MichalBryxi/dom-to-image",
 		"esprima": "^4.0.0",
-		"file-saver": "^2.0.2",
+		"file-saver": "^2.0.5",
 		"firebase": "^7.16.1",
 		"firebase-tools": "^8.4.3",
 		"git-revision-webpack-plugin": "^3.0.6",
