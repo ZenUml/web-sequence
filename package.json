@@ -98,7 +98,7 @@
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^2.6.11",
 		"vue-sequence": "^1.0.66",
-		"vuex": "^3.0.1"
+		"vuex": "^3.6.2"
 	},
 	"jest": {
 		"verbose": true
