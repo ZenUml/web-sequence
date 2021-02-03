@@ -312,8 +312,6 @@ export function loadJS(src) {
 	return d.promise;
 }
 
-//__VUE_SEQUENCE_BUNDLE_JS__ is a placeholder which will be replaced by Webpack
-const vueSequenceBundleJs = __VUE_SEQUENCE_BUNDLE_JS__; //eslint-disable-line
 
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item, isForExport) {
@@ -323,8 +321,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		return '';
 	}
 
-	var	externalCss = [	'https://unpkg.com/vue-sequence@1.0.66/dist/vue-sequence.css',
-		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
+	var	externalCss = [	'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
 			.reduce(function(links, url) {
 				return (
 					links +
