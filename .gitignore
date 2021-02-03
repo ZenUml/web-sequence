@@ -1,6 +1,10 @@
 ### OSX ###
 .DS_Store
 
+.vscode
+logs
+yarn-error.log
+
 ### PhPStorm / IntellJ IDEA ###
 .idea/
 *.iml

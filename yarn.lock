@@ -14821,10 +14821,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.78:
-  version "1.0.78"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.78.tgz#6dcbbe671bbf643a78c3ab50b3f9dff289d84422"
-  integrity sha512-9tuj1wMZ9jxBF8IDQjBEXv+I4XEyAlfBFowMOVlh+sKSaLf3Ii1E3VtF612DpBZH8dLfeoSMiG71+8H+Yoc6kQ==
+vue-sequence@^1.0.80:
+  version "1.0.80"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.80.tgz#88d569d65d51a0ea72767f6e96e0de7756521c96"
+  integrity sha512-2VD7qTQhd01yZvh1k/r/HIrCKVkCmSi8Ilx+KWYoBQFzIUTAn2uVP8mXgZ+c8gM5RTWrUdN4gyR55H+67w6hJw==
   dependencies:
     antlr4 "~4.8.0"
     dom-to-image-more "^2.8.0"
