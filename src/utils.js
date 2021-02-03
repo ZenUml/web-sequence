@@ -6,6 +6,7 @@ import { deferred } from './deferred';
 import Vue from '!!file-loader!vue/dist/vue';
 import Vuex from '!!file-loader!vuex/dist/vuex';
 import vueSequence from '!!file-loader!vue-sequence';
+import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
 const esprima = require('esprima');
 
 // window.Store = Store;
@@ -321,7 +322,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		return '';
 	}
 
-	var	externalCss = [	'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css']
+	var	externalCss = [vueSequenceCss]
 			.reduce(function(links, url) {
 				return (
 					links +
