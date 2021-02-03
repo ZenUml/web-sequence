@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: yarn install && yarn webpack && yarn build
+    - run: yarn install && yarn build
     - run: yarn release
     - run: yarn deploy:prod --token ${{ secrets.FIREBASE_TOKEN }}
     - name: Create Release
