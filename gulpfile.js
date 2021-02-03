@@ -62,7 +62,9 @@ gulp.task('copyFiles', function () {
 			'src/icon-128.png',
 			'manifest.json'
 		]).pipe(gulp.dest('app')),
-		gulp.src('build/bundle.*.js')
+		gulp.src('build/*.js')
+			.pipe(gulp.dest('app')),
+		gulp.src('build/*.css')
 			.pipe(gulp.dest('app')),
 		// Following CSS are copied to build/ folder where they'll be referenced by
 		// useRef plugin to concat into one.
