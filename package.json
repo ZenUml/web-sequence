@@ -89,7 +89,7 @@
 		"firebase-tools": "^8.4.3",
 		"git-revision-webpack-plugin": "^3.0.6",
 		"http-server": "^0.12.3",
-		"jszip": "^3.5.0",
+		"jszip": "^3.6.0",
 		"preact": "^8.5.3",
 		"preact-compat": "^3.17.0",
 		"preact-portal": "^1.1.3",
