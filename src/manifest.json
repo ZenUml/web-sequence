@@ -1,6 +1,6 @@
 {
 	"name": "ZenUML Sequence",
-	"version": "1.0.27",
+	"version": "1.0.28",
 	"manifest_version": 2,
 	"description": "Real-time & offline tool for generating sequence diagrams",
 	"homepage_url": "http://zenuml.com",
