@@ -610,15 +610,16 @@ BookService BookRepository Receipt Notification
 	updateExternalLibCount() {
 		// Calculate no. of external libs
 		var noOfExternalLibs = 0;
-		if (!this.state.currentItem.externalLibs) {
-			return;
-		}
-		noOfExternalLibs += this.state.currentItem.externalLibs.js
-			.split('\n')
-			.filter(lib => !!lib).length;
-		noOfExternalLibs += this.state.currentItem.externalLibs.css
-			.split('\n')
-			.filter(lib => !!lib).length;
+		// There is no external libs
+		// if (!this.state.currentItem.externalLibs) {
+		// 	return;
+		// }
+		// noOfExternalLibs += this.state.currentItem.externalLibs.js
+		// 	.split('\n')
+		// 	.filter(lib => !!lib).length;
+		// noOfExternalLibs += this.state.currentItem.externalLibs.css
+		// 	.split('\n')
+		// 	.filter(lib => !!lib).length;
 		this.setState({
 			externalLibCount: noOfExternalLibs
 		});
