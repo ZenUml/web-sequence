@@ -313,6 +313,13 @@ export function loadJS(src) {
 	return d.promise;
 }
 
+function getUrl(relativeUrl) {
+	return chrome.extension
+		? chrome.extension.getURL(relativeUrl)
+		: `${
+			location.origin
+			}${BASE_PATH}/${relativeUrl}`
+}
 
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item, isForExport) {
@@ -326,7 +333,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 			.reduce(function(links, url) {
 				return (
 					links +
-					(url ? '\n<link rel="stylesheet" href="' + url + '"></link>' : '')
+					(url ? '\n<link rel="stylesheet" href="' + getUrl(url) + '"></link>' : '')
 				);
 			}, '');
 
@@ -355,20 +362,16 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 			'"></script>';
 	}
 	contents +=
-		'<script src="' + Vue + '"></script>';
+		'<script src="' + getUrl(Vue) + '"></script>';
 	contents +=
-		'<script src="' + Vuex + '"></script>';
+		'<script src="' + getUrl(Vuex) + '"></script>';
 	contents +=
-		'<script src="' + vueSequence + '"></script>';
+		'<script src="' + getUrl(vueSequence) + '"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
 		contents +=
 			'<script src="' +
-			(chrome.extension
-				? chrome.extension.getURL('lib/transpilers/babel-polyfill.min.js')
-				: `${
-						location.origin
-				  }${BASE_PATH}/lib/transpilers/babel-polyfill.min.js`) +
+			getUrl('lib/transpilers/babel-polyfill.min.js') +
 			'"></script>';
 	}
 
