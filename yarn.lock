@@ -9553,12 +9553,7 @@ lodash.values@^2.4.1:
   dependencies:
     lodash.keys "~2.4.1"
 
-lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.3, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.3.0:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
-
-lodash@^4.17.20:
+lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.20, lodash@^4.17.3, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.3.0:
   version "4.17.20"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
@@ -14968,10 +14963,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.128:
-  version "1.0.128"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.128.tgz#790cef67a24d050c093781cc982f620978cf788e"
-  integrity sha512-5LH3gZUlBn+fZIf/Dp+Fn6D+3FokNi6XAJYaGUXWEXgzf73E3iVPUmq6H6h2AjoaAUeH4BcoxrnY28gSacc4zQ==
+vue-sequence@^1.0.135:
+  version "1.0.135"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.135.tgz#b230ba69fb3cf46443d019a888ad2beed80496b9"
+  integrity sha512-4EFB4GeB5dlzeY5Utlnn4soKRzipUcM3HvxpXbXYBJDh1Nils9XTAyJuPC+OEbxr2IKRT6/EQ2Ioc8aYBr2XrA==
   dependencies:
     "@types/assert" "^1.5.4"
     antlr4 "~4.8.0"
