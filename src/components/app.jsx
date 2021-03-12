@@ -346,7 +346,8 @@ BookService BookRepository Receipt Notification
   BookRepository.Update(id, onLoan)
 
   // Send Event with "Source->Target:Event". "Source->" is optional
-  Notification:BOOK_ON_LOAN event with id, due date, etc. 
+  Notification:BOOK_ON_LOAN event with id, due date, etc.
+  =="Create a Receipt==
   new Receipt(id, dueDate)
 }`,
 			externalLibs: { js: '', css: '' },
