@@ -292,10 +292,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@emmetio/codemirror-plugin@^1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@emmetio/codemirror-plugin/-/codemirror-plugin-1.2.1.tgz#4edd6f8258a0255b34d3afcefebd7ddc125c75cf"
-  integrity sha512-XXJO5742H6Vu6TcLnigLlS8vj7hAjbv68T/RNfTub77B6+iGGeTOr9tcMQx/1tNmi5D+f4Sh6/60su13ed6wRA==
+"@emmetio/codemirror-plugin@^1.2.4":
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/@emmetio/codemirror-plugin/-/codemirror-plugin-1.2.4.tgz#f880a36098536f6555747eadece9b7cc2df597e3"
+  integrity sha512-wVw2gqI6X+uVWYVRtTVymzTgbo4hEZIcPCNj4xrXw4l/+L3Qa+tAC/yf+Xy9nenRPCqRq0RLqGiQL+Qf/wYE9Q==
 
 "@firebase/analytics-types@0.3.1":
   version "0.3.1"
