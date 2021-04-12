@@ -9356,6 +9356,11 @@ lodash.camelcase@^4.3.0:
   resolved "https://registry.yarnpkg.com/lodash.camelcase/-/lodash.camelcase-4.3.0.tgz#b28aa6288a2b9fc651035c7711f65ab6190331a6"
   integrity sha1-soqmKIorn8ZRA1x3EfZathkDMaY=
 
+lodash.deburr@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/lodash.deburr/-/lodash.deburr-4.1.0.tgz#ddb1bbb3ef07458c0177ba07de14422cb033ff9b"
+  integrity sha1-3bG7s+8HRYwBd7oH3hRCLLAz/5s=
+
 lodash.defaults@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/lodash.defaults/-/lodash.defaults-4.2.0.tgz#d09178716ffea4dde9e5fb7b37f6f0802274580c"
@@ -13590,6 +13595,13 @@ string-length@^4.0.1:
     char-regex "^1.0.2"
     strip-ansi "^6.0.0"
 
+string-pixel-width@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/string-pixel-width/-/string-pixel-width-1.10.0.tgz#aff215aaa7a65627f937d70fcc88d83ae1bc5657"
+  integrity sha512-cOMpkH+CpxWAnrPsWUvPWhZxh25CzUukweT+6WF+Kwx6+G2ksg8flvELZusLyWiZzfFCjj1+QRRGwcPWZlwVYA==
+  dependencies:
+    lodash.deburr "^4.1.0"
+
 string-width@^1.0.1, string-width@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-1.0.2.tgz#118bdf5b8cdc51a2a7e70d211e07e2b0b9b107d3"
@@ -14950,10 +14962,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.150:
-  version "1.0.150"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.150.tgz#e7847a91c47773cbac01069385cd9f9450afe849"
-  integrity sha512-7EjvOXxUg5vTfbx13oRe0bevQRdIeOqnOcSl80Eb0pYKdjPS65EjvBWUKi0/txliSmdZWO9W5UScPlqtokyy0A==
+vue-sequence@^1.0.155:
+  version "1.0.155"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.155.tgz#afb71cc87248ddd9112c7013b04465238bc856f5"
+  integrity sha512-YcmXELGM3o/XtpiwcpIDMv+syCYKn92t64qf0sZy1AJfAsDHXLAV6kgON7IFDzQGNnsJJHezrzzIyznYZwpEQg==
   dependencies:
     "@types/assert" "^1.5.4"
     antlr4 "~4.8.0"
@@ -14962,6 +14974,7 @@ vue-sequence@^1.0.150:
     highlight.js "^10.1.1"
     lodash "^4.17.20"
     marked "^2.0.0"
+    string-pixel-width "^1.10.0"
     vue "2.6.12"
     vue-template-compiler "2.6.12"
     vuex "^3.6.2"
