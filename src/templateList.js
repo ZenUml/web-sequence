@@ -5,8 +5,8 @@ export default [
 		img: 'assets/basic-icon.png'
 	},
 	{
-		id: 'advanced',
-		title: 'Advanced',
+		id: 'blue',
+		title: 'Blue',
 		img: 'assets/advanced-icon.png'
 	},
 	{

@@ -14950,10 +14950,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.157:
-  version "1.0.157"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.157.tgz#69f75923a4c5df81249c33733e0e6d2762aa8571"
-  integrity sha512-BvVS9Vywiqwtw8mttSJqByah+HELvjrM64s3NvGzZ9+1MKterAB2pOX4wQYEzCOy6ygph4h2cyXSuhIxcdPNJQ==
+vue-sequence@^1.0.159:
+  version "1.0.159"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.159.tgz#9d0166e1b38094dfdd1367a0e03b47bd14d34eb7"
+  integrity sha512-RrEY2UZc1ggCdnBoEqyKs0Vu862h0iDNCJH27nTXf/XTFtuFDHEeLbhcoaLUK1WryZ9MwKWA/bFqLYeE7yOQxQ==
   dependencies:
     "@types/assert" "^1.5.4"
     antlr4 "~4.8.0"
