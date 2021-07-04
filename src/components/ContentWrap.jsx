@@ -417,7 +417,7 @@ export default class ContentWrap extends Component {
 	async exportPngClickHandler(e) {
 		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
-		const png = await mountingPoint.children[0].__vue__.toBlob();
+		const png = await mountingPoint.children[0].getElementsByClassName('sequence-diagram')[0].__vue__.toBlob();
 		saveAs(png, 'zenuml.png');
 		trackEvent('ui', 'downloadPng');
 	}
@@ -425,7 +425,7 @@ export default class ContentWrap extends Component {
 	async exportJpegClickHandler(e) {
 		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
-		const jpeg = await mountingPoint.children[0].__vue__.toJpeg();
+		const jpeg = await mountingPoint.children[0].getElementsByClassName('sequence-diagram')[0].__vue__.toJpeg();
 		saveAs(jpeg, 'zenuml.jpeg');
 		trackEvent('ui', 'downloadJpeg');
 	}
