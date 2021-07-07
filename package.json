@@ -55,7 +55,7 @@
 		"gulp-uglify": "^3.0.0",
 		"gulp-useref": "^4.0.1",
 		"gulp-zip": "^5.0.2",
-		"husky": "^4.3.8",
+		"husky": "^7.0.1",
 		"identity-obj-proxy": "^3.0.0",
 		"if-env": "^1.0.0",
 		"jest": "^26.6.3",
