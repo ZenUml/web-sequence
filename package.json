@@ -79,7 +79,7 @@
 		"babel-preset-react": "^6.24.1",
 		"babel-standalone": "^6.25.0",
 		"code-blast-codemirror": "chinchang/code-blast-codemirror#web-maker",
-		"codemirror": "^5.59.4",
+		"codemirror": "^5.62.2",
 		"copy-webpack-plugin": "^4.5.1",
 		"dom-to-image": "github:MichalBryxi/dom-to-image",
 		"esprima": "^4.0.0",
