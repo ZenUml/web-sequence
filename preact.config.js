@@ -48,4 +48,14 @@ export default function(config, env, helpers) {
 
 	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});
 	config.plugins.push(new webpack.DefinePlugin({__COMMITHASH__: JSON.stringify(gitRevisionPlugin.commithash())}));
+
+	const postCssLoaders = helpers.getLoadersByName(config, 'postcss-loader');
+	// console.log(postCssLoaders);
+	postCssLoaders.forEach(({ loader }) => {
+		const plugins = loader.options.postcssOptions.plugins;
+
+		// Add tailwind css at the top.
+		plugins.unshift(require('tailwindcss'));
+	});
+	return config;
 }
