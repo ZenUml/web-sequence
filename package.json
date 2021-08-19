@@ -4,10 +4,10 @@
 	"description": "A real-time tool for generating sequence diagrams",
 	"main": "index.html",
 	"scripts": {
-		"start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
+		"engine": "use yarn instead of npm please",
+		"start": "if-env NODE_ENV=production && yarn serve || yarn dev",
 		"build": "preact build --clean --template src/index.html --no-prerender --service-worker false",
 		"release": "gulp release",
-		"serve": "npm run release && preact serve --dir app",
 		"dev": "preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
 		"test": "jest ./",
@@ -95,6 +95,7 @@
 		"preact-router": "^2.5.7",
 		"split.js": "1.6.2",
 		"svg-transform-loader": "^2.0.12",
+		"tailwindcss": "^2.2.7",
 		"vue": "^2.6.12",
 		"vue-sequence": "^1.0.166",
 		"vuex": "^3.6.2"
