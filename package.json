@@ -62,15 +62,14 @@
 		"lint-staged": "^10.5.4",
 		"merge-stream": "^2.0.0",
 		"path": "^0.12.7",
-		"preact-cli": "^2.1.0",
+		"preact-cli": "^3.2.2",
 		"preact-render-spy": "^1.2.1",
 		"prettier": "^2.2.1",
 		"require": "^2.4.20",
 		"run-sequence": "^2.2.1",
 		"style-loader": "^0.23.1",
 		"svg-url-loader": "^5.0.0",
-		"sw-precache": "^5.2.0",
-		"webpack": "3.12.0"
+		"sw-precache": "^5.2.0"
 	},
 	"dependencies": {
 		"@emmetio/codemirror-plugin": "^1.2.1",

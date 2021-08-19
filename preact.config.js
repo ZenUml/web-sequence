@@ -1,5 +1,3 @@
-import CopyWebpackPlugin from 'copy-webpack-plugin';
-var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
 const path = require('path')
 const GitRevisionPlugin = require('git-revision-webpack-plugin')
