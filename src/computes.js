@@ -14,7 +14,7 @@ export function computeHtml(userCode, mode) {
 		`<main id="demo">
 			<div id="diagram">
 			  <div id="mounting-point">
-					<seq-diagram></seq-diagram>
+					<diagram-frame></diagram-frame>
 				</div>
 			</div>
 		</main>`;
@@ -170,17 +170,18 @@ export function computeJs(
 	console.log('Is it recomputing?')
 	let code = `
 	window.addEventListener("load", function(event) {
-		console.log("window loaded");
+		console.log("window loaded", Vue);
+		console.log("window loaded", Vuex);
 		Vue.use(Vuex);
-		let { Frame, SeqDiagram, Store } = window['vue-sequence'];
+		let { DiagramFrame, SeqDiagram, Store } = window['vue-sequence'];
 		let storeConfig = Store();
 		storeConfig.state.code = "A.method";
-		Vue.component("frame", Frame);
+		Vue.component("diagram-frame", DiagramFrame);
 		Vue.component("seq-diagram", SeqDiagram);
 		window.app = new Vue({
 			el: document.getElementById('mounting-point'),
 			store: new Vuex.Store(storeConfig),
-			render: (h) => h('frame')
+			render: (h) => h('diagram-frame')
 		});
 	});
 	window.addEventListener('message', (e) => {

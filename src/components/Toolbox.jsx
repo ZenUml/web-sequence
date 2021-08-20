@@ -8,7 +8,7 @@ class Toolbox extends Component {
 
   render() {
     return (
-      <div className="toolbox">
+      <div className="toolbox flex">
         <svg
           id="addNewParticipantButton"
           width="25px"

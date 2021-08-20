@@ -4,11 +4,10 @@ import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
 import Vue from '!!file-loader!vue/dist/vue';
-import Vuex from '!!file-loader!vuex/dist/vuex';
+import Vuex from '!!file-loader!vuex/dist/vuex.min.js';
 import vueSequence from '!!file-loader!vue-sequence';
 import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
 const esprima = require('esprima');
-
 // window.Store = Store;
 // window.SeqDiagram = SeqDiagram;
 // window.Vue = Vue;
