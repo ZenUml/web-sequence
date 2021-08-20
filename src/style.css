@@ -1802,7 +1802,6 @@ while the theme CSS file is loading */
 
 .editor-nav {
 	display: flex;
-	justify-content: center;
 	align-items: end;
 	z-index: 1;
 	text-align: center;
