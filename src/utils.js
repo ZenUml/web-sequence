@@ -256,7 +256,7 @@ export function writeFile(name, blob, cb) {
 			if (writeFile.errorCount === 4) {
 				setTimeout(function() {
 					alert(
-						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://webmakerapp.com/app/.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh ZenUML\n - Restart browser\n - Update browser\n - Reinstall ZenUML (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @ZenUML."
+						"Oops! Seems like your preview isn't updating. It's recommended to switch to the web app: https://app.zenuml.com.\n\n If you still want to get the extension working, please try the following steps until it fixes:\n - Refresh ZenUML\n - Restart browser\n - Update browser\n - Reinstall ZenUML (don't forget to export all your creations from saved items pane (click the OPEN button) before reinstalling)\n\nIf nothing works, please tweet out to @ZenUML."
 					);
 					trackEvent('ui', 'writeFileMessageSeen');
 				}, 1000);

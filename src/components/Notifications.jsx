@@ -56,7 +56,7 @@ function Notification({ version, isLatest, ...props }) {
 						</a>
 						&nbsp;
 						<a
-							href="http://twitter.com/share?url=https://webmakerapp.com/&text=ZenUML - A real-time sequence diagram generator! via @ZenUML&related=ZenUML&hashtags=web,developer,chrome,extension"
+							href="http://twitter.com/share?url=https://zenuml.com/&text=ZenUML - A real-time sequence diagram generator! via @ZenUML&related=ZenUML&hashtags=web,developer,chrome,extension"
 							target="_blank"
 							rel="noopener noreferrer"
 							class="btn"
