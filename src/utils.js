@@ -343,7 +343,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		'<meta charset="UTF-8" />\n' +
 		externalCss +
 		'\n' +
-		'<style id="webmakerstyle">\n' +
+		'<style id="zenumlstyle">\n' +
 		css +
 		'\n</style>\n' +
 		'</head>\n' +
