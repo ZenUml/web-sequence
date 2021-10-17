@@ -241,9 +241,9 @@ export default class ContentWrap extends Component {
 				if (cssMode === CssModes.ACSS) {
 					this.cm.css.setValue(result.code || '');
 				}
-				if (targetFrame.contentDocument.querySelector('#webmakerstyle')) {
+				if (targetFrame.contentDocument.querySelector('#zenumlstyle')) {
 					targetFrame.contentDocument.querySelector(
-						'#webmakerstyle'
+						'#zenumlstyle'
 					).textContent = result.code || '';
 				}
 			});

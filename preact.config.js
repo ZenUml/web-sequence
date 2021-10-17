@@ -45,9 +45,6 @@ export default function(config, env, helpers) {
 		config.plugins.splice(uglifyPlugin.index, 1);
 	}
 
-	const vueSequenceBundleJs = `lib/${fsUtil.getVueSequenceBundleJs(path.join(__dirname, 'src/lib'))}`;
-	config.plugins.push(new webpack.DefinePlugin({__VUE_SEQUENCE_BUNDLE_JS__: JSON.stringify(vueSequenceBundleJs)}));
-
 	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});
 	config.plugins.push(new webpack.DefinePlugin({__COMMITHASH__: JSON.stringify(gitRevisionPlugin.commithash())}));
 }
