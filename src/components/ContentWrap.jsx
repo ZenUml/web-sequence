@@ -6,7 +6,12 @@ import Tabs from './Tabs.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
 import { log, loadJS, getCompleteHtml } from '../utils';
-import { writeFile} from "../WriteFile";
+import { writeFileAsync} from "../WriteFile";
+import Vue from '!!file-loader!vue/dist/vue';
+import Vuex from '!!file-loader!vuex/dist/vuex';
+import vueSequence from '!!file-loader!vue-sequence';
+import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
+
 import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
 import { trackEvent } from '../analytics';
@@ -132,7 +137,7 @@ export default class ContentWrap extends Component {
 	}
 
 	// Called for both detached window and non-detached window
-	createPreviewFile(html, css, js) {
+	async createPreviewFile(html, css, js) {
 		// isNotChrome
 		const shouldInlineJs =
 			!window.webkitRequestFileSystem || !window.IS_EXTENSION;
@@ -142,8 +147,8 @@ export default class ContentWrap extends Component {
 			shouldInlineJs ? js : null,
 			this.props.currentItem
 		);
-		var blob = new Blob([contents], { type: 'text/plain;charset=UTF-8' });
-		var blobjs = new Blob([js], { type: 'text/plain;charset=UTF-8' });
+		var blob = new Blob([contents], {type: 'text/plain;charset=UTF-8'});
+		var blobjs = new Blob([js], {type: 'text/plain;charset=UTF-8'});
 
 		// Track if people have written code.
 		if (!trackEvent.hasTrackedCode && (html || css || js)) {
@@ -151,14 +156,14 @@ export default class ContentWrap extends Component {
 			trackEvent.hasTrackedCode = true;
 		}
 		const that = this;
-		that.frame.onload = function() {
+		that.frame.onload = function () {
 			that.frame.contentWindow.postMessage({code: that.cmCodes.js}, '*')
 		}
 
 		if (shouldInlineJs) {
 			if (this.detachedWindow) {
 				log('✉️ Sending message to detached window');
-				this.detachedWindow.postMessage({ contents }, '*');
+				this.detachedWindow.postMessage({contents}, '*');
 
 			} else {
 				this.frame.src = this.frame.src;
@@ -171,19 +176,43 @@ export default class ContentWrap extends Component {
 		} else {
 			// we need to store user script in external JS file to prevent inline-script
 			// CSP from affecting it.
-			writeFile('script.js', blobjs, () => {
-				writeFile('preview.html', blob, () => {
-					var origin = chrome.runtime.id
-						? `chrome-extension://${chrome.runtime.id}`
-						: `${location.origin}`;
-					var src = `filesystem:${origin}/temporary/preview.html`;
-					if (this.detachedWindow) {
-						this.detachedWindow.postMessage(src, '*');
-					} else {
-						this.frame.src = src;
-					}
+			console.log('Vue is', Vue);
+			fetch('lib/screenlog.js')
+				.then(res => res.blob())
+				.then(async b => {
+					await writeFileAsync('screenlog.js', b);
 				});
-			});
+			fetch(Vue)
+				.then(res => res.blob())
+				.then(async b => {
+					await writeFileAsync(Vue, b);
+				});
+			fetch(Vuex)
+				.then(res => res.blob())
+				.then(async b => {
+					await writeFileAsync(Vuex, b);
+				});
+			fetch(vueSequence)
+				.then(res => res.blob())
+				.then(async b => {
+					await writeFileAsync(vueSequence, b);
+				});
+			fetch(vueSequenceCss)
+				.then(res => res.blob())
+				.then(async b => {
+					await writeFileAsync(vueSequenceCss, b);
+				});
+			await writeFileAsync('script.js', blobjs);
+			await writeFileAsync('preview.html', blob);
+			var origin = chrome.runtime.id
+				? `chrome-extension://${chrome.runtime.id}`
+				: `${location.origin}`;
+			var src = `filesystem:${origin}/temporary/preview.html`;
+			if (this.detachedWindow) {
+				this.detachedWindow.postMessage(src, '*');
+			} else {
+				this.frame.src = src;
+			}
 		}
 	}
 	cleanupErrors(lang) {

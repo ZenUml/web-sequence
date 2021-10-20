@@ -1,6 +1,14 @@
 import {trackEvent} from "./analytics";
 import {log} from "./utils";
 
+export function writeFileAsync(name, blob) {
+	console.log('writing file', name);
+	return new Promise((resolve => {
+		writeFile(name, blob, () => {
+			resolve();
+		});
+	}));
+}
 export function writeFile(name, blob, cb) {
 	var fileWritten = false;
 

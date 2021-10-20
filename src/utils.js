@@ -258,11 +258,7 @@ export function loadJS(src) {
 }
 
 function getUrl(relativeUrl) {
-	return chrome.extension
-		? chrome.extension.getURL(relativeUrl)
-		: `${
-			location.origin
-			}${BASE_PATH}/${relativeUrl}`
+	return relativeUrl;
 }
 
 /* eslint-disable max-params */
@@ -298,11 +294,7 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 	if (!isForExport) {
 		contents +=
 			'<script src="' +
-			(chrome.extension
-				? chrome.extension.getURL('lib/screenlog.js')
-				: `${location.origin}${
-						window.DEBUG ? '' : BASE_PATH
-				  }/lib/screenlog.js`) +
+			(`/screenlog.js`) +
 			'"></script>';
 	}
 	contents +=
