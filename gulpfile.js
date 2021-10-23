@@ -39,6 +39,8 @@ gulp.task('copyFiles', function () {
 			.pipe(gulp.dest('app/privacy-policy')),
 		gulp.src('End-User-License-Agreement/*')
 			.pipe(gulp.dest('app/End-User-License-Agreement')),
+		gulp.src('src/lib/codemirror/lib/*')
+			.pipe(gulp.dest('app/lib/codemirror/lib')),
 		gulp.src('src/lib/codemirror/theme/*')
 			.pipe(gulp.dest('app/lib/codemirror/theme')),
 		gulp.src('src/lib/codemirror/mode/**/*')
