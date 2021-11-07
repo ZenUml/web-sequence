@@ -7317,10 +7317,10 @@ gulp-uglify@^3.0.0:
     uglify-js "^3.0.5"
     vinyl-sourcemaps-apply "^0.2.0"
 
-gulp-useref@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/gulp-useref/-/gulp-useref-4.0.1.tgz#8495c3c085c25587263a7722cd438092da057e85"
-  integrity sha512-+FjOGvvlCiUTbIjDQ0CAz8sQC3zkq3n1FqG6HR3njvcKQ9rNPIsHhcE5nUah4IHthKOHMPsnUBtE71nZp+dHAg==
+gulp-useref@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/gulp-useref/-/gulp-useref-5.0.0.tgz#9bea68791e667f57e605e4db1d306c52b68376e8"
+  integrity sha512-YNnc+DTMBBVoWXunT2RvWuUReZEjzS98XvLXrMLE3uoouQ9to8R4cfUuJzp9i1IJ6+DT0tBvyNVDrkz3NuXIiA==
   dependencies:
     event-stream "^4.0.1"
     extend "^3.0.2"
@@ -7328,7 +7328,7 @@ gulp-useref@^4.0.1:
     gulp-concat "^2.6.1"
     gulp-if "^3.0.0"
     plugin-error "^1.0.1"
-    through2 "^3.0.1"
+    through2 "^4.0.2"
     useref "^1.4.3"
     vinyl-fs "^3.0.3"
 
@@ -12790,7 +12790,7 @@ read-pkg@^3.0.0:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
-"readable-stream@2 || 3", readable-stream@^3.0.6, readable-stream@^3.1.1, readable-stream@^3.4.0:
+"readable-stream@2 || 3", readable-stream@3, readable-stream@^3.0.6, readable-stream@^3.1.1, readable-stream@^3.4.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.6.0.tgz#337bbda3adc0706bd3e024426a286d4b4b2c9198"
   integrity sha512-BViHy7LKeTz4oNnkcLJ+lVSL6vpiFeX6/d3oSH8zCW7UxP2onchk+vTGB143xuFjHS3deTgkKoXXymXqymiIdA==
@@ -14657,6 +14657,13 @@ through2@^2.0.0, through2@^2.0.3, through2@~2.0.0:
   dependencies:
     readable-stream "~2.3.6"
     xtend "~4.0.1"
+
+through2@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/through2/-/through2-4.0.2.tgz#a7ce3ac2a7a8b0b966c80e7c49f0484c3b239764"
+  integrity sha512-iOqSav00cVxEEICeD7TjLB1sueEL+81Wpzp2bY17uZjZN0pWZPuo4suZ/61VujxmqSGFfgOcNuTZ85QJwNZQpw==
+  dependencies:
+    readable-stream "3"
 
 through@2, "through@>=2.2.7 <3", through@^2.3.6, through@^2.3.8, through@~2.3, through@~2.3.4:
   version "2.3.8"
