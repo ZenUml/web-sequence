@@ -58,12 +58,15 @@ class Tabs extends Component {
 					})}
 				</ol>
 				<div className="tab-content" style="height: calc(100% - 45px); overflow-y:auto;-webkit-overflow-scrolling: touch;">
-					{children.map((child) => {
-						if (child.props.label !== activeTab) {
-							return child.props.children.map(c => Tabs.modifyChildren(c, false))
-						}
-						return child.props.children;
-					})}
+					{
+						React.Children.map(children,
+							(child) => {
+								if (child.props.label !== activeTab) {
+									return React.Children.map(child.props.children, c => Tabs.modifyChildren(c, false));
+								}
+								return child.props.children;
+							})
+					}
 				</div>
 			</div>
 		);

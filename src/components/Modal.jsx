@@ -1,5 +1,4 @@
-import { h, Component } from 'preact';
-import Portal from 'preact-portal';
+import { Component, createPortal } from 'preact/compat';
 
 export default class Modal extends Component {
 	componentDidMount() {
@@ -53,8 +52,7 @@ export default class Modal extends Component {
 	render() {
 		if (!this.props.show) return null;
 
-		return (
-			<Portal into="body">
+		return createPortal(
 				<div
 					class={`${this.props.extraClasses || ''} modal is-modal-visible ${
 						this.props.small ? 'modal--small' : ''
@@ -74,8 +72,8 @@ export default class Modal extends Component {
 						</button>
 						{this.props.children}
 					</div>
-				</div>
-			</Portal>
+				</div>,
+			document.body
 		);
 	}
 }

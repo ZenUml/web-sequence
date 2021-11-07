@@ -35,7 +35,7 @@ export class SplitPane extends Component {
 
 		/* eslint-disable new-cap */
 		this.splitInstance = Split(
-			this.props.children.map(node => '#' + node.attributes.id),
+			this.props.children.map(node => '#' + node.props.id),
 			options
 		);
 		/* eslint-enable new-cap */

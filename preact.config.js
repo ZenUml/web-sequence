@@ -1,8 +1,6 @@
-import CopyWebpackPlugin from 'copy-webpack-plugin';
-var CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const webpack = require('webpack');
 const path = require('path')
-const GitRevisionPlugin = require('git-revision-webpack-plugin')
+const {GitRevisionPlugin} = require('git-revision-webpack-plugin')
 const fsUtil = require('./fs-util');
 
 /**
@@ -35,14 +33,6 @@ export default function(config, env, helpers) {
 		// 	})
 		// );
 
-		const swPlugin = helpers.getPluginsByName(
-			config,
-			'SWPrecacheWebpackPlugin'
-		)[0];
-		config.plugins.splice(swPlugin.index, 1);
-
-		const uglifyPlugin = helpers.getPluginsByName(config, 'UglifyJsPlugin')[0];
-		config.plugins.splice(uglifyPlugin.index, 1);
 	}
 
 	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});

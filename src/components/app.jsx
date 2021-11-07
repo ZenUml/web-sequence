@@ -37,10 +37,8 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { takeScreenshot } from '../takeScreenshot';
 import { AskToImportModal } from './AskToImportModal';
 import { Alerts } from './Alerts';
-import Portal from 'preact-portal';
 import { HelpModal } from './HelpModal';
 import { ProFeatureListModal } from './subscription/ProFeatureListModal';
-import { OnboardingModal } from './OnboardingModal';
 import { Js13KModal } from './Js13KModal';
 import { CreateNewModal } from './CreateNewModal';
 import { Icons } from './Icons';
@@ -1482,11 +1480,6 @@ BookService BookRepository Receipt Notification
 					dontAskBtnClickHandler={this.dontAskToImportAnymore.bind(this)}
 				/>
 
-				{/*<OnboardingModal*/}
-				{/*show={this.state.isOnboardModalOpen}*/}
-				{/*closeHandler={() => this.setState({ isOnboardModalOpen: false })}*/}
-				{/*/>*/}
-
 				<Js13KModal
 					show={this.state.isJs13KModalOpen}
 					closeHandler={() => this.setState({ isJs13KModalOpen: false })}
@@ -1499,12 +1492,10 @@ BookService BookRepository Receipt Notification
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
 				/>
 
-				<Portal into="body">
-					<div
-						class="modal-overlay"
-						onClick={this.modalOverlayClickHandler.bind(this)}
-					/>
-				</Portal>
+				<div
+					class="modal-overlay"
+					onClick={this.modalOverlayClickHandler.bind(this)}
+				/>
 
 				<Icons />
 				<form
