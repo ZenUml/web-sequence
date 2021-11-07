@@ -172,11 +172,11 @@ export function computeJs(
 	window.addEventListener("load", function(event) {
 		console.log("window loaded");
 		Vue.use(Vuex);
-		let { Frame, SeqDiagram, Store } = window['vue-sequence'];
-		let storeConfig = Store();
+		let { VueSequence } = window['vue-sequence'];
+		let storeConfig = VueSequence.Store();
 		storeConfig.state.code = "A.method";
-		Vue.component("frame", Frame);
-		Vue.component("seq-diagram", SeqDiagram);
+		Vue.component("frame", VueSequence.DiagramFrame);
+		Vue.component("seq-diagram", VueSequence.SeqDiagram);
 		window.app = new Vue({
 			el: document.getElementById('mounting-point'),
 			store: new Vuex.Store(storeConfig),
