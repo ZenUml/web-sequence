@@ -204,7 +204,7 @@ export default class ContentWrap extends Component {
 				});
 			await writeFileAsync('script.js', blobjs);
 			await writeFileAsync('preview.html', blob);
-			var origin = chrome.runtime.id
+			var origin = chrome.runtime && chrome.runtime.id
 				? `chrome-extension://${chrome.runtime.id}`
 				: `${location.origin}`;
 			var src = `filesystem:${origin}/temporary/preview.html`;

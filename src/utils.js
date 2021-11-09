@@ -297,30 +297,31 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 			(`/screenlog.js`) +
 			'"></script>';
 	}
-	contents +=
-		'<script src="' + getUrl(Vue) + '"></script>';
-	contents +=
-		'<script src="' + getUrl(Vuex) + '"></script>';
-	contents +=
-		'<script src="' + getUrl(vueSequence) + '"></script>';
+	console.log('getCompleteHtml 1', contents);
+	contents +=	'<script src="' + getUrl(Vue) + '"></script>';
+	contents +=	'<script src="' + getUrl(Vuex) + '"></script>';
+	contents +=	'<script src="' + getUrl(vueSequence) + '"></script>';
+	console.log('getCompleteHtml 2', contents);
 
 	if (item.jsMode === JsModes.ES6) {
-		contents +=
-			'<script src="' +
+		contents +=	'<script src="' +
 			getUrl('lib/transpilers/babel-polyfill.min.js') +
 			'"></script>';
 	}
+	console.log('getCompleteHtml 2.1', contents);
 
 	if (typeof js === 'string') {
-		contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
+		// The following line does not work after minimisation.
+		// contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
+		contents = contents + '<script>\n' + js + '\n//# sourceURL=userscript.js';
 	} else {
-		var origin = chrome.runtime.id
+		var origin = chrome.runtime && chrome.runtime.id
 			? `chrome-extension://${chrome.runtime.id}`
 			: `${location.origin}`;
-		contents +=
-			'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';
+		contents +=	'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';
 	}
 	contents += '\n</script>\n</body>\n</html>';
+	console.log('getCompleteHtml 3', contents);
 
 	return contents;
 }
