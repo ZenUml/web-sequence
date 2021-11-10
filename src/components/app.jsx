@@ -345,7 +345,7 @@ BookService BookRepository Receipt Notification
 
   // Send Event with "Source->Target:Event". "Source->" is optional
   Notification:BOOK_ON_LOAN event with id, due date, etc.
-  =="Create a Receipt==
+  =="Create a Receipt"==
   new Receipt(id, dueDate)
 }`,
 			externalLibs: { js: '', css: '' },
