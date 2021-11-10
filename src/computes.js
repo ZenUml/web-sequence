@@ -188,11 +188,11 @@ export function computeJs(
 		const cursor = e.data && e.data.cursor;
 
 	  if (code) {
-		  app.$store.commit('code', code);
+		  app && app.$store.commit('code', code);
 	  }
 
 	  if(cursor !== null || cursor !== undefined) {
-		  app.$store.state.cursor = cursor;
+		  app && app.$store.state.cursor = cursor;
 	  }
 	}, false);`;
 
