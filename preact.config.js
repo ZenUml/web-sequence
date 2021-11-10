@@ -25,7 +25,7 @@ export default function(config, env, helpers) {
 
 	if (env.isProd) {
 		config.devtool = false; // disable sourcemaps
-
+		config.output.publicPath = './';
 		// config.plugins.push(
 		// 	new CommonsChunkPlugin({
 		// 		name: 'vendor',
