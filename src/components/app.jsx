@@ -337,16 +337,23 @@ export default class App extends Component {
 				d.getMinutes(),
 			html: '',
 			css: '/* Prefix your CSS rules with `#diagram` */',
-			js:	`// Sample! Decare the participants (optional)
-BookService BookRepository Receipt Notification
-@Starter(User)
-"{id, dueDate, ...}" = BookService.Borrow(id) {
-  BookRepository.Update(id, onLoan)
-
-  // Send Event with "Source->Target:Event". "Source->" is optional
-  Notification:BOOK_ON_LOAN event with id, due date, etc.
-  =="Create a Receipt"==
-  new Receipt(id, dueDate)
+			js:	`// An example for a RESTful endpoint<br>
+// Go to the "Cheat sheet" tab or https://docs.zenuml.com
+// to find all syntax<br>
+// \`POST /v1/book/{id}/borrow\`
+BookLibService.Borrow(id) {
+  User = Session.GetUser()
+  if(User.isActive) {
+    try {
+      BookRepository.Update(id, onLoan, User)
+      receipt = new Receipt(id, dueDate)
+    } catch (BookNotFoundException) {
+      ErrorService.onException(BookNotFoundException)
+    } finally {
+      Connection.close()
+    }
+  }
+  return receipt
 }`,
 			externalLibs: { js: '', css: '' },
 			layoutMode: this.state.currentLayoutMode
