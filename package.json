@@ -6,7 +6,7 @@
 	"scripts": {
 		"engine": "use yarn instead of npm please",
 		"start": "if-env NODE_ENV=production && yarn serve || yarn dev",
-		"build": "preact build --template src/index.html  --no-prerender --no-sw",
+		"build": "preact build --template src/index.html --no-inline-css --no-prerender --no-sw",
 		"release": "gulp release",
 		"dev": "preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
