@@ -16,6 +16,7 @@ export default function(config, env, helpers) {
 	const critters = helpers.getPluginsByName(config, 'Critters')[0];
 	if (critters) {
 		critters.plugin.options.mergeStylesheets = false;
+		critters.plugin.options.compress = false;
 	}
 
 	const htmlWebpackPlugin = helpers.getPluginsByName(
