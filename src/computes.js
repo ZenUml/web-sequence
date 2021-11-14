@@ -187,12 +187,12 @@ export function computeJs(
 		const code = e.data && e.data.code;
 		const cursor = e.data && e.data.cursor;
 
-	  if (code) {
-		  app && app.$store.commit('code', code);
+	  if (code && app) {
+		  app.$store.commit('code', code);
 	  }
 
-	  if(cursor !== null || cursor !== undefined) {
-		  app && app.$store.state.cursor = cursor;
+	  if(app && (cursor !== null || cursor !== undefined)) {
+		  app.$store.state.cursor = cursor;
 	  }
 	}, false);`;
 
