@@ -12,6 +12,12 @@ const fsUtil = require('./fs-util');
  * @param {WebpackConfigHelpers} helpers - object with useful helpers when working with config.
  **/
 export default function(config, env, helpers) {
+
+	const critters = helpers.getPluginsByName(config, 'Critters')[0];
+	if (critters) {
+		critters.plugin.options.mergeStylesheets = false;
+	}
+
 	const htmlWebpackPlugin = helpers.getPluginsByName(
 		config,
 		'HtmlWebpackPlugin'
@@ -34,6 +40,7 @@ export default function(config, env, helpers) {
 		// );
 
 	}
+
 
 	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});
 	config.plugins.push(new webpack.DefinePlugin({__COMMITHASH__: JSON.stringify(gitRevisionPlugin.commithash())}));
