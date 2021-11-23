@@ -291,12 +291,12 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		html +
 		'\n';
 
-	if (!isForExport) {
-		contents +=
-			'<script src="' +
-			(`/screenlog.js`) +
-			'"></script>';
-	}
+	// if (!isForExport) {
+	// 	contents +=
+	// 		'<script src="' +
+	// 		(`/screenlog.js`) +
+	// 		'"></script>';
+	// }
 	contents +=	'<script src="' + getUrl(Vue) + '"></script>';
 	contents +=	'<script src="' + getUrl(Vuex) + '"></script>';
 	contents +=	'<script src="' + getUrl(vueSequence) + '"></script>';
