@@ -20,7 +20,7 @@ async function retrieveSubscription(firestore, userId) {
 function loadSubscriptionToApp(app) {
 	return window.db.getDb()
 		.then(async firestore => {
-				return await retrieveSubscription(firestore, app.state.user.uid);
+				return await retrieveSubscription(firestore, app.state.user && app.state.user.uid);
 			}
 		).then(subscription => {
 		app.setState(state => {

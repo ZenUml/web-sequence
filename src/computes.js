@@ -88,7 +88,7 @@ export function computeCss(userCode, mode, settings) {
 			});
 		}
 	} else if (mode === CssModes.LESS) {
-		less.render(code).then(
+		less && less.render(code).then(
 			function(result) {
 				d.resolve({
 					code: result.css
