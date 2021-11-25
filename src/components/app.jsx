@@ -414,7 +414,7 @@ BookLibService.Borrow(id) {
 			'saveBtnClick',
 			!this.state.user ? 'not-logged-in' : (this.state.currentItem.id ? 'saved' : 'new')
 		);
-		if (this.state.user) {
+		if (this.state.user || window.zenumlDesktop) {
 			this.saveItem();
 			const numOfItems = Object.keys(this.state.savedItems).length;
 			trackEvent(
@@ -740,7 +740,8 @@ BookLibService.Borrow(id) {
 	saveItem() {
 		if (
 			!window.user &&
-			!window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN]
+			!window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN] &&
+			!window.zenumlDesktop
 		) {
 			const answer = confirm(
 				'Saving without signing in will save your work only on this machine and this browser. If you want it to be secure & available anywhere, please login in your account and then save.\n\nDo you still want to continue saving locally?'
