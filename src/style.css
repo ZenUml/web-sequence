@@ -309,7 +309,7 @@ a > svg {
 }
 
 .is-loading .btn-loader {
-	display: block;
+	display: inline-block;
 }
 
 .star:after {

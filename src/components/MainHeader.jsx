@@ -70,7 +70,7 @@ export function MainHeader(props) {
 					>
 						<path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" />
 					</svg>
-					<svg className="btn-loader" width="15" height="15" stroke="#fff">
+					<svg className="btn-loader" width="14" height="14" stroke="#fff">
 						<use xlinkHref="#loader-icon" />
 					</svg>
 					Save
@@ -89,7 +89,7 @@ export function MainHeader(props) {
 					>
 						<path d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
 					</svg>
-					<svg className="btn-loader" width="15" height="15" stroke="#fff">
+					<svg className="btn-loader" width="14" height="14" stroke="#fff">
 						<use xlinkHref="#loader-icon" />
 					</svg>
 					Open
