@@ -113,7 +113,9 @@ export default class App extends Component {
 			autoCloseTags: true
 		};
 		this.prefs = {};
-
+		if (window.zenumlDesktop) { // hack savedItems, so we can load them on the desktop, without this object, the log in saveBtnClickHandler will not work.
+			this.state.savedItems = {};
+		}
 		firebase.auth().onAuthStateChanged(async user => {
 			await this.setState({isLoginModalOpen: false});
 			if (user) {
@@ -465,7 +467,7 @@ BookLibService.Borrow(id) {
 		// savedItems object and hence, while merging no saved item matches with itself.
 		this.state.savedItems = {};
 		var items = [];
-		if (window.user && !shouldFetchLocally) {
+		if ((window.user || window.zenumlDesktop) && !shouldFetchLocally) {
 			items = await itemService.getAllItems();
 			log('got items');
 			if (shouldSaveGlobally) {
