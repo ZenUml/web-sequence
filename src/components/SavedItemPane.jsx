@@ -119,10 +119,10 @@ export default class SavedItemPane extends Component {
 		e.preventDefault();
 	}
 
-	searchInputHandler(e) {
+	async searchInputHandler(e) {
 		console.log('search input handler');
 		const text = e.target.value;
-		this.setState({
+		await this.setState({
 			searchText: text
 		});
 		trackEvent('ui', 'searchInputType');

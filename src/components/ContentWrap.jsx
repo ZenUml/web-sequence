@@ -86,8 +86,8 @@ export default class ContentWrap extends Component {
 		);
 		this.onCodeChange(editor, change);
 	}
-	onJsCodeChange(editor, change) {
-		this.setState({lineOfCode: editor.doc.size});
+	async onJsCodeChange(editor, change) {
+		await this.setState({lineOfCode: editor.doc.size});
 		this.cmCodes.js = editor.getValue();
 		this.props.onCodeChange(
 			'js',
@@ -96,7 +96,7 @@ export default class ContentWrap extends Component {
 		);
 
 		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
-		targetWindow.postMessage({ code: this.cmCodes.js }, '*');
+		targetWindow.postMessage({code: this.cmCodes.js}, '*');
 
 	}
 	onCursorMove(editor) {
@@ -460,8 +460,8 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'downloadJpeg');
 	}
 
-	resetSplitting() {
-		this.setState({
+	async resetSplitting() {
+		await this.setState({
 			codeSplitSizes: this.getCodeSplitSizes(),
 			mainSplitSizes: this.getMainSplitSizesToApply()
 		});
@@ -694,8 +694,8 @@ export default class ContentWrap extends Component {
 		this.onMessageFromConsole('Possible infinite loop detected.', error.stack);
 	}
 
-	toggleConsole() {
-		this.setState({ isConsoleOpen: !this.state.isConsoleOpen });
+	async toggleConsole() {
+		await this.setState({isConsoleOpen: !this.state.isConsoleOpen});
 		trackEvent('ui', 'consoleToggle');
 	}
 	consoleHeaderDblClickHandler(e) {
@@ -732,8 +732,8 @@ export default class ContentWrap extends Component {
 			trackEvent('fn', 'evalConsoleExpr');
 		}
 	}
-	cssSettingsBtnClickHandler() {
-		this.setState({ isCssSettingsModalOpen: true });
+	async cssSettingsBtnClickHandler() {
+		await this.setState({isCssSettingsModalOpen: true});
 		trackEvent('ui', 'cssSettingsBtnClick');
 	}
 	cssSettingsChangeHandler(settings) {
@@ -1033,8 +1033,8 @@ export default class ContentWrap extends Component {
 					/>
 					<CssSettingsModal
 						show={this.state.isCssSettingsModalOpen}
-						closeHandler={() =>
-							this.setState({ isCssSettingsModalOpen: false })
+						closeHandler={async () =>
+							await this.setState({isCssSettingsModalOpen: false})
 						}
 						onChange={this.cssSettingsChangeHandler.bind(this)}
 						settings={this.props.currentItem.cssSettings}

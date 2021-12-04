@@ -17,8 +17,8 @@ class Tabs extends Component {
 			activeTab: this.props.children[0].props.label,
 		};
 	}
-	onClickTabItem = (tab) => {
-		this.setState({ activeTab: tab });
+	onClickTabItem = async (tab) => {
+		await this.setState({activeTab: tab});
 		this.props.onChange(tab);
 	}
 

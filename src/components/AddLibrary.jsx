@@ -11,42 +11,42 @@ export default class AddLibrary extends Component {
 			js: props.js || ''
 		};
 	}
-	onSelectChange(e) {
+	async onSelectChange(e) {
 		const target = e.target;
 		if (!target.value) {
 			return;
 		}
 		const type = target.selectedOptions[0].dataset.type;
 		if (type === 'js') {
-			this.setState({
+			await this.setState({
 				js: `${this.state.js}\n${target.value}`
 			});
 		} else {
-			this.setState({
+			await this.setState({
 				css: `${this.state.css}\n${target.value}`
 			});
 		}
 
 		trackEvent('ui', 'addLibrarySelect', target.selectedOptions[0].label);
-		this.props.onChange({ js: this.state.js, css: this.state.css });
+		this.props.onChange({js: this.state.js, css: this.state.css});
 		// Reset the select to the default value
 		target.value = '';
 	}
-	textareaBlurHandler(e, textarea) {
+	async textareaBlurHandler(e, textarea) {
 		const target = e ? e.target : textarea;
 		const type = target.dataset.lang;
 		if (type === 'js') {
-			this.setState({
+			await this.setState({
 				js: target.value || ''
 			});
 		} else {
-			this.setState({
+			await this.setState({
 				css: target.value || ''
 			});
 		}
 
 		// trackEvent('ui', 'addLibrarySelect', target.selectedOptions[0].label);
-		this.props.onChange({ js: this.state.js, css: this.state.css });
+		this.props.onChange({js: this.state.js, css: this.state.css});
 	}
 	suggestionSelectHandler(value) {
 		const textarea = value.match(/\.js$/)

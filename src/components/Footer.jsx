@@ -10,9 +10,7 @@ class JS13K extends Component {
 		if (+compoDate > +now) {
 			daysLeft = Math.floor((compoDate - now) / 1000 / 3600 / 24);
 		}
-		this.setState({
-			daysLeft
-		});
+
 	}
 
 	render() {
@@ -62,9 +60,9 @@ export default class Footer extends Component {
 		this.props.layoutBtnClickHandler(layoutId);
 	}
 
-	js13kClickHandler() {
+	async js13kClickHandler() {
 		// console.log(999);
-		this.setState({
+		await this.setState({
 			isJs13kDropdownOpen: !this.state.isJs13kDropdownOpen
 		});
 	}
@@ -147,7 +145,7 @@ export default class Footer extends Component {
 							onClick={this.js13kClickHandler.bind(this)}
 							onBlur={() =>
 								setTimeout(
-									() => this.setState({ isJs13kDropdownOpen: false }),
+									async () => await this.setState({isJs13kDropdownOpen: false}),
 									300
 								)
 							}
