@@ -115,6 +115,15 @@ export default class App extends Component {
 		this.prefs = {};
 		if (window.zenumlDesktop) { // hack savedItems, so we can load them on the desktop, without this object, the log in saveBtnClickHandler will not work.
 			this.state.savedItems = {};
+			// hack rename function
+			window.zd_nameChangedHandler = this.titleInputBlurHandler.bind(this);
+			window.zd_openBtnHandler = this.openBtnClickHandler.bind(this);
+			window.zd_newBtnHandler = this.newBtnClickHandler.bind(this)
+			window.zd_saveBtnHandler = this.saveBtnClickHandler.bind(this)
+			window.zd_loginBtnHandler = this.loginBtnClickHandler.bind(this)
+			// window.zd_proBtHandler = this.proBtnClickHandler.bind(this)
+			// window.zd_profileBtHandler = this.profileBtnClickHandler.bind(this)
+			// window.zd_libraryBtHander = this.openAddLibrary.bind(this)
 		}
 		firebase.auth().onAuthStateChanged(async user => {
 			await this.setState({isLoginModalOpen: false});
@@ -1312,23 +1321,25 @@ BookLibService.Borrow(id) {
 		return (
 			<div>
 				<div class="main-container">
-					<MainHeader
-						externalLibCount={this.state.externalLibCount}
-						openBtnHandler={this.openBtnClickHandler.bind(this)}
-						newBtnHandler={this.newBtnClickHandler.bind(this)}
-						saveBtnHandler={this.saveBtnClickHandler.bind(this)}
-						loginBtnHandler={this.loginBtnClickHandler.bind(this)}
-						proBtnHandler={this.proBtnClickHandler.bind(this)}
-						profileBtnHandler={this.profileBtnClickHandler.bind(this)}
-						addLibraryBtnHandler={this.openAddLibrary.bind(this)}
-						runBtnClickHandler={this.runBtnClickHandler.bind(this)}
-						isFetchingItems={this.state.isFetchingItems}
-						isSaving={this.state.isSaving}
-						title={this.state.currentItem.title}
-						titleInputBlurHandler={this.titleInputBlurHandler.bind(this)}
-						user={this.state.user}
-						unsavedEditCount={this.state.unsavedEditCount}
-					/>
+					{window.zenumlDesktop ? (null) : (
+						<MainHeader
+							externalLibCount={this.state.externalLibCount}
+							openBtnHandler={this.openBtnClickHandler.bind(this)}
+							newBtnHandler={this.newBtnClickHandler.bind(this)}
+							saveBtnHandler={this.saveBtnClickHandler.bind(this)}
+							loginBtnHandler={this.loginBtnClickHandler.bind(this)}
+							proBtnHandler={this.proBtnClickHandler.bind(this)}
+							profileBtnHandler={this.profileBtnClickHandler.bind(this)}
+							addLibraryBtnHandler={this.openAddLibrary.bind(this)}
+							runBtnClickHandler={this.runBtnClickHandler.bind(this)}
+							isFetchingItems={this.state.isFetchingItems}
+							isSaving={this.state.isSaving}
+							title={this.state.currentItem.title}
+							titleInputBlurHandler={this.titleInputBlurHandler.bind(this)}
+							user={this.state.user}
+							unsavedEditCount={this.state.unsavedEditCount}
+						/>
+					)}
 					<ContentWrap
 						currentLayoutMode={this.state.currentLayoutMode}
 						currentItem={this.state.currentItem}
