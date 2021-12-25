@@ -121,8 +121,8 @@ export default class App extends Component {
 			window.zd_newBtnHandler = this.newBtnClickHandler.bind(this)
 			window.zd_saveBtnHandler = this.saveBtnClickHandler.bind(this)
 			window.zd_loginBtnHandler = this.loginBtnClickHandler.bind(this)
-			// window.zd_proBtHandler = this.proBtnClickHandler.bind(this)
-			// window.zd_profileBtHandler = this.profileBtnClickHandler.bind(this)
+			window.zd_proBtHandler = this.proBtnClickHandler.bind(this)
+			window.zd_profileBtHandler = this.profileBtnClickHandler.bind(this)
 			// window.zd_libraryBtHander = this.openAddLibrary.bind(this)
 		}
 		firebase.auth().onAuthStateChanged(async user => {
