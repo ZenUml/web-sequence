@@ -24,3 +24,5 @@ build
 src/lib/vue-sequence-bundle.*.js
 extension-*.zip
 .firebase
+size-plugin.json
+extension.zip
