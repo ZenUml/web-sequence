@@ -1,4 +1,7 @@
-#Web Sequence  [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+#Web Sequence  
+
+[![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![HitCount](http://hits.dwyl.com/zenuml/web-sequence.svg?style=flat-square)](http://hits.dwyl.com/zenuml/web-sequence)
 
 **Web Sequence** is a Chrome Extension and a Web App that convert your Chrome tab into a sequence diagram generator. Something like CodePen or JSFiddle, but for sequence diagram generation.
 
