@@ -212,12 +212,15 @@ export default class App extends Component {
 
 			//If query parameter 'itemId' presents
 			let itemId = getQueryParameter('itemId');
+			if (window.zenumlDesktop) {
+				itemId = await itemService.getCurrentItemId();
+			}
 			if (itemId) {
 				itemService.getItem(itemId).then(
 					item => {
 						if (item) {
 							const resolveCurrentItem = items => {
-								if (items && items[item.id]) {
+								if ((items && items[item.id]) || window.zenumlDesktop) {
 									this.setCurrentItem(item).then(() => this.refreshEditor());
 								} else {
 									this.forkItem(item);
@@ -230,12 +233,21 @@ export default class App extends Component {
 							}
 						} else {
 							//Invalid itemId
-							window.location.href = '/';
+							if (window.zenumlDesktop) {
+								this.createNewItem();
+							} else {
+								window.location.href = '/';
+							}
+
 						}
 					},
 					error => {
 						//Insufficient permission
-						window.location.href = '/';
+						if (window.zenumlDesktop) {
+							this.createNewItem();
+						} else {
+							window.location.href = '/';
+						}
 					}
 				);
 			} else if (result.preserveLastCode && lastCode && lastCode.js) {
@@ -412,11 +424,16 @@ BookLibService.Borrow(id) {
 		await this.setState({currentItem: item}, d.resolve);
 
 		// Reset auto-saving flag
-		this.isAutoSavingEnabled = false;
+		if (window.zenumlDesktop) {
+			this.saveItem();// in desktop mode, always enable auto-saving
+		} else {
+			this.isAutoSavingEnabled = false;
+		}
 
 		// Reset unsaved count, in UI also.
 		await this.setState({unsavedEditCount: 0});
 		currentBrowserTab.setTitle(item.title);
+
 		return d.promise;
 	}
 	saveBtnClickHandler() {
