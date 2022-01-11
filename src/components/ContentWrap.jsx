@@ -770,6 +770,7 @@ export default class ContentWrap extends Component {
 		return (
 			<SplitPane
 				class="content-wrap  flex  flex-grow"
+				id = "content-wrap"
 				sizes={this.state.mainSplitSizes}
 				minSize={150}
 				style=""
