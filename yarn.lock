@@ -15787,10 +15787,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.184:
-  version "1.0.184"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.184.tgz#fa0e55f430da698f83b0378a37d5d17ab576c728"
-  integrity sha512-kRUO+3eC794UX1GdzuDwzEb530QZrb1+yeYi5lghnpZDcW+Y/9xRtiBEVuWK9sx+KQwv9kXJS+4PUiyL+C1NVg==
+vue-sequence@^1.0.185:
+  version "1.0.185"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.185.tgz#e6fae7ac9ef9ba361b4a09f5f793ef2a16b833f4"
+  integrity sha512-cOjXwB/e5JG7KsIPCr7mCYuStsBBGPavqzXZZcRzRY6y2AewW2lPIPOLaUf9udZGOkoMvt0Kwzfp9Rmlwl4WOw==
   dependencies:
     "@tailwindcss/postcss7-compat" "^2.0.2"
     "@types/assert" "^1.5.4"
