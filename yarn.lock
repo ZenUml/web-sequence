@@ -15787,10 +15787,15 @@ vm-browserify@^1.0.1:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
 
-vue-sequence@^1.0.188:
-  version "1.0.188"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.188.tgz#0827eecf47fd035d91a6d66d5404db164c34d64c"
-  integrity sha512-OzWc82lILWdl5p+7VVmC8Uyj/mP4uCcEwn3oa7XO5TMA5taMcxbE0SrWlU5Mp9VDwRz15KGv8iC/KjwbxpAR9Q==
+vue-gtag@^1.16.1:
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/vue-gtag/-/vue-gtag-1.16.1.tgz#edb2f20ab4f6c4d4d372dfecf8c1fcc8ab890181"
+  integrity sha512-5vs0pSGxdqrfXqN1Qwt0ZFXG0iTYjRMu/saddc7QIC5yp+DKgjWQRpGYVa7Pq+KbThxwzzMfo0sGi7ISa6NowA==
+
+vue-sequence@^1.0.191:
+  version "1.0.191"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.191.tgz#d942c648285854ec159e1829c24ee82eb45ff026"
+  integrity sha512-htFfifro9p0opdhZwzE9277QSRB4C0TGIyHNuGymeVm5JY3v9sKQMEzLuZQaBHkekuve/WQv45r/7k56ruUfLA==
   dependencies:
     "@tailwindcss/postcss7-compat" "^2.0.2"
     "@types/assert" "^1.5.4"
@@ -15804,6 +15809,7 @@ vue-sequence@^1.0.188:
     postcss "^7"
     tailwindcss "npm:@tailwindcss/postcss7-compat@^2.0.2"
     vue "2.6.12"
+    vue-gtag "^1.16.1"
     vue-template-compiler "2.6.12"
     vuex "^3.6.2"
 
