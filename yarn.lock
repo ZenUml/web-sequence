@@ -15792,10 +15792,10 @@ vue-gtag@^1.16.1:
   resolved "https://registry.yarnpkg.com/vue-gtag/-/vue-gtag-1.16.1.tgz#edb2f20ab4f6c4d4d372dfecf8c1fcc8ab890181"
   integrity sha512-5vs0pSGxdqrfXqN1Qwt0ZFXG0iTYjRMu/saddc7QIC5yp+DKgjWQRpGYVa7Pq+KbThxwzzMfo0sGi7ISa6NowA==
 
-vue-sequence@^1.0.191:
-  version "1.0.191"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.191.tgz#d942c648285854ec159e1829c24ee82eb45ff026"
-  integrity sha512-htFfifro9p0opdhZwzE9277QSRB4C0TGIyHNuGymeVm5JY3v9sKQMEzLuZQaBHkekuve/WQv45r/7k56ruUfLA==
+vue-sequence@^1.0.193:
+  version "1.0.193"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.193.tgz#e866d7eb465939a0a597cd1fb37c11a72204ecf7"
+  integrity sha512-owtmFKkANnlbksl5r4imqpAm0TFU6PI5KeLNto/DdSghe638WUXEdalX9ydRKU4eQKitrYXm5wMUe/fR8+/0BA==
   dependencies:
     "@tailwindcss/postcss7-compat" "^2.0.2"
     "@types/assert" "^1.5.4"
