@@ -64,7 +64,7 @@
 		"dom-to-image": "github:MichalBryxi/dom-to-image",
 		"esprima": "^4.0.0",
 		"file-saver": "^2.0.2",
-		"firebase": "^7.16.1",
+		"firebase": "^9.6.7",
 		"firebase-tools": "^8.4.3",
 		"http-server": "^0.12.3",
 		"jszip": "^3.5.0",
