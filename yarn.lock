@@ -4156,6 +4156,14 @@ color-parse@^1.3.7:
   dependencies:
     color-name "^1.0.0"
 
+color-string@1.5.2:
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/color-string/-/color-string-1.5.2.tgz#26e45814bc3c9a7cbd6751648a41434514a773a9"
+  integrity sha512-LX+I88NH9fxJ7mO8RFKYS9bPLdcSDP+FLSSA4VwkK3JMSJdVcZStoXBNgjUBb6COx7COITc/EE+o6zmz9O88rA==
+  dependencies:
+    color-name "^1.0.0"
+    simple-swizzle "^0.2.2"
+
 color-string@^1.6.0, color-string@^1.9.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/color-string/-/color-string-1.9.0.tgz#63b6ebd1bec11999d1df3a79a7569451ac2be8aa"
@@ -9926,7 +9934,7 @@ memfs@^3.4.1:
   dependencies:
     fs-monkey "1.0.3"
 
-memoizee@^0.4.14, memoizee@^0.4.15:
+memoizee@^0.4.14:
   version "0.4.15"
   resolved "https://registry.yarnpkg.com/memoizee/-/memoizee-0.4.15.tgz#e6f3d2da863f318d02225391829a6c5956555b72"
   integrity sha512-UBWmJpLZd5STPm7PMUlOw/TSy972M+z8gcyQ5veOnSDRREz/0bmpyTfKt3/51DhEBqCZQn1udM/5flcSPYhkdQ==
@@ -15043,23 +15051,22 @@ vue-gtag@^1.16.1:
   resolved "https://registry.yarnpkg.com/vue-gtag/-/vue-gtag-1.16.1.tgz#edb2f20ab4f6c4d4d372dfecf8c1fcc8ab890181"
   integrity sha512-5vs0pSGxdqrfXqN1Qwt0ZFXG0iTYjRMu/saddc7QIC5yp+DKgjWQRpGYVa7Pq+KbThxwzzMfo0sGi7ISa6NowA==
 
-vue-sequence@^1.0.219:
-  version "1.0.219"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.219.tgz#3ef3c849d502f83eb393df4915f8932f95fb3bb6"
-  integrity sha512-bf+ttwQeeiNEyRAwpnsZ+Im6FjHPoC09/RY/Krg4sQI8RmRORIT7coWhN+wYabJwcivMw2WTS6EY/Svxu87inQ==
+vue-sequence@^1.0.237:
+  version "1.0.237"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.237.tgz#54455c5ba5dd163d2908e80a45606f297871c69c"
+  integrity sha512-hqdVjZ/SiIIJl7rpDRNK01fuManAcJlQng+UuWCc220BqcqIxXJt3E+oY5xcmSBDxmO72Gta+vHO7Xo7s8T1mQ==
   dependencies:
     "@tailwindcss/postcss7-compat" "^2.0.2"
     "@types/assert" "^1.5.4"
     "@types/ramda" "^0.28.0"
     antlr4 "~4.8.0"
-    autoprefixer "^9"
+    color-string "1.5.2"
     dom-to-image-more "^2.9.5"
     file-saver "^2.0.5"
     highlight.js "^10.1.1"
     html-to-image "^1.9.0"
     lodash "^4.17.20"
     marked "^2.0.0"
-    memoizee "^0.4.15"
     postcss "^7"
     ramda "^0.28.0"
     tailwindcss "npm:@tailwindcss/postcss7-compat@^2.0.2"
