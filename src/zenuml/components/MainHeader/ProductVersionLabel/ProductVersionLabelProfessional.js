@@ -2,7 +2,7 @@ import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract';
 
 const ProductVersionLabelProfessional = ({ clickHandler }) => {
 	const style = {
-		'background-color': 'gold',
+		'background-color': '#d3a447',
 		color: 'white'
 	};
 

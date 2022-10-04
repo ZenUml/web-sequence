@@ -145,7 +145,7 @@ export default class SavedItemPane extends Component {
 					class="btn  saved-items-pane__close-btn"
 					id="js-saved-items-pane-close-btn"
 				>
-					X
+					<span class="material-symbols-outlined">close</span>
 				</button>
 				<div class="flex flex-v-center" style="justify-content: space-between;">
 					<h3>My Library ({this.items.length})</h3>

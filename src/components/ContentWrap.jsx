@@ -1000,18 +1000,26 @@ export default class ContentWrap extends Component {
 				{/*</Tabs>*/}
 				<div class="demo-side" id="js-demo-side" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
 					{window.zenumlDesktop ? (null) : (
-						<div className={'promotion'}>
+						<div className='promotion'>
 							<a target={'_blank'} href={'https://marketplace.atlassian.com/apps/1218380/zenuml-sequence-diagram-free-on-server?hosting=cloud&tab=overview'}>
 								Get Free Trial of ZenUML Confluence Plugin via Atlassian Marketplace
 							</a>
-							<Button
-								onClick={this.exportPngClickHandler.bind(this)}>
-								Export PNG
-							</Button>
-							<Button
-								onClick={this.exportJpegClickHandler.bind(this)}>
-								Export JPEG
-							</Button>
+							<div className="downloads">
+								<Button
+									className="button icon-button hint--rounded hint--bottom-left"
+									aria-label="Export as PNG"
+									onClick={this.exportPngClickHandler.bind(this)}>
+									<span class="material-symbols-outlined">file_download</span>
+									<span>PNG</span>
+								</Button>
+								<Button
+									className="button icon-button hint--rounded hint--bottom-left"
+									aria-label="Export as JPEG"
+									onClick={this.exportJpegClickHandler.bind(this)}>
+									<span class="material-symbols-outlined">file_download</span>
+									<span>JPEG</span>
+								</Button>
+							</div>
 						</div>
 					)}
 
