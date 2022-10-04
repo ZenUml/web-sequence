@@ -9,10 +9,10 @@ const SubscriptionAction = (props) => {
 		onClick={props.loginCallback}
 		data-event-category="ui"
 		data-event-action="loginButtonClick"
-		className="hide-on-login btn--dark flex  flex-v-center  hint--rounded  hint--bottom-left button button-editor-solid"
-		aria-label="Login/Signup"
+		className="hide-on-login btn--dark flex flex-v-center hint--rounded  hint--bottom-left button button-editor-solid"
+		aria-label="Signin"
 	>
-		Login/Signup
+		Sign in
 	</Button>;
 	if (userService.isPro()) {
 		const subscription = userService.subscription();

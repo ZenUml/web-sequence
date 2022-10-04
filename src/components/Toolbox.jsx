@@ -480,11 +480,15 @@ class Toolbox extends Component {
             </g>
           </g>
         </svg>
-		<svg width="29" height="29" viewBox="0 0 29 29" fill="none" onClick={() => {this.insertCode("//Note\nA.message()")}}>
-		  <path d="M26 26H3L3 8H20.2404L26 13.4493V26Z" stroke="#bbbfd3" stroke-width="2" />
-		  <line x1="19" y1="9" x2="19" y2="15" stroke="#bbbfd3" stroke-width="2" />
-		  <line x1="18" y1="15" x2="26" y2="15" stroke="#bbbfd3" stroke-width="2" />
-		</svg>
+
+        <svg width="29" height="29" viewBox="0 0 29 29" fill="none" onClick={() => {this.insertCode("//Note\nA.message()")}}>
+        <title>Note</title>
+          <g>
+            <path d="M26 26H3L3 8H20.2404L26 13.4493V26Z" stroke="#bbbfd3" stroke-width="2" />
+            <line x1="19" y1="9" x2="19" y2="15" stroke="#bbbfd3" stroke-width="2" />
+            <line x1="18" y1="15" x2="26" y2="15" stroke="#bbbfd3" stroke-width="2" />
+          </g>
+        </svg>
 
 	  </div>
     );

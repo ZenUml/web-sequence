@@ -14,7 +14,7 @@ export function ItemTile({
 		<div
 			role={focusable ? 'button' : null}
 			tabindex={focusable ? 0 : null}
-			class={`js-saved-item-tile saved-item-tile ${
+			className={`js-saved-item-tile saved-item-tile ${
 				inline ? 'saved-item-tile--inline' : ''
 			}`}
 			data-item-id={item.id}

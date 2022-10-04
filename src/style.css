@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+
 :root {
 	--color-text: #d4cde9;
 	--color-bg: #252637;
@@ -21,8 +23,9 @@ body {
 	font-size: 87.5%;
 	/* speocifically for mobile when keyboard is open */
 	position: relative;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
-		sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
+	font-family: 'Ubuntu', sans-serif;
+	/* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+		sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol'; */
 }
 
 h1 {
@@ -240,17 +243,24 @@ a > svg {
 	bottom: 0;
 }
 
+:root {
+	--border-radius: 5px;
+	--link-color: #f7ae2da6;
+	--link-color-bright: #f7ae2d;
+}
+
 .btn {
 	display: inline-block;
-	color: var(--color-button);
+	color: var(--link-color-bright);
 	font-size: inherit;
 	background: transparent;
-	border: 3px solid var(--color-button);
+	border: 3px solid var(--link-color-bright);
 	border-radius: 5px;
-	padding: 9px 15px;
+	padding: 0.2rem 0.5rem;
 	cursor: pointer;
 	letter-spacing: 0.2px;
-	line-height: 1;
+	line-height: 1.2;
+	font-size: 1rem;
 	white-space: nowrap;
 	text-align: center;
 	box-sizing: border-box;
@@ -362,12 +372,29 @@ body:not(.light-version).overlay-visible .main-container {
 }
 
 .demo-side .promotion {
-	height: 35px;
-	line-height: 35px;
+	display: flex;
+	align-items: center;
+	padding: 0.5rem;
 }
 
-div.toolbox>svg {
-	margin: 5px;
+.demo-side .promotion a {
+	color: var(--link-color-bright);
+	font-weight: lighter;
+}
+
+.demo-side .promotion .downloads {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+}
+
+.toolbox {
+	padding: 0.5rem 1rem;
+}
+
+.toolbox > svg {
+	margin: 0.2rem 0.5rem;
+	stroke: red;
 }
 
 .layout-3 .content-wrap {
@@ -611,16 +638,16 @@ body > #demo-frame {
 
 .main-header,
 .footer {
-	padding: 5px 10px;
+	padding: 0.5rem 1rem;
 	background-color: rgb(18, 19, 27);
 	color: rgba(255, 255, 255, 0.45);
 	border-top: 1px solid rgba(255, 255, 255, 0.14);
-	/*line-height: 20px;*/
 }
 
 .footer {
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
 	/* Because .console is 6 */
 	z-index: 6;
 }
@@ -628,6 +655,7 @@ body > #demo-frame {
 .main-header {
 	display: flex;
 	flex-wrap: nowrap;
+	align-items: center;
 	border: 0;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
@@ -653,6 +681,56 @@ body > #demo-frame {
 .main-header__avatar-img,
 .profile-modal__avatar-img {
 	border-radius: 50%;
+}
+
+.main-header .title {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+}
+
+.main-header .title > span {
+	display: inline-block;
+}
+
+.header-logo {
+	width: 2rem;
+	height: 2rem;
+
+	margin-right: 1rem;
+}
+
+.header-logo img {
+	width: 100%;
+}
+
+.title {
+	color: var(--color-text);
+}
+
+.title .material-symbols-outlined {
+	margin-left: 0.2rem;
+	font-size: 1rem;
+}
+
+.icon-button {
+	display: flex;
+	align-items: center;
+	gap: 0.1rem;
+
+	appearance: none;
+	font-size: 1rem;
+	text-shadow: none;
+	border-radius: var(--border-radius);
+	border: 3px solid transparent;
+	background: #444857;
+	color: white;
+	cursor: pointer;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	text-decoration: none;
+	text-align: center;
+	font-weight: normal;
 }
 
 .logo {
@@ -714,13 +792,14 @@ body > #demo-frame {
 }
 
 .footer__link {
-	/* display: inline-block; */
 	background: transparent;
 	border: 0;
 	padding: 0;
-	margin-right: 5px;
+	margin-right: 0.5rem;
 	position: relative;
 	top: 2px;
+	color: var(--link-color);
+	font-weight: lighter;
 }
 
 .footer a > svg,
@@ -757,10 +836,10 @@ body > #demo-frame {
 }
 
 .item-title-input {
-	color: rgba(6, 6, 6, 0.6);
-	flex: 1;
-	padding: 3px 5px !important;
+	padding: 3px 5px;
 	margin-right: 10px;
+	background: var(--color-bg);
+	color: white;
 }
 
 .search-input {
@@ -800,6 +879,9 @@ body > #demo-frame {
 }
 
 .modal__close-btn {
+	appearance: none;
+	border: none;
+	padding: 0.2rem;
 	position: absolute;
 	right: 1rem;
 	top: 1rem;
@@ -809,7 +891,10 @@ body > #demo-frame {
 	opacity: 0.8;
 	transition: 0.25s ease;
 	border-radius: 2px;
-	padding: 0.2rem 0.5rem;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .modal__close-btn > svg {
@@ -950,6 +1035,7 @@ body > #demo-frame {
 }
 
 .saved-item-tile {
+	flex: 1;
 	padding: 20px;
 	background-color: rgba(255, 255, 255, 0.06);
 	position: relative;
@@ -964,11 +1050,13 @@ body > #demo-frame {
 	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
 	animation: slide-left 0.35s ease forwards;
 }
+
 .saved-item-tile--inline {
 	display: inline-block;
 	margin-left: 10px;
 	margin-right: 10px;
 }
+
 .saved-item-tile:nth-child(1) {
 	animation-delay: 0.2s;
 }
@@ -1074,7 +1162,7 @@ body > #demo-frame {
 
 .saved-item-tile__title {
 	pointer-events: none;
-	font-size: 1.4em;
+	font-size: 1rem;
 	margin: 0;
 	opacity: 0.8;
 }
@@ -1086,6 +1174,9 @@ body > #demo-frame {
 }
 
 .saved-items-pane__container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	overflow-y: auto;
 	overflow-x: hidden;
 	max-height: calc(100vh - 90px);
@@ -1593,6 +1684,10 @@ body:not(.is-app) .show-when-app {
 	margin-left: -115px;
 }
 
+.main-header__btn-wrap {
+	margin-left: auto;
+}
+
 @media screen and (max-width: 600px) {
 	body {
 		font-size: 70%;
@@ -1717,14 +1812,14 @@ while the theme CSS file is loading */
 	position: fixed;
 }
 .tab-list {
-	display:grid;
+	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
-	padding:0;
-	margin:0;
+	padding: 0;
+	margin: 0;
 }
 
 .tab-list-item {
-	display:inline;
+	display: inline;
 }
 
 .tab-list-item span.line-of-code {
@@ -1751,7 +1846,7 @@ while the theme CSS file is loading */
 
 .feature-list .modal__content {
 	background: #ffffff;
-	color: #5D5D5D;
+	color: #5d5d5d;
 	padding: 0;
 	min-width: 400px;
 }
@@ -1762,8 +1857,8 @@ while the theme CSS file is loading */
 	text-align: center;
 	font-size: 30px;
 	font-weight: 100;
-	color: #FFF;
-	background: #30DBB5;
+	color: #fff;
+	background: #30dbb5;
 }
 
 .feature-list .header h1,
@@ -1796,9 +1891,8 @@ while the theme CSS file is loading */
 .user-subscription-link {
 	margin: 20px;
 	text-align: center;
-	font-size: xx-large
+	font-size: xx-large;
 }
-
 
 .editor-nav {
 	display: flex;
@@ -1810,7 +1904,7 @@ while the theme CSS file is loading */
 	top: 8px;
 	height: 32px;
 	overflow: hidden;
-	pointer-events: none
+	pointer-events: none;
 }
 
 ol.editor-nav li {
@@ -1829,46 +1923,40 @@ ol.editor-nav li {
 
 .editor-nav li.tab-list-active {
 	border-top: 2px solid #d5d7de;
-	background: #444857
+	background: #444857;
 }
 
 .editor-nav li:first-child {
-	border-top-left-radius: 2px
+	border-top-left-radius: 2px;
 }
 
 .editor-nav li:last-child {
 	border-top-right-radius: 2px;
-	margin-right: 0
+	margin-right: 0;
 }
 
 .button-editor-solid {
 	border: 3px solid #444857;
-	background: #444857
+	background: #444857;
 }
 
 .button {
-	font-family: 'Lato', 'Lucida Grande', 'Lucida Sans Unicode', Tahoma, Sans-Serif;
-	-webkit-appearance: none;
+	appearance: none;
 	font-size: 1rem;
 	text-shadow: none;
 	line-height: 1.2;
-	display: inline-block;
-	padding: 10px 16px;
 	margin: 0 10px 0 0;
 	position: relative;
 	border-radius: 4px;
 	border: 3px solid transparent;
 	background: #444857;
-	color: white;
+	color: var(--color-text);
 	cursor: pointer;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	text-decoration: none !important;
+	text-decoration: none;
 	text-align: center;
-	font-weight: normal !important;
-}
-
-.cheat-sheet {
+	font-weight: lighter;
 }
 
 .cheat-sheet table {
@@ -1880,20 +1968,14 @@ ol.editor-nav li {
 	background: #444857;
 }
 
-.cheat-sheet tr:nth-child(even){
+.cheat-sheet tr:nth-child(even) {
 	background-color: #2d303a;
 }
 
-.cheat-sheet tr>td, .cheat-sheet tr>th {
+.cheat-sheet tr > td,
+.cheat-sheet tr > th {
 	padding: 10px 5px;
 }
 
 .prod-version.basic {
-	animation: blinker 1s linear infinite;
-}
-
-@keyframes blinker {
-	50% {
-		opacity: 0;
-	}
 }
