@@ -850,6 +850,10 @@ BookLibService.Borrow(id) {
 
 	titleInputBlurHandler(e) {
 		this.state.currentItem.title = e.target.value;
+		this.setState({currentItem: {
+			...this.state.currentItem,
+			title: e.target.value,
+		}});
 		currentBrowserTab.setTitle(this.state.currentItem.title);
 		if (this.state.currentItem.id) {
 			this.saveItem();
