@@ -1001,9 +1001,6 @@ export default class ContentWrap extends Component {
 				<div class="demo-side" id="js-demo-side" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
 					{window.zenumlDesktop ? (null) : (
 						<div className='promotion'>
-							<a target={'_blank'} href={'https://marketplace.atlassian.com/apps/1218380/zenuml-sequence-diagram-free-on-server?hosting=cloud&tab=overview'}>
-								Get Free Trial of ZenUML Confluence Plugin via Atlassian Marketplace
-							</a>
 							<div className="downloads">
 								<Button
 									className="button icon-button hint--rounded hint--bottom-left"
