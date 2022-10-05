@@ -130,7 +130,39 @@ export default class SavedItemPane extends Component {
 
 	filteredItems() {
 		// !null === true, !'' === true, !' ' === false
-		return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
+		return [
+			{
+				"title": "Basic",
+				"mainSizes": [30, 70],
+				"htmlMode": "html",
+				"cssMode": "css",
+				"jsMode": "js",
+				"layoutMode": 1,
+				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
+				"html": ""
+			},
+			{
+				"title": "Basic",
+				"mainSizes": [30, 70],
+				"htmlMode": "html",
+				"cssMode": "css",
+				"jsMode": "js",
+				"layoutMode": 1,
+				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
+				"html": ""
+			},
+			{
+				"title": "Basic",
+				"mainSizes": [30, 70],
+				"htmlMode": "html",
+				"cssMode": "css",
+				"jsMode": "js",
+				"layoutMode": 1,
+				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
+				"html": ""
+			},			
+		]
+		// return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
 	}
 
 	render() {
@@ -142,28 +174,29 @@ export default class SavedItemPane extends Component {
 			>
 				<button
 					onClick={this.onCloseIntent.bind(this)}
-					class="btn  saved-items-pane__close-btn"
+					class="btn icon-button modal__close-btn"
 					id="js-saved-items-pane-close-btn"
 				>
 					<span class="material-symbols-outlined">close</span>
 				</button>
-				<div class="flex flex-v-center" style="justify-content: space-between;">
+				<div class="flex flex-v-center header-container">
 					<h3>My Library ({this.items.length})</h3>
-
-					<div>
+					<div className="my-library-buttons">
 						<button
 							onClick={this.props.exportBtnClickHandler}
-							class="btn--dark hint--bottom-left hint--rounded hint--medium"
+							class="btn--dark hint--bottom-left hint--rounded hint--medium icon-button"
 							aria-label="Export all your creations into a single importable file."
 						>
-							Export
+							<span class="material-symbols-outlined">file_download</span>
+							<span>Export</span>
 						</button>
 						<button
 							onClick={this.importBtnClickHandler.bind(this)}
-							class="btn--dark hint--bottom-left hint--rounded hint--medium"
+							class="btn--dark hint--bottom-left hint--rounded hint--medium icon-button"
 							aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
 						>
-							Import
+							<span class="material-symbols-outlined">file_upload</span>
+							<span>Import</span>
 						</button>
 					</div>
 				</div>

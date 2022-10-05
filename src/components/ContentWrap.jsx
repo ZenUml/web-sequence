@@ -1003,14 +1003,14 @@ export default class ContentWrap extends Component {
 						<div className='promotion'>
 							<div className="downloads">
 								<Button
-									className="button icon-button hint--rounded hint--bottom-left"
+									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Export as PNG"
 									onClick={this.exportPngClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_download</span>
 									<span>PNG</span>
 								</Button>
 								<Button
-									className="button icon-button hint--rounded hint--bottom-left"
+									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Export as JPEG"
 									onClick={this.exportJpegClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_download</span>
