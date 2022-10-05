@@ -18,7 +18,7 @@ export function CreateNewModal({
 			</div>
 			<hr />
 			Or choose from a template:
-			<div class="saved-items-pane__container">
+			<div class="create-new-pane__container">
 				{templates.map(template => (
 					<ItemTile
 						inline
