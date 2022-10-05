@@ -129,40 +129,7 @@ export default class SavedItemPane extends Component {
 	}
 
 	filteredItems() {
-		// !null === true, !'' === true, !' ' === false
-		return [
-			{
-				"title": "Basic",
-				"mainSizes": [30, 70],
-				"htmlMode": "html",
-				"cssMode": "css",
-				"jsMode": "js",
-				"layoutMode": 1,
-				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
-				"html": ""
-			},
-			{
-				"title": "Basic",
-				"mainSizes": [30, 70],
-				"htmlMode": "html",
-				"cssMode": "css",
-				"jsMode": "js",
-				"layoutMode": 1,
-				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
-				"html": ""
-			},
-			{
-				"title": "Basic",
-				"mainSizes": [30, 70],
-				"htmlMode": "html",
-				"cssMode": "css",
-				"jsMode": "js",
-				"layoutMode": 1,
-				"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
-				"html": ""
-			},			
-		]
-		// return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
+		return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
 	}
 
 	render() {
