@@ -67,7 +67,7 @@
 		"esprima": "^4.0.0",
 		"file-saver": "^2.0.2",
 		"firebase": "^7.16.1",
-		"firebase-tools": "^8.4.3",
+		"firebase-tools": "^11.14.3",
 		"http-server": "^0.12.3",
 		"jszip": "^3.5.0",
 		"preact": "10.6.6",
@@ -76,7 +76,7 @@
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^2.6.11",
-		"vue-sequence": "^1.0.238",
+		"vue-sequence": "^1.0.241",
 		"vuex": "3.4.0"
 	},
 	"resolutions": {
