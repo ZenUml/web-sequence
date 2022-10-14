@@ -76,7 +76,7 @@
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^2.6.11",
-		"vue-sequence": "^1.0.242",
+		"vue-sequence": "^1.0.243",
 		"vuex": "3.4.0"
 	},
 	"resolutions": {
