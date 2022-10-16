@@ -765,6 +765,8 @@ export default class ContentWrap extends Component {
 		this.cm.js.setValue(codeService.addCode(code, param));
 	}
 
+	gotoShareSurvey() {}
+
 	render() {
 		return (
 			<SplitPane
@@ -1002,6 +1004,16 @@ export default class ContentWrap extends Component {
 					{window.zenumlDesktop ? (null) : (
 						<div className='promotion'>
 							<div className="downloads">
+								<a href='https://github.com/ZenUml/web-sequence/discussions/496' target="_blank"
+								   style={{textDecoration:'none'}}>
+									<Button
+										className="btn--dark button icon-button hint--rounded hint--bottom-left"
+										aria-label="Share Your Work"
+										onClick={this.gotoShareSurvey.bind()}>
+										<span className="material-symbols-outlined">share</span>
+										<span>Share</span>
+									</Button>
+								</a>
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Export as PNG"
