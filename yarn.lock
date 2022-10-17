@@ -13557,10 +13557,10 @@ split-string@^3.0.1, split-string@^3.0.2:
   dependencies:
     extend-shallow "^3.0.0"
 
-split.js@1.6.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/split.js/-/split.js-1.6.0.tgz#bc49bb484eeea0785192a62d9b748c0f5e673954"
-  integrity sha512-83xRNcvWNuLDdBHpfm25Lzj3H2yCAXvPb+7QIKQMCSd3yjhSMSjLvr7+FZYJb3qc0/U0V2B5QRBrzfAVXSw36g==
+split.js@1.6.5:
+  version "1.6.5"
+  resolved "https://registry.yarnpkg.com/split.js/-/split.js-1.6.5.tgz#f7f61da1044c9984cb42947df4de4fadb5a3f300"
+  integrity sha512-mPTnGCiS/RiuTNsVhCm9De9cCAUsrNFFviRbADdKiiV+Kk8HKp/0fWu7Kr8pi3/yBmsqLFHuXGT9UUZ+CNLwFw==
 
 split@^1.0.1:
   version "1.0.1"
