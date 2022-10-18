@@ -25,6 +25,7 @@ We will discuss deployment of the following items:
 Shared steps - build and test:
 
 1. Make sure you are on the right branch (`master`).
+1. `yarn install` to install the dependencies
 1. `yarn build` to build the product release
 1. `yarn release` to copy build files to app / extension
 1. `http-server ./app` to verify build in ./app
@@ -51,24 +52,6 @@ we pass the generated zip file name to the script of `yarn upload` and `yarn pub
 // firebase.json, this will deploy the `app` folder
 $ firebase deploy --project [staging|prod]
 ````
-
-##### Travis CI
-Node: Custom Build only support trigger a build of a branch, not a commit. 
-
-1. In travisCI UI, go to `web-sequence`
-1. Click `More options` -> `Trigger Build`
-1. Select which branch to deploy
-1. In Custom Config put the config below, and change the FIREBASE_PROJECT value accordingly.
-1. Trigger Build
-
-```
-env:
-  global:
-#    - PRODUCT_TO_DEPLOY=none|web|chrome|all
-#    - FIREBASE_PROJECT=default|staging|prod
-    - PRODUCT_TO_DEPLOY=web
-    - FIREBASE_PROJECT=default
-```
 
 ##### Post development
 
