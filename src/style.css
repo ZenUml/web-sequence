@@ -382,7 +382,7 @@ body:not(.light-version).overlay-visible .main-container {
 	font-weight: lighter;
 }
 
-.demo-side .promotion .downloads {
+.demo-side .promotion .actions {
 	margin-left: auto;
 	display: flex;
 	align-items: center;
