@@ -460,6 +460,10 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'downloadJpeg');
 	}
 
+	shareClickHandler(e) {
+		trackEvent('ui', 'shareSurvey');
+	}
+
 	async resetSplitting() {
 		await this.setState({
 			codeSplitSizes: this.getCodeSplitSizes(),
@@ -765,8 +769,6 @@ export default class ContentWrap extends Component {
 		this.cm.js.setValue(codeService.addCode(code, param));
 	}
 
-	gotoShareSurvey() {}
-
 	render() {
 		return (
 			<SplitPane
@@ -1003,13 +1005,13 @@ export default class ContentWrap extends Component {
 				<div class="demo-side" id="js-demo-side" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
 					{window.zenumlDesktop ? (null) : (
 						<div className='promotion'>
-							<div className="downloads">
+							<div className="actions">
 								<a href='https://github.com/ZenUml/web-sequence/discussions/496' target="_blank"
 								   style={{textDecoration:'none'}}>
 									<Button
 										className="btn--dark button icon-button hint--rounded hint--bottom-left"
 										aria-label="Share Your Work"
-										onClick={this.gotoShareSurvey.bind()}>
+										onClick={this.shareClickHandler.bind(this)}>
 										<span className="material-symbols-outlined">share</span>
 										<span>Share</span>
 									</Button>
