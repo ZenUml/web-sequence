@@ -1,4 +1,4 @@
-#Web Sequence  
+#Web Sequence
 
 [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![HitCount](http://hits.dwyl.com/zenuml/web-sequence.svg?style=flat-square)](http://hits.dwyl.com/zenuml/web-sequence)
@@ -13,11 +13,11 @@
 
 We will discuss deployment of the following items:
 
-| App/Plugin       | Target    | Local | Console | Travis-CI |
-|------------------|-----------|-------|---------|-----------|
-| Web App          | Firebase  | Y     | N       | Y         |
-| Functions        | Firebase  | Y     | N       | N         |
-| Chrome extension | Web store | Y     | Y       | N         |
+| App/Plugin       | Target    | Local | Web Console | Github Actions |
+|------------------|-----------|-------|-------------|----------------|
+| Web App          | Firebase  | Y     | N           | Y              |
+| Functions        | Firebase  | Y     | N           | N              |
+| Chrome extension | Web store | Y     | Y           | N              |
 
 
 ### Web App and Chrome extension
@@ -32,12 +32,15 @@ Shared steps - build and test:
 1. `access localhost instead of 127.0.0.1` to allow firebase access
 
 #### Chrome extension
-1. Update `version` in `extension/manifest.json`
-1. Zip the `extension` folder
-1. `yarn upload` to upload the extension to Google Web Store
-1. `yarn pub` to publish the extension
+1. Update `version` in `src/manifest.json`
+2. `yarn build` to build the product release
+3. `yarn release` to build the Chrome extension
+4. Use the ZenUml extension to the Chrome Browser
+	1. Chrome -> settings -> extensions
+	2. Enable 'Developer Mode'
+	3. Load the unpacked extensions: folder ./extension
 
-> Optimisation: The #3 step in the shared steps would generate a zip file. The #2 step can be omitted if 
+> Optimisation: The #3 step in the shared steps would generate a zip file. The #2 step can be omitted if
 we pass the generated zip file name to the script of `yarn upload` and `yarn pub`.
 
 ##### Post deployment
@@ -67,8 +70,7 @@ $ yarn install  // instal modules
 $ yarn start    // start a local server
 
 $ yarn build    // build a staging release
-$ yarn build-prod    // build a production release
-$ gulp release  // copy resources to app / extension
+$ yarn release  // copy resources to app / extension
 ````
 
 #### Enable/Disable DEBUG
