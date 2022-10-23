@@ -469,8 +469,10 @@ export default class ContentWrap extends Component {
 	}
 
 	copyPngToClipboard(imageData) {
-		const status = navigator.permissions.query({name: 'clipboard-write'});
-		console.log(status);
+		if (navigator.permissions && navigator.permissions.query) {
+			const status = navigator.permissions.query({name: 'clipboard_write'});
+			console.log(status);
+		}
 		const clipboardItem = new ClipboardItem({'image/png': imageData});
 		navigator.clipboard.write([clipboardItem]).then(
 			() => console.log("Copied to clipboard successfully!"),
