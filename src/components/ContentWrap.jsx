@@ -475,8 +475,8 @@ export default class ContentWrap extends Component {
 		}
 		const clipboardItem = new ClipboardItem({'image/png': imageData});
 		navigator.clipboard.write([clipboardItem]).then(
-			() => console.log("Copied to clipboard successfully!"),
-			() => console.error("Copied to clipboard failed!")
+			(value) => console.log("Copied to clipboard successfully!", value),
+			(reason) => console.error("Copied to clipboard failed!: ", reason)
 		)
 	}
 
