@@ -473,26 +473,26 @@ export default class ContentWrap extends Component {
 			const status = navigator.permissions.query({name: 'clipboard_write'});
 			console.log(status);
 		}
-		const isSafari = /^((?!chrome|android).)*safari/i.test(
-			navigator?.userAgent
-		);
+		console.log(navigator.userAgent);
+		const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+		console.log(isSafari);
 		if (isSafari) {
 			console.log("safari")
 			navigator.clipboard.write([
-					new ClipboardItem({
-						"image/png": new Promise(async (resolve, reject) => {
-							try {
-								resolve(new Blob([imageData], { type: "image/png" }));
-							} catch (err) {
-								reject(err);
-							}
-						}),
+				new ClipboardItem({
+					"image/png": new Promise(async (resolve, reject) => {
+						try {
+							resolve(new Blob([imageData], { type: "image/png" }));
+						} catch (err) {
+							reject(err);
+						}
 					}),
-				]).then(() => console.log("success")
-				).catch((err) =>
-					// Error
-					console.error("Error:", err)
-				);
+				}),
+			]).then(() => console.log("success")
+			).catch((err) =>
+				// Error
+				console.error("Error:", err)
+			);
 		} else {
 			const clipboardItem = new ClipboardItem({'image/png': imageData});
 			navigator.clipboard.write([clipboardItem]).then(
