@@ -460,6 +460,24 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'downloadJpeg');
 	}
 
+	async copyPngClickHandler(e) {
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+		this.copyPngToClipboard(png);
+		trackEvent('ui', 'copyPng');
+	}
+
+	copyPngToClipboard(imageData) {
+		const status = navigator.permissions.query({name: 'clipboard-write'});
+		console.log(status);
+		const clipboardItem = new ClipboardItem({'image/png': imageData});
+		navigator.clipboard.write([clipboardItem]).then(
+			() => console.log("Copied to clipboard successfully!"),
+			() => console.error("Copied to clipboard failed!")
+		)
+	}
+
 	shareClickHandler(e) {
 		trackEvent('ui', 'shareSurvey');
 	}
@@ -1029,6 +1047,13 @@ export default class ContentWrap extends Component {
 									onClick={this.exportJpegClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_download</span>
 									<span>JPEG</span>
+								</Button>
+								<Button
+									className="btn--dark button icon-button hint--rounded hint--bottom-left"
+									aria-label="Copy PNG on Clipboard"
+									onClick={this.copyPngClickHandler.bind(this)}>
+									<span class="material-symbols-outlined">file_copy</span>
+									<span>Copy PNG File</span>
 								</Button>
 							</div>
 						</div>
