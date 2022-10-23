@@ -460,7 +460,7 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'downloadJpeg');
 	}
 
-	async copyPngClickHandler(e) {
+	async copyPngClickHandler() {
 		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
 		const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
@@ -474,8 +474,9 @@ export default class ContentWrap extends Component {
 			console.log(status);
 		}
 		console.log(navigator.userAgent);
-		const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+		let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 		console.log(isSafari);
+		isSafari = false;
 		if (isSafari) {
 			console.log("safari")
 			navigator.clipboard.write([
@@ -1075,7 +1076,7 @@ export default class ContentWrap extends Component {
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Copy PNG on Clipboard"
-									onClick={this.copyPngClickHandler.bind(this)}>
+									onClick={() => this.copyPngClickHandler()}>
 									<span class="material-symbols-outlined">file_copy</span>
 									<span>Copy PNG File</span>
 								</Button>
