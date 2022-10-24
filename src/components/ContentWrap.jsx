@@ -469,6 +469,21 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'copyPng');
 	}
 
+	async copyPngClickHandlerBySafari(e) {
+		console.log(e);
+		navigator.clipboard.write([
+			new ClipboardItem({
+				"image/png": new Promise(async resolve => {
+					const response = await fetch("https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png");
+					resolve(await response.blob());
+				})
+			})
+		]).then(
+			r => console.log("success", r),
+			reason => console.log("failed", reason)
+		);
+	}
+
 	copyPngToClipboard(imageData) {
 		if (navigator.permissions && navigator.permissions.query) {
 			const status = navigator.permissions.query({name: 'clipboard_write'});
@@ -1081,18 +1096,9 @@ export default class ContentWrap extends Component {
 									<span class="material-symbols-outlined">file_copy</span>
 									<span>Copy PNG File</span>
 								</Button>
-								<a onClick={async () => {
-									const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
-									// eslint-disable-next-line
-									const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
-									await navigator.clipboard.write([
-										new ClipboardItem({
-											'text/plain': new Promise(async (resolve) => {
-												resolve(new Blob(["svg"], {type: 'text/plain'}));
-											}),
-										})
-									]);
-								}}>test</a>
+								<a onClick={this.copyPngClickHandlerBySafari.bind(this)}>test</a>
+								<a onClick={this.copyPngClickHandlerBySafari.bind()}>test-no-this</a>
+								<a id="a-test">just-a</a>
 							</div>
 						</div>
 					)}
