@@ -1085,7 +1085,13 @@ export default class ContentWrap extends Component {
 									const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 									// eslint-disable-next-line
 									const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
-									this.copyPngToClipboard(png);
+									await navigator.clipboard.write([
+										new ClipboardItem({
+											'text/plain': new Promise(async (resolve) => {
+												resolve(new Blob(["svg"], {type: 'text/plain'}));
+											}),
+										})
+									]);
 								}}>test</a>
 							</div>
 						</div>
