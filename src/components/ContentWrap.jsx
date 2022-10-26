@@ -469,13 +469,64 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'copyPng');
 	}
 
-	async copyPngClickHandlerBySafari(e) {
+	async copyPngClickHandlerBySafari1(e) {
 		console.log(e);
 		navigator.clipboard.write([
 			new ClipboardItem({
 				"image/png": new Promise(async resolve => {
 					const response = await fetch("https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png");
 					resolve(await response.blob());
+				})
+			})
+		]).then(
+			r => console.log("success", r),
+			reason => console.log("failed", reason)
+		);
+	}
+
+	async copyPngClickHandlerBySafari2(e) {
+		console.log(e);
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+		navigator.clipboard.write([
+			new ClipboardItem({
+				"image/png": new Promise(async resolve => {
+					resolve(png);
+				})
+			})
+		]).then(
+			r => console.log("success", r),
+			reason => console.log("failed", reason)
+		);
+	}
+
+	async copyPngClickHandlerBySafari3(e) {
+		console.log(e);
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		navigator.clipboard.write([
+			new ClipboardItem({
+				"image/png": new Promise(async resolve => {
+					const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+					resolve(png);
+				})
+			})
+		]).then(
+			r => console.log("success", r),
+			reason => console.log("failed", reason)
+		);
+	}
+
+	async copyPngClickHandlerBySafari4(e) {
+		console.log(e);
+		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		navigator.clipboard.write([
+			new ClipboardItem({
+				"image/png": new Promise(async resolve => {
+					const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+					resolve(await png);
 				})
 			})
 		]).then(
@@ -1096,8 +1147,10 @@ export default class ContentWrap extends Component {
 									<span class="material-symbols-outlined">file_copy</span>
 									<span>Copy PNG File</span>
 								</Button>
-								<a onClick={this.copyPngClickHandlerBySafari.bind(this)}>test</a>
-								<a onClick={this.copyPngClickHandlerBySafari.bind()}>test-no-this</a>
+								<a onClick={this.copyPngClickHandlerBySafari1.bind(this)}>test1</a>
+								<a onClick={this.copyPngClickHandlerBySafari2.bind(this)}>test2</a>
+								<a onClick={this.copyPngClickHandlerBySafari3.bind(this)}>test3</a>
+								<a onClick={this.copyPngClickHandlerBySafari4.bind(this)}>test4</a>
 								<a id="a-test">just-a</a>
 							</div>
 						</div>
