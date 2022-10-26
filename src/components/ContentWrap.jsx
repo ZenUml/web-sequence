@@ -1,26 +1,27 @@
-import React, { h, Component } from 'preact';
+import React, {Component} from 'preact';
 import {saveAs} from 'file-saver'
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
-import { computeHtml, computeCss, computeJs } from '../computes';
-import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
-import { log, loadJS, getCompleteHtml } from '../utils';
-import { writeFileAsync} from "../WriteFile";
+import {computeCss, computeHtml, computeJs} from '../computes';
+import {CssModes, HtmlModes, JsModes, modes} from '../codeModes';
+import {getCompleteHtml, loadJS, log} from '../utils';
+import {writeFileAsync} from "../WriteFile";
 import Vue from '!!file-loader!vue/dist/vue';
 import Vuex from '!!file-loader!vuex/dist/vuex';
 import vueSequence from '!!file-loader!vue-sequence';
 import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
 
-import { Button } from './common';
-import { SplitPane } from './SplitPane.jsx';
-import { trackEvent } from '../analytics';
+import {Button} from './common';
+import {SplitPane} from './SplitPane.jsx';
+import {trackEvent} from '../analytics';
 import CodeMirror from '../CodeMirror';
 import 'codemirror/mode/javascript/javascript.js'
-import { Console } from './Console';
-import { deferred } from '../deferred';
+import {Console} from './Console';
+import {deferred} from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
 import codeService from '../services/code_service'
+import {alertsService} from '../notifications';
 
 const minCodeWrapSize = 33;
 
@@ -445,81 +446,44 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 	}
 	async exportPngClickHandler(e) {
-		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
-		// eslint-disable-next-line
-		const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+		const png = await this.getPngBlob();
 		saveAs(png, 'zenuml.png');
 		trackEvent('ui', 'downloadPng');
 	}
 
-	async exportJpegClickHandler(e) {
+	async getPngBlob() {
 		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
-		const jpeg = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toJpeg();
-		saveAs(jpeg, 'zenuml.jpeg');
-		trackEvent('ui', 'downloadJpeg');
+		return await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
 	}
 
-	async copyPngClickHandler(e) {
-		console.log(e);
-		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
-		// eslint-disable-next-line
-		const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
-		this.copyPngToClipboard(png);
-		trackEvent('ui', 'copyPng');
-	}
-
-	async copyPngClickHandlerBySafari3(e) {
-		console.log(e);
-		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
-		// eslint-disable-next-line
+	async copyImageClickHandler(e) {
+		if(!navigator.clipboard || !navigator.clipboard.write){
+			this.showCopyErrorNotice();
+			trackEvent('ui', 'copyImageFailed1');
+			return;
+		}
 		navigator.clipboard.write([
 			new ClipboardItem({
 				"image/png": new Promise(async resolve => {
-					const png = await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+					const png = await this.getPngBlob();
 					resolve(png);
 				})
 			})
 		]).then(
-			r => console.log("success", r),
-			reason => console.log("failed", reason)
+			() => alertsService.add("PNG file was copied"),
+			err => {
+				this.showCopyErrorNotice();
+				console.log(err);
+				trackEvent('ui', 'copyImageFailed2');
+			}
 		);
-		trackEvent('ui', 'copyPng');
+		trackEvent('ui', 'copyImage');
 	}
 
-	copyPngToClipboard(imageData) {
-		if (navigator.permissions && navigator.permissions.query) {
-			const status = navigator.permissions.query({name: 'clipboard_write'});
-			console.log(status);
-		}
-		console.log(navigator.userAgent);
-		let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-		console.log(isSafari);
-		isSafari = false;
-		if (isSafari) {
-			console.log("safari")
-			navigator.clipboard.write([
-				new ClipboardItem({
-					"image/png": new Promise(async (resolve, reject) => {
-						try {
-							resolve(new Blob([imageData], { type: "image/png" }));
-						} catch (err) {
-							reject(err);
-						}
-					}),
-				}),
-			]).then(() => console.log("success")
-			).catch((err) =>
-				// Error
-				console.error("Error:", err)
-			);
-		} else {
-			const clipboardItem = new ClipboardItem({'image/png': imageData});
-			navigator.clipboard.write([clipboardItem]).then(
-				(value) => console.log("Copied to clipboard successfully!", value),
-				(reason) => console.error("Copied to clipboard failed!: ", reason)
-			)
-		}
+
+	showCopyErrorNotice() {
+		alertsService.add("Copy failed, please try on another browser or upgrade your browser!");
 	}
 
 	shareClickHandler(e) {
@@ -1087,22 +1051,8 @@ export default class ContentWrap extends Component {
 								</Button>
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
-									aria-label="Export as JPEG"
-									onClick={this.exportJpegClickHandler.bind(this)}>
-									<span class="material-symbols-outlined">file_download</span>
-									<span>JPEG</span>
-								</Button>
-								<Button
-									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Copy PNG to Clipboard"
-									onClick={this.copyPngClickHandler.bind(this)}>
-									<span class="material-symbols-outlined">file_copy</span>
-									<span>Copy PNG File By Chrome</span>
-								</Button>
-								<Button
-									className="btn--dark button icon-button hint--rounded hint--bottom-left"
-									aria-label="Copy PNG to Clipboard"
-									onClick={this.copyPngClickHandlerBySafari3.bind(this)}>
+									onClick={this.copyImageClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_copy</span>
 									<span>Copy PNG File</span>
 								</Button>
