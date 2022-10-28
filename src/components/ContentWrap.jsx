@@ -1054,7 +1054,7 @@ export default class ContentWrap extends Component {
 									aria-label="Copy PNG to Clipboard"
 									onClick={this.copyImageClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_copy</span>
-									<span>Copy PNG File</span>
+									<span>Copy PNG</span>
 								</Button>
 							</div>
 						</div>
