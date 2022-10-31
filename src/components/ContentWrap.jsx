@@ -205,14 +205,19 @@ export default class ContentWrap extends Component {
 				});
 			await writeFileAsync('script.js', blobjs);
 			await writeFileAsync('preview.html', blob);
-			var origin = chrome.runtime && chrome.runtime.id
-				? `chrome-extension://${chrome.runtime.id}`
-				: `${location.origin}`;
-			var src = `filesystem:${origin}/temporary/preview.html`;
+			// var origin = chrome.runtime && chrome.runtime.id
+			// 	? `chrome-extension://${chrome.runtime.id}`
+			// 	: `${location.origin}`;
+			// var src = `filesystem:${origin}/temporary/preview.html`;
 			if (this.detachedWindow) {
-				this.detachedWindow.postMessage(src, '*');
+				this.detachedWindow.postMessage({contents}, '*');
 			} else {
-				this.frame.src = src;
+				this.frame.src = this.frame.src;
+				setTimeout(() => {
+					that.frame.contentDocument.open();
+					that.frame.contentDocument.write(contents);
+					that.frame.contentDocument.close();
+				}, 10);
 			}
 		}
 	}
@@ -1054,7 +1059,7 @@ export default class ContentWrap extends Component {
 									aria-label="Copy PNG to Clipboard"
 									onClick={this.copyImageClickHandler.bind(this)}>
 									<span class="material-symbols-outlined">file_copy</span>
-									<span>Copy PNG File</span>
+									<span>Copy PNG</span>
 								</Button>
 							</div>
 						</div>
