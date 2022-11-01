@@ -190,6 +190,7 @@ export default class Footer extends Component {
 
 				<div class="footer__right">
 					<button
+						style="display: none;"
 						onClick={this.props.saveHtmlBtnClickHandler}
 						id="saveHtmlBtn"
 						class="mode-btn  hint--rounded  hint--top-left hide-on-mobile"
@@ -236,7 +237,7 @@ export default class Footer extends Component {
 						</svg>
 					</button>
 
-					<div class="footer__separator hide-on-mobile" />
+					<div style="display: none;" class="footer__separator hide-on-mobile" />
 
 					<button
 						onClick={this.layoutBtnClickhandler.bind(this, 1)}
@@ -291,6 +292,7 @@ export default class Footer extends Component {
 						</svg>
 					</button>
 					<button
+						style="display:none;"
 						class="mode-btn hint--top-left hint--rounded hide-on-mobile"
 						aria-label="Detach Preview"
 						onClick={this.props.detachedPreviewBtnHandler}
