@@ -26,3 +26,4 @@ extension-*.zip
 .firebase
 size-plugin.json
 extension.zip
+!src/extension
