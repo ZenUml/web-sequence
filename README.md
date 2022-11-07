@@ -32,7 +32,7 @@ Shared steps - build and test:
 1. `access localhost instead of 127.0.0.1` to allow firebase access
 
 #### Chrome extension
-1. Update `version` in `src/manifest.json`
+1. Update `version` in `src/extension/manifest.json`
 2. `yarn build` to build the product release
 3. `yarn release` to build the Chrome extension
 4. Use the ZenUml extension to the Chrome Browser
