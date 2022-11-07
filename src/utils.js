@@ -262,7 +262,7 @@ function getUrl(relativeUrl) {
 }
 
 /* eslint-disable max-params */
-export function getCompleteHtml(html, css, js, item, isForExport) {
+export function getCompleteHtml(html, css, js, item) {
 	/* eslint-enable max-params */
 
 	if (!item) {
@@ -291,12 +291,6 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		html +
 		'\n';
 
-	// if (!isForExport) {
-	// 	contents +=
-	// 		'<script src="' +
-	// 		(`/screenlog.js`) +
-	// 		'"></script>';
-	// }
 	contents +=	'<script src="' + getUrl(Vue) + '"></script>';
 	contents +=	'<script src="' + getUrl(Vuex) + '"></script>';
 	contents +=	'<script src="' + getUrl(vueSequence) + '"></script>';
@@ -312,10 +306,8 @@ export function getCompleteHtml(html, css, js, item, isForExport) {
 		// contents += '<script>\n' + js + '\n//# sourceURL=userscript.js';
 		contents = contents + '<script>\n' + js + '\n//# sourceURL=userscript.js';
 	} else {
-		var origin = chrome.runtime && chrome.runtime.id
-			? `chrome-extension://${chrome.runtime.id}`
-			: `${location.origin}`;
-		contents +=	'<script src="' + `filesystem:${origin}/temporary/script.js` + '">';
+		// for Chrome extension, read the js file from lib
+		contents +=	'<script src="./script.js">';
 	}
 	contents += '\n</script>\n</body>\n</html>';
 

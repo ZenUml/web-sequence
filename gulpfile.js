@@ -146,13 +146,14 @@ gulp.task('fixIndex', function () {
 
 gulp.task('packageExtension', function () {
 	childProcess.execSync('cp -R app/ extension');
-	childProcess.execSync('cp src/manifest.json extension');
-	childProcess.execSync('cp src/options.js extension');
-	childProcess.execSync('cp src/options.html extension');
-	childProcess.execSync('cp src/eventPage.js extension');
-	childProcess.execSync('cp src/icon-16.png extension');
-	childProcess.execSync('cp src/icon-48.png extension');
-	childProcess.execSync('cp src/icon-128.png extension');
+	childProcess.execSync('cp src/extension/manifest.json extension');
+	childProcess.execSync('cp src/extension/options.js extension');
+	childProcess.execSync('cp src/extension/options.html extension');
+	childProcess.execSync('cp src/extension/eventPage.js extension');
+	childProcess.execSync('cp src/extension/script.js extension');
+	childProcess.execSync('cp src/extension/icon-16.png extension');
+	childProcess.execSync('cp src/extension/icon-48.png extension');
+	childProcess.execSync('cp src/extension/icon-128.png extension');
 	childProcess.execSync(
 		'rm -rf extension/partials'
 	);

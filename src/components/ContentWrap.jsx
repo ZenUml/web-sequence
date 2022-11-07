@@ -142,14 +142,12 @@ export default class ContentWrap extends Component {
 		// isNotChrome
 		const shouldInlineJs =
 			!window.webkitRequestFileSystem || !window.IS_EXTENSION;
-		var contents = getCompleteHtml(
+		const contents = getCompleteHtml(
 			html,
 			css,
 			shouldInlineJs ? js : null,
 			this.props.currentItem
 		);
-		var blob = new Blob([contents], {type: 'text/plain;charset=UTF-8'});
-		var blobjs = new Blob([js], {type: 'text/plain;charset=UTF-8'});
 
 		// Track if people have written code.
 		if (!trackEvent.hasTrackedCode && (html || css || js)) {
@@ -161,66 +159,18 @@ export default class ContentWrap extends Component {
 			that.frame.contentWindow.postMessage({code: that.cmCodes.js}, '*')
 		}
 
-		if (shouldInlineJs) {
-			if (this.detachedWindow) {
-				log('✉️ Sending message to detached window');
-				this.detachedWindow.postMessage({contents}, '*');
-
-			} else {
-				this.frame.src = this.frame.src;
-				setTimeout(() => {
-					that.frame.contentDocument.open();
-					that.frame.contentDocument.write(contents);
-					that.frame.contentDocument.close();
-				}, 10);
-			}
+		if (this.detachedWindow) {
+			this.detachedWindow.postMessage({contents}, '*');
 		} else {
-			// we need to store user script in external JS file to prevent inline-script
-			// CSP from affecting it.
-			console.log('Vue is', Vue);
-			fetch('lib/screenlog.js')
-				.then(res => res.blob())
-				.then(async b => {
-					await writeFileAsync('screenlog.js', b);
-				});
-			fetch(Vue)
-				.then(res => res.blob())
-				.then(async b => {
-					await writeFileAsync(Vue, b);
-				});
-			fetch(Vuex)
-				.then(res => res.blob())
-				.then(async b => {
-					await writeFileAsync(Vuex, b);
-				});
-			fetch(vueSequence)
-				.then(res => res.blob())
-				.then(async b => {
-					await writeFileAsync(vueSequence, b);
-				});
-			fetch(vueSequenceCss)
-				.then(res => res.blob())
-				.then(async b => {
-					await writeFileAsync(vueSequenceCss, b);
-				});
-			await writeFileAsync('script.js', blobjs);
-			await writeFileAsync('preview.html', blob);
-			// var origin = chrome.runtime && chrome.runtime.id
-			// 	? `chrome-extension://${chrome.runtime.id}`
-			// 	: `${location.origin}`;
-			// var src = `filesystem:${origin}/temporary/preview.html`;
-			if (this.detachedWindow) {
-				this.detachedWindow.postMessage({contents}, '*');
-			} else {
-				this.frame.src = this.frame.src;
-				setTimeout(() => {
-					that.frame.contentDocument.open();
-					that.frame.contentDocument.write(contents);
-					that.frame.contentDocument.close();
-				}, 10);
-			}
+			this.frame.src = this.frame.src;
+			setTimeout(() => {
+				that.frame.contentDocument.open();
+				that.frame.contentDocument.write(contents);
+				that.frame.contentDocument.close();
+			}, 10);
 		}
 	}
+
 	cleanupErrors(lang) {
 		this.cm[lang].clearGutter('error-gutter');
 	}

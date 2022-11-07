@@ -738,8 +738,7 @@ body > #demo-frame {
 	height: 18px;
 	width: 18px;
 	margin-right: 5px;
-	background: url(icon-16.png);
-	background-repeat: no-repeat;
+	background: url(extension/icon-16.png) no-repeat;
 	vertical-align: middle;
 	-webkit-filter: grayscale(0.9);
 	filter: grayscale(0.9);
@@ -752,7 +751,7 @@ body > #demo-frame {
 	height: 20px;
 	width: 20px;
 	margin-right: 0px;
-	background: url(icon-16.png) 0px 0px no-repeat;
+	background: url(extension/icon-16.png) 0px 0px no-repeat;
 	-webkit-filter: grayscale(0);
 	opacity: 1;
 }
