@@ -17,7 +17,7 @@ export function trackEvent(category, action, label, value) {
 
 async function sendTrackMessage(type, category, action, label, value) {
 	if (location.href.indexOf('chrome-extension://') !== -1) {
-		await postAnalyticsDataByApi(type, category, action);
+		await postAnalyticsDataByApi(type, category, action, label);
 	} else {
 		if (window.ga) {
 			ga('send', type, category, action, label, value);
@@ -37,7 +37,7 @@ function getCustomerId() {
 	return cid;
 }
 
-async function postAnalyticsDataByApi(type, category, action) {
+async function postAnalyticsDataByApi(type, category, action, label) {
 	const url = "https://www.google-analytics.com/collect";
 	const gaParams = new URLSearchParams();
 	gaParams.append("v", 1);
@@ -46,7 +46,8 @@ async function postAnalyticsDataByApi(type, category, action) {
 	gaParams.append("dl", window.location.host);
 	gaParams.append("ul", navigator.language);
 	gaParams.append("de", document.characterSet);
-	gaParams.append("dt", new Date().toUTCString());
+	gaParams.append("dt", document.title);
+	gaParams.append("el", label ? label : null);
 	gaParams.append("t", type);
 	gaParams.append("ec", category);
 	gaParams.append("ea", action);

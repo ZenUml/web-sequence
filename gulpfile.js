@@ -91,7 +91,8 @@ gulp.task('copyFiles', function () {
 			'src/Inconsolata.ttf',
 			'src/Monoid.ttf'
 		])
-			.pipe(gulp.dest('app'))
+			.pipe(gulp.dest('app')),
+		gulp.src('node_modules/vue-sequence/dist/fonts/*').pipe(gulp.dest("app/fonts/"))
 	);
 });
 
@@ -154,6 +155,8 @@ gulp.task('packageExtension', function () {
 	childProcess.execSync('cp src/icon-16.png extension');
 	childProcess.execSync('cp src/icon-48.png extension');
 	childProcess.execSync('cp src/icon-128.png extension');
+	childProcess.execSync('cp -r node_modules/vue-sequence/dist/fonts extension');
+
 	childProcess.execSync(
 		'rm -rf extension/partials'
 	);
