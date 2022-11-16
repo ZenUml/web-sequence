@@ -17,13 +17,13 @@ node_modules/
 *.map
 
 .sass-cache
-extension/
-app/
+### folders built by preact or gulp
+/build/
+/extension/
+/app/
 
-build
 src/lib/vue-sequence-bundle.*.js
 extension-*.zip
 .firebase
 size-plugin.json
 extension.zip
-!src/extension
