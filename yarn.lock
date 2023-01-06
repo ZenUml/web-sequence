@@ -2723,7 +2723,7 @@ array.prototype.flat@^1.2.3:
     define-properties "^1.1.3"
     es-abstract "^1.19.0"
 
-array.prototype.flatmap@^1.2.1, array.prototype.flatmap@^1.2.5:
+array.prototype.flatmap@^1.2.5:
   version "1.2.5"
   resolved "https://registry.yarnpkg.com/array.prototype.flatmap/-/array.prototype.flatmap-1.2.5.tgz#908dc82d8a406930fdf38598d51e7411d18d4446"
   integrity sha512-08u6rVyi1Lj7oqWbS9nUxliETrtIROT4XGTA4D/LWGten6E3ocm7cy9SIrmNHOL5XVbVuckUp3X6Xyg8/zpvHA==
@@ -5511,13 +5511,10 @@ envinfo@^7.8.1:
   resolved "https://registry.yarnpkg.com/envinfo/-/envinfo-7.8.1.tgz#06377e3e5f4d379fea7ac592d5ad8927e0c4d475"
   integrity sha512-/o+BXHmB7ocbHEAs6F2EnG0ogybVVUdkRunTT2glZU9XAaGmhqskrvKwqXuDfNjEO0LZKWdejEEpnq8aM0tOaw==
 
-enzyme-adapter-preact-pure@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/enzyme-adapter-preact-pure/-/enzyme-adapter-preact-pure-2.3.0.tgz#8df90c4a014154c782427c58209da62406b4ca85"
-  integrity sha512-GTcU0uX7PvXgKL+BixcwoQNoqolpSVLga01hO5p/enWxCwLJMb9nDHGPB9rBvGVWSFGwzJONBOp+SE1plkN0FQ==
-  dependencies:
-    array.prototype.flatmap "^1.2.1"
-    preact-render-to-string "^4.1.0"
+enzyme-adapter-preact-pure@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/enzyme-adapter-preact-pure/-/enzyme-adapter-preact-pure-4.1.0.tgz#791f7b064a97b5ae124da2a33cab9e2ddf75962f"
+  integrity sha512-SifzvBGf1qUEs0FfCAOiKgDppb1wg/R+rmX8D7jFVpQ/Q2L3/xuyc1V575zoi8QAhIBDUB/8QUWvI4KZc50trw==
 
 enzyme-shallow-equal@^1.0.1:
   version "1.0.4"
@@ -12021,13 +12018,6 @@ preact-cli@^3.0.0:
     workbox-routing "^6.1.5"
     workbox-strategies "^6.1.5"
     workbox-webpack-plugin "^6.1.5"
-
-preact-render-to-string@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/preact-render-to-string/-/preact-render-to-string-4.1.0.tgz#70d98a8385cb86558366c558aad7311ebecb881d"
-  integrity sha512-FlFBJRxo8z4cp6VsDmeYjIEx4ZK2clFJnKIvIj8K1IQCRm7ZgJ/SZ1+BotT86/Nc+V1pNtFabHoUi6gpjx5Pug==
-  dependencies:
-    pretty-format "^3.8.0"
 
 preact-render-to-string@^5.1.4:
   version "5.1.20"
