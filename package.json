@@ -57,7 +57,8 @@
 		"jest-preset-preact": "^1.0.0",
 		"preact-cli": "^3.0.0",
 		"run-sequence": "^2.2.1",
-		"sirv-cli": "1.0.3"
+		"sirv-cli": "1.0.3",
+	  	"eslint-config-synacor": "^3.0.5"
 	},
 	"dependencies": {
 		"@emmetio/codemirror-plugin": "^1.1.3",
