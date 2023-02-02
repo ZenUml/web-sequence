@@ -69,7 +69,7 @@
 		"firebase": "^7.16.1",
 		"firebase-tools": "^8.4.3",
 		"http-server": "^0.12.3",
-		"jszip": "^3.5.0",
+		"jszip": "^3.8.0",
 		"preact": "10.6.6",
 		"preact-render-to-string": "^5.1.4",
 		"preact-router": "^3.2.1",
