@@ -7179,10 +7179,10 @@ gulp-concat@^2.6.1:
     through2 "^2.0.0"
     vinyl "^2.0.0"
 
-gulp-hash-filename@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/gulp-hash-filename/-/gulp-hash-filename-3.0.0.tgz#e9820fb7a20f3cd16a720413be7485aaee1782b9"
-  integrity sha512-wAtigX+faOEl/cQJCJ/pcY6mKSS2cGkoCT1FopUqjakM6AKYe1WuYEht0wcWTNinJGxj6m1tKMEMZUWhO0MD5Q==
+gulp-hash-filename@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/gulp-hash-filename/-/gulp-hash-filename-4.1.0.tgz#308bfdd5135ccbcebc64a85af91196aec3b634b0"
+  integrity sha512-3DRGODOjeEYGOLqYKf7SRzZolFtU2l6CN7r0KWuxTdLtDPUn7/jnIH+ko2/zQHKFx10MDLvBpyVwkNOxFBl89A==
 
 gulp-if@^3.0.0:
   version "3.0.0"
