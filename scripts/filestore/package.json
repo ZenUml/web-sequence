@@ -1,0 +1,14 @@
+{
+  "name": "filestore",
+  "version": "1.0.0",
+  "description": "",
+  "main": "get_filestore.js",
+  "scripts": {
+    "query": "node get_filestore.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.0.0"
+  }
+}
