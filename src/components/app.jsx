@@ -739,7 +739,21 @@ BookLibService.Borrow(id) {
 		return d.promise;
 	}
 
-	saveCode(key) {
+	async saveCode(key) {
+
+		const blobToBase64 = (blob) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(blob);
+			return new Promise(resolve => {
+				reader.onloadend = () => {
+					resolve(reader.result);
+				};
+			});
+		};
+
+		const imageBlob = await this.contentWrap.getPngBlob();
+		console.log('on saving, ', imageBlob)
+		this.state.currentItem.imageBase64 = await blobToBase64(imageBlob);
 		this.state.currentItem.updatedOn = Date.now();
 		this.state.currentItem.layoutMode = this.state.currentLayoutMode;
 
