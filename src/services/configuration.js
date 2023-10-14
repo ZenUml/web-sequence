@@ -68,6 +68,20 @@ const configByDomain = {
         features: {
             payment: true
         }
+    },
+    'web-sequence-dev.web.app': {
+        firebase: {
+			apiKey: "AIzaSyAeI0cwZ1e5DdJDH3NDVrm01Zjvoa9ys40",
+            authDomain: "web-sequence-dev.firebaseapp.com",
+            projectId: "web-sequence-dev",
+            storageBucket: "web-sequence-dev.appspot.com",
+            messagingSenderId: "269086080449",
+            appId: "1:269086080449:web:524e822dbd66f7bb594340"
+		},
+        paddleProduct: 552378, //Test Plan1
+        features: {
+            payment: true
+        }
     }
 };
 
@@ -88,6 +102,6 @@ const defaultConfig = {
 
 const domain = window.location.hostname;
 
-const config = configByDomain[domain] || defaultConfig;
+const config = configByDomain[domain] || configByDomain['web-sequence-dev.web.app'];
 
 export default config
