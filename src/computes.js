@@ -178,7 +178,9 @@ export function computeJs(
 		const cursor = e.data && e.data.cursor;
 
 	  if (code && app) {
-		  app.render(code, { enableMultiTheme: false });
+		  app.render(code, { enableMultiTheme: false, onContentChange: (code) => {
+		  	window.parent.postMessage({ code })
+		  }});
 	  }
 
 	  if(app && (cursor !== null || cursor !== undefined)) {

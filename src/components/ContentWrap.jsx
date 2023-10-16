@@ -66,8 +66,20 @@ export default class ContentWrap extends Component {
 	}
 	componentDidMount() {
 		this.props.onRef(this);
+		window.addEventListener('message', this.handleMessageCodeUpdate.bind(this));
 	}
 
+	componentWillUnmount() {
+		window.removeEventListener('message', this.handleMessageCodeUpdate.bind(this));
+	}
+
+	handleMessageCodeUpdate(e) {
+		const code = e.data && e.data.code;
+		if (code) {
+			this.cm.js.setValue(code);
+			this.cm.js.refresh();
+		}
+	}
 	onHtmlCodeChange(editor, change) {
 		this.cmCodes.html = editor.getValue();
 		this.props.onCodeChange(

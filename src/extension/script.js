@@ -1,5 +1,5 @@
-window.addEventListener("load", function (event) {
-	console.log("window loaded");
+window.addEventListener('load', function(event) {
+	console.log('window loaded');
 	window.app = new window.zenuml.default('#mounting-point');
 });
 window.addEventListener('message', (e) => {
@@ -7,7 +7,11 @@ window.addEventListener('message', (e) => {
 	const cursor = e.data && e.data.cursor;
 
 	if (code && app) {
-		app.render(code, { enableMultiTheme: false });
+		app.render(code, {
+			enableMultiTheme: false, onContentChange: (code) => {
+				window.parent.postMessage({ code });
+			}
+		});
 	}
 
 	if (app && (cursor !== null || cursor !== undefined)) {
