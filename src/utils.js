@@ -3,11 +3,11 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
-import Vue from '!!file-loader!vue/dist/vue';
-import Vuex from '!!file-loader!vuex/dist/vuex';
-import vueSequence from '!!file-loader!vue-sequence';
+import Vue from '!!file-loader!vue/dist/vue.global';
+import Vuex from '!!file-loader!vuex/dist/vuex.global';
+import zenuml from '!!file-loader!@zenuml/core/dist/zenuml';
 import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
-const esprima = require('esprima');
+const esprima= require('esprima');
 
 // window.Store = Store;
 // window.SeqDiagram = SeqDiagram;
@@ -293,7 +293,7 @@ export function getCompleteHtml(html, css, js, item) {
 
 	contents +=	'<script src="' + getUrl(Vue) + '"></script>';
 	contents +=	'<script src="' + getUrl(Vuex) + '"></script>';
-	contents +=	'<script src="' + getUrl(vueSequence) + '"></script>';
+	contents +=	'<script src="' + getUrl(zenuml) + '"></script>';
 
 	if (item.jsMode === JsModes.ES6) {
 		contents +=	'<script src="' +

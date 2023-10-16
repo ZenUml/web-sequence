@@ -7,10 +7,9 @@ import {computeCss, computeHtml, computeJs} from '../computes';
 import {CssModes, HtmlModes, JsModes, modes} from '../codeModes';
 import {getCompleteHtml, loadJS, log} from '../utils';
 import {writeFileAsync} from "../WriteFile";
-import Vue from '!!file-loader!vue/dist/vue';
-import Vuex from '!!file-loader!vuex/dist/vuex';
-import vueSequence from '!!file-loader!vue-sequence';
-import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
+import Vue from '!!file-loader!vue/dist/vue.global';
+import Vuex from '!!file-loader!vuex/dist/vuex.global';
+import zenuml from '@zenuml/core';
 
 import {Button} from './common';
 import {SplitPane} from './SplitPane.jsx';
