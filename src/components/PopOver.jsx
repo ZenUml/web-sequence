@@ -12,13 +12,10 @@ export class Popover extends Component {
 	}
 
 	componentDidMount() {
-		// Add a click event listener to the document
-		console.log('xxx')
 		document.addEventListener('click', this.handleDocumentClick, true);
 	}
 
 	componentWillUnmount() {
-		// Remove the click event listener when the component unmounts
 		console.log('yyy')
 		document.removeEventListener('click', this.handleDocumentClick);
 	}
@@ -30,8 +27,6 @@ export class Popover extends Component {
 	};
 
 	handleDocumentClick = (event) => {
-		console.log('handleDocumentClick', event.target)
-		// Check if the click target is outside the popover
 		if (this.popoverRef.current && !this.popoverRef.current.contains(event.target)) {
 			this.setState({ isVisible: false });
 		}
