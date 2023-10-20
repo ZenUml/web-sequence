@@ -1,6 +1,9 @@
 {
 	"name": "web-sequence",
 	"version": "1.0.24",
+	"engines": {
+		"node": "16"
+	},
 	"description": "A real-time tool for generating sequence diagrams",
 	"main": "index.html",
 	"scripts": {
@@ -127,5 +130,8 @@
 	"bugs": {
 		"url": "https://github.com/ZenUml/web-sequence/issues"
 	},
-	"homepage": "http://zenuml.com"
+	"homepage": "http://zenuml.com",
+	"volta": {
+		"node": "16.16.0"
+	}
 }
