@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap");
 
 :root {
 	--color-text: #d4cde9;
@@ -23,7 +23,7 @@ body {
 	font-size: 87.5%;
 	/* speocifically for mobile when keyboard is open */
 	position: relative;
-	font-family: 'Ubuntu', sans-serif;
+	font-family: "Ubuntu", sans-serif;
 	/* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
 		sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol'; */
 }
@@ -46,7 +46,7 @@ textarea {
 	box-sizing: border-box;
 }
 
-[role='button'] {
+[role="button"] {
 	cursor: pointer;
 }
 
@@ -207,7 +207,7 @@ label {
 	cursor: pointer;
 }
 
-[class*='hint--']:after {
+[class*="hint--"]:after {
 	text-transform: none;
 	font-weight: normal;
 	letter-spacing: 0.5px;
@@ -323,7 +323,7 @@ a > svg {
 }
 
 .star:after {
-	content: '★';
+	content: "★";
 	color: currentColor;
 }
 
@@ -1600,7 +1600,7 @@ body:not(.is-app) .show-when-app {
 }
 
 .onboard-selection.selected:after {
-	content: '';
+	content: "";
 	position: absolute;
 	right: -20px;
 	bottom: 40px;
@@ -1967,4 +1967,81 @@ ol.editor-nav li {
 }
 
 .prod-version.basic {
+}
+
+.popover {
+	position: relative;
+	display: inline-block;
+}
+
+.popover-trigger {
+	cursor: pointer;
+}
+
+.popover-content {
+	position: absolute;
+	background: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	padding: 12px;
+	z-index: 3;
+	top: calc(100% + 8px);
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.popover-backdrop {
+	content: "";
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: transparent;
+	opacity: 0.5;
+	z-index: 2;
+}
+
+.popover-arrow {
+	position: absolute;
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-bottom: 8px solid #fff;
+	top: -8px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.share-panel {
+	position: relative;
+	color: #000;
+	width: 300px;
+}
+
+.share-panel ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.share-panel li {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.share-panel li h4,
+.share-panel li p {
+	margin: 0;
+	padding: 0;
+}
+
+.share-panel li p {
+	line-height: 1.25;
 }
