@@ -78,7 +78,7 @@ $ yarn release  // copy resources to app / extension
 In Chrome console, type in `document.cookie='DEBUG=true'` or `document.cookie='DEBUG=;max-age=1'`.
 
 ````
-$ yarn link vue-sequence # use un-uglyfied version
+$ yarn link @zenuml/core # use un-uglyfied version
 $ webpack                # build bundle.js to src/lib
 ````
 

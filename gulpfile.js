@@ -51,11 +51,10 @@ gulp.task('copyFiles', function() {
 		gulp.src('src/lib/screenlog.js').pipe(gulp.dest('app/lib')),
 		gulp.src('src/lib/paddle.js').pipe(gulp.dest('app/lib')),
 		gulp.src('src/lib/gtm.js').pipe(gulp.dest('app/lib')),
-		gulp.src('src/lib/vue-sequence-ext.css').pipe(gulp.dest('app/lib')),
+		gulp.src('src/lib/sequence-ext.css').pipe(gulp.dest('app/lib')),
 		gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
 		gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
-		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
 		gulp.src(['help.html', 'ZenUML_Sequence_Diagram_addon_help.html',
 			'src/detached-window.js',
@@ -92,7 +91,6 @@ gulp.task('copyFiles', function() {
 			'src/Monoid.ttf'
 		])
 			.pipe(gulp.dest('app')),
-		gulp.src('node_modules/vue-sequence/dist/fonts/*').pipe(gulp.dest('app/fonts/'))
 	);
 });
 
@@ -156,7 +154,6 @@ gulp.task('packageExtension', function() {
 	childProcess.execSync('cp src/icon-16.png extension');
 	childProcess.execSync('cp src/icon-48.png extension');
 	childProcess.execSync('cp src/icon-128.png extension');
-	childProcess.execSync('cp -r node_modules/vue-sequence/dist/fonts extension');
 
 	childProcess.execSync(
 		'rm -rf extension/partials'

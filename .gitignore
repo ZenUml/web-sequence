@@ -22,7 +22,6 @@ node_modules/
 /extension/
 /app/
 
-src/lib/vue-sequence-bundle.*.js
 extension-*.zip
 .firebase
 size-plugin.json
