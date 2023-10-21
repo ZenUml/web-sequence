@@ -28,7 +28,7 @@ function minifyJs(fileName) {
 	);
 }
 
-gulp.task('copyFiles', function () {
+gulp.task('copyFiles', function() {
 
 	return merge(
 		gulp.src('static/**/*')
@@ -57,7 +57,7 @@ gulp.task('copyFiles', function () {
 		gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
 		gulp.src(`src/lib/vue-sequence-bundle.*.js`).pipe(gulp.dest('app/lib')),
 		gulp.src('icons/*').pipe(gulp.dest('app/icons')),
-		gulp.src(['help.html','ZenUML_Sequence_Diagram_addon_help.html',
+		gulp.src(['help.html', 'ZenUML_Sequence_Diagram_addon_help.html',
 			'src/detached-window.js',
 			'src/icon-16.png',
 			'src/icon-48.png',
@@ -92,21 +92,21 @@ gulp.task('copyFiles', function () {
 			'src/Monoid.ttf'
 		])
 			.pipe(gulp.dest('app')),
-		gulp.src('node_modules/vue-sequence/dist/fonts/*').pipe(gulp.dest("app/fonts/"))
+		gulp.src('node_modules/vue-sequence/dist/fonts/*').pipe(gulp.dest('app/fonts/'))
 	);
 });
 
 // Generate script.js, vendor.js, style.css and vendor.css and index.html under ./app/
-gulp.task('useRef', function () {
+gulp.task('useRef', function() {
 	return gulp
 		.src('build/*.html')
 		.pipe(useref())
 		.pipe(gulp.dest('app'));
 });
 
-const bundleJs = () => fsUtil.getBundleJs('build')
+const bundleJs = () => fsUtil.getBundleJs('build');
 
-gulp.task('concat', function () {
+gulp.task('concat', function() {
 	// TODO: Don't understand what does it do
 	gulp
 		.src([`app/${bundleJs()}`])
@@ -114,8 +114,9 @@ gulp.task('concat', function () {
 		.pipe(gulp.dest('app'));
 });
 
-gulp.task('minify', function () {
-	minifyJs(`app/${bundleJs()}`);
+gulp.task('minify', function() {
+	// TODO: don't know why it causes unknown error: `Uncaught IllegalState`
+	// minifyJs(`app/${bundleJs()}`);
 	minifyJs('app/lib/screenlog.js');
 
 	gulp
@@ -134,7 +135,7 @@ gulp.task('minify', function () {
 		.pipe(gulp.dest('app'));
 });
 
-gulp.task('fixIndex', function () {
+gulp.task('fixIndex', function() {
 	var contents = fs.readFileSync('build/index.html', 'utf8');
 	// style.css is replaced with style-[hash].css
 	contents = contents.replace(/style\.css/g, fsUtil.getHashedFile('build', 'style-', 'css'));
@@ -145,7 +146,7 @@ gulp.task('fixIndex', function () {
 	fs.writeFileSync('build/preview.html', contents, 'utf8');
 });
 
-gulp.task('packageExtension', function () {
+gulp.task('packageExtension', function() {
 	childProcess.execSync('cp -R app/ extension');
 	childProcess.execSync('cp src/manifest.json extension');
 	childProcess.execSync('cp src/extension/options.js extension');
@@ -171,14 +172,14 @@ gulp.task('packageExtension', function () {
 	);
 });
 
-gulp.task('cleanup', function () {
+gulp.task('cleanup', function() {
 	return childProcess.execSync('rm -rf app extension');
 });
-gulp.task('cleanup-build', function () {
+gulp.task('cleanup-build', function() {
 	return childProcess.execSync('rm -rf build');
 });
 
-gulp.task('release', function (callback) {
+gulp.task('release', function(callback) {
 	runSequence(
 		'cleanup',
 		'copyFiles',
@@ -187,7 +188,7 @@ gulp.task('release', function (callback) {
 		'concat',
 		'minify',
 		'packageExtension',
-		function (error) {
+		function(error) {
 			if (error) {
 				console.log(error.message);
 			} else {
