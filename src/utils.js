@@ -6,7 +6,6 @@ import { deferred } from './deferred';
 import Vue from '!!file-loader!vue/dist/vue.global';
 import Vuex from '!!file-loader!vuex/dist/vuex.global';
 import zenuml from '!!file-loader!@zenuml/core/dist/zenuml';
-import vueSequenceCss from '!!file-loader!vue-sequence/dist/vue-sequence.css';
 const esprima= require('esprima');
 
 // window.Store = Store;
@@ -269,20 +268,10 @@ export function getCompleteHtml(html, css, js, item) {
 		return '';
 	}
 
-	var	externalCss = [vueSequenceCss]
-			.reduce(function(links, url) {
-				return (
-					links +
-					(url ? '\n<link rel="stylesheet" href="' + getUrl(url) + '"></link>' : '')
-				);
-			}, '');
-
 	var contents =
 		'<!DOCTYPE html>\n' +
 		'<html>\n<head>\n' +
 		'<meta charset="UTF-8" />\n' +
-		externalCss +
-		'\n' +
 		'<style id="zenumlstyle">\n' +
 		css +
 		'\n</style>\n' +

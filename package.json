@@ -8,12 +8,10 @@
 		"start": "if-env NODE_ENV=production && yarn serve || yarn dev",
 		"build": "preact build --template src/index.html --no-inline-css --no-prerender --no-sw",
 		"release": "gulp release",
-		"prep:release:upgrade-core": "yarn upgrade vue-sequence@latest",
 		"prep:release:git-tag-push": "git tag release-`date +%Y%m%d%H%M` && git push origin release-`date +%Y%m%d%H%M`",
 		"dev": "preact watch --template src/index.html --no-prerender",
 		"lint": "eslint src",
 		"test": "jest ./",
-		"update-core": "yarn unlink vue-sequence sequence-parser && yarn add vue-sequence sequence-parser",
 		"deploy:staging": "firebase deploy --project staging",
 		"deploy:prod": "firebase deploy --project prod",
 		"upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret 5bIK01PSsjRykdAqaV-v4fFZ --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
@@ -77,7 +75,6 @@
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^3.2.45",
-		"vue-sequence": "^1.0.243",
 		"vuex": "^4.1.0"
 	},
 	"resolutions": {
