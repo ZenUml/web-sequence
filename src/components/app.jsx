@@ -752,7 +752,7 @@ BookLibService.Borrow(id) {
 		};
 
 		const imageBlob = await this.contentWrap.getPngBlob();
-		console.log('on saving, ', imageBlob)
+		
 		this.state.currentItem.imageBase64 = await blobToBase64(imageBlob);
 		this.state.currentItem.updatedOn = Date.now();
 		this.state.currentItem.layoutMode = this.state.currentLayoutMode;
@@ -771,6 +771,18 @@ BookLibService.Borrow(id) {
 				alertsService.add('Item saved.');
 			}
 			await this.setState({unsavedEditCount: 0});
+		}
+
+		console.log('on saving, ', this.state.currentItem)
+
+		const token = firebase.auth().currentUser.getIdToken(true);
+
+		try {
+			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify({token, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com', id: this.state.currentItem.id, createdBy: this.state.currentItem.createdBy}), imageBase64: this.state.currentItem.imageBase64}), headers: {'Content-Type': 'application/json'}})).json()
+			console.log('save to php app result: ', result)
+	
+		} catch(e) {
+			console.error(e)
 		}
 
 		return itemService

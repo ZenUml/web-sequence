@@ -102,6 +102,6 @@ const defaultConfig = {
 
 const domain = window.location.hostname;
 
-const config = configByDomain[domain] || configByDomain['web-sequence-dev.web.app'];
+const config = configByDomain[domain] || defaultConfig;
 
 export default config
