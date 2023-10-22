@@ -5,7 +5,13 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ]
+    ],
+    "rewrites": [ {
+      "source": "/sync-diagram",
+      "function": {
+        "functionId": "sync_diagram"
+      }
+    } ]
   },
   "firestore": {
     "rules": "firestore.rules",

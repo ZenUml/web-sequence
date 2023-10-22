@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "web-sequence-dev",
+    "default": "staging-zenuml-27954",
     "staging": "staging-zenuml-27954",
     "prod": "web-sequence-local"
   }
