@@ -15,9 +15,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: yarn install && yarn build
-      - run: yarn release
+      - id: release_step
+        run: yarn release
     outputs:
-      status: ${{ steps.build.outcome }}
+      status: ${{ steps.release_step.outcome }}
 
   Deploy-to-staging:
     needs: Build
