@@ -73,7 +73,7 @@
 		"jszip": "^3.5.0",
 		"preact": "10.6.6",
 		"preact-render-to-string": "^5.1.4",
-		"preact-router": "^3.2.1",
+		"preact-router": "^4.1.2",
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
 		"vue": "^3.2.45",
