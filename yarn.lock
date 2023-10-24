@@ -1838,12 +1838,7 @@
   resolved "https://registry.yarnpkg.com/@trysound/sax/-/sax-0.2.0.tgz#cccaab758af56761eb7bf37af6f03f326dd798ad"
   integrity sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==
 
-"@types/assert@^1.5.4":
-  version "1.5.6"
-  resolved "https://registry.yarnpkg.com/@types/assert/-/assert-1.5.6.tgz#a8b5a94ce5fb8f4ba65fdc37fc9507609114189e"
-  integrity sha512-Y7gDJiIqb9qKUHfBQYOWGngUpLORtirAVPuj/CWJrU2C6ZM4/y3XLwuwfGMF8s7QzW746LQZx23m0+1FSgjfug==
-
-"@types/assert@^1.5.6":
+"@types/assert@^1.5.4", "@types/assert@^1.5.6":
   version "1.5.7"
   resolved "https://registry.yarnpkg.com/@types/assert/-/assert-1.5.7.tgz#4ccc65c4c9f65dc5e64d7c46b5e075793912da14"
   integrity sha512-qRK5tg1LaErm1uQBTu3YrVscZwPAbhGdXWtPG8YiiwUXQ68eKouiantdQmQCQ/cVXGZc/uBdH2TTbWwdpkOB0g==
@@ -2011,14 +2006,7 @@
   resolved "https://registry.yarnpkg.com/@types/qs/-/qs-6.9.7.tgz#63bb7d067db107cc1e457c303bc25d511febf6cb"
   integrity sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==
 
-"@types/ramda@^0.28.0":
-  version "0.28.0"
-  resolved "https://registry.yarnpkg.com/@types/ramda/-/ramda-0.28.0.tgz#ee87155c25548c578f44f98aa0f7e87b53cd3517"
-  integrity sha512-w3NK/csQSMwTTkC5iCXZu+b0RL55oZYZVEkPBtimL892KcmSQtleZV+Ytm/znFYiXQXjGjHrzfk3YURez8V7ig==
-  dependencies:
-    ts-toolbelt "^6.15.1"
-
-"@types/ramda@^0.28.20":
+"@types/ramda@^0.28.0", "@types/ramda@^0.28.20":
   version "0.28.25"
   resolved "https://registry.yarnpkg.com/@types/ramda/-/ramda-0.28.25.tgz#68080ef9eed92cddcd2c727cf3fe09f6a093e475"
   integrity sha512-HrQNqQAGcITpn9HAJFamDxm7iZeeXiP/95pN5OMbNniDjzCCeOHbBKNGmUy8NRi0fhYS+/cXeo91MFC+06gbow==
@@ -4423,18 +4411,10 @@ color-string@1.5.2:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
 
-color-string@^1.5.5:
+color-string@^1.5.5, color-string@^1.6.0, color-string@^1.9.0:
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/color-string/-/color-string-1.9.1.tgz#4467f9146f036f855b764dfb5bf8582bf342c7a4"
   integrity sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==
-  dependencies:
-    color-name "^1.0.0"
-    simple-swizzle "^0.2.2"
-
-color-string@^1.6.0, color-string@^1.9.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/color-string/-/color-string-1.9.0.tgz#63b6ebd1bec11999d1df3a79a7569451ac2be8aa"
-  integrity sha512-9Mrz2AQLefkH1UvASKj6v6hj/7eWgjnT/cVsR8CumieLoT+g900exWeNogqtweI8dxloXN9BDQTYro1oWu/5CQ==
   dependencies:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
@@ -5522,15 +5502,10 @@ dom-storage@2.1.0:
   resolved "https://registry.yarnpkg.com/dom-storage/-/dom-storage-2.1.0.tgz#00fb868bc9201357ea243c7bcfd3304c1e34ea39"
   integrity sha512-g6RpyWXzl0RR6OTElHKBl7nwnK87GUyZMYC7JWsB/IA73vpqK2K6LT39x4VepLxlSsWBFrPVLnsSR5Jyty0+2Q==
 
-dom-to-image-more@^2.13.0:
+dom-to-image-more@^2.13.0, dom-to-image-more@^2.9.5:
   version "2.16.0"
   resolved "https://registry.yarnpkg.com/dom-to-image-more/-/dom-to-image-more-2.16.0.tgz#ffafe86e4561b3a0ecce3b18ddf4ec88fd2ca576"
   integrity sha512-RyjtkaM/zVy90uJ20lT+/G7MwBZx6l/ePliq5CQOeAnPeew7aUGS6IqRWBkHpstU+POmhaKA8A9H9qf476gisQ==
-
-dom-to-image-more@^2.9.5:
-  version "2.9.5"
-  resolved "https://registry.yarnpkg.com/dom-to-image-more/-/dom-to-image-more-2.9.5.tgz#a5dd5a30480e01b795fde9e99278096143b3ece7"
-  integrity sha512-7pr43ZY/Nk0k2z3NXDKN4GvnZqP/3iZvddLeIuGfNTyFJuzzr0UeLl+poZ1ewYt3YIK+WHCEZUkz+RNuocN3/Q==
 
 "dom-to-image@github:MichalBryxi/dom-to-image":
   version "2.6.0"
@@ -7852,15 +7827,10 @@ html-tags@^3.1.0:
   resolved "https://registry.yarnpkg.com/html-tags/-/html-tags-3.1.0.tgz#7b5e6f7e665e9fb41f30007ed9e0d41e97fb2140"
   integrity sha512-1qYz89hW3lFDEazhjW0yVAV87lw8lVkrJocr72XmBkMKsoSVJCQx3W8BXsC7hO2qAt8BoVjYjtAcZ9perqGnNg==
 
-html-to-image@^1.11.3:
+html-to-image@^1.11.3, html-to-image@^1.9.0:
   version "1.11.11"
   resolved "https://registry.yarnpkg.com/html-to-image/-/html-to-image-1.11.11.tgz#c0f8a34dc9e4b97b93ff7ea286eb8562642ebbea"
   integrity sha512-9gux8QhvjRO/erSnDPv28noDZcPZmYE7e1vFsBLKLlRlKDSqNJYebj6Qz1TGd5lsRV+X+xYyjCKjuZdABinWjA==
-
-html-to-image@^1.9.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/html-to-image/-/html-to-image-1.9.0.tgz#cb49bf9f4b37376771c85cfdd65863ae9420b268"
-  integrity sha512-9gaDCIYg62Ek07F2pBk76AHgYZ2gxq2YALU7rK3gNCqXuhu6cWzsOQqM7qGbjZiOzxGzrU1deDqZpAod2NEwbA==
 
 html-webpack-exclude-assets-plugin@0.0.7:
   version "0.0.7"
@@ -10678,11 +10648,6 @@ nan@^2.12.1, nan@^2.15.0:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.15.0.tgz#3f34a473ff18e15c1b5626b62903b5ad6e665fee"
   integrity sha512-8ZtvEnA2c5aYCZYd1cvgdnU6cqwixRoYg70xPLWUws5ORTa/lnw+u4amixRS/Ac5U5mQVgp9pnlSUnbNWFaWZQ==
 
-nanoid@^3.3.1:
-  version "3.3.1"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.1.tgz#6347a18cac88af88f58af0b3594b723d5e99bb35"
-  integrity sha512-n6Vs/3KGyxPQd6uO0eH4Bv0ojGSUvuLlIHtC3Y0kEO23YRge8H9x1GCzLn28YX0H66pMkxuaeESFq4tKISKwdw==
-
 nanoid@^3.3.6:
   version "3.3.6"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.6.tgz#443380c856d6e9f9824267d960b4236ad583ea4c"
@@ -11624,10 +11589,10 @@ pino-std-serializers@^6.0.0:
   resolved "https://registry.yarnpkg.com/pino-std-serializers/-/pino-std-serializers-6.2.2.tgz#d9a9b5f2b9a402486a5fc4db0a737570a860aab3"
   integrity sha512-cHjPPsE+vhj/tnhCy/wiMh3M3z3h/j15zHQX+S9GkTBgqJuTuJzYJ4gUyACLhDaJ7kk9ba9iRDmbH2tJU03OiA==
 
-pino@^8.8.0:
-  version "8.16.0"
-  resolved "https://registry.yarnpkg.com/pino/-/pino-8.16.0.tgz#2465012a1d11fa2e7a0545032f636e203990ae26"
-  integrity sha512-UUmvQ/7KTZt/vHjhRrnyS7h+J7qPBQnpG80V56xmIC+o9IqYmQOw/UIny9S9zYDfRBR0ClouCr464EkBMIT7Fw==
+pino@^8.7.0, pino@^8.8.0:
+  version "8.16.1"
+  resolved "https://registry.yarnpkg.com/pino/-/pino-8.16.1.tgz#dcaf82764b1a27f24101317cdd6453e96290f1d9"
+  integrity sha512-3bKsVhBmgPjGV9pyn4fO/8RtoVDR8ssW1ev819FsRXlRNgW8gR/9Kx+gCK4UPWd4JjrRDLWpzd/pb1AyWm3MGA==
   dependencies:
     atomic-sleep "^1.0.0"
     fast-redact "^3.1.1"
@@ -12329,21 +12294,12 @@ postcss@^7, postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.18, po
     picocolors "^0.2.1"
     source-map "^0.6.1"
 
-postcss@^8.1.10, postcss@^8.4.20, postcss@^8.4.23:
+postcss@^8.1.10, postcss@^8.2.1, postcss@^8.2.10, postcss@^8.2.15, postcss@^8.3.5, postcss@^8.4.20, postcss@^8.4.23:
   version "8.4.31"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.31.tgz#92b451050a9f914da6755af352bdc0192508656d"
   integrity sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==
   dependencies:
     nanoid "^3.3.6"
-    picocolors "^1.0.0"
-    source-map-js "^1.0.2"
-
-postcss@^8.2.1, postcss@^8.2.10, postcss@^8.2.15, postcss@^8.3.5:
-  version "8.4.7"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.7.tgz#f99862069ec4541de386bf57f5660a6c7a0875a8"
-  integrity sha512-L9Ye3r6hkkCeOETQX6iOaWZgjp3LL6Lpqm6EtgbKrgqGGteRMNb9vzBfRL96YOSu8o7x3MfIH9Mo5cPJFGrW6A==
-  dependencies:
-    nanoid "^3.3.1"
     picocolors "^1.0.0"
     source-map-js "^1.0.2"
 
@@ -15636,10 +15592,10 @@ vue-gtag@^1.16.1:
   resolved "https://registry.yarnpkg.com/vue-gtag/-/vue-gtag-1.16.1.tgz#edb2f20ab4f6c4d4d372dfecf8c1fcc8ab890181"
   integrity sha512-5vs0pSGxdqrfXqN1Qwt0ZFXG0iTYjRMu/saddc7QIC5yp+DKgjWQRpGYVa7Pq+KbThxwzzMfo0sGi7ISa6NowA==
 
-vue-sequence@^1.0.243:
-  version "1.0.243"
-  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.243.tgz#d58ededd09b617982e1f796f444353908a782fed"
-  integrity sha512-wbEZyysI3xY4VA1/ZdQqJ3H10LK3LSVqv+vr7tLNUIwhpk98elQp4cN+kePZ5oFl9oU+fjycIJMigLwyhg8rpQ==
+vue-sequence@^1.0.275:
+  version "1.0.275"
+  resolved "https://registry.yarnpkg.com/vue-sequence/-/vue-sequence-1.0.275.tgz#82a238671afa0c5535c4a7f3b8a233388cd35270"
+  integrity sha512-Nihdq4YgnFBQ0EjuGHGTnDgPyuEwDiKZgWEYwN1vaaid4BR/EC6MzpBmfpZh/2RQAJv6WM7SMlz7bttZWapyTg==
   dependencies:
     "@tailwindcss/postcss7-compat" "^2.0.2"
     "@types/assert" "^1.5.4"
@@ -15652,6 +15608,7 @@ vue-sequence@^1.0.243:
     html-to-image "^1.9.0"
     lodash "^4.17.20"
     marked "^2.0.0"
+    pino "^8.7.0"
     postcss "^7"
     ramda "^0.28.0"
     tailwindcss "npm:@tailwindcss/postcss7-compat@^2.0.2"
