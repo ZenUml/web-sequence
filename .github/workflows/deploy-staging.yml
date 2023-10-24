@@ -15,16 +15,18 @@ jobs:
         node-version: [16.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
     - run: yarn install && yarn build
     - run: yarn release
-    - run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
+    - name: Deploy to staging
+      if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'  # This conditional will skip the step for Dependabot PRs
+      run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
     - name: Upload artifacts  # Find artifacts under actions/jobs
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: chrome-extension
         path: extension
