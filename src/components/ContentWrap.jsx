@@ -998,7 +998,9 @@ export default class ContentWrap extends Component {
 								<Popover
 									trigger={
 										<Button
-											className="btn--dark button icon-button hint--rounded hint--bottom-left"
+											className="button icon-button hint--rounded hint--bottom-left"
+											/* Highlight this button for more traction */
+											style="background-color: #ffa900; color: #fff;"
 											aria-label="Share Your Work"
 											onClick={this.shareClickHandler.bind(this)}>
 											<span className="material-symbols-outlined">share</span>
