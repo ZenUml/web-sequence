@@ -1006,7 +1006,7 @@ export default class ContentWrap extends Component {
 										</Button>
 									}
 									content={
-										<SharePanel />
+										<SharePanel id={0} dsl={''} image={''} />
 									}
 								/>
 								<Button

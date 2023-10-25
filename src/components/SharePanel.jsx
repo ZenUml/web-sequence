@@ -1,28 +1,72 @@
 
-export function SharePanel(params) {
-	return (
-		<div className="share-panel">
-			<h3 style="margin-top: 4px">Share this diagram</h3>
-			<ul>
-				<li>
-					<h4>Option 1(Recommended): Install ZenUML Confluence Plugin</h4>
-					<p>
-						You can create and edit sequence diagram on Confluence pages.&nbsp;
-						<a>More Info</a>
+import { Component } from 'preact';
+import PropTypes from 'prop-types';
+
+
+export class SharePanel extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			isLoading: true,
+			link: '',
+		}
+	}
+
+	componentDidMount() {
+		// TODO: API call to get the link
+		setTimeout(() => {
+			this.setState({
+				isLoading: false,
+				link: 'https://sequencediagram.zenuml.com/preview/1234',
+			})
+		}, 300);
+	}
+
+	handleCopyLink = () => {
+		const { link } = this.state;
+		navigator.clipboard.writeText(link);
+	}
+
+	render() {
+		const { link, isLoading } = this.state;
+
+
+		return (
+			<div className="share-panel">
+				<h3 style={{ marginTop: '4px' }}>Share the Diagram on Confluence<sup>*</sup></h3>
+				{isLoading ?
+					<div className='loader'>
+					</div>
+					: <>
+						<div>
+							<p>Paste the link on Confluence and select "Display as a Card"</p>
+							<img width={200} height={100} style="background: #acacac" />
+						</div>
 						<br />
-					</p>
-				</li>
-				<li>
-					<h4>Option 2: Use Confluence Iframe plugin</h4>
-					<img width={200} height={100} style="background: #acacac" />
-					<p>URL: </p>
-				</li>
-				<li>
-					<h4>Option 3: Copy and paste the link to Confluence and select Card style</h4>
-					<img width={200} height={100} style="background: #acacac" />
-					<p>URL: </p>
-				</li>
-			</ul>
-		</div>
-	)
+						<div>
+							<p>Preview</p>
+							<div className="preview" >
+								<img height={100} style="background: #acacac; width: 100%;" />
+								<button
+									aria-label="Copy link"
+									className="button icon-button copy-button" title={link}
+									onClick={this.handleCopyLink}
+								>
+									<span className="material-symbols-outlined">
+										link
+									</span>
+									<span>Copy link</span>
+								</button>
+							</div>
+						</div>
+						<span className="footnote">* Anyone with the link can view the diagram. The view is optimised for Confluence.</span>
+					</>}
+			</div>
+		);
+	}
 }
+
+SharePanel.propTypes = {
+	id: PropTypes.string,
+	dsl: PropTypes.string,
+};

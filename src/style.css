@@ -1966,9 +1966,6 @@ ol.editor-nav li {
 	padding: 10px 5px;
 }
 
-.prod-version.basic {
-}
-
 .popover {
 	position: relative;
 	display: inline-block;
@@ -1984,7 +1981,7 @@ ol.editor-nav li {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	border: 1px solid #ccc;
 	border-radius: 4px;
-	padding: 12px;
+	padding: 20px;
 	z-index: 3;
 	top: calc(100% + 8px);
 	left: 50%;
@@ -2018,30 +2015,47 @@ ol.editor-nav li {
 .share-panel {
 	position: relative;
 	color: #000;
-	width: 300px;
+	width: 400px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
-.share-panel ul {
-	list-style: none;
-	padding: 0;
+.share-panel p {
 	margin: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
+	padding: 0;
 }
 
-.share-panel li {
+.share-panel .loader {
+	margin: 0 auto;
+}
+
+.share-panel .preview {
 	display: flex;
 	flex-direction: column;
+	align-items: end;
 	gap: 8px;
 }
 
-.share-panel li h4,
-.share-panel li p {
+.share-panel .copy-button {
 	margin: 0;
-	padding: 0;
+	padding: 8px 20px;
+	border: 1px solid #414bb2;
+	background-color: transparent;
+	border-radius: 4px;
+	font-weight: 500;
+	color: #414bb2;
 }
 
-.share-panel li p {
-	line-height: 1.25;
+.share-panel .copy-button:focus {
+	outline-color: #414bb2;
+}
+
+.share-panel .copy-button .material-symbols-outlined {
+	transform: rotate(315deg);
+}
+.share-panel .footnote {
+	margin-top: 8px;
+	color: #acacac;
+	font-size: 12px;
 }

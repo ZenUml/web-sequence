@@ -9,12 +9,12 @@
 
 ![Screenshot](/screenshots/ss1.png)
 
-##Deployment
+## Deployment
 
 We will discuss deployment of the following items:
 
 | App/Plugin       | Target    | Local | Web Console | Github Actions |
-|------------------|-----------|-------|-------------|----------------|
+| ---------------- | --------- | ----- | ----------- | -------------- |
 | Web App          | Firebase  | Y     | N           | Y              |
 | Functions        | Firebase  | Y     | N           | N              |
 | Chrome extension | Web store | Y     | Y           | N              |
