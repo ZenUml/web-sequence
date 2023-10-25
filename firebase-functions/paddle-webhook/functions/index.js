@@ -13,15 +13,19 @@ exports.info = functions.https.onRequest((req, res) => {
     res.send(`Hello from ${process.env.GCLOUD_PROJECT}!`);
 });
 
-exports.sync_diagram = functions.https.onRequest((req, res) => {
-    //   admin.auth().verifyIdToken(idToken)
-    //     .then(function(decodedToken) {
-    //         var uid = decodedToken.uid;
-    //         // ...
-    //     }).catch(function(error) {
-    //         // Handle error
-    //     });
-    console.log('req body:', req.body);
+const verifyIdToken = (token) => admin.auth().verifyIdToken(token);
+
+exports.authenticate = functions.https.onRequest(async (req, res) => {
+    console.log('request:', req)
+    const auth = req.get('Authorization');
+    const decoded = await verifyIdToken(auth);
+    console.log('decoded token:', decoded);
+    res.send(decoded.uid);
+});
+
+exports.sync_diagram = functions.https.onRequest(async (req, res) => {
+    const decoded = await verifyIdToken(req.body.token);
+    console.log('decoded token:', decoded);
 
     const options = {
         hostname: '18.139.29.58',
