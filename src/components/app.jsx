@@ -775,10 +775,13 @@ BookLibService.Borrow(id) {
 
 		console.log('on saving, ', this.state.currentItem)
 
-		const token = firebase.auth().currentUser.getIdToken(true);
+		const token = await firebase.auth().currentUser.getIdToken(true);
 
 		try {
-			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify({token, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com', id: this.state.currentItem.id, createdBy: this.state.currentItem.createdBy}), imageBase64: this.state.currentItem.imageBase64}), headers: {'Content-Type': 'application/json'}})).json()
+			const data = {token, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com', id: this.state.currentItem.id, createdBy: this.state.currentItem.createdBy}), imageBase64: this.state.currentItem.imageBase64};
+			console.log('calling /sync-diagram with data:', data)
+
+			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}})).json()
 			console.log('save to php app result: ', result)
 	
 		} catch(e) {

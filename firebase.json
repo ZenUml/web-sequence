@@ -6,12 +6,20 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [ {
-      "source": "/sync-diagram",
-      "function": {
-        "functionId": "sync_diagram"
+    "rewrites": [
+      {
+        "source": "/sync-diagram",
+        "function": {
+          "functionId": "sync_diagram"
+        }
+      },
+      {
+        "source": "/authenticate",
+        "function": {
+          "functionId": "authenticate"
+        }
       }
-    } ]
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",
