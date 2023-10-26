@@ -36,7 +36,8 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
             'Content-Type': 'application/json'
         }
     };
-    const data = JSON.stringify({name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
+    const data = JSON.stringify({token: req.body.token, name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
+    console.log('http request with:', options, data);
 
     const request = http.request(options, (response) => {
         let responseData = '';
