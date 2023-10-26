@@ -26,6 +26,7 @@ exports.authenticate = functions.https.onRequest(async (req, res) => {
 exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     const decoded = await verifyIdToken(req.body.token);
     console.log('decoded token:', decoded);
+    const user = {name: decoded.name, id: decoded.user_id, email: decoded.email, email_verified: decoded.email_verified, picture: decoded.picture};
 
     const options = {
         hostname: '18.139.29.58',
@@ -36,7 +37,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
             'Content-Type': 'application/json'
         }
     };
-    const data = JSON.stringify({token: req.body.token, name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
+    const data = JSON.stringify({token: req.body.token, user, name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
     console.log('http request with:', options, data);
 
     const request = http.request(options, (response) => {
