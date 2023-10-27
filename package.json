@@ -124,5 +124,9 @@
 	"bugs": {
 		"url": "https://github.com/ZenUml/web-sequence/issues"
 	},
-	"homepage": "http://zenuml.com"
+	"homepage": "http://zenuml.com",
+	"volta": {
+		"node": "16.16.0",
+		"yarn": "1.22.19"
+	}
 }
