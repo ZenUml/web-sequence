@@ -61,7 +61,7 @@
 		"@emmetio/codemirror-plugin": "^1.1.3",
 		"@zenuml/core": "^3.13.1",
 		"code-blast-codemirror": "chinchang/code-blast-codemirror#web-maker",
-		"codemirror": "^5.54.0",
+		"codemirror": "^5.65.15",
 		"dom-to-image": "github:MichalBryxi/dom-to-image",
 		"esprima": "^4.0.0",
 		"file-saver": "^2.0.2",

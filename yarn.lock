@@ -4424,10 +4424,10 @@ code-blast-codemirror@chinchang/code-blast-codemirror#web-maker:
   version "1.0.0"
   resolved "https://codeload.github.com/chinchang/code-blast-codemirror/tar.gz/d6d5366ff04e25b6973eb0fdf6d6c16cfc478054"
 
-codemirror@^5.54.0:
-  version "5.65.2"
-  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.2.tgz#5799a70cb3d706e10f60e267245e3a75205d3dd9"
-  integrity sha512-SZM4Zq7XEC8Fhroqe3LxbEEX1zUPWH1wMr5zxiBuiUF64iYOUH/JI88v4tBag8MiBS8B8gRv8O1pPXGYXQ4ErA==
+codemirror@^5.65.15:
+  version "5.65.15"
+  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.15.tgz#66899278f44a7acde0eb641388cd563fe6dfbe19"
+  integrity sha512-YC4EHbbwQeubZzxLl5G4nlbLc1T21QTrKGaOal/Pkm9dVDMZXMH7+ieSPEOZCtO9I68i8/oteJKOxzHC2zR+0g==
 
 collection-visit@^1.0.0:
   version "1.0.0"
