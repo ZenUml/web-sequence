@@ -2038,8 +2038,10 @@ ol.editor-nav li {
 }
 
 .share-panel .copy-button {
+	display: flex;
+	gap: 4px;
 	margin: 0;
-	padding: 8px 20px;
+	padding: 8px 20px 8px 16px;
 	border: 1px solid #414bb2;
 	background-color: transparent;
 	border-radius: 4px;
@@ -2054,8 +2056,62 @@ ol.editor-nav li {
 .share-panel .copy-button .material-symbols-outlined {
 	transform: rotate(315deg);
 }
+
 .share-panel .footnote {
 	margin-top: 8px;
 	color: #acacac;
 	font-size: 12px;
+}
+
+.preview-card {
+	position: relative;
+	display: flex;
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #414bb2;
+	border-radius: 4px;
+	justify-content: space-between;
+	box-sizing: border-box;
+	border: 1px solid #dfe1e6;
+	margin-bottom: 8px;
+}
+
+.preview-card__content {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.preview-card__title {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	font-size: 14px;
+	color: #0052cc;
+	font-weight: 500;
+}
+
+.preview-card__title img {
+	width: 16px;
+	height: 16px;
+}
+
+.preview-card__description {
+	font-size: 12px;
+}
+
+.preview-card__image {
+	position: absolute;
+	width: 30%;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	overflow: hidden;
+}
+
+.preview-card__image img {
+	object-fit: cover;
+	object-position: left top;
+	width: 200%;
+	height: 200%;
 }

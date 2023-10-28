@@ -1,6 +1,7 @@
 
 import { Component } from 'preact';
 import PropTypes from 'prop-types';
+import { PreviewCard } from './PreviewCard';
 
 
 export class SharePanel extends Component {
@@ -19,7 +20,7 @@ export class SharePanel extends Component {
 				isLoading: false,
 				link: 'https://sequencediagram.zenuml.com/preview/1234',
 			})
-		}, 300);
+		}, 3000);
 	}
 
 	handleCopyLink = () => {
@@ -34,33 +35,35 @@ export class SharePanel extends Component {
 		return (
 			<div className="share-panel">
 				<h3 style={{ marginTop: '4px' }}>Share the Diagram on Confluence<sup>*</sup></h3>
-				{isLoading ?
-					<div className='loader'>
+				<>
+					<div>
+						<p>Paste the link on Confluence and select "Display as a Card"</p>
+						<img width={200} height={100} style="background: #acacac" />
 					</div>
-					: <>
-						<div>
-							<p>Paste the link on Confluence and select "Display as a Card"</p>
-							<img width={200} height={100} style="background: #acacac" />
-						</div>
-						<br />
-						<div>
-							<p>Preview</p>
-							<div className="preview" >
-								<img height={100} style="background: #acacac; width: 100%;" />
-								<button
-									aria-label="Copy link"
-									className="button icon-button copy-button" title={link}
-									onClick={this.handleCopyLink}
-								>
+					<br />
+					<div>
+						<h4 style="margin-bottom: 8px;">Preview</h4>
+						<div className="preview" >
+							<PreviewCard
+								title="ZenUML Sequence"
+								description="ZenUML Sequence"
+								image="https://zenuml.cn/storage/diagrams/3/79.png"
+							/>
+							<button
+								aria-label="Copy link"
+								className="button icon-button copy-button" title={link}
+								onClick={this.handleCopyLink}
+							>
+								{isLoading ? <div className="loader" /> :
 									<span className="material-symbols-outlined">
 										link
-									</span>
-									<span>Copy link</span>
-								</button>
-							</div>
+									</span>}
+								<span>Copy link</span>
+							</button>
 						</div>
-						<span className="footnote">* Anyone with the link can view the diagram. The view is optimised for Confluence.</span>
-					</>}
+					</div>
+					<span className="footnote">* Anyone with the link can view the diagram. The view is optimised for Confluence.</span>
+				</>
 			</div>
 		);
 	}
@@ -69,4 +72,6 @@ export class SharePanel extends Component {
 SharePanel.propTypes = {
 	id: PropTypes.string,
 	dsl: PropTypes.string,
+	email: PropTypes.string,
+	image: PropTypes.string,
 };
