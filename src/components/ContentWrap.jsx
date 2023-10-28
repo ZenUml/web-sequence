@@ -987,7 +987,7 @@ export default class ContentWrap extends Component {
 					{window.zenumlDesktop ? (null) : (
 						<div className='promotion'>
 							<div className="actions">
-								<a href='https://github.com/ZenUml/web-sequence/discussions/496' target="_blank"
+								<a href={this.props.currentItem.shareLink || 'https://github.com/ZenUml/web-sequence/discussions/496'} target="_blank"
 								   style={{textDecoration:'none'}}>
 									<Button
 										className="btn--dark button icon-button hint--rounded hint--bottom-left"
