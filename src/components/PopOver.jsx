@@ -16,7 +16,6 @@ export class Popover extends Component {
 	}
 
 	componentWillUnmount() {
-		console.log('yyy')
 		document.removeEventListener('click', this.handleDocumentClick);
 	}
 
