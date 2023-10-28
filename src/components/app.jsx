@@ -783,6 +783,8 @@ BookLibService.Borrow(id) {
 
 			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}})).json()
 			console.log('save to php app result: ', result)
+
+			this.state.currentItem.shareLink = `${result.page_share}?v=${result.md5}`;
 	
 		} catch(e) {
 			console.error(e)
