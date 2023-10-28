@@ -778,7 +778,7 @@ BookLibService.Borrow(id) {
 		const token = await firebase.auth().currentUser.getIdToken(true);
 
 		try {
-			const data = {token, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com', id: this.state.currentItem.id, createdBy: this.state.currentItem.createdBy}), imageBase64: this.state.currentItem.imageBase64};
+			const data = {token, id: this.state.currentItem.id, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com'}), imageBase64: this.state.currentItem.imageBase64};
 			console.log('calling /sync-diagram with data:', data)
 
 			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}})).json()
