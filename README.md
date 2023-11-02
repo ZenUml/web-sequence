@@ -13,6 +13,9 @@
 	- [Installation](#installation)
 		- [Features](#features)
 	- [Development](#development)
+	- [CI/CD](#cicd)
+		- [Staging environment](#staging-environment)
+		- [Production environment](#production-environment)
 	- [Support](#support)
 	- [Acknowledgements](#acknowledgements)
 		- [License](#license)
@@ -47,6 +50,17 @@ $ yarn build    // build a staging release
 $ yarn release  // copy resources to app / extension
 ````
 
+## CI/CD
+
+### Staging environment
+
+1. When a PR is created or updated, a **preview** site will be created, and you can find the link in the PR page.
+2. When a PR is merged into `master` branch, a **staging** site will be created. The link to the staging site is https://staging.zenuml.com.
+
+### Production environment
+
+Create a tag as `release-<version>`, and push it to the remote. It doesn't matter which branch you are on. The CI/CD 
+pipeline will create a production release. The link to the production site is https://app.zenuml.com.
 
 ## Support
 
