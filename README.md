@@ -21,9 +21,8 @@
 		- [License](#license)
 
 ## Installation
-
-Install the Chrome Extension from the [Chrome Web Store - Web Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef). 
-You can search **ZenUML** in the store.
+1. Web App - https://app.zenuml.com
+2. Chrome Extension - [Chrome Web Store - ZenUML Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef). 
 
 ### Features
 
