@@ -383,6 +383,16 @@ export function getFilenameFromUrl(url) {
 	return url.match(/\/([^/]*)$/)[1];
 }
 
+export function blobToBase64(blob) {
+	const reader = new FileReader();
+	reader.readAsDataURL(blob);
+	return new Promise(resolve => {
+		reader.onloadend = () => {
+			resolve(reader.result);
+		};
+	});
+}
+
 if (window.IS_EXTENSION) {
 	document.body.classList.add('is-extension');
 } else {

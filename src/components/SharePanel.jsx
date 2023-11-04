@@ -14,13 +14,18 @@ export class SharePanel extends Component {
 	}
 
 	componentDidMount() {
-		// TODO: API call to get the link
-		setTimeout(() => {
-			this.setState({
-				isLoading: false,
-				link: 'https://sequencediagram.zenuml.com/preview/1234',
-			})
-		}, 3000);
+		this.setState({
+			isLoading: false,
+			link: this.props.shareLink || 'https://sequencediagram.zenuml.com/preview/1234',
+		});
+
+		// TODO: API call to get the link if props.shareLink is not present
+		// setTimeout(() => {
+		// 	this.setState({
+		// 		isLoading: false,
+		// 		link: props.shareLink || 'https://sequencediagram.zenuml.com/preview/1234',
+		// 	})
+		// }, 3000);
 	}
 
 	handleCopyLink = () => {
@@ -74,4 +79,5 @@ SharePanel.propTypes = {
 	dsl: PropTypes.string,
 	email: PropTypes.string,
 	image: PropTypes.string,
+	shareLink: PropTypes.string,
 };
