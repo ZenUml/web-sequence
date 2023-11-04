@@ -1,4 +1,4 @@
-#Web Sequence
+# Web Sequence
 
 [![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![HitCount](http://hits.dwyl.com/zenuml/web-sequence.svg?style=flat-square)](http://hits.dwyl.com/zenuml/web-sequence)
@@ -9,12 +9,12 @@
 
 ![Screenshot](/screenshots/ss1.png)
 
-##Deployment
+## Deployment
 
 We will discuss deployment of the following items:
 
 | App/Plugin       | Target    | Local | Web Console | Github Actions |
-|------------------|-----------|-------|-------------|----------------|
+| ---------------- | --------- | ----- | ----------- | -------------- |
 | Web App          | Firebase  | Y     | N           | Y              |
 | Functions        | Firebase  | Y     | N           | N              |
 | Chrome extension | Web store | Y     | Y           | N              |
