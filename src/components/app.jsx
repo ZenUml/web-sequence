@@ -46,6 +46,7 @@ import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
 import { currentBrowserTab } from '../services/browserService';
+import { syncDiagram, getShareLink } from '../services/syncService';
 
 if (module.hot) {
 	require('preact/debug');
@@ -765,19 +766,11 @@ BookLibService.Borrow(id) {
 
 		console.log('on saving, ', this.state.currentItem)
 
-		const token = await firebase.auth().currentUser.getIdToken(true);
-
 		try {
-			const data = {token, id: this.state.currentItem.id, name: this.state.currentItem.title, content: this.state.currentItem.js, description: JSON.stringify({source: 'app.zenuml.com'}), imageBase64: this.state.currentItem.imageBase64};
-			console.log('calling /sync-diagram with data:', data)
-
-			const result = await (await fetch('/sync-diagram', {method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}})).json()
-			console.log('save to php app result: ', result)
-
-			this.state.currentItem.shareLink = `${result.page_share}?v=${result.md5}`;
-	
+			const result = await syncDiagram(this.state.currentItem);
+			this.state.currentItem.shareLink = getShareLink(result);
 		} catch(e) {
-			console.error(e)
+			console.error(e);
 		}
 
 		return itemService

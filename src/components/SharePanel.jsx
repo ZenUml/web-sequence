@@ -2,7 +2,7 @@
 import { Component } from 'preact';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
-
+import { syncDiagram, getShareLink } from '../services/syncService';
 
 export class SharePanel extends Component {
 	constructor(props) {
@@ -13,19 +13,20 @@ export class SharePanel extends Component {
 		}
 	}
 
-	componentDidMount() {
-		this.setState({
-			isLoading: false,
-			link: this.props.shareLink || 'https://sequencediagram.zenuml.com/preview/1234',
-		});
-
-		// TODO: API call to get the link if props.shareLink is not present
-		// setTimeout(() => {
-		// 	this.setState({
-		// 		isLoading: false,
-		// 		link: props.shareLink || 'https://sequencediagram.zenuml.com/preview/1234',
-		// 	})
-		// }, 3000);
+	async componentDidMount() {
+		if(this.props.currentItem.shareLink) {
+			this.setState({
+				isLoading: false,
+				link: this.props.shareLink,
+			});
+		}
+		else {
+			const result = await syncDiagram(this.props.currentItem);
+			this.setState({
+				isLoading: false,
+				link: getShareLink(result),
+			});
+		}
 	}
 
 	handleCopyLink = () => {
@@ -79,5 +80,5 @@ SharePanel.propTypes = {
 	dsl: PropTypes.string,
 	email: PropTypes.string,
 	image: PropTypes.string,
-	shareLink: PropTypes.string,
+	currentItem: PropTypes.object,
 };
