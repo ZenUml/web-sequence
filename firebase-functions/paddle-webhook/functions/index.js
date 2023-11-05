@@ -29,7 +29,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     const user = {name: decoded.name, id: decoded.user_id, email: decoded.email, email_verified: decoded.email_verified, picture: decoded.picture};
 
     const options = {
-        hostname: process.env.LARASITE_HOST || '18.141.198.134',
+        hostname: process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com',
         port: process.env.LARASITE_PORT || 80,
         path: '/diagrams',
         method: 'POST',
