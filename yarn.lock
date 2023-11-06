@@ -2570,10 +2570,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@zenuml/core@^3.13.3":
-  version "3.13.3"
-  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.13.3.tgz#4357cbc24f02e52464b3b1a91096b8dbd1200c95"
-  integrity sha512-U4BNJeSBr4/rpdkbqhrCN3eAmwCDE0+7CGuTCLJMb8dG2o1zBEA255vCcSyGyZub3rpLtmDYM8CuOazdJEq/Fg==
+"@zenuml/core@^3.13.4":
+  version "3.13.4"
+  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.13.4.tgz#70da7670b7fa99cab7fac212d5a08062b4a138c0"
+  integrity sha512-gl1m+QOS1TDKkN479mBjvzyZLMUL8lz97ejdAJR+4PCw/+5LD6cuUwHxdXk+yPTBEpWRKTjue+TabItJLR1p8Q==
   dependencies:
     "@headlessui-float/vue" "^0.11.3"
     "@headlessui/tailwindcss" "^0.2.0"
@@ -2590,7 +2590,7 @@
     lodash "^4.17.21"
     marked "^4.0.10"
     pino "^8.8.0"
-    postcss "^8.4.20"
+    postcss "^8.4.31"
     ramda "^0.28.0"
     tailwindcss "^3.2.4"
     vue "^3.2.45"
@@ -12361,7 +12361,7 @@ postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.27, postcss@^7.0.5
     picocolors "^0.2.1"
     source-map "^0.6.1"
 
-postcss@^8.1.10, postcss@^8.2.1, postcss@^8.2.15, postcss@^8.4.13, postcss@^8.4.20, postcss@^8.4.23:
+postcss@^8.1.10, postcss@^8.2.1, postcss@^8.2.15, postcss@^8.4.13, postcss@^8.4.23, postcss@^8.4.31:
   version "8.4.31"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.31.tgz#92b451050a9f914da6755af352bdc0192508656d"
   integrity sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==
