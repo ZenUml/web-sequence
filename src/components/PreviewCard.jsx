@@ -1,19 +1,29 @@
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 
-export function PreviewCard({ title, description, image }) {
+export function PreviewCard({ title, author, description, image }) {
 	return (
 		<div className="preview-card">
 			<div className="preview-card__content">
 				<div className="preview-card__title">
 					<img src="https://zenuml.cn/favicon.ico" />
-					<span>{title}</span>
+					<span className="text-ellipsis">{title}</span>
+				</div>
+				<div className="preview-card__subtitle">
+					<span class="material-symbols-outlined">account_circle</span>
+					<span className="text-ellipsis">Created by {author}</span>
 				</div>
 				<div className="preview-card__description">
-					<span>{description}</span>
+					<p>{description}</p>
+				</div>
+				<div className="preview-card__footer">
+					<img src="https://zenuml.cn/favicon.ico" />
+					<span>ZenUML</span>
 				</div>
 			</div>
 			<div className="preview-card__image">
-				<img src={image} />
+				<div className="overlay">
+					<img src={image} />
+				</div>
 			</div>
 		</div>
 	);
@@ -21,6 +31,7 @@ export function PreviewCard({ title, description, image }) {
 
 PreviewCard.propTypes = {
 	title: PropTypes.string.isRequired,
+	author: PropTypes.string.isRequired,
 	description: PropTypes.string.isRequired,
 	image: PropTypes.string.isRequired,
 };
