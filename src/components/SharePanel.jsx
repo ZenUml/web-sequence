@@ -2,6 +2,8 @@ import { Component } from 'preact';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
 import { syncDiagram, getShareLink } from '../services/syncService';
+import { Popover } from './PopOver';
+import { Button } from './common';
 
 export class SharePanel extends Component {
 	constructor(props) {
@@ -9,6 +11,7 @@ export class SharePanel extends Component {
 		this.state = {
 			isLoading: true,
 			link: '',
+			isTooltipVisible: false,
 		};
 	}
 
@@ -23,10 +26,16 @@ export class SharePanel extends Component {
 	handleCopyLink = () => {
 		const { link } = this.state;
 		navigator.clipboard.writeText(link);
+		this.setState({
+			isTooltipVisible: true,
+		});
+		setTimeout(() => {
+			this.setState({ isTooltipVisible: false });
+		}, 3000);
 	};
 
 	render() {
-		const { image, author } = this.props;
+		const { author, currentItem } = this.props;
 		const { link, isLoading } = this.state;
 
 		return (
@@ -37,31 +46,44 @@ export class SharePanel extends Component {
 				<>
 					<div>
 						<p>Paste the link on Confluence and select "Display as a Card"</p>
-						<img width={200} height={100} style="background: #acacac" />
+						<img style="width: 100%;" src="../assets/tutorial.png" />
 					</div>
 					<br />
 					<div>
 						<h4 style="margin-bottom: 8px;">Preview</h4>
 						<div className="preview">
 							<PreviewCard
-								title="Test Sequence Diagram"
+								title={currentItem.title}
 								author={author}
 								description="Click and check the latest diagram. Install our Confluence plugin for an enhanced expperience when viewing in Confluence."
-								image={image}
+								image={currentItem.imageBase64}
 							/>
-							<button
-								aria-label="Copy link"
-								className="button icon-button copy-button"
-								title={link}
-								onClick={this.handleCopyLink}
-							>
-								{isLoading ? (
-									<div className="loader" />
-								) : (
-									<span className="material-symbols-outlined">link</span>
-								)}
-								<span>Copy link</span>
-							</button>
+							<Popover
+								isVisible={this.state.isTooltipVisible}
+								placement={'top'}
+								hasShadow={true}
+								trigger={
+									<Button
+										aria-label="Copy link"
+										className="button icon-button copy-button"
+										title={link}
+										onClick={this.handleCopyLink}
+									>
+										{isLoading ? (
+											<div className="loader" />
+										) : (
+											<span className="material-symbols-outlined">link</span>
+										)}
+										<span>Copy link</span>
+									</Button>
+								}
+								content={
+									<div className="tooltip">
+										<span class="material-symbols-outlined">check_circle</span>
+										<span>Link copied to clipboard</span>
+									</div>
+								}
+							/>
 						</div>
 					</div>
 					<span className="footnote">

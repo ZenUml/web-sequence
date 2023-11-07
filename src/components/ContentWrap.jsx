@@ -1044,6 +1044,9 @@ export default class ContentWrap extends Component {
 						<div className="promotion">
 							<div className="actions">
 								<Popover
+									closeOnBlur={true}
+									hasArrow={true}
+									placement={'bottom'}
 									trigger={
 										<Button
 											className="button icon-button hint--rounded hint--bottom-left"

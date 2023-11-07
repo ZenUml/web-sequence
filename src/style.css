@@ -1980,12 +1980,48 @@ ol.editor-nav li {
 .popover-content {
 	position: absolute;
 	background: #fff;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	border: 1px solid #ccc;
 	border-radius: 4px;
-	padding: 20px;
 	z-index: 3;
+}
+
+.popover-content.shadow {
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.popover-arrow {
+	position: absolute;
+	width: 0;
+	height: 0;
+}
+
+.popover-content.top {
+	top: auto;
+	bottom: calc(100% + 8px);
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.popover-content.bottom {
 	top: calc(100% + 8px);
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.popover-content.top .popover-arrow {
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-top: 8px solid #fff;
+	bottom: -8px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.popover-content.bottom .popover-arrow {
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-bottom: 8px solid #fff;
+	top: -8px;
 	left: 50%;
 	transform: translateX(-50%);
 }
@@ -2002,22 +2038,11 @@ ol.editor-nav li {
 	z-index: 2;
 }
 
-.popover-arrow {
-	position: absolute;
-	width: 0;
-	height: 0;
-	border-left: 4px solid transparent;
-	border-right: 4px solid transparent;
-	border-bottom: 8px solid #fff;
-	top: -8px;
-	left: 50%;
-	transform: translateX(-50%);
-}
-
 .share-panel {
 	position: relative;
 	color: #000;
-	width: 450px;
+	width: 400px;
+	padding: 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -2059,6 +2084,20 @@ ol.editor-nav li {
 	transform: rotate(315deg);
 }
 
+.share-panel .tooltip {
+	display: flex;
+	align-items: center;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	white-space: nowrap;
+	padding: 8px;
+	gap: 12px;
+}
+
+.share-panel .tooltip .material-symbols-outlined {
+	color: #41b276;
+}
+
 .share-panel .footnote {
 	margin-top: 8px;
 	color: #acacac;
@@ -2069,8 +2108,7 @@ ol.editor-nav li {
 	position: relative;
 	display: flex;
 	width: 100%;
-	border: 1px solid #414bb2;
-	border-radius: 4px;
+	border-radius: 8px;
 	justify-content: space-between;
 	box-sizing: border-box;
 	border: 1px solid #dfe1e6;
