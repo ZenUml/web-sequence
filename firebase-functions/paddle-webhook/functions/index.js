@@ -7,7 +7,7 @@ const db = admin.firestore();
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
 const pubKey = functions.config().paddle.pub_key;
-const http = require('http');
+const https = require('https');
 
 exports.info = functions.https.onRequest((req, res) => {
     res.send(`Hello from ${process.env.GCLOUD_PROJECT}!`);
@@ -30,7 +30,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
 
     const options = {
         hostname: process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com',
-        port: process.env.LARASITE_PORT || 80,
+        port: process.env.LARASITE_PORT || 443,
         path: '/diagrams',
         method: 'POST',
         headers: {
@@ -38,9 +38,11 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
         }
     };
     const data = JSON.stringify({token: req.body.token, user, firebase_diagram_id: req.body.id, name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
-    console.log('http request with:', options, data);
+    console.log('request - options: ', options, 'data: ', data);
 
-    const request = http.request(options, (response) => {
+    const request = https.request(options, (response) => {
+        console.log(`response - code: ${response.statusCode}, headers: `, response.headers);
+
         let responseData = '';
         response.on('data', (chunk) => {
             responseData += chunk;
@@ -52,7 +54,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     });
 
     request.on('error', (error) => {
-        console.error(error);
+        console.error('request failed: ', error);
         res.send(error);
     });
 
