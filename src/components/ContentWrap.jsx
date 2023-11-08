@@ -5,7 +5,7 @@ import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
-import { getCompleteHtml, loadJS, log } from '../utils';
+import { getCompleteHtml, loadJS, log, blobToBase64 } from '../utils';
 
 import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
@@ -449,7 +449,10 @@ export default class ContentWrap extends Component {
 		alertsService.add("Copy failed, please try on another browser or upgrade your browser!");
 	}
 
-	shareClickHandler(e) {
+	async shareClickHandler(e) {
+		const imageBlob = await this.getPngBlob();
+		this.props.currentItem.imageBase64 = await blobToBase64(imageBlob);
+		
 		trackEvent('ui', 'shareSurvey');
 	}
 

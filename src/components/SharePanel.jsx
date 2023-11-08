@@ -14,19 +14,11 @@ export class SharePanel extends Component {
 	}
 
 	async componentDidMount() {
-		if(this.props.currentItem.shareLink) {
-			this.setState({
-				isLoading: false,
-				link: this.props.shareLink,
-			});
-		}
-		else {
-			const result = await syncDiagram(this.props.currentItem);
-			this.setState({
-				isLoading: false,
-				link: getShareLink(result),
-			});
-		}
+		const result = await syncDiagram(this.props.currentItem);
+		this.setState({
+			isLoading: false,
+			link: getShareLink(result),
+		});
 	}
 
 	handleCopyLink = () => {
