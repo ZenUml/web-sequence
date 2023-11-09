@@ -70,7 +70,7 @@
 		"http-server": "^0.12.3",
 		"jszip": "^3.5.0",
 		"preact": "10.18.1",
-		"preact-render-to-string": "^6.2.2",
+		"preact-render-to-string": "^6.3.0",
 		"preact-router": "^4.1.2",
 		"split.js": "1.6.0",
 		"svg-transform-loader": "^2.0.12",
