@@ -2,7 +2,7 @@
 import { Component } from 'preact';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
-
+import { syncDiagram, getShareLink } from '../services/syncService';
 
 export class SharePanel extends Component {
 	constructor(props) {
@@ -13,14 +13,12 @@ export class SharePanel extends Component {
 		}
 	}
 
-	componentDidMount() {
-		// TODO: API call to get the link
-		setTimeout(() => {
-			this.setState({
-				isLoading: false,
-				link: 'https://sequencediagram.zenuml.com/preview/1234',
-			})
-		}, 3000);
+	async componentDidMount() {
+		const result = await syncDiagram(this.props.currentItem);
+		this.setState({
+			isLoading: false,
+			link: getShareLink(result),
+		});
 	}
 
 	handleCopyLink = () => {
@@ -74,4 +72,5 @@ SharePanel.propTypes = {
 	dsl: PropTypes.string,
 	email: PropTypes.string,
 	image: PropTypes.string,
+	currentItem: PropTypes.object,
 };

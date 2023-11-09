@@ -13,6 +13,7 @@ jobs:
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING_ZENUML_27954 }}'
+          channelId: live
           projectId: staging-zenuml-27954
         env:
           FIREBASE_CLI_PREVIEWS: hostingchannels

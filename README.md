@@ -1,89 +1,28 @@
 # Web Sequence
 
-[![Gitter](https://badges.gitter.im/zenuml/Lobby.svg)](https://gitter.im/zenuml/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![HitCount](http://hits.dwyl.com/zenuml/web-sequence.svg?style=flat-square)](http://hits.dwyl.com/zenuml/web-sequence)
+[![Go to Web App](https://img.shields.io/badge/go%20to-web%20app-brightgreen)](https://app.zenuml.com)
 
-**Web Sequence** is a Chrome Extension and a Web App that convert your Chrome tab into a sequence diagram generator. Something like CodePen or JSFiddle, but for sequence diagram generation.
-
-### [Go to Web App](https://app.zenuml.com)
+**Web Sequence** is a Free Sequence Diagram Online tool that converts your Chrome tab into a sequence diagram generator.
 
 ![Screenshot](/screenshots/ss1.png)
 
-## Deployment
+## Table of Contents
+- [Web Sequence](#web-sequence)
+	- [Table of Contents](#table-of-contents)
+	- [Installation](#installation)
+		- [Features](#features)
+	- [Development](#development)
+	- [CI/CD](#cicd)
+		- [Staging environment](#staging-environment)
+		- [Production environment](#production-environment)
+	- [Support](#support)
+	- [Acknowledgements](#acknowledgements)
+		- [License](#license)
 
-We will discuss deployment of the following items:
-
-| App/Plugin       | Target    | Local | Web Console | Github Actions |
-| ---------------- | --------- | ----- | ----------- | -------------- |
-| Web App          | Firebase  | Y     | N           | Y              |
-| Functions        | Firebase  | Y     | N           | N              |
-| Chrome extension | Web store | Y     | Y           | N              |
-
-
-### Web App and Chrome extension
-
-Shared steps - build and test:
-
-1. Make sure you are on the right branch (`master`).
-1. `yarn install` to install the dependencies
-1. `yarn build` to build the product release
-1. `yarn release` to copy build files to app / extension
-1. `http-server ./app` to verify build in ./app
-1. `access localhost instead of 127.0.0.1` to allow firebase access
-
-#### Chrome extension
-1. Update `version` in `src/manifest.json`
-2. `yarn build` to build the product release
-3. `yarn release` to build the Chrome extension
-4. Use the ZenUml extension to the Chrome Browser
-	1. Chrome -> settings -> extensions
-	2. Enable 'Developer Mode'
-	3. Load the unpacked extensions: folder ./extension
-
-> Optimisation: The #3 step in the shared steps would generate a zip file. The #2 step can be omitted if
-we pass the generated zip file name to the script of `yarn upload` and `yarn pub`.
-
-##### Post deployment
-
-1. Uninstall and reinstall [the latest version of extension](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef)
-1. Do smoke test by creating a new diagram
-
-#### Web App
-
-##### From local
-````
-// firebase.json, this will deploy the `app` folder
-$ firebase deploy --project [staging|prod]
-````
-
-##### Post development
-
-1. Go to [the page of app](https://app.zenuml.com)
-2. Do smoke test by create a new diagram
-
-### Development
-
-#### First time setup
-
-````
-$ yarn install  // instal modules
-$ yarn start    // start a local server
-
-$ yarn build    // build a staging release
-$ yarn release  // copy resources to app / extension
-````
-
-#### Enable/Disable DEBUG
-
-In Chrome console, type in `document.cookie='DEBUG=true'` or `document.cookie='DEBUG=;max-age=1'`.
-
-````
-$ yarn link @zenuml/core # use un-uglyfied version
-$ webpack                # build bundle.js to src/lib
-````
-
-### Install
-Install it from [Chrome Web Store - Web Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef). You can also search "Web Sequence" or "Sequence Diagram" to find it.
+## Installation
+1. Web App - https://app.zenuml.com
+2. Chrome Extension - [Chrome Web Store - ZenUML Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef). 
 
 ### Features
 
@@ -100,11 +39,34 @@ Install it from [Chrome Web Store - Web Sequence](https://chrome.google.com/webs
 
 Follow [@ZenUml](https://twitter.com/intent/follow?screen_name=ZenUml) for updates or tweet out feature requests and suggestions.
 
-### Support Web Sequence
+## Development
 
-Web Sequence is completely free and open-source. If you find it useful, you can show your support by sharing it in your social network or by simply letting me know how much you 💖 it by tweeting to [@ZenUml](https://twitter.com/ZenUml).
+````
+$ yarn install  // instal modules
+$ yarn start    // start a local server
 
-### Awesome libraries used
+$ yarn build    // build a staging release
+$ yarn release  // copy resources to app / extension
+````
+
+## CI/CD
+
+### Staging environment
+
+1. When a PR is created or updated, a **preview** site will be created, and you can find the link in the PR page.
+2. When a PR is merged into `master` branch, a **staging** site will be created. The link to the staging site is https://staging.zenuml.com.
+
+### Production environment
+
+Create a tag as `release-<version>`, and push it to the remote. It doesn't matter which branch you are on. The CI/CD 
+pipeline will create a production release. The link to the production site is https://app.zenuml.com.
+
+## Support
+
+Web Sequence is completely free and open-source. If you find it useful, you can show your support by sharing it in your 
+social network or by simply letting me know how much you 💖 it by tweeting to [@ZenUml](https://twitter.com/ZenUml).
+
+## Acknowledgements
 
 * This project is a fork of [Web Maker](https://github.com/chinchang/web-maker)
 * The diagram generator is built on top of [VueJs](https://vuejs.org/)
@@ -113,4 +75,4 @@ Web Sequence is completely free and open-source. If you find it useful, you can 
 
 MIT Licensed
 
-Copyright (c) 2017 Peng Xiao, [ZenUml.com](http://ZenUml.com)
+Copyright (c) 2023 Peng Xiao, [ZenUml.com](http://ZenUml.com)

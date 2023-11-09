@@ -18,7 +18,8 @@ import {
 	handleDownloadsPermission,
 	downloadFile,
 	getCompleteHtml,
-	getFilenameFromUrl
+	getFilenameFromUrl,
+	blobToBase64
 } from '../utils';
 import { itemService } from '../itemService';
 import '../db';
@@ -45,6 +46,7 @@ import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
 import { currentBrowserTab } from '../services/browserService';
+import { syncDiagram, getShareLink } from '../services/syncService';
 
 if (module.hot) {
 	require('preact/debug');
@@ -739,7 +741,10 @@ BookLibService.Borrow(id) {
 		return d.promise;
 	}
 
-	saveCode(key) {
+	async saveCode(key) {
+		const imageBlob = await this.contentWrap.getPngBlob();
+		
+		this.state.currentItem.imageBase64 = await blobToBase64(imageBlob);
 		this.state.currentItem.updatedOn = Date.now();
 		this.state.currentItem.layoutMode = this.state.currentLayoutMode;
 
@@ -757,6 +762,15 @@ BookLibService.Borrow(id) {
 				alertsService.add('Item saved.');
 			}
 			await this.setState({unsavedEditCount: 0});
+		}
+
+		console.log('on saving, ', this.state.currentItem)
+
+		try {
+			const result = await syncDiagram(this.state.currentItem);
+			this.state.currentItem.shareLink = getShareLink(result);
+		} catch(e) {
+			console.error(e);
 		}
 
 		return itemService

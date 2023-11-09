@@ -7,21 +7,71 @@ const db = admin.firestore();
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
 const pubKey = functions.config().paddle.pub_key;
+const https = require('https');
 
 exports.info = functions.https.onRequest((req, res) => {
     res.send(`Hello from ${process.env.GCLOUD_PROJECT}!`);
 });
 
+const verifyIdToken = (token) => admin.auth().verifyIdToken(token);
+
+exports.authenticate = functions.https.onRequest(async (req, res) => {
+    console.log('request:', req)
+    const auth = req.get('Authorization');
+    const decoded = await verifyIdToken(auth);
+    console.log('decoded token:', decoded);
+    res.send(decoded.uid);
+});
+
+exports.sync_diagram = functions.https.onRequest(async (req, res) => {
+    const decoded = await verifyIdToken(req.body.token);
+    console.log('decoded token:', decoded);
+    const user = {name: decoded.name, id: decoded.user_id, email: decoded.email, email_verified: decoded.email_verified, picture: decoded.picture};
+
+    const options = {
+        hostname: process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com',
+        port: process.env.LARASITE_PORT || 443,
+        path: '/diagrams',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+    const data = JSON.stringify({token: req.body.token, user, firebase_diagram_id: req.body.id, name: req.body.name, content: req.body.content, description: req.body.description,imageBase64: req.body.imageBase64});
+    console.log('request - options: ', options, 'data: ', data);
+
+    const request = https.request(options, (response) => {
+        console.log(`response - code: ${response.statusCode}, headers: `, response.headers);
+
+        let responseData = '';
+        response.on('data', (chunk) => {
+            responseData += chunk;
+        });
+
+        response.on('end', () => {
+            res.send(responseData);
+        });
+    });
+
+    request.on('error', (error) => {
+        console.error('request failed: ', error);
+        res.send(error);
+    });
+
+    request.write(data);
+    request.end();
+});
+
 exports.webhook = functions.https.onRequest(async (req, res) => {
-    if(req.body && req.body.p_signature) {
+    if (req.body && req.body.p_signature) {
         const valid = webhook.validate(req.body, pubKey);
-        if(valid) {
-            if(alertParser.supports(req)) {
+        if (valid) {
+            if (alertParser.supports(req)) {
                 const subscription = alertParser.parse(req);
                 const userId = subscription.passthrough;
 
                 const user = await db.collection('users').doc(userId).get();
-                if(user.exists) {
+                if (user.exists) {
                     await db.collection('user_subscriptions').doc('user-' + userId).set(subscription);
                     res.send('Accepted');
                 } else {
