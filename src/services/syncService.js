@@ -3,7 +3,7 @@ import firebase from 'firebase/app';
 async function syncDiagram(currentItem) {
   const token = await firebase.auth().currentUser.getIdToken(true);
 
-  const data = { token, id: currentItem.id, name: currentItem.title, content: currentItem.js, description: JSON.stringify({ source: 'app.zenuml.com' }), imageBase64: currentItem.imageBase64 };
+  const data = { token, id: currentItem.id, name: currentItem.title, content: currentItem.js, description: 'Shared diagram from https://app.zenuml.com', imageBase64: currentItem.imageBase64 };
   console.log('calling /sync-diagram with data:', data)
 
   const result = await (await fetch('/sync-diagram', { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })).json()
