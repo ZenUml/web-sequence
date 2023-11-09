@@ -28,9 +28,21 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     console.log('decoded token:', decoded);
     const user = {name: decoded.name, id: decoded.user_id, email: decoded.email, email_verified: decoded.email_verified, picture: decoded.picture};
 
+    const hostname = process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com';
+    const baseUrlHttps = `https://${hostname}`;
+    const baseUrlHttp = `http://${hostname}`;
+    const publicBaseUrl = process.env.PUBLIC_LARASITE_BASE_URL || 'https://zenuml.com/sequence-diagram';
+    console.log('using publicBaseUrl:', publicBaseUrl);
+
+    const replaceBaseUrlInShareLink = (responseData) => {
+        const data = JSON.parse(responseData);
+        data.page_share = data.page_share.replace(baseUrlHttp, publicBaseUrl).replace(baseUrlHttps, publicBaseUrl);
+        return JSON.stringify(data);
+    }
+
     const options = {
-        hostname: process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com',
-        port: process.env.LARASITE_PORT || 443,
+        hostname,
+        port: 443,
         path: '/diagrams',
         method: 'POST',
         headers: {
@@ -49,7 +61,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
         });
 
         response.on('end', () => {
-            res.send(responseData);
+            res.send(replaceBaseUrlInShareLink(responseData));
         });
     });
 
