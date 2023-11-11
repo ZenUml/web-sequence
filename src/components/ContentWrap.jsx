@@ -1,21 +1,21 @@
 import React, { Component } from 'preact';
-import { saveAs } from 'file-saver'
+import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
-import { getCompleteHtml, loadJS, log, blobToBase64 } from '../utils';
+import { getCompleteHtml, loadJS, log } from '../utils';
 
 import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
 import { trackEvent } from '../analytics';
 import CodeMirror from '../CodeMirror';
-import 'codemirror/mode/javascript/javascript.js'
+import 'codemirror/mode/javascript/javascript.js';
 import { Console } from './Console';
 import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
-import codeService from '../services/code_service'
+import codeService from '../services/code_service';
 import { alertsService } from '../notifications';
 import { Popover } from './PopOver.jsx';
 import { SharePanel } from './SharePanel.jsx';
@@ -31,7 +31,9 @@ export default class ContentWrap extends Component {
 		this.state = {
 			lineOfCode: 0,
 			isConsoleOpen: false,
-			isCssSettingsModalOpen: false
+			isCssSettingsModalOpen: false,
+			imageBase64: null,
+			isSharePanelVisible: false,
 		};
 		this.updateTimer = null;
 		this.updateDelay = 500;
@@ -68,7 +70,10 @@ export default class ContentWrap extends Component {
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener('message', this.handleMessageCodeUpdate.bind(this));
+		window.removeEventListener(
+			'message',
+			this.handleMessageCodeUpdate.bind(this)
+		);
 	}
 
 	handleMessageCodeUpdate(e) {
@@ -105,9 +110,10 @@ export default class ContentWrap extends Component {
 			change.origin !== 'setValue'
 		);
 
-		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
+		const targetWindow =
+			this.detachedWindow ||
+			document.getElementById('demo-frame').contentWindow;
 		targetWindow.postMessage({ code: this.cmCodes.js }, '*');
-
 	}
 	onCursorMove(editor) {
 		const cursor = editor.getCursor();
@@ -115,10 +121,12 @@ export default class ContentWrap extends Component {
 		let pos = cursor.ch;
 
 		for (let i = 0; i < line; i++) {
-			pos += editor.getLine(i).length + 1
+			pos += editor.getLine(i).length + 1;
 		}
 
-		const targetWindow = this.detachedWindow || document.getElementById('demo-frame').contentWindow;
+		const targetWindow =
+			this.detachedWindow ||
+			document.getElementById('demo-frame').contentWindow;
 		targetWindow.postMessage({ cursor: pos }, '*');
 	}
 	onCodeChange(editor, change) {
@@ -139,7 +147,7 @@ export default class ContentWrap extends Component {
 				if (trackEvent.previewCount === 4) {
 					trackEvent('fn', 'usingPreview');
 				}
-				if ((trackEvent.previewCount % 4) === 0) {
+				if (trackEvent.previewCount % 4 === 0) {
 					trackEvent('fn', 'userEdit', '', trackEvent.previewCount);
 				}
 			}
@@ -165,8 +173,8 @@ export default class ContentWrap extends Component {
 		}
 		const that = this;
 		that.frame.onload = function () {
-			that.frame.contentWindow.postMessage({ code: that.cmCodes.js }, '*')
-		}
+			that.frame.contentWindow.postMessage({ code: that.cmCodes.js }, '*');
+		};
 
 		if (this.detachedWindow) {
 			this.detachedWindow.postMessage({ contents }, '*');
@@ -214,7 +222,7 @@ export default class ContentWrap extends Component {
 
 		var currentCode = {
 			css: this.cmCodes.css,
-			js: this.cmCodes.js
+			js: this.cmCodes.js,
 		};
 		log('🔎 setPreviewContent', isForced);
 		const targetFrame = this.detachedWindow
@@ -224,15 +232,12 @@ export default class ContentWrap extends Component {
 		const cssMode = this.props.currentItem.cssMode;
 		// If just CSS was changed (and everything shudn't be empty),
 		// change the styles inside the iframe.
-		if (
-			!isForced &&
-			currentCode.js === this.codeInPreview.js
-		) {
+		if (!isForced && currentCode.js === this.codeInPreview.js) {
 			computeCss(
 				cssMode === CssModes.ACSS ? currentCode.html : currentCode.css,
 				cssMode,
 				this.props.currentItem.cssSettings
-			).then(result => {
+			).then((result) => {
 				if (cssMode === CssModes.ACSS) {
 					this.cm.css.setValue(result.code || '');
 				}
@@ -258,7 +263,7 @@ export default class ContentWrap extends Component {
 				true,
 				this.props.prefs.infiniteLoopTimeout
 			);
-			Promise.all([htmlPromise, cssPromise, jsPromise]).then(result => {
+			Promise.all([htmlPromise, cssPromise, jsPromise]).then((result) => {
 				if (cssMode === CssModes.ACSS) {
 					this.cm.css.setValue(result[1].code || '');
 				}
@@ -268,7 +273,7 @@ export default class ContentWrap extends Component {
 					result[1].code || '',
 					result[2].code || ''
 				);
-				result.forEach(resultItem => {
+				result.forEach((resultItem) => {
 					if (resultItem.errors) {
 						this.showErrors(resultItem.errors.lang, resultItem.errors.data);
 					}
@@ -298,38 +303,38 @@ export default class ContentWrap extends Component {
 		Promise.all([
 			this.updateHtmlMode(this.props.currentItem.htmlMode),
 			this.updateCssMode(this.props.currentItem.cssMode),
-			this.updateJsMode(this.props.currentItem.jsMode)
+			this.updateJsMode(this.props.currentItem.jsMode),
 		]).then(() => this.setPreviewContent(true));
 	}
 	applyCodemirrorSettings(prefs) {
 		if (!this.cm) {
 			return;
 		}
-		cssCodeEl.querySelector(
-			'.CodeMirror'
-		).style.fontSize = jsCodeEl.querySelector(
-			'.CodeMirror'
-		).style.fontSize = `${parseInt(prefs.fontSize, 10)}px`;
+		cssCodeEl.querySelector('.CodeMirror').style.fontSize =
+			jsCodeEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
+				prefs.fontSize,
+				10
+			)}px`;
 		window.consoleEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
 			prefs.fontSize,
 			10
 		)}px`;
 
 		// Replace correct css file in LINK tags's href
-		window.editorThemeLinkTag.href = `lib/codemirror/theme/${prefs.editorTheme
-			}.css`;
-		window.fontStyleTag.textContent = window.fontStyleTemplate.textContent.replace(
-			/fontname/g,
-			(prefs.editorFont === 'other'
-				? prefs.editorCustomFont
-				: prefs.editorFont) || 'FiraCode'
-		);
+		window.editorThemeLinkTag.href = `lib/codemirror/theme/${prefs.editorTheme}.css`;
+		window.fontStyleTag.textContent =
+			window.fontStyleTemplate.textContent.replace(
+				/fontname/g,
+				(prefs.editorFont === 'other'
+					? prefs.editorCustomFont
+					: prefs.editorFont) || 'FiraCode'
+			);
 		// window.customEditorFontInput.classList[
 		// 	prefs.editorFont === 'other' ? 'remove' : 'add'
 		// ]('hide');
 		this.consoleCm.setOption('theme', prefs.editorTheme);
 
-		['js', 'css'].forEach(type => {
+		['js', 'css'].forEach((type) => {
 			this.cm[type].setOption('indentWithTabs', prefs.indentWith !== 'spaces');
 			this.cm[type].setOption(
 				'blastCode',
@@ -384,7 +389,7 @@ export default class ContentWrap extends Component {
 			var arr = [
 				`${minCodeWrapSize}px`,
 				`${minCodeWrapSize}px`,
-				`${minCodeWrapSize}px`
+				`${minCodeWrapSize}px`,
 			];
 			arr[id] = `calc(100% - ${minCodeWrapSize * 2}px)`;
 
@@ -415,9 +420,12 @@ export default class ContentWrap extends Component {
 	}
 
 	async getPngBlob() {
-		const mountingPoint = this.frame.contentWindow.document.getElementById('diagram');
+		const mountingPoint =
+			this.frame.contentWindow.document.getElementById('diagram');
 		// eslint-disable-next-line
-		return await mountingPoint.getElementsByClassName('frame')[0].parentElement.__vue__.toBlob();
+		return await mountingPoint
+			.getElementsByClassName('frame')[0]
+			.parentElement.__vue__.toBlob();
 	}
 
 	async copyImageClickHandler(e) {
@@ -426,40 +434,43 @@ export default class ContentWrap extends Component {
 			trackEvent('ui', 'copyImageFailed1');
 			return;
 		}
-		navigator.clipboard.write([
-			new ClipboardItem({
-				"image/png": new Promise(async resolve => {
-					const png = await this.getPngBlob();
-					resolve(png);
-				})
-			})
-		]).then(
-			() => alertsService.add("PNG file was copied"),
-			err => {
-				this.showCopyErrorNotice();
-				console.log(err);
-				trackEvent('ui', 'copyImageFailed2');
-			}
-		);
+		navigator.clipboard
+			.write([
+				new ClipboardItem({
+					'image/png': new Promise(async (resolve) => {
+						const png = await this.getPngBlob();
+						resolve(png);
+					}),
+				}),
+			])
+			.then(
+				() => alertsService.add('PNG file was copied'),
+				(err) => {
+					this.showCopyErrorNotice();
+					console.log(err);
+					trackEvent('ui', 'copyImageFailed2');
+				}
+			);
 		trackEvent('ui', 'copyImage');
 	}
 
-
 	showCopyErrorNotice() {
-		alertsService.add("Copy failed, please try on another browser or upgrade your browser!");
+		alertsService.add(
+			'Copy failed, please try on another browser or upgrade your browser!'
+		);
 	}
 
-	async shareClickHandler(e) {
-		const imageBlob = await this.getPngBlob();
-		this.props.currentItem.imageBase64 = await blobToBase64(imageBlob);
-		
-		trackEvent('ui', 'shareSurvey');
+	async shareClickHandler() {
+		const image = await this.getPngBlob();
+		await this.props.onUpdateImage(image);
+		this.setState({ isSharePanelVisible: true });
+		trackEvent('ui', 'shareLink');
 	}
 
 	async resetSplitting() {
 		await this.setState({
 			codeSplitSizes: this.getCodeSplitSizes(),
-			mainSplitSizes: this.getMainSplitSizesToApply()
+			mainSplitSizes: this.getMainSplitSizesToApply(),
 		});
 	}
 	updateSplits() {
@@ -592,9 +603,10 @@ export default class ContentWrap extends Component {
 	codeModeChangeHandler(e) {
 		var mode = e.target.value;
 		var type = e.target.dataset.type;
-		var currentMode = this.props.currentItem[
-			type === 'html' ? 'htmlMode' : type === 'css' ? 'cssMode' : 'jsMode'
-		];
+		var currentMode =
+			this.props.currentItem[
+				type === 'html' ? 'htmlMode' : type === 'css' ? 'cssMode' : 'jsMode'
+			];
 		if (currentMode !== mode) {
 			if (type === 'html') {
 				this.updateHtmlMode(mode).then(() => this.setPreviewContent(true));
@@ -625,13 +637,13 @@ export default class ContentWrap extends Component {
 		const that = this;
 		this.detachedWindow.onload = function () {
 			that.setPreviewContent(true);
-			const frm = that.detachedWindow.document.querySelector('iframe')
+			const frm = that.detachedWindow.document.querySelector('iframe');
 			frm.onload = function () {
 				that.detachedWindow.postMessage({ code: that.cmCodes.js }, '*');
-			}
-		}
+			};
+		};
 
-		var intervalID = window.setInterval(checkWindow => {
+		var intervalID = window.setInterval((checkWindow) => {
 			if (this.detachedWindow && this.detachedWindow.closed) {
 				clearInterval(intervalID);
 				document.body.classList.remove('is-detached-mode');
@@ -651,7 +663,7 @@ export default class ContentWrap extends Component {
 
 	onMessageFromConsole() {
 		/* eslint-disable no-param-reassign */
-		[...arguments].forEach(arg => {
+		[...arguments].forEach((arg) => {
 			if (
 				arg &&
 				arg.indexOf &&
@@ -665,16 +677,16 @@ export default class ContentWrap extends Component {
 			try {
 				this.consoleCm.replaceRange(
 					arg +
-					' ' +
-					((arg + '').match(/\[object \w+]/) ? JSON.stringify(arg) : '') +
-					'\n',
+						' ' +
+						((arg + '').match(/\[object \w+]/) ? JSON.stringify(arg) : '') +
+						'\n',
 					{
-						line: Infinity
+						line: Infinity,
 					}
 				);
 			} catch (e) {
 				this.consoleCm.replaceRange('🌀\n', {
-					line: Infinity
+					line: Infinity,
 				});
 			}
 			this.consoleCm.scrollTo(0, Infinity);
@@ -744,7 +756,7 @@ export default class ContentWrap extends Component {
 	}
 
 	resetTabs() {
-		this.tabsRef.onInit()
+		this.tabsRef.onInit();
 	}
 
 	onTabChanges(tab) {
@@ -775,7 +787,8 @@ export default class ContentWrap extends Component {
 				onDragEnd={this.mainSplitDragEndHandler.bind(this)}
 			>
 				<div id="js-code-side">
-					<Tabs ref={tabs => (this.tabsRef = tabs)}
+					<Tabs
+						ref={(tabs) => (this.tabsRef = tabs)}
 						onChange={this.onTabChanges.bind(this)}
 						style="height: 100%;display:flex;flex-direction: column;"
 					>
@@ -818,22 +831,25 @@ export default class ContentWrap extends Component {
 							</div> */}
 								<Toolbox clickSvg={this.toolboxUpdateToApp.bind(this)} />
 								<UserCodeMirror
-									ref={dslEditor => (this.dslEditor = dslEditor)}
+									ref={(dslEditor) => (this.dslEditor = dslEditor)}
 									options={{
 										mode: 'htmlmixed',
 										profile: 'xhtml',
-										gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+										gutters: [
+											'CodeMirror-linenumbers',
+											'CodeMirror-foldgutter',
+										],
 										noAutocomplete: true,
 										matchTags: { bothTags: true },
 										prettier: true,
 										prettierParser: 'html',
-										emmet: true
+										emmet: true,
 									}}
 									prefs={this.props.prefs}
 									autoComplete={this.props.prefs.autoComplete}
 									onChange={this.onJsCodeChange.bind(this)}
 									onCursorMove={this.onCursorMove.bind(this)}
-									onCreation={el => (this.cm.js = el)}
+									onCreation={(el) => (this.cm.js = el)}
 									onFocus={this.editorFocusHandler.bind(this)}
 								/>
 								{/* Inlet(scope.cm.js); */}
@@ -847,7 +863,6 @@ export default class ContentWrap extends Component {
 								className="code-wrap"
 								onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 							>
-
 								<div
 									className="js-code-wrap__header  code-wrap__header"
 									title="Double click to toggle code pane"
@@ -893,27 +908,26 @@ export default class ContentWrap extends Component {
 									</div>
 								</div>
 								<UserCodeMirror
-									ref={cssEditor => (this.cssEditor = cssEditor)}
+									ref={(cssEditor) => (this.cssEditor = cssEditor)}
 									options={{
 										mode: 'css',
 										gutters: [
 											'error-gutter',
 											'CodeMirror-linenumbers',
-											'CodeMirror-foldgutter'
+											'CodeMirror-foldgutter',
 										],
 										emmet: true,
 										prettier: true,
-										prettierParser: 'css'
+										prettierParser: 'css',
 									}}
 									prefs={this.props.prefs}
 									onChange={this.onCssCodeChange.bind(this)}
-									onCreation={el => (this.cm.css = el)}
+									onCreation={(el) => (this.cm.css = el)}
 									onFocus={this.editorFocusHandler.bind(this)}
 								/>
 							</div>
 						</div>
 						<div label="Cheat sheet">
-
 							<div
 								data-code-wrap-id="0"
 								id="htmlCodeEl"
@@ -944,7 +958,11 @@ export default class ContentWrap extends Component {
 										</tr>
 										<tr>
 											<td>Participant</td>
-											<td>ParticipantA<br />ParticipantB</td>
+											<td>
+												ParticipantA
+												<br />
+												ParticipantB
+											</td>
 										</tr>
 										<tr>
 											<td>Message</td>
@@ -956,7 +974,13 @@ export default class ContentWrap extends Component {
 										</tr>
 										<tr>
 											<td>Nested message</td>
-											<td>A.messageA() {'{'}<br />&nbsp;&nbsp;B.messageB()<br />{'}'}</td>
+											<td>
+												A.messageA() {'{'}
+												<br />
+												&nbsp;&nbsp;B.messageB()
+												<br />
+												{'}'}
+											</td>
 										</tr>
 										<tr>
 											<td class="tg-0pky">Self-message</td>
@@ -964,11 +988,31 @@ export default class ContentWrap extends Component {
 										</tr>
 										<tr>
 											<td>Alt</td>
-											<td>if (condition1) {'{'}<br />&nbsp;&nbsp;A.methodA()<br />{'}'} else if (condition2) {'{'}<br />&nbsp;&nbsp;B.methodB()<br />{'}'} else {'{'}<br />&nbsp;&nbsp;C.methodC()<br />{'}'}</td>
+											<td>
+												if (condition1) {'{'}
+												<br />
+												&nbsp;&nbsp;A.methodA()
+												<br />
+												{'}'} else if (condition2) {'{'}
+												<br />
+												&nbsp;&nbsp;B.methodB()
+												<br />
+												{'}'} else {'{'}
+												<br />
+												&nbsp;&nbsp;C.methodC()
+												<br />
+												{'}'}
+											</td>
 										</tr>
 										<tr>
 											<td>Loop</td>
-											<td>while (condition) {'{'}<br />&nbsp;&nbsp;A.methodA()<br />{'}'}</td>
+											<td>
+												while (condition) {'{'}
+												<br />
+												&nbsp;&nbsp;A.methodA()
+												<br />
+												{'}'}
+											</td>
 										</tr>
 									</table>
 								</div>
@@ -994,37 +1038,70 @@ export default class ContentWrap extends Component {
 				{/**/}
 				{/**/}
 				{/*</Tabs>*/}
-				<div class="demo-side" id="js-demo-side" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
-					{window.zenumlDesktop ? (null) : (
-						<div className='promotion'>
+				<div
+					class="demo-side"
+					id="js-demo-side"
+					style="overflow-y: auto; -webkit-overflow-scrolling: touch;"
+				>
+					{window.zenumlDesktop ? null : (
+						<div className="promotion">
 							<div className="actions">
-								<Popover
-									trigger={
-										<Button
-											className="button icon-button hint--rounded hint--bottom-left"
-											/* Highlight this button for more traction */
-											style="background-color: #ffa900; color: #fff;"
-											aria-label="Share Your Work"
-											onClick={this.shareClickHandler.bind(this)}>
-											<span className="material-symbols-outlined">share</span>
-											<span>Share</span>
-										</Button>
-									}
-									content={
-										<SharePanel id={0} dsl={''} image={''} currentItem={this.props.currentItem} />
-									}
-								/>
+								{!window.user ? (
+									<Button
+										className="button icon-button hint--rounded hint--bottom-left"
+										/* Highlight this button for more traction */
+										style="background-color: #ffa900; color: #fff;"
+										aria-label="Share Your Work"
+										onClick={this.props.onLogin.bind(this)}
+									>
+										<span className="material-symbols-outlined">share</span>
+										<span>Share</span>
+									</Button>
+								) : (
+									<Popover
+										closeOnBlur={true}
+										hasArrow={true}
+										placement={'bottom'}
+										isVisible={this.state.isSharePanelVisible}
+										onVisibilityChange={(isVisible) =>
+											this.setState({ isSharePanelVisible: isVisible })
+										}
+										trigger={
+											<Button
+												className="button icon-button hint--rounded hint--bottom-left"
+												/* Highlight this button for more traction */
+												style="background-color: #ffa900; color: #fff;"
+												aria-label="Share Your Work"
+												onClick={this.shareClickHandler.bind(this)}
+											>
+												<span className="material-symbols-outlined">share</span>
+												<span>Share</span>
+											</Button>
+										}
+										content={
+											<SharePanel
+												author={
+													window.user ? window.user.displayName : 'author'
+												}
+												currentItem={this.props.currentItem}
+												imageBase64={this.state.imageBase64}
+											/>
+										}
+									/>
+								)}
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Export as PNG"
-									onClick={this.exportPngClickHandler.bind(this)}>
+									onClick={this.exportPngClickHandler.bind(this)}
+								>
 									<span class="material-symbols-outlined">file_download</span>
 									<span>PNG</span>
 								</Button>
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Copy PNG to Clipboard"
-									onClick={this.copyImageClickHandler.bind(this)}>
+									onClick={this.copyImageClickHandler.bind(this)}
+								>
 									<span class="material-symbols-outlined">file_copy</span>
 									<span>Copy PNG</span>
 								</Button>
@@ -1033,7 +1110,7 @@ export default class ContentWrap extends Component {
 					)}
 
 					<iframe
-						ref={el => (this.frame = el)}
+						ref={(el) => (this.frame = el)}
 						frameborder="0"
 						id="demo-frame"
 						allowfullscreen
@@ -1046,7 +1123,7 @@ export default class ContentWrap extends Component {
 						onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(this)}
 						toggleConsole={this.toggleConsole.bind(this)}
 						onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-						onReady={el => (this.consoleCm = el)}
+						onReady={(el) => (this.consoleCm = el)}
 					/>
 					<CssSettingsModal
 						show={this.state.isCssSettingsModalOpen}

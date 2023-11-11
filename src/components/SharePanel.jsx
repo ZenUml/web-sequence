@@ -1,8 +1,9 @@
-
 import { Component } from 'preact';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
 import { syncDiagram, getShareLink } from '../services/syncService';
+import { Popover } from './PopOver';
+import { Button } from './common';
 
 export class SharePanel extends Component {
 	constructor(props) {
@@ -10,11 +11,25 @@ export class SharePanel extends Component {
 		this.state = {
 			isLoading: true,
 			link: '',
-		}
+			isTooltipVisible: false,
+		};
 	}
 
 	async componentDidMount() {
-		const result = await syncDiagram(this.props.currentItem);
+		await this.syncDiagram(this.props.currentItem);
+	}
+
+	async componentDidUpdate(prevProps) {
+		if (prevProps.currentItem !== this.props.currentItem) {
+			await this.syncDiagram(this.props.currentItem);
+		}
+	}
+
+	async syncDiagram(currentItem) {
+		const result = await syncDiagram(currentItem);
+		if (!result) {
+			return;
+		}
 		this.setState({
 			isLoading: false,
 			link: getShareLink(result),
@@ -24,43 +39,71 @@ export class SharePanel extends Component {
 	handleCopyLink = () => {
 		const { link } = this.state;
 		navigator.clipboard.writeText(link);
-	}
+		this.setState({
+			isTooltipVisible: true,
+		});
+		setTimeout(() => {
+			this.setState({ isTooltipVisible: false });
+		}, 3000);
+	};
 
 	render() {
+		const { author, currentItem } = this.props;
 		const { link, isLoading } = this.state;
-
 
 		return (
 			<div className="share-panel">
-				<h3 style={{ marginTop: '4px' }}>Share the Diagram on Confluence<sup>*</sup></h3>
+				<h3 style={{ marginTop: '4px' }}>
+					Share the Diagram on Confluence<sup>*</sup>
+				</h3>
 				<>
 					<div>
 						<p>Paste the link on Confluence and select "Display as a Card"</p>
-						<img width={200} height={100} style="background: #acacac" />
+						<img style="width: 100%;" src="../assets/tutorial.png" />
 					</div>
 					<br />
 					<div>
 						<h4 style="margin-bottom: 8px;">Preview</h4>
-						<div className="preview" >
+						<div className="preview">
 							<PreviewCard
-								title="ZenUML Sequence"
-								description="ZenUML Sequence"
-								image="https://zenuml.cn/storage/diagrams/3/79.png"
+								title={currentItem.title}
+								author={author}
+								description="Click and check the latest diagram. Install our Confluence plugin for an enhanced expperience when viewing in Confluence."
+								imageBase64={currentItem.imageBase64}
 							/>
-							<button
-								aria-label="Copy link"
-								className="button icon-button copy-button" title={link}
-								onClick={this.handleCopyLink}
-							>
-								{isLoading ? <div className="loader" /> :
-									<span className="material-symbols-outlined">
-										link
-									</span>}
-								<span>Copy link</span>
-							</button>
+							<Popover
+								isVisible={this.state.isTooltipVisible}
+								placement={'top'}
+								hasShadow={true}
+								trigger={
+									<Button
+										aria-label="Copy link"
+										className="button icon-button copy-button"
+										title={link}
+										onClick={this.handleCopyLink}
+										disabled={isLoading}
+									>
+										{isLoading ? (
+											<div className="loader" />
+										) : (
+											<span className="material-symbols-outlined">link</span>
+										)}
+										<span>Copy link</span>
+									</Button>
+								}
+								content={
+									<div className="tooltip">
+										<span class="material-symbols-outlined">check_circle</span>
+										<span>Link copied to clipboard</span>
+									</div>
+								}
+							/>
 						</div>
 					</div>
-					<span className="footnote">* Anyone with the link can view the diagram. The view is optimised for Confluence.</span>
+					<span className="footnote">
+						* Anyone with the link can view the diagram. The view is optimised
+						for Confluence.
+					</span>
 				</>
 			</div>
 		);
@@ -68,9 +111,6 @@ export class SharePanel extends Component {
 }
 
 SharePanel.propTypes = {
-	id: PropTypes.string,
-	dsl: PropTypes.string,
-	email: PropTypes.string,
-	image: PropTypes.string,
+	author: PropTypes.string,
 	currentItem: PropTypes.object,
 };
