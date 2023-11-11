@@ -11,14 +11,13 @@ export default class SavedItemPane extends Component {
 		super(props);
 		this.items = [];
 		this.state = {
-			searchText: null
+			searchText: null,
 		};
 	}
 	componentWillUpdate(nextProps) {
-		console.log('component will update');
 		if (this.props.items !== nextProps.items) {
 			this.items = Object.values(nextProps.items);
-			this.items.sort(function(a, b) {
+			this.items.sort(function (a, b) {
 				return b.updatedOn - a.updatedOn;
 			});
 		}
@@ -90,7 +89,7 @@ export default class SavedItemPane extends Component {
 		var file = e.target.files[0];
 
 		var reader = new FileReader();
-		reader.addEventListener('load', progressEvent => {
+		reader.addEventListener('load', (progressEvent) => {
 			var items;
 			try {
 				items = JSON.parse(progressEvent.target.result);
@@ -123,13 +122,17 @@ export default class SavedItemPane extends Component {
 		console.log('search input handler');
 		const text = e.target.value;
 		await this.setState({
-			searchText: text
+			searchText: text,
 		});
 		trackEvent('ui', 'searchInputType');
 	}
 
 	filteredItems() {
-		return this.items.filter(item => !this.state.searchText || item.title.toLowerCase().indexOf(this.state.searchText) !== -1);
+		return this.items.filter(
+			(item) =>
+				!this.state.searchText ||
+				item.title.toLowerCase().indexOf(this.state.searchText) !== -1
+		);
 	}
 
 	render() {
@@ -178,7 +181,7 @@ export default class SavedItemPane extends Component {
 					{!this.filteredItems().length && this.items.length ? (
 						<div class="mt-1">No match found.</div>
 					) : null}
-					{this.filteredItems().map(item => (
+					{this.filteredItems().map((item) => (
 						<ItemTile
 							item={item}
 							onClick={this.itemClickHandler.bind(this, item)}
