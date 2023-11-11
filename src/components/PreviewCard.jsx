@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-export function PreviewCard({ title, author, description, image }) {
+export function PreviewCard({ title, author, description, imageBase64 }) {
 	return (
 		<div className="preview-card">
 			<div className="preview-card__content">
@@ -22,7 +22,7 @@ export function PreviewCard({ title, author, description, image }) {
 			</div>
 			<div className="preview-card__image">
 				<div className="overlay">
-					<img src={image} />
+					<img src={imageBase64} />
 				</div>
 			</div>
 		</div>
@@ -33,5 +33,5 @@ PreviewCard.propTypes = {
 	title: PropTypes.string.isRequired,
 	author: PropTypes.string.isRequired,
 	description: PropTypes.string.isRequired,
-	image: PropTypes.string,
+	imageBase64: PropTypes.string,
 };

@@ -2076,6 +2076,11 @@ ol.editor-nav li {
 	color: #414bb2;
 }
 
+.share-panel .copy-button[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 .share-panel .copy-button:focus {
 	outline-color: #414bb2;
 }
@@ -2190,7 +2195,7 @@ ol.editor-nav li {
 }
 
 .preview-card__image img {
-	object-fit: cover;
+	object-fit: contain;
 	object-position: left top;
 	width: 300%;
 	height: 300%;

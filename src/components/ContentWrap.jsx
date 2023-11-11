@@ -5,7 +5,7 @@ import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
-import { getCompleteHtml, loadJS, log, blobToBase64 } from '../utils';
+import { getCompleteHtml, loadJS, log } from '../utils';
 
 import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
@@ -32,6 +32,8 @@ export default class ContentWrap extends Component {
 			lineOfCode: 0,
 			isConsoleOpen: false,
 			isCssSettingsModalOpen: false,
+			imageBase64: null,
+			isSharePanelVisible: false,
 		};
 		this.updateTimer = null;
 		this.updateDelay = 500;
@@ -459,8 +461,13 @@ export default class ContentWrap extends Component {
 	}
 
 	async shareClickHandler(e) {
-		const imageBlob = await this.getPngBlob();
-		this.props.currentItem.imageBase64 = await blobToBase64(imageBlob);
+		if (!window.user) {
+			this.props.onLogin();
+			return;
+		}
+		const image = await this.getPngBlob();
+		await this.props.onUpdateImage(image);
+		this.setState({ isSharePanelVisible: true });
 		trackEvent('ui', 'shareLink');
 	}
 
@@ -1047,6 +1054,10 @@ export default class ContentWrap extends Component {
 									closeOnBlur={true}
 									hasArrow={true}
 									placement={'bottom'}
+									onVisibilityChange={(visible) =>
+										this.setState({ isSharePanelVisible: visible })
+									}
+									isVisible={this.state.isSharePanelVisible}
 									trigger={
 										<Button
 											className="button icon-button hint--rounded hint--bottom-left"
@@ -1063,6 +1074,7 @@ export default class ContentWrap extends Component {
 										<SharePanel
 											author={window.user ? window.user.displayName : 'author'}
 											currentItem={this.props.currentItem}
+											imageBase64={this.state.imageBase64}
 										/>
 									}
 								/>

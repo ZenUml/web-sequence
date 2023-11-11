@@ -19,7 +19,7 @@ import {
 	downloadFile,
 	getCompleteHtml,
 	getFilenameFromUrl,
-	blobToBase64
+	blobToBase64,
 } from '../utils';
 import { itemService } from '../itemService';
 import '../db';
@@ -54,7 +54,7 @@ if (module.hot) {
 
 const LocalStorageKeys = {
 	LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
-	ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations'
+	ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
 };
 const UNSAVED_WARNING_COUNT = 15;
 const version = '3.6.1';
@@ -77,7 +77,7 @@ export default class App extends Component {
 			isAskToImportModalOpen: false,
 			isOnboardModalOpen: false,
 			isJs13KModalOpen: false,
-			isCreateNewModalOpen: false
+			isCreateNewModalOpen: false,
 		};
 		this.state = {
 			isSavedItemPaneOpen: false,
@@ -85,8 +85,8 @@ export default class App extends Component {
 			prefs: {},
 			currentItem: {
 				title: '',
-				externalLibs: { js: '', css: '' }
-			}
+				externalLibs: { js: '', css: '' },
+			},
 		};
 		this.defaultSettings = {
 			preserveLastCode: true,
@@ -112,46 +112,47 @@ export default class App extends Component {
 			infiniteLoopTimeout: 1000,
 			layoutMode: 2,
 			isJs13kModeOn: false,
-			autoCloseTags: true
+			autoCloseTags: true,
 		};
 		this.prefs = {};
-		if (window.zenumlDesktop) { // hack savedItems, so we can load them on the desktop, without this object, the log in saveBtnClickHandler will not work.
+		if (window.zenumlDesktop) {
+			// hack savedItems, so we can load them on the desktop, without this object, the log in saveBtnClickHandler will not work.
 			this.state.savedItems = {};
 			// hack rename function
 			window.zd_nameChangedHandler = this.titleInputBlurHandler.bind(this);
 			window.zd_openBtnHandler = this.openBtnClickHandler.bind(this);
-			window.zd_newBtnHandler = this.newBtnClickHandler.bind(this)
-			window.zd_saveBtnHandler = this.saveBtnClickHandler.bind(this)
-			window.zd_loginBtnHandler = this.loginBtnClickHandler.bind(this)
-			window.zd_proBtHandler = this.proBtnClickHandler.bind(this)
-			window.zd_profileBtHandler = this.profileBtnClickHandler.bind(this)
+			window.zd_newBtnHandler = this.newBtnClickHandler.bind(this);
+			window.zd_saveBtnHandler = this.saveBtnClickHandler.bind(this);
+			window.zd_loginBtnHandler = this.loginBtnClickHandler.bind(this);
+			window.zd_proBtHandler = this.proBtnClickHandler.bind(this);
+			window.zd_profileBtHandler = this.profileBtnClickHandler.bind(this);
 			// window.zd_libraryBtHander = this.openAddLibrary.bind(this)
 		}
-		firebase.auth().onAuthStateChanged(async user => {
-			await this.setState({isLoginModalOpen: false});
+		firebase.auth().onAuthStateChanged(async (user) => {
+			await this.setState({ isLoginModalOpen: false });
 			if (user) {
 				log('You are -> ', user);
 				alertsService.add('You are now logged in!');
-				await this.setState({user});
+				await this.setState({ user });
 				window.user = user;
 				if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
-					this.fetchItems(false, true).then(async items => {
+					this.fetchItems(false, true).then(async (items) => {
 						if (!items.length) {
 							return;
 						}
 						this.oldSavedItems = items;
 						this.oldSavedCreationsCount = items.length;
 						await this.setState({
-							isAskToImportModalOpen: true
+							isAskToImportModalOpen: true,
 						});
 						trackEvent('ui', 'askToImportModalSeen');
 					});
 				}
-				window.db.getUser(user.uid).then(async customUser => {
+				window.db.getUser(user.uid).then(async (customUser) => {
 					if (customUser) {
-						const prefs = {...this.state.prefs};
+						const prefs = { ...this.state.prefs };
 						Object.assign(prefs, user.settings);
-						await this.setState({prefs: prefs});
+						await this.setState({ prefs: prefs });
 						await this.updateSetting();
 					}
 
@@ -164,7 +165,7 @@ export default class App extends Component {
 				this.loadUserSubscription();
 			} else {
 				// User is signed out.
-				await this.setState({user: undefined});
+				await this.setState({ user: undefined });
 				delete window.user;
 
 				if (this.onUserItemsResolved) {
@@ -186,9 +187,9 @@ export default class App extends Component {
 		db.local.get(
 			{
 				layoutMode: 1,
-				code: ''
+				code: '',
 			},
-			result => {
+			(result) => {
 				this.toggleLayout(result.layoutMode);
 				this.state.prefs.layoutMode = result.layoutMode;
 				if (result.code) {
@@ -197,8 +198,8 @@ export default class App extends Component {
 			}
 		);
 		// Get synced `preserveLastCode` setting to get back last code (or not).
-		db.getSettings(this.defaultSettings).then(async result => {
-			const getQueryParameter = key => {
+		db.getSettings(this.defaultSettings).then(async (result) => {
+			const getQueryParameter = (key) => {
 				let search = window.location.search;
 				if (search.length < 1) return;
 
@@ -219,9 +220,9 @@ export default class App extends Component {
 			}
 			if (itemId) {
 				itemService.getItem(itemId).then(
-					item => {
+					(item) => {
 						if (item) {
-							const resolveCurrentItem = items => {
+							const resolveCurrentItem = (items) => {
 								if ((items && items[item.id]) || window.zenumlDesktop) {
 									this.setCurrentItem(item).then(() => this.refreshEditor());
 								} else {
@@ -240,10 +241,9 @@ export default class App extends Component {
 							} else {
 								window.location.href = '/';
 							}
-
 						}
 					},
-					error => {
+					(error) => {
 						//Insufficient permission
 						if (window.zenumlDesktop) {
 							this.createNewItem();
@@ -253,12 +253,12 @@ export default class App extends Component {
 					}
 				);
 			} else if (result.preserveLastCode && lastCode && lastCode.js) {
-				await this.setState({unsavedEditCount: 0});
+				await this.setState({ unsavedEditCount: 0 });
 
 				// For web app environment we don't fetch item from localStorage,
 				// because the item isn't stored in the localStorage.
 				if (lastCode.id && window.IS_EXTENSION) {
-					db.local.get(lastCode.id, itemResult => {
+					db.local.get(lastCode.id, (itemResult) => {
 						if (itemResult[lastCode.id]) {
 							log('Load item ', lastCode.id);
 							this.setCurrentItem(itemResult[lastCode.id]).then(() =>
@@ -274,16 +274,16 @@ export default class App extends Component {
 				this.createNewItem();
 			}
 			Object.assign(this.state.prefs, result);
-			await this.setState({prefs: this.state.prefs});
+			await this.setState({ prefs: this.state.prefs });
 			await this.updateSetting();
 		});
 
 		// Check for new version notifications
-		db.getUserLastSeenVersion().then(async lastSeenVersion => {
+		db.getUserLastSeenVersion().then(async (lastSeenVersion) => {
 			// Check if new user
 			if (!lastSeenVersion) {
 				await this.setState({
-					isOnboardModalOpen: true
+					isOnboardModalOpen: true,
 				});
 				if (document.cookie.indexOf('onboarded') === -1) {
 					trackEvent('ui', 'onboardModalSeen', version);
@@ -305,7 +305,7 @@ export default class App extends Component {
 			}
 
 			if (!lastSeenVersion || semverCompare(lastSeenVersion, version) === -1) {
-				await this.setState({hasUnseenChangelog: true});
+				await this.setState({ hasUnseenChangelog: true });
 				this.hasSeenNotifications = false;
 			}
 		});
@@ -362,7 +362,7 @@ export default class App extends Component {
 				d.getMinutes(),
 			html: '',
 			css: '/* Prefix your CSS rules with `#diagram` */',
-			js:	`// An example for a RESTful endpoint<br>
+			js: `// An example for a RESTful endpoint<br>
 // Go to the "Cheat sheet" tab or https://docs.zenuml.com
 // to find all syntax<br>
 // \`POST /v1/book/{id}/borrow\`
@@ -381,7 +381,7 @@ BookLibService.Borrow(id) {
   return receipt
 }`,
 			externalLibs: { js: '', css: '' },
-			layoutMode: this.state.currentLayoutMode
+			layoutMode: this.state.currentLayoutMode,
 		}).then(() => this.refreshEditor());
 		alertsService.add('New item created');
 	}
@@ -410,7 +410,7 @@ BookLibService.Borrow(id) {
 		// Remove from cached list
 		delete this.state.savedItems[item.id];
 		await this.setState({
-			savedItems: {...this.state.savedItems}
+			savedItems: { ...this.state.savedItems },
 		});
 
 		trackEvent('fn', 'itemRemoved');
@@ -423,17 +423,17 @@ BookLibService.Borrow(id) {
 		item.cssMode = item.cssMode || this.state.prefs.cssMode || CssModes.CSS;
 		item.jsMode = item.jsMode || this.state.prefs.jsMode || JsModes.JS;
 
-		await this.setState({currentItem: item}, d.resolve);
+		await this.setState({ currentItem: item }, d.resolve);
 
 		// Reset auto-saving flag
 		if (window.zenumlDesktop) {
-			this.saveItem();// in desktop mode, always enable auto-saving
+			this.saveItem(); // in desktop mode, always enable auto-saving
 		} else {
 			this.isAutoSavingEnabled = false;
 		}
 
 		// Reset unsaved count, in UI also.
-		await this.setState({unsavedEditCount: 0});
+		await this.setState({ unsavedEditCount: 0 });
 		currentBrowserTab.setTitle(item.title);
 
 		return d.promise;
@@ -442,16 +442,16 @@ BookLibService.Borrow(id) {
 		trackEvent(
 			'ui',
 			'saveBtnClick',
-			!this.state.user ? 'not-logged-in' : (this.state.currentItem.id ? 'saved' : 'new')
+			!this.state.user
+				? 'not-logged-in'
+				: this.state.currentItem.id
+				? 'saved'
+				: 'new'
 		);
 		if (this.state.user || window.zenumlDesktop) {
 			this.saveItem();
 			const numOfItems = Object.keys(this.state.savedItems).length;
-			trackEvent(
-				'fn',
-				'save',
-				'no_of_files_' + numOfItems
-			)
+			trackEvent('fn', 'save', 'no_of_files_' + numOfItems);
 		} else {
 			this.loginBtnClickHandler();
 		}
@@ -460,7 +460,7 @@ BookLibService.Borrow(id) {
 	async populateItemsInSavedPane(items) {
 		// TODO: sort desc. by updation date
 		await this.setState({
-			savedItems: {...this.state.savedItems}
+			savedItems: { ...this.state.savedItems },
 		});
 
 		await this.toggleSavedItemsPane();
@@ -470,7 +470,7 @@ BookLibService.Borrow(id) {
 	async toggleSavedItemsPane(shouldOpen) {
 		await this.setState({
 			isSavedItemPaneOpen:
-				shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen
+				shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen,
 		});
 
 		if (this.state.isSavedItemPaneOpen) {
@@ -499,14 +499,14 @@ BookLibService.Borrow(id) {
 			items = await itemService.getAllItems();
 			log('got items');
 			if (shouldSaveGlobally) {
-				items.forEach(item => {
+				items.forEach((item) => {
 					this.state.savedItems[item.id] = item;
 				});
 			}
 			d.resolve(items);
 			return d.promise;
 		}
-		db.local.get('items', result => {
+		db.local.get('items', (result) => {
 			var itemIds = Object.getOwnPropertyNames(result.items || {});
 			if (!itemIds.length) {
 				d.resolve([]);
@@ -515,7 +515,7 @@ BookLibService.Borrow(id) {
 			trackEvent('fn', 'fetchItems', itemIds.length);
 			for (let i = 0; i < itemIds.length; i++) {
 				/* eslint-disable no-loop-func */
-				db.local.get(itemIds[i], itemResult => {
+				db.local.get(itemIds[i], (itemResult) => {
 					if (shouldSaveGlobally) {
 						this.state.savedItems[itemIds[i]] = itemResult[itemIds[i]];
 					}
@@ -534,21 +534,21 @@ BookLibService.Borrow(id) {
 
 	async openSavedItemsPane() {
 		await this.setState({
-			isFetchingItems: true
+			isFetchingItems: true,
 		});
-		this.fetchItems(true).then(async items => {
+		this.fetchItems(true).then(async (items) => {
 			await this.setState({
-				isFetchingItems: false
+				isFetchingItems: false,
 			});
 			await this.populateItemsInSavedPane(items);
 		});
 	}
 	async openAddLibrary() {
-		await this.setState({isAddLibraryModalOpen: true});
+		await this.setState({ isAddLibraryModalOpen: true });
 	}
 	async closeSavedItemsPane() {
 		await this.setState({
-			isSavedItemPaneOpen: false
+			isSavedItemPaneOpen: false,
 		});
 		document.body.classList.remove('overlay-visible');
 
@@ -565,7 +565,7 @@ BookLibService.Borrow(id) {
 		});
 
 		// Editor keyboard shortucuts
-		window.addEventListener('keydown', async event => {
+		window.addEventListener('keydown', async (event) => {
 			// TODO: refactor common listener code
 			// Ctrl/⌘ + S
 			if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
@@ -595,7 +595,8 @@ BookLibService.Borrow(id) {
 				// Ctrl/⌘ + Shift + ?
 				event.preventDefault();
 				await this.setState({
-					isKeyboardShortcutsModalOpen: !this.state.isKeyboardShortcutsModalOpen
+					isKeyboardShortcutsModalOpen:
+						!this.state.isKeyboardShortcutsModalOpen,
 				});
 				trackEvent('ui', 'showKeyboardShortcutsShortcut');
 			} else if (event.keyCode === 27) {
@@ -604,7 +605,7 @@ BookLibService.Borrow(id) {
 		});
 
 		// Basic Focus trapping
-		window.addEventListener('focusin', e => {
+		window.addEventListener('focusin', (e) => {
 			if (document.body.classList.contains('overlay-visible')) {
 				const modal = $('.is-modal-visible');
 				if (!modal) {
@@ -618,7 +619,7 @@ BookLibService.Borrow(id) {
 		});
 
 		trackGaSetField('page', '/');
-		trackPageView()
+		trackPageView();
 	}
 
 	async closeAllOverlays() {
@@ -627,18 +628,18 @@ BookLibService.Borrow(id) {
 		}
 
 		await this.setState({
-			...this.modalDefaultStates
+			...this.modalDefaultStates,
 		});
 	}
 	async onExternalLibChange(newValues) {
 		log('onExternalLibChange');
 		this.state.currentItem.externalLibs = {
 			js: newValues.js,
-			css: newValues.css
+			css: newValues.css,
 		};
 		await this.updateExternalLibCount();
 		await this.setState({
-			currentItem: {...this.state.currentItem}
+			currentItem: { ...this.state.currentItem },
 		});
 		this.contentWrap.setPreviewContent(true);
 		alertsService.add('Libraries updated.');
@@ -657,7 +658,7 @@ BookLibService.Borrow(id) {
 		// 	.split('\n')
 		// 	.filter(lib => !!lib).length;
 		await this.setState({
-			externalLibCount: noOfExternalLibs
+			externalLibCount: noOfExternalLibs,
 		});
 	}
 	async toggleLayout(mode) {
@@ -668,18 +669,18 @@ BookLibService.Borrow(id) {
 			this.contentWrap.resetSplitting();
 			// mainSplitInstance.setSizes(getMainSplitSizesToApply());
 			// codeSplitInstance.setSizes(currentItem.sizes || [33.33, 33.33, 33.33]);
-			await this.setState({currentLayoutMode: mode});
+			await this.setState({ currentLayoutMode: mode });
 			return;
 		}
 		// Remove all layout classes
-		[1, 2, 3, 4, 5].forEach(layoutNumber => {
+		[1, 2, 3, 4, 5].forEach((layoutNumber) => {
 			window[`layoutBtn${layoutNumber}`].classList.remove('selected');
 			document.body.classList.remove(`layout-${layoutNumber}`);
 		});
 		$('#layoutBtn' + mode).classList.add('selected');
 		document.body.classList.add('layout-' + mode);
 
-		await this.setState({currentLayoutMode: mode}, () => {
+		await this.setState({ currentLayoutMode: mode }, () => {
 			this.contentWrap.resetSplitting();
 			this.contentWrap.setPreviewContent(true);
 		});
@@ -701,7 +702,7 @@ BookLibService.Borrow(id) {
 			sizes = [
 				htmlCodeEl.style[dimensionProperty],
 				cssCodeEl.style[dimensionProperty],
-				jsCodeEl.style[dimensionProperty]
+				jsCodeEl.style[dimensionProperty],
 			];
 		} catch (e) {
 			sizes = [0, 30, 70];
@@ -721,7 +722,7 @@ BookLibService.Borrow(id) {
 		try {
 			sizes = [
 				+$('#js-code-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
-				+$('#js-demo-side').style[dimensionProperty].match(/([\d.]+)%/)[1]
+				+$('#js-demo-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
 			];
 		} catch (e) {
 			sizes = [50, 50];
@@ -735,7 +736,7 @@ BookLibService.Borrow(id) {
 	saveSetting(setting, value) {
 		const d = deferred();
 		const obj = {
-			[setting]: value
+			[setting]: value,
 		};
 		db.local.set(obj, d.resolve);
 		return d.promise;
@@ -743,7 +744,7 @@ BookLibService.Borrow(id) {
 
 	async saveCode(key) {
 		const imageBlob = await this.contentWrap.getPngBlob();
-		
+
 		this.state.currentItem.imageBase64 = await blobToBase64(imageBlob);
 		this.state.currentItem.updatedOn = Date.now();
 		this.state.currentItem.layoutMode = this.state.currentLayoutMode;
@@ -761,15 +762,15 @@ BookLibService.Borrow(id) {
 			} else {
 				alertsService.add('Item saved.');
 			}
-			await this.setState({unsavedEditCount: 0});
+			await this.setState({ unsavedEditCount: 0 });
 		}
 
-		console.log('on saving, ', this.state.currentItem)
+		console.log('on saving, ', this.state.currentItem);
 
 		try {
 			const result = await syncDiagram(this.state.currentItem);
 			this.state.currentItem.shareLink = getShareLink(result);
-		} catch(e) {
+		} catch (e) {
 			console.error(e);
 		}
 
@@ -792,7 +793,7 @@ BookLibService.Borrow(id) {
 			if (!answer) {
 				trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'login');
 				await this.closeAllOverlays();
-				await this.setState({isLoginModalOpen: true});
+				await this.setState({ isLoginModalOpen: true });
 				return;
 			}
 			trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
@@ -801,11 +802,11 @@ BookLibService.Borrow(id) {
 		this.state.currentItem.id =
 			this.state.currentItem.id || 'item-' + generateRandomId();
 		await this.setState({
-			isSaving: true
+			isSaving: true,
 		});
 		this.saveCode().then(async () => {
 			await this.setState({
-				isSaving: false
+				isSaving: false,
 			});
 			// TODO: May be setState with currentItem
 
@@ -824,14 +825,16 @@ BookLibService.Borrow(id) {
 		}
 	}
 	async onCodeModeChange(ofWhat, mode) {
-		const item = {...this.state.currentItem};
+		const item = { ...this.state.currentItem };
 		item[`${ofWhat}Mode`] = mode;
-		await this.setState({currentItem: item});
+		await this.setState({ currentItem: item });
 	}
 	async onCodeChange(type, code, isUserChange) {
 		this.state.currentItem[type] = code;
 		if (isUserChange) {
-			await this.setState({unsavedEditCount: this.state.unsavedEditCount + 1});
+			await this.setState({
+				unsavedEditCount: this.state.unsavedEditCount + 1,
+			});
 
 			if (
 				this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
@@ -858,16 +861,18 @@ BookLibService.Borrow(id) {
 	}
 	onCodeSettingsChange(type, settings) {
 		this.state.currentItem[`${type}Settings`] = {
-			acssConfig: settings
+			acssConfig: settings,
 		};
 	}
 
 	titleInputBlurHandler(e) {
 		this.state.currentItem.title = e.target.value;
-		this.setState({currentItem: {
-			...this.state.currentItem,
-			title: e.target.value,
-		}});
+		this.setState({
+			currentItem: {
+				...this.state.currentItem,
+				title: e.target.value,
+			},
+		});
 		currentBrowserTab.setTitle(this.state.currentItem.title);
 		if (this.state.currentItem.id) {
 			this.saveItem();
@@ -885,10 +890,10 @@ BookLibService.Borrow(id) {
 			var obj = {};
 			var el = e.target;
 			log(settingName, el.type === 'checkbox' ? el.checked : el.value);
-			const prefs = {...this.state.prefs};
+			const prefs = { ...this.state.prefs };
 			prefs[settingName] = el.type === 'checkbox' ? el.checked : el.value;
 			obj[settingName] = prefs[settingName];
-			await this.setState({prefs});
+			await this.setState({ prefs });
 
 			// We always save locally so that it gets fetched
 			// faster on future loads.
@@ -896,17 +901,17 @@ BookLibService.Borrow(id) {
 				alertsService.add('Setting saved');
 			});
 			if (window.user) {
-				window.db.getDb().then(remoteDb => {
+				window.db.getDb().then((remoteDb) => {
 					remoteDb
 						.collection('users')
 						.doc(window.user.uid)
 						.update({
-							[`settings.${settingName}`]: this.state.prefs[settingName]
+							[`settings.${settingName}`]: this.state.prefs[settingName],
 						})
-						.then(arg => {
+						.then((arg) => {
 							log(`Setting "${settingName}" for user`, arg);
 						})
-						.catch(error => log(error));
+						.catch((error) => log(error));
 				});
 			}
 			trackEvent('ui', 'updatePref-' + settingName, prefs[settingName]);
@@ -941,15 +946,26 @@ BookLibService.Borrow(id) {
 	}
 
 	async loginBtnClickHandler() {
-		await this.setState({isLoginModalOpen: true});
+		await this.setState({ isLoginModalOpen: true });
 	}
 
 	async proBtnClickHandler() {
 		trackEvent('ui', 'proBtnClick');
-		await this.setState({isProFeatureListModalOpen: true});
+		await this.setState({ isProFeatureListModalOpen: true });
 	}
 	async profileBtnClickHandler() {
-		await this.setState({isProfileModalOpen: true});
+		await this.setState({ isProfileModalOpen: true });
+	}
+
+	async onUpdateImage(image) {
+		const imageBase64 = await blobToBase64(image);
+		this.setState({
+			currentItem: {
+				...this.state.currentItem,
+				imageBase64,
+			},
+		});
+		trackEvent('ui', 'shareLink');
 	}
 
 	async logout() {
@@ -963,7 +979,7 @@ BookLibService.Borrow(id) {
 		}
 		trackEvent('fn', 'loggedOut');
 		auth.logout();
-		await this.setState({isProfileModalOpen: false});
+		await this.setState({ isProfileModalOpen: false });
 		alertsService.add('Log out successful');
 	}
 
@@ -990,12 +1006,12 @@ BookLibService.Borrow(id) {
 			);
 			if (shouldDiscard) {
 				await this.setState({
-					isCreateNewModalOpen: true
+					isCreateNewModalOpen: true,
 				});
 			}
 		} else {
 			await this.setState({
-				isCreateNewModalOpen: true
+				isCreateNewModalOpen: true,
 			});
 		}
 	}
@@ -1009,11 +1025,11 @@ BookLibService.Borrow(id) {
 		this.contentWrap.detachPreview();
 	}
 	async notificationsBtnClickHandler() {
-		await this.setState({isNotificationsModalOpen: true});
+		await this.setState({ isNotificationsModalOpen: true });
 
 		if (this.state.isNotificationsModalOpen && !this.hasSeenNotifications) {
 			this.hasSeenNotifications = true;
-			await this.setState({hasUnseenChangelog: false});
+			await this.setState({ hasUnseenChangelog: false });
 			await window.db.setUserLastSeenVersion(version);
 		}
 		trackEvent('ui', 'notificationButtonClick', version);
@@ -1041,7 +1057,7 @@ BookLibService.Borrow(id) {
 			css_external: this.state.currentItem.externalLibs.css
 				.split('\n')
 				.join(';'),
-			js_external: this.state.currentItem.externalLibs.js.split('\n').join(';')
+			js_external: this.state.currentItem.externalLibs.js.split('\n').join(';'),
 
 			/* eslint-enable camelcase */
 		};
@@ -1064,7 +1080,7 @@ BookLibService.Borrow(id) {
 	}
 	exportItems() {
 		handleDownloadsPermission().then(() => {
-			this.fetchItems().then(items => {
+			this.fetchItems().then((items) => {
 				var d = new Date();
 				var fileName = [
 					'web-maker-export',
@@ -1073,11 +1089,11 @@ BookLibService.Borrow(id) {
 					d.getDate(),
 					d.getHours(),
 					d.getMinutes(),
-					d.getSeconds()
+					d.getSeconds(),
 				].join('-');
 				fileName += '.json';
 				var blob = new Blob([JSON.stringify(items, false, 2)], {
-					type: 'application/json;charset=UTF-8'
+					type: 'application/json;charset=UTF-8',
 				});
 
 				downloadFile(fileName, blob);
@@ -1092,7 +1108,7 @@ BookLibService.Borrow(id) {
 		trackEvent('ui', 'exportBtnClicked');
 	}
 	screenshotBtnClickHandler(e) {
-		this.contentWrap.getDemoFrame(frame => {
+		this.contentWrap.getDemoFrame((frame) => {
 			takeScreenshot(frame.getBoundingClientRect());
 		});
 		e.preventDefault();
@@ -1111,7 +1127,7 @@ BookLibService.Borrow(id) {
 	 * Called from inside ask-to-import-modal
 	 */
 	async dontAskToImportAnymore(e) {
-		await this.setState({isAskToImportModalOpen: false});
+		await this.setState({ isAskToImportModalOpen: false });
 		window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS] = true;
 		if (e) {
 			trackEvent('ui', 'dontAskToImportBtnClick');
@@ -1123,7 +1139,7 @@ BookLibService.Borrow(id) {
 		var toMergeItems = {};
 		const d = deferred();
 		const { savedItems } = this.state;
-		items.forEach(item => {
+		items.forEach((item) => {
 			// We can access `savedItems` here because this gets set when user
 			// opens the saved creations panel. And import option is available
 			// inside the saved items panel.
@@ -1146,7 +1162,7 @@ BookLibService.Borrow(id) {
 			);
 			if (shouldReplace) {
 				log('shouldreplace', shouldReplace);
-				items.forEach(item => {
+				items.forEach((item) => {
 					toMergeItems[item.id] = item;
 				});
 				mergedItemCount = items.length;
@@ -1203,7 +1219,7 @@ BookLibService.Borrow(id) {
 			whitespace = /(\r?\n|\r|\s+)/g;
 
 		const ByteSize = {
-			count: function(text, options) {
+			count: function (text, options) {
 				// Set option defaults
 				options = options || {};
 				options.lineBreaks = options.lineBreaks || 1;
@@ -1227,7 +1243,7 @@ BookLibService.Borrow(id) {
 				}
 			},
 
-			format: function(count, plainText) {
+			format: function (count, plainText) {
 				var level = 0;
 
 				while (count > 1024) {
@@ -1246,7 +1262,7 @@ BookLibService.Borrow(id) {
 					level +
 					'B'
 				);
-			}
+			},
 		};
 
 		return ByteSize.count(text);
@@ -1255,14 +1271,14 @@ BookLibService.Borrow(id) {
 		const item = this.state.currentItem;
 		var libs = (item.externalLibs && item.externalLibs.js) || '';
 		libs += ('\n' + item.externalLibs && item.externalLibs.css) || '';
-		libs = libs.split('\n').filter(lib => lib);
-		return libs.map(lib =>
+		libs = libs.split('\n').filter((lib) => lib);
+		return libs.map((lib) =>
 			fetch(lib)
-				.then(res => res.text())
-				.then(data => {
+				.then((res) => res.text())
+				.then((data) => {
 					return {
 						code: data,
-						fileName: getFilenameFromUrl(lib)
+						fileName: getFilenameFromUrl(lib),
 					};
 				})
 		);
@@ -1276,8 +1292,8 @@ BookLibService.Borrow(id) {
 			htmlPromise,
 			cssPromise,
 			jsPromise,
-			...this.getExternalLibCode()
-		]).then(result => {
+			...this.getExternalLibCode(),
+		]).then((result) => {
 			var html = result[0].code || '',
 				css = result[1].code || '',
 				js = result[2].code || '';
@@ -1307,16 +1323,16 @@ BookLibService.Borrow(id) {
 					type: 'base64',
 					compression: 'DEFLATE',
 					compressionOptions: {
-						level: 9
-					}
+						level: 9,
+					},
 				});
 			}
 
-			promise.then(async data => {
+			promise.then(async (data) => {
 				const zipContent = data;
 				const size = this.calculateTextSize(atob(data));
 				await this.setState({
-					codeSize: size
+					codeSize: size,
 				});
 				this.currentItemZipBase64Data = data;
 			});
@@ -1325,7 +1341,7 @@ BookLibService.Borrow(id) {
 
 	async js13KHelpBtnClickHandler() {
 		await this.setState({
-			isJs13KModalOpen: true
+			isJs13KModalOpen: true,
 		});
 	}
 	js13KDownloadBtnClickHandler() {
@@ -1338,17 +1354,17 @@ BookLibService.Borrow(id) {
 	}
 	async blankTemplateSelectHandler() {
 		this.createNewItem();
-		await this.setState({isCreateNewModalOpen: false, activeTab: 'ZenUML'});
+		await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
 	}
 
 	async templateSelectHandler(template) {
 		fetch(`templates/template-${template.id}.json`)
-			.then(res => res.json())
-			.then(json => {
+			.then((res) => res.json())
+			.then((json) => {
 				this.forkItem(json);
 			});
-		await this.setState({isCreateNewModalOpen: false, activeTab: 'ZenUML'});
+		await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
 	}
 
@@ -1356,7 +1372,7 @@ BookLibService.Borrow(id) {
 		return (
 			<div>
 				<div class="main-container">
-					{window.zenumlDesktop ? (null) : (
+					{window.zenumlDesktop ? null : (
 						<MainHeader
 							externalLibCount={this.state.externalLibCount}
 							openBtnHandler={this.openBtnClickHandler.bind(this)}
@@ -1378,10 +1394,12 @@ BookLibService.Borrow(id) {
 					<ContentWrap
 						currentLayoutMode={this.state.currentLayoutMode}
 						currentItem={this.state.currentItem}
+						onLogin={this.loginBtnClickHandler.bind(this)}
 						onCodeChange={this.onCodeChange.bind(this)}
+						onUpdateImage={this.onUpdateImage.bind(this)}
 						onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
 						onCodeModeChange={this.onCodeModeChange.bind(this)}
-						onRef={comp => (this.contentWrap = comp)}
+						onRef={(comp) => (this.contentWrap = comp)}
 						prefs={this.state.prefs}
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
@@ -1389,9 +1407,11 @@ BookLibService.Borrow(id) {
 					<Footer
 						prefs={this.state.prefs}
 						layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
-						helpBtnClickHandler={async () => await this.setState({isHelpModalOpen: true})}
+						helpBtnClickHandler={async () =>
+							await this.setState({ isHelpModalOpen: true })
+						}
 						settingsBtnClickHandler={async () =>
-							await this.setState({isSettingsModalOpen: true})
+							await this.setState({ isSettingsModalOpen: true })
 						}
 						notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
 							this
@@ -1405,7 +1425,7 @@ BookLibService.Borrow(id) {
 						codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
 						saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
 						keyboardShortcutsBtnClickHandler={async () =>
-							await this.setState({isKeyboardShortcutsModalOpen: true})
+							await this.setState({ isKeyboardShortcutsModalOpen: true })
 						}
 						screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
 							this
@@ -1448,7 +1468,9 @@ BookLibService.Borrow(id) {
 
 				<Modal
 					show={this.state.isAddLibraryModalOpen}
-					closeHandler={async () => await this.setState({isAddLibraryModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isAddLibraryModalOpen: false })
+					}
 				>
 					<AddLibrary
 						js={
@@ -1467,7 +1489,7 @@ BookLibService.Borrow(id) {
 				<Modal
 					show={this.state.isNotificationsModalOpen}
 					closeHandler={async () =>
-						await this.setState({isNotificationsModalOpen: false})
+						await this.setState({ isNotificationsModalOpen: false })
 					}
 				>
 					<Notifications
@@ -1477,7 +1499,9 @@ BookLibService.Borrow(id) {
 				<Modal
 					extraClasses="modal--settings"
 					show={this.state.isSettingsModalOpen}
-					closeHandler={async () => await this.setState({isSettingsModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isSettingsModalOpen: false })
+					}
 				>
 					<Settings
 						prefs={this.state.prefs}
@@ -1487,13 +1511,17 @@ BookLibService.Borrow(id) {
 				<Modal
 					extraClasses="login-modal"
 					show={this.state.isLoginModalOpen}
-					closeHandler={async () => await this.setState({isLoginModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isLoginModalOpen: false })
+					}
 				>
 					<Login />
 				</Modal>
 				<Modal
 					show={this.state.isProfileModalOpen}
-					closeHandler={async () => await this.setState({isProfileModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isProfileModalOpen: false })
+					}
 				>
 					<Profile
 						user={this.state.user}
@@ -1502,13 +1530,17 @@ BookLibService.Borrow(id) {
 				</Modal>
 				<HelpModal
 					show={this.state.isHelpModalOpen}
-					closeHandler={async () => await this.setState({isHelpModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isHelpModalOpen: false })
+					}
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
 				/>
 				<ProFeatureListModal
 					show={this.state.isProFeatureListModalOpen}
-					closeHandler={async () => await this.setState({isProFeatureListModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isProFeatureListModalOpen: false })
+					}
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
 					onSubscriptionChange={this.loadUserSubscription.bind(this)}
@@ -1517,18 +1549,20 @@ BookLibService.Borrow(id) {
 				<SupportDeveloperModal
 					show={this.state.isSupportDeveloperModalOpen}
 					closeHandler={async () =>
-						await this.setState({isSupportDeveloperModalOpen: false})
+						await this.setState({ isSupportDeveloperModalOpen: false })
 					}
 				/>
 				<KeyboardShortcutsModal
 					show={this.state.isKeyboardShortcutsModalOpen}
 					closeHandler={async () =>
-						await this.setState({isKeyboardShortcutsModalOpen: false})
+						await this.setState({ isKeyboardShortcutsModalOpen: false })
 					}
 				/>
 				<AskToImportModal
 					show={this.state.isAskToImportModalOpen}
-					closeHandler={async () => await this.setState({isAskToImportModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isAskToImportModalOpen: false })
+					}
 					oldSavedCreationsCount={this.oldSavedCreationsCount}
 					importBtnClickHandler={this.importCreationsAndSettingsIntoApp.bind(
 						this
@@ -1538,12 +1572,16 @@ BookLibService.Borrow(id) {
 
 				<Js13KModal
 					show={this.state.isJs13KModalOpen}
-					closeHandler={async () => await this.setState({isJs13KModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isJs13KModalOpen: false })
+					}
 				/>
 
 				<CreateNewModal
 					show={this.state.isCreateNewModalOpen}
-					closeHandler={async () => await this.setState({isCreateNewModalOpen: false})}
+					closeHandler={async () =>
+						await this.setState({ isCreateNewModalOpen: false })
+					}
 					onBlankTemplateSelect={this.blankTemplateSelectHandler.bind(this)}
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
 				/>

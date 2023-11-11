@@ -16,7 +16,20 @@ export class SharePanel extends Component {
 	}
 
 	async componentDidMount() {
-		const result = await syncDiagram(this.props.currentItem);
+		await this.syncDiagram(this.props.currentItem);
+	}
+
+	async componentDidUpdate(prevProps) {
+		if (prevProps.currentItem !== this.props.currentItem) {
+			await this.syncDiagram(this.props.currentItem);
+		}
+	}
+
+	async syncDiagram(currentItem) {
+		const result = await syncDiagram(currentItem);
+		if (!result) {
+			return;
+		}
 		this.setState({
 			isLoading: false,
 			link: getShareLink(result),
@@ -56,7 +69,7 @@ export class SharePanel extends Component {
 								title={currentItem.title}
 								author={author}
 								description="Click and check the latest diagram. Install our Confluence plugin for an enhanced expperience when viewing in Confluence."
-								image={currentItem.imageBase64}
+								imageBase64={currentItem.imageBase64}
 							/>
 							<Popover
 								isVisible={this.state.isTooltipVisible}
@@ -68,6 +81,7 @@ export class SharePanel extends Component {
 										className="button icon-button copy-button"
 										title={link}
 										onClick={this.handleCopyLink}
+										disabled={isLoading}
 									>
 										{isLoading ? (
 											<div className="loader" />

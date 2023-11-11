@@ -11,13 +11,15 @@ export class Popover extends Component {
 	}
 
 	componentDidMount() {
-		this.props.closeOnBlur &&
-			document.addEventListener('click', this.handleDocumentClick, true);
+		document.addEventListener(
+			'click',
+			this.handleDocumentClick.bind(this),
+			true
+		);
 	}
 
 	componentWillUnmount() {
-		this.props.closeOnBlur &&
-			document.removeEventListener('click', this.handleDocumentClick);
+		document.removeEventListener('click', this.handleDocumentClick.bind(this));
 	}
 
 	togglePopover = () => {
@@ -36,6 +38,7 @@ export class Popover extends Component {
 			this.popoverRef.current &&
 			!this.popoverRef.current.contains(event.target)
 		) {
+			this.props.onVisibilityChange && this.props.onVisibilityChange(false);
 			this.setState({ isVisible: false });
 		}
 	};
