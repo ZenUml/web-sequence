@@ -3,6 +3,7 @@ import firebase from 'firebase/app';
 async function syncDiagram(currentItem) {
   const { id, title, js, imageBase64 } = currentItem;
   if (!js || !title || !imageBase64) {
+    console.warn('Cannot sync diagram because of missing data');
     return null;
   }
 

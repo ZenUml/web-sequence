@@ -16,17 +16,7 @@ export class SharePanel extends Component {
 	}
 
 	async componentDidMount() {
-		await this.syncDiagram(this.props.currentItem);
-	}
-
-	async componentDidUpdate(prevProps) {
-		if (prevProps.currentItem !== this.props.currentItem) {
-			await this.syncDiagram(this.props.currentItem);
-		}
-	}
-
-	async syncDiagram(currentItem) {
-		const result = await syncDiagram(currentItem);
+		const result = await syncDiagram(this.props.currentItem);
 		if (!result) {
 			return;
 		}
