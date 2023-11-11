@@ -18,7 +18,7 @@ async function syncDiagram(currentItem) {
   };
   console.log('calling /sync-diagram with data:', data)
   try {
-    const response = await fetch('https://staging.zenuml.com/sync-diagram', {
+    const response = await fetch('/sync-diagram', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },

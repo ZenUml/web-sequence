@@ -460,11 +460,7 @@ export default class ContentWrap extends Component {
 		);
 	}
 
-	async shareClickHandler(e) {
-		if (!window.user) {
-			this.props.onLogin();
-			return;
-		}
+	async shareClickHandler() {
 		const image = await this.getPngBlob();
 		await this.props.onUpdateImage(image);
 		this.setState({ isSharePanelVisible: true });
@@ -1050,34 +1046,49 @@ export default class ContentWrap extends Component {
 					{window.zenumlDesktop ? null : (
 						<div className="promotion">
 							<div className="actions">
-								<Popover
-									closeOnBlur={true}
-									hasArrow={true}
-									placement={'bottom'}
-									onVisibilityChange={(visible) =>
-										this.setState({ isSharePanelVisible: visible })
-									}
-									isVisible={this.state.isSharePanelVisible}
-									trigger={
-										<Button
-											className="button icon-button hint--rounded hint--bottom-left"
-											/* Highlight this button for more traction */
-											style="background-color: #ffa900; color: #fff;"
-											aria-label="Share Your Work"
-											onClick={this.shareClickHandler.bind(this)}
-										>
-											<span className="material-symbols-outlined">share</span>
-											<span>Share</span>
-										</Button>
-									}
-									content={
-										<SharePanel
-											author={window.user ? window.user.displayName : 'author'}
-											currentItem={this.props.currentItem}
-											imageBase64={this.state.imageBase64}
-										/>
-									}
-								/>
+								{!window.user ? (
+									<Button
+										className="button icon-button hint--rounded hint--bottom-left"
+										/* Highlight this button for more traction */
+										style="background-color: #ffa900; color: #fff;"
+										aria-label="Share Your Work"
+										onClick={this.props.onLogin.bind(this)}
+									>
+										<span className="material-symbols-outlined">share</span>
+										<span>Share</span>
+									</Button>
+								) : (
+									<Popover
+										closeOnBlur={true}
+										hasArrow={true}
+										placement={'bottom'}
+										isVisible={this.state.isSharePanelVisible}
+										onVisibilityChange={(isVisible) =>
+											this.setState({ isSharePanelVisible: isVisible })
+										}
+										trigger={
+											<Button
+												className="button icon-button hint--rounded hint--bottom-left"
+												/* Highlight this button for more traction */
+												style="background-color: #ffa900; color: #fff;"
+												aria-label="Share Your Work"
+												onClick={this.shareClickHandler.bind(this)}
+											>
+												<span className="material-symbols-outlined">share</span>
+												<span>Share</span>
+											</Button>
+										}
+										content={
+											<SharePanel
+												author={
+													window.user ? window.user.displayName : 'author'
+												}
+												currentItem={this.props.currentItem}
+												imageBase64={this.state.imageBase64}
+											/>
+										}
+									/>
+								)}
 								<Button
 									className="btn--dark button icon-button hint--rounded hint--bottom-left"
 									aria-label="Export as PNG"
