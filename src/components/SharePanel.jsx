@@ -53,50 +53,49 @@ export class SharePanel extends Component {
 
 		return (
 			<div className="share-panel">
+				<Popover
+						isVisible={this.state.isTooltipVisible}
+						placement={'top'}
+						hasShadow={true}
+						trigger={
+							<Button
+									aria-label="Copy link*"
+									className="button icon-button copy-button"
+									title={link}
+									onClick={this.handleCopyLink}
+									disabled={isLoading}
+							>
+								{isLoading ? (
+										<div className="loader" />
+								) : (
+										<span className="material-symbols-outlined">link</span>
+								)}
+								<span>Copy link<sup>*</sup></span>
+							</Button>
+						}
+						content={
+							<div className="tooltip">
+								<span class="material-symbols-outlined">check_circle</span>
+								<span>Link copied to clipboard</span>
+							</div>
+						}
+				/>
+				<hr/>
 				<h3 style={{ marginTop: '4px' }}>
-					Share the Diagram on Confluence<sup>*</sup>
+					Want to share the diagram on Confluence?
 				</h3>
 				<>
 					<div>
 						<p>Paste the link on Confluence and select "Display as a Card"</p>
 						<img style="width: 100%;" src="../assets/tutorial.png" />
 					</div>
-					<br />
 					<div>
-						<h4 style="margin-bottom: 8px;">Preview</h4>
 						<div className="preview">
 							<PreviewCard
 								title={currentItem.title}
 								author={author}
 								description="Click and check the latest diagram. Install our Confluence plugin for an enhanced expperience when viewing in Confluence."
 								imageBase64={currentItem.imageBase64}
-							/>
-							<Popover
-								isVisible={this.state.isTooltipVisible}
-								placement={'top'}
-								hasShadow={true}
-								trigger={
-									<Button
-										aria-label="Copy link"
-										className="button icon-button copy-button"
-										title={link}
-										onClick={this.handleCopyLink}
-										disabled={isLoading}
-									>
-										{isLoading ? (
-											<div className="loader" />
-										) : (
-											<span className="material-symbols-outlined">link</span>
-										)}
-										<span>Copy link</span>
-									</Button>
-								}
-								content={
-									<div className="tooltip">
-										<span class="material-symbols-outlined">check_circle</span>
-										<span>Link copied to clipboard</span>
-									</div>
-								}
 							/>
 						</div>
 					</div>
