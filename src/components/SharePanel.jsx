@@ -15,8 +15,16 @@ export class SharePanel extends Component {
 		};
 	}
 
-	async componentDidMount() {
-		const result = await syncDiagram(this.props.currentItem);
+	async componentDidUpdate(prevProps) {
+		if (
+			prevProps.currentItem.imageBase64 !== this.props.currentItem.imageBase64
+		) {
+			await this.syncDiagram(this.props.currentItem);
+		}
+	}
+
+	async syncDiagram(currentItem) {
+		const result = await syncDiagram(currentItem);
 		if (!result) {
 			return;
 		}
@@ -44,33 +52,35 @@ export class SharePanel extends Component {
 		return (
 			<div className="share-panel">
 				<Popover
-						isVisible={this.state.isTooltipVisible}
-						placement={'top'}
-						hasShadow={true}
-						trigger={
-							<Button
-									aria-label="Copy link*"
-									className="button icon-button copy-button"
-									title={link}
-									onClick={this.handleCopyLink}
-									disabled={isLoading}
-							>
-								{isLoading ? (
-										<div className="loader" />
-								) : (
-										<span className="material-symbols-outlined">link</span>
-								)}
-								<span>Copy link<sup>*</sup></span>
-							</Button>
-						}
-						content={
-							<div className="tooltip">
-								<span class="material-symbols-outlined">check_circle</span>
-								<span>Link copied to clipboard</span>
-							</div>
-						}
+					isVisible={this.state.isTooltipVisible}
+					placement={'top'}
+					hasShadow={true}
+					trigger={
+						<Button
+							aria-label="Copy link*"
+							className="button icon-button copy-button"
+							title={link}
+							onClick={this.handleCopyLink}
+							disabled={isLoading}
+						>
+							{isLoading ? (
+								<div className="loader" />
+							) : (
+								<span className="material-symbols-outlined">link</span>
+							)}
+							<span>
+								Copy link<sup>*</sup>
+							</span>
+						</Button>
+					}
+					content={
+						<div className="tooltip">
+							<span class="material-symbols-outlined">check_circle</span>
+							<span>Link copied to clipboard</span>
+						</div>
+					}
 				/>
-				<hr/>
+				<hr />
 				<h3 style={{ marginTop: '4px' }}>
 					Want to share the diagram on Confluence?
 				</h3>
