@@ -9,7 +9,7 @@ export class SharePanel extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			isLoading: false,
+			isLoading: true,
 			link: '',
 			isTooltipVisible: false,
 			hasError: false,
@@ -27,7 +27,8 @@ export class SharePanel extends Component {
 	async syncDiagram(currentItem) {
 		this.setState({ isLoading: true });
 		try {
-			await syncDiagram(currentItem);
+			const result = await syncDiagram(currentItem);
+
 			this.setState({
 				link: getShareLink(result),
 				hasError: false,
@@ -79,19 +80,19 @@ export class SharePanel extends Component {
 						</Button>
 					}
 					content={
-						!hasError ? (
-							<div className="tooltip">
-								<span class="material-symbols-outlined success">
-									check_circle
-								</span>
-								<span>Link copied to clipboard</span>
-							</div>
-						) : (
+						hasError ? (
 							<div className="tooltip">
 								<span class="material-symbols-outlined error">error</span>
 								<span>
 									Unable to create the share link. Save it and try again later.
 								</span>
+							</div>
+						) : (
+							<div className="tooltip">
+								<span class="material-symbols-outlined success">
+									check_circle
+								</span>
+								<span>Link copied to clipboard</span>
 							</div>
 						)
 					}
