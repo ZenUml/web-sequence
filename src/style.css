@@ -2095,12 +2095,16 @@ ol.editor-nav li {
 	flex-direction: row;
 	flex-wrap: nowrap;
 	white-space: nowrap;
-	padding: 8px;
-	gap: 12px;
+	padding: 8px 12px;
+	gap: 8px;
 }
 
-.share-panel .tooltip .material-symbols-outlined {
+.share-panel .tooltip .material-symbols-outlined.success {
 	color: #41b276;
+}
+
+.share-panel .tooltip .material-symbols-outlined.error {
+	color: #df0211;
 }
 
 .share-panel .footnote {

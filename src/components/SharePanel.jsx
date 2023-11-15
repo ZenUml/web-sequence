@@ -9,9 +9,10 @@ export class SharePanel extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			isLoading: true,
+			isLoading: false,
 			link: '',
 			isTooltipVisible: false,
+			hasError: false,
 		};
 	}
 
@@ -24,14 +25,18 @@ export class SharePanel extends Component {
 	}
 
 	async syncDiagram(currentItem) {
-		const result = await syncDiagram(currentItem);
-		if (!result) {
-			return;
+		this.setState({ isLoading: true });
+		try {
+			await syncDiagram(currentItem);
+			this.setState({
+				link: getShareLink(result),
+				hasError: false,
+			});
+		} catch (err) {
+			this.setState({ link: '', hasError: true });
+		} finally {
+			this.setState({ isLoading: false });
 		}
-		this.setState({
-			isLoading: false,
-			link: getShareLink(result),
-		});
 	}
 
 	handleCopyLink = () => {
@@ -47,12 +52,12 @@ export class SharePanel extends Component {
 
 	render() {
 		const { author, currentItem } = this.props;
-		const { link, isLoading } = this.state;
+		const { link, isLoading, isTooltipVisible, hasError } = this.state;
 
 		return (
 			<div className="share-panel">
 				<Popover
-					isVisible={this.state.isTooltipVisible}
+					isVisible={isTooltipVisible}
 					placement={'top'}
 					hasShadow={true}
 					trigger={
@@ -60,7 +65,7 @@ export class SharePanel extends Component {
 							aria-label="Copy link*"
 							className="button icon-button copy-button"
 							title={link}
-							onClick={this.handleCopyLink}
+							onClick={this.handleCopyLink.bind(this)}
 							disabled={isLoading}
 						>
 							{isLoading ? (
@@ -74,10 +79,21 @@ export class SharePanel extends Component {
 						</Button>
 					}
 					content={
-						<div className="tooltip">
-							<span class="material-symbols-outlined">check_circle</span>
-							<span>Link copied to clipboard</span>
-						</div>
+						!hasError ? (
+							<div className="tooltip">
+								<span class="material-symbols-outlined success">
+									check_circle
+								</span>
+								<span>Link copied to clipboard</span>
+							</div>
+						) : (
+							<div className="tooltip">
+								<span class="material-symbols-outlined error">error</span>
+								<span>
+									Unable to create the share link. Save it and try again later.
+								</span>
+							</div>
+						)
 					}
 				/>
 				<hr />
