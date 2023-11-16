@@ -56,20 +56,18 @@ export class Popover extends Component {
 				<div className="popover-trigger" onClick={this.togglePopover}>
 					{trigger}
 				</div>
-				{isVisible && (
-					<>
-						{closeOnBlur && <div className="popover-backdrop" />}
-						<div
-							className={`popover-content ${placement}  ${
-								hasShadow ? 'shadow' : ''
-							}`}
-							ref={this.popoverRef}
-						>
-							{hasArrow && <div className={`popover-arrow`}></div>}
-							{content}
-						</div>
-					</>
-				)}
+				<div style={{ display: isVisible ? 'block' : 'none' }}>
+					{closeOnBlur && <div className="popover-backdrop" />}
+					<div
+						className={`popover-content ${placement}  ${
+							hasShadow ? 'shadow' : ''
+						}`}
+						ref={this.popoverRef}
+					>
+						{hasArrow && <div className={`popover-arrow`}></div>}
+						{content}
+					</div>
+				</div>
 			</div>
 		);
 	}
