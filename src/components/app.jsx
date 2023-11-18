@@ -110,7 +110,7 @@ export default class App extends Component {
 			lightVersion: false,
 			lineWrap: true,
 			infiniteLoopTimeout: 1000,
-			layoutMode: 2,
+			layoutMode: 1,
 			isJs13kModeOn: false,
 			autoCloseTags: true,
 		};
@@ -192,8 +192,16 @@ export default class App extends Component {
 			(result) => {
 				this.toggleLayout(result.layoutMode);
 				this.state.prefs.layoutMode = result.layoutMode;
-				if (result.code) {
-					lastCode = result.code;
+				let urlCode;
+				try {
+					urlCode = JSON.parse(
+						decodeURIComponent(new URLSearchParams(location.search).get('code'))
+					);
+				} catch (err) {
+					console.error(err);
+				}
+				if (urlCode || result.code) {
+					lastCode = urlCode || result.code;
 				}
 			}
 		);
