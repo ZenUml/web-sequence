@@ -1,0 +1,32 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Deploy to Stage
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install && yarn build
+    - run: yarn release
+    - name: Deploy to staging
+      if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'  # This conditional will skip the step for Dependabot PRs
+      run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
+    - name: Upload artifacts  # Find artifacts under actions/jobs
+      uses: actions/upload-artifact@v3
+      with:
+        name: chrome-extension
+        path: extension
