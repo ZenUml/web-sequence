@@ -8,14 +8,6 @@ on:
     tags:
       - release-*
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [16.x]
-
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
