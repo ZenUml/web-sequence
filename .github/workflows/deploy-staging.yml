@@ -22,7 +22,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: yarn install && yarn build
     - run: yarn release
-    - run: cd functions && yarn install && yarn deploy:config:staging
+    - run: cd functions && yarn install && yarn deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
     - name: Deploy to staging
       if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'  # This conditional will skip the step for Dependabot PRs
       run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
