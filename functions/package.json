@@ -2,7 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "engines": {
-    "node": "10"
+    "node": "16"
   },
   "scripts": {
     "lint": "eslint .",
@@ -10,12 +10,14 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
+    "deploy:config:staging": "firebase -P staging functions:config:set larasite.host=sequence-diagram-staging.zenuml.com larasite.public_base_url=https://sequence-diagram-staging.zenuml.com",
+    "deploy:config:prod": "firebase -P prod functions:config:set larasite.host=sequence-diagram.zenuml.com larasite.public_base_url=https://zenuml.com/sequence-diagram",
     "logs": "firebase functions:log"
   },
   "dependencies": {
     "crypto": "^1.0.1",
-    "firebase-admin": "~7.0.0",
-    "firebase-functions": "^2.2.0",
+    "firebase-admin": "~11.11.0",
+    "firebase-functions": "^4.5.0",
     "php-serialize": "^2.1.0"
   },
   "devDependencies": {
