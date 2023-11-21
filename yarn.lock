@@ -4610,10 +4610,10 @@ code-blast-codemirror@chinchang/code-blast-codemirror#web-maker:
   version "1.0.0"
   resolved "https://codeload.github.com/chinchang/code-blast-codemirror/tar.gz/d6d5366ff04e25b6973eb0fdf6d6c16cfc478054"
 
-codemirror@^5.65.15:
-  version "5.65.15"
-  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.15.tgz#66899278f44a7acde0eb641388cd563fe6dfbe19"
-  integrity sha512-YC4EHbbwQeubZzxLl5G4nlbLc1T21QTrKGaOal/Pkm9dVDMZXMH7+ieSPEOZCtO9I68i8/oteJKOxzHC2zR+0g==
+codemirror@^5.65.16:
+  version "5.65.16"
+  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.16.tgz#efc0661be6bf4988a6a1c2fe6893294638cdb334"
+  integrity sha512-br21LjYmSlVL0vFCPWPfhzUCT34FM/pAdK7rRIZwa0rrtrIdotvP4Oh4GUHsu2E3IrQMCfRkL/fN3ytMNxVQvg==
 
 collection-visit@^1.0.0:
   version "1.0.0"
