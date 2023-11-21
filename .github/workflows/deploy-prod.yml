@@ -24,6 +24,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: yarn install && yarn build
       - run: yarn release
+      - run: cd functions && yarn install && yarn deploy:config:prod --token ${{ secrets.FIREBASE_TOKEN }}
       - run: yarn deploy:prod --token ${{ secrets.FIREBASE_TOKEN }}
       - name: Create Release
         id: create_release

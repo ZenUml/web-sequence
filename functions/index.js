@@ -28,10 +28,11 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     console.log('decoded token:', decoded);
     const user = {name: decoded.name, id: decoded.user_id, email: decoded.email, email_verified: decoded.email_verified, picture: decoded.picture};
 
-    const hostname = process.env.LARASITE_HOST || 'sequence-diagram.zenuml.com';
+    const hostname = functions.config().larasite.host || 'sequence-diagram.zenuml.com';
     const baseUrlHttps = `https://${hostname}`;
     const baseUrlHttp = `http://${hostname}`;
-    const publicBaseUrl = process.env.PUBLIC_LARASITE_BASE_URL || 'https://zenuml.com/sequence-diagram';
+    const publicBaseUrl = functions.config().larasite.public_base_url || 'https://zenuml.com/sequence-diagram';
+    console.log('using LaraSite URL:', baseUrlHttps);
     console.log('using publicBaseUrl:', publicBaseUrl);
 
     const replaceBaseUrlInShareLink = (responseData) => {
