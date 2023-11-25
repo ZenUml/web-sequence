@@ -743,9 +743,6 @@ BookLibService.Borrow(id) {
 	}
 
 	async saveCode(key) {
-		const imageBlob = await this.contentWrap.getPngBlob();
-
-		this.state.currentItem.imageBase64 = await blobToBase64(imageBlob);
 		this.state.currentItem.updatedOn = Date.now();
 		this.state.currentItem.layoutMode = this.state.currentLayoutMode;
 
@@ -769,7 +766,9 @@ BookLibService.Borrow(id) {
 
 		try {
 			const result = await syncDiagram(this.state.currentItem);
-			this.state.currentItem.shareLink = getShareLink(result);
+			if(result) {
+				this.state.currentItem.shareLink = getShareLink(result);
+			}
 		} catch (e) {
 			console.error(e);
 		}

@@ -1,6 +1,11 @@
 import firebase from 'firebase/app';
 
 async function syncDiagram(currentItem) {
+	if(location.host === 'localhost:8080') {
+		console.log('!! Skipping sync-diagram call in local environment');
+		return;
+	}
+
 	const { id, title, js, imageBase64 } = currentItem;
 	if (!js || !title || !imageBase64) {
 		throw Error('Cannot sync diagram because of missing data');
