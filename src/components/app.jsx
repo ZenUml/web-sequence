@@ -765,6 +765,10 @@ BookLibService.Borrow(id) {
 
 		console.log('on saving, ', this.state.currentItem);
 
+		itemService
+			.setItem(key || this.state.currentItem.id, this.state.currentItem)
+			.then(onSaveComplete.bind(this));
+
 		try {
 			const result = await syncDiagram(this.state.currentItem);
 			if(result) {
@@ -774,9 +778,6 @@ BookLibService.Borrow(id) {
 			console.error(e);
 		}
 
-		return itemService
-			.setItem(key || this.state.currentItem.id, this.state.currentItem)
-			.then(onSaveComplete.bind(this));
 	}
 
 	// Save current item to storage
