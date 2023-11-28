@@ -2,36 +2,70 @@ const Firestore = require('@google-cloud/firestore');
 
 //How to set up key file: https://firebase.google.com/docs/admin/setup#initialize_the_sdk_in_non-google_environments
 const db = new Firestore({
-  projectId: 'web-sequence-local', //project name: zenuml-app-prod
+  projectId: 'staging-zenuml-27954', //project name: web-sequence-local(zenuml-app-prod)
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
 });
 
-async function query() {
-  const itemsRef = db.collection('items');
-  const snapshot = await itemsRef.orderBy('updatedOn', 'desc').get();
-  if (snapshot.empty) {
-    console.log('No matching documents.');
+const mysql = require('mysql');
+
+const dbConfig = {
+  host: 'localhost',
+  user: 'zenuml',
+  password: process.env.MYSQL_PASSWORD || 'Z3num1',
+  database: 'zenuml',
+};
+
+const connection = mysql.createConnection(dbConfig);
+
+connection.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
     return;
-  }  
-  
-  snapshot.forEach(doc => {
-    const r = convert(doc.data());
-    console.log(`${r.id},${escapeForCsv(r.title)},${r.createdBy},${r.updatedOn},${escapeForCsv(r.code)}`);
-  });
+  }
+  console.log('Connected to MySQL database');
+});
+
+function queryMysql(sql, data) {
+  return new Promise((resolv, reject) => {
+    connection.query(sql, data, (err, results, fields) => {
+      if (err) {
+        console.log('err:', err, 'results:', results, 'fields:', fields)
+        reject('Error executing query:', err);
+        return;
+      }
+      resolv(results);
+    });
+  })
 }
 
 function convert(doc) {
-  return {id: doc.id, title: doc.title, code: doc.js, createdBy: doc.createdBy, updatedOn: new Date(doc.updatedOn).toISOString()}
+  //doc.createdBy
+  return { firebase_diagram_id: doc.id, name: doc.title, content: doc.js, author_id: '1', public: 0, updated_at: new Date(doc.updatedOn), description: 'Migrated diagram from https://app.zenuml.com' }
 }
 
-function escapeForCsv(input) {
-  input = String(input);
-  const escaped = input.replace(/"/g, '""');
-  if (input.includes(',') || input.includes('\n')) {
-    return `"${escaped}"`;
+async function handleDoc(doc) {
+  const r = convert(doc.data());
+
+  const mr = await queryMysql(`select * from diagrams where firebase_diagram_id = '${r.firebase_diagram_id}'`);
+  if (!mr.length) {
+    console.log('not found: ', r.firebase_diagram_id)
+    console.log('insert result:', await queryMysql(`insert into diagrams SET ?`, r))
   }
-  return input;
+  console.log(`found ${r.firebase_diagram_id} in mysql, skipping`);
 }
 
-console.log('id,title,createdBy,updatedOn,code');
-query();
+async function queryFirebase() {
+  const itemsRef = db.collection('items');
+  const snapshot = await itemsRef.orderBy('updatedOn', 'asc').get(); //.limit(1)
+  if (snapshot.empty) {
+    console.log('No matching documents.');
+    return;
+  }
+
+  return await Promise.all(snapshot.docs.map(handleDoc));
+}
+
+queryFirebase().then(r => {
+  console.log('closing connection');
+  connection.end();
+});

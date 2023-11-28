@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/firestore": "^7.0.0"
+    "@google-cloud/firestore": "^7.0.0",
+    "mysql": "^2.18.1"
   }
 }
