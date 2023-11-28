@@ -8,6 +8,7 @@ async function syncDiagram(currentItem) {
 
 	const { id, title, js, imageBase64 } = currentItem;
 	if (!js || !title || !imageBase64) {
+		console.log('!! Cannot sync diagram because of missing data', currentItem);
 		throw Error('Cannot sync diagram because of missing data');
 	}
 
