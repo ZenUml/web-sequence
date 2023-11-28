@@ -74,6 +74,7 @@ if (window.zenumlDesktop) {
 		},
 
 		async setItem(id, item) {
+			console.debug('#623 setItem', id, item);
 			const d = deferred();
 			var remotePromise;
 			// TODO: check why we need to save locally always?

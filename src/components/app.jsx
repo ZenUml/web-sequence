@@ -178,6 +178,7 @@ export default class App extends Component {
 	componentWillMount() {
 		var lastCode;
 		window.onunload = () => {
+			console.debug('#623 onunload');
 			this.saveCode('code');
 			if (this.detachedWindow) {
 				this.detachedWindow.close();

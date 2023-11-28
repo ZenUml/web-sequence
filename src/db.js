@@ -19,6 +19,7 @@ import { log } from './utils';
 				setTimeout(() => cb(retVal), FAUX_DELAY);
 			} else {
 				Object.keys(obj).forEach(key => {
+					console.debug('#623 localStorage: Getting', key);
 					const val = window.localStorage.getItem(key);
 					retVal[key] =
 						val === undefined || val === null ? obj[key] : JSON.parse(val);
@@ -28,6 +29,8 @@ import { log } from './utils';
 		},
 		set: (obj, cb) => {
 			Object.keys(obj).forEach(key => {
+				debugger;
+				console.debug('#623 localStorage: Setting', key, obj[key]);
 				window.localStorage.setItem(key, JSON.stringify(obj[key]));
 			});
 			/* eslint-disable consistent-return */
