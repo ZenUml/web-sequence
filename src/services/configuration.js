@@ -72,7 +72,7 @@ const configByDomain = {
   'air.zenuml.com': {
     firebase: {
       apiKey: "AIzaSyC6s6r7KJeIK_8eGP469CK2Q5_X1XcFXdY",
-      authDomain: "staging.zenuml.com",
+      authDomain: "air.zenuml.com",
       databaseURL: "https://staging-zenuml-27954.firebaseio.com",
       projectId: "staging-zenuml-27954",
       storageBucket: "staging-zenuml.appspot.com",
