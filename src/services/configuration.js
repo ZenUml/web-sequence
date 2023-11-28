@@ -69,6 +69,20 @@ const configByDomain = {
       payment: true
     }
   },
+  'air.zenuml.com': {
+    firebase: {
+      apiKey: "AIzaSyC6s6r7KJeIK_8eGP469CK2Q5_X1XcFXdY",
+      authDomain: "staging.zenuml.com",
+      databaseURL: "https://staging-zenuml-27954.firebaseio.com",
+      projectId: "staging-zenuml-27954",
+      storageBucket: "staging-zenuml.appspot.com",
+      messagingSenderId: "937016595307"
+    },
+    paddleProduct: 552378, //Test Plan1
+    features: {
+      payment: true
+    }
+  },
   'web-sequence-dev.web.app': {
     firebase: {
       apiKey: "AIzaSyAeI0cwZ1e5DdJDH3NDVrm01Zjvoa9ys40",
