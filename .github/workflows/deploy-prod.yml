@@ -4,9 +4,9 @@
 name: Deploy to Prod
 
 on:
-  push:
-    tags:
-      - release-*
+  release:
+    types: [published]
+
 jobs:
   build:
 
