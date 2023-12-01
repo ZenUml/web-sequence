@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
 :root {
 	--color-text: #d4cde9;
@@ -23,7 +23,7 @@ body {
 	font-size: 87.5%;
 	/* speocifically for mobile when keyboard is open */
 	position: relative;
-	font-family: "Ubuntu", sans-serif;
+	font-family: 'Ubuntu', sans-serif;
 	/* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
 		sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol'; */
 }
@@ -46,7 +46,7 @@ textarea {
 	box-sizing: border-box;
 }
 
-[role="button"] {
+[role='button'] {
 	cursor: pointer;
 }
 
@@ -207,7 +207,7 @@ label {
 	cursor: pointer;
 }
 
-[class*="hint--"]:after {
+[class*='hint--']:after {
 	text-transform: none;
 	font-weight: normal;
 	letter-spacing: 0.5px;
@@ -323,7 +323,7 @@ a > svg {
 }
 
 .star:after {
-	content: "★";
+	content: '★';
 	color: currentColor;
 }
 
@@ -637,6 +637,7 @@ body > #demo-frame {
 }
 
 .main-header,
+.embed-header,
 .footer {
 	padding: 0.5rem 1rem;
 	background-color: rgb(18, 19, 27);
@@ -658,6 +659,30 @@ body > #demo-frame {
 	align-items: center;
 	border: 0;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.embed-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: #333;
+	background-color: #fff;
+	border-bottom: 1px solid #dadde1;
+}
+
+.embed-header__left {
+	display: flex;
+	align-items: center;
+}
+
+.embed-header__external {
+	opacity: 0.6;
+}
+.embed-header__external:hover {
+	opacity: 1;
+}
+.embed-header__external:focus {
+	outline: none;
 }
 
 .btn--dark > svg {
@@ -1602,7 +1627,7 @@ body:not(.is-app) .show-when-app {
 }
 
 .onboard-selection.selected:after {
-	content: "";
+	content: '';
 	position: absolute;
 	right: -20px;
 	bottom: 40px;
@@ -1807,6 +1832,12 @@ while the theme CSS file is loading */
 	grid-template-columns: 1fr 1fr 1fr;
 	padding: 0;
 	margin: 0;
+}
+
+.tab-content {
+	height: calc(100% - 45px);
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .tab-list-item {
@@ -2027,7 +2058,7 @@ ol.editor-nav li {
 }
 
 .popover-backdrop {
-	content: "";
+	content: '';
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -2203,4 +2234,24 @@ ol.editor-nav li {
 	object-position: left top;
 	width: 300%;
 	height: 300%;
+}
+
+.embed-app .toolbox {
+	display: none;
+}
+
+.embed-app .tab-list {
+	display: none;
+}
+
+.embed-app .promotion {
+	display: none;
+}
+
+.embed-app .content-wrap {
+	max-height: none;
+}
+
+.embed-app .tab-content {
+	height: 100%;
 }

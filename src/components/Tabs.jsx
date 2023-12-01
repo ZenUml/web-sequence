@@ -5,7 +5,7 @@ import Tab from './Tab';
 class Tabs extends Component {
 	static propTypes = {
 		children: PropTypes.instanceOf(Array).isRequired,
-	}
+	};
 
 	constructor(props) {
 		super(props);
@@ -16,17 +16,17 @@ class Tabs extends Component {
 		this.state = {
 			activeTab: this.props.children[0].props.label,
 		};
-	}
+	};
 	onClickTabItem = async (tab) => {
-		await this.setState({activeTab: tab});
+		await this.setState({ activeTab: tab });
 		this.props.onChange(tab);
-	}
+	};
 
 	static modifyChildren(child, visible) {
 		const className = [child.props.className, visible ? '' : 'hide'].join(' ');
 
 		const props = {
-			className
+			className,
 		};
 
 		return React.cloneElement(child, props);
@@ -34,18 +34,14 @@ class Tabs extends Component {
 	render() {
 		const {
 			onClickTabItem,
-			props: {
-				children,
-			},
-			state: {
-				activeTab,
-			}
+			props: { children },
+			state: { activeTab },
 		} = this;
 		return (
 			<div className="tabs" style="height:100%">
 				<ol className="tab-list editor-nav">
 					{children.map((child) => {
-						const { label,lineOfCode } = child.props;
+						const { label, lineOfCode } = child.props;
 						return (
 							<Tab
 								activeTab={activeTab}
@@ -57,16 +53,15 @@ class Tabs extends Component {
 						);
 					})}
 				</ol>
-				<div className="tab-content" style="height: calc(100% - 45px); overflow-y:auto;-webkit-overflow-scrolling: touch;">
-					{
-						React.Children.map(children,
-							(child) => {
-								if (child.props.label !== activeTab) {
-									return React.Children.map(child.props.children, c => Tabs.modifyChildren(c, false));
-								}
-								return child.props.children;
-							})
-					}
+				<div className="tab-content">
+					{React.Children.map(children, (child) => {
+						if (child.props.label !== activeTab) {
+							return React.Children.map(child.props.children, (c) =>
+								Tabs.modifyChildren(c, false)
+							);
+						}
+						return child.props.children;
+					})}
 				</div>
 			</div>
 		);

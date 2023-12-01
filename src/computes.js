@@ -178,9 +178,13 @@ export function computeJs(
 		const cursor = e.data && e.data.cursor;
 
 	  if (code && app) {
-		  app.render(code, { enableMultiTheme: false, onContentChange: (code) => {
-		  	window.parent.postMessage({ code })
-		  }});
+		  app.render(code, {
+				enableMultiTheme: false,
+				onContentChange: (code) => {
+					window.parent.postMessage({ code })
+				},
+				stickyOffset: Number(new URLSearchParams(window.location.search).get('stickyOffset') || 0)
+			});
 	  }
 
 	  if(app && (cursor !== null || cursor !== undefined)) {
