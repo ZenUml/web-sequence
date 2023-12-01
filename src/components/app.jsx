@@ -1384,6 +1384,8 @@ BookLibService.Borrow(id) {
 	}
 
 	render() {
+		// remove field imageBase64 from currentItem and save it to a local variable as a copy
+		const { imageBase64, ...currentItem } = this.state.currentItem;
 		return (
 			<div>
 				<div class={clsx('main-container', this.isEmbed && 'embed-app')}>
@@ -1411,7 +1413,7 @@ BookLibService.Borrow(id) {
 							title={this.searchParams.get('title')}
 							link={
 								`/?code=${JSON.stringify(
-									this.state.currentItem || ''
+										currentItem
 								)}&title=${this.searchParams.get('title')}` || ''
 							}
 						/>
