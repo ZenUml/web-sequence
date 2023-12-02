@@ -47,6 +47,8 @@ import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
 import { currentBrowserTab } from '../services/browserService';
 import { syncDiagram, getShareLink } from '../services/syncService';
+import clsx from 'clsx';
+import EmbedHeader from './EmbedHeader.jsx';
 
 if (module.hot) {
 	require('preact/debug');
@@ -110,10 +112,12 @@ export default class App extends Component {
 			lightVersion: false,
 			lineWrap: true,
 			infiniteLoopTimeout: 1000,
-			layoutMode: 2,
+			layoutMode: 1,
 			isJs13kModeOn: false,
 			autoCloseTags: true,
 		};
+		this.searchParams = new URLSearchParams(location.search);
+		this.isEmbed = this.searchParams.get('embed');
 		this.prefs = {};
 		if (window.zenumlDesktop) {
 			// hack savedItems, so we can load them on the desktop, without this object, the log in saveBtnClickHandler will not work.
@@ -192,8 +196,16 @@ export default class App extends Component {
 			(result) => {
 				this.toggleLayout(result.layoutMode);
 				this.state.prefs.layoutMode = result.layoutMode;
-				if (result.code) {
-					lastCode = result.code;
+				let urlCode;
+				try {
+					urlCode = JSON.parse(
+						decodeURIComponent(this.searchParams.get('code'))
+					);
+				} catch (err) {
+					console.error(err);
+				}
+				if (urlCode || result.code) {
+					lastCode = urlCode || result.code;
 				}
 			}
 		);
@@ -565,44 +577,46 @@ BookLibService.Borrow(id) {
 		});
 
 		// Editor keyboard shortucuts
-		window.addEventListener('keydown', async (event) => {
-			// TODO: refactor common listener code
-			// Ctrl/⌘ + S
-			if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-				event.preventDefault();
-				this.saveItem();
-				trackEvent('ui', 'saveItemKeyboardShortcut');
-			}
-			// Ctrl/⌘ + Shift + 5
-			if (
-				(event.ctrlKey || event.metaKey) &&
-				event.shiftKey &&
-				event.keyCode === 53
-			) {
-				event.preventDefault();
-				this.contentWrap.setPreviewContent(true, true);
-				trackEvent('ui', 'previewKeyboardShortcut');
-			} else if ((event.ctrlKey || event.metaKey) && event.keyCode === 79) {
-				// Ctrl/⌘ + O
-				event.preventDefault();
-				await this.openSavedItemsPane();
-				trackEvent('ui', 'openCreationKeyboardShortcut');
-			} else if (
-				(event.ctrlKey || event.metaKey) &&
-				event.shiftKey &&
-				event.keyCode === 191
-			) {
-				// Ctrl/⌘ + Shift + ?
-				event.preventDefault();
-				await this.setState({
-					isKeyboardShortcutsModalOpen:
-						!this.state.isKeyboardShortcutsModalOpen,
-				});
-				trackEvent('ui', 'showKeyboardShortcutsShortcut');
-			} else if (event.keyCode === 27) {
-				await this.closeSavedItemsPane();
-			}
-		});
+		if (!this.isEmbed) {
+			window.addEventListener('keydown', async (event) => {
+				// TODO: refactor common listener code
+				// Ctrl/⌘ + S
+				if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
+					event.preventDefault();
+					this.saveItem();
+					trackEvent('ui', 'saveItemKeyboardShortcut');
+				}
+				// Ctrl/⌘ + Shift + 5
+				if (
+					(event.ctrlKey || event.metaKey) &&
+					event.shiftKey &&
+					event.keyCode === 53
+				) {
+					event.preventDefault();
+					this.contentWrap.setPreviewContent(true, true);
+					trackEvent('ui', 'previewKeyboardShortcut');
+				} else if ((event.ctrlKey || event.metaKey) && event.keyCode === 79) {
+					// Ctrl/⌘ + O
+					event.preventDefault();
+					await this.openSavedItemsPane();
+					trackEvent('ui', 'openCreationKeyboardShortcut');
+				} else if (
+					(event.ctrlKey || event.metaKey) &&
+					event.shiftKey &&
+					event.keyCode === 191
+				) {
+					// Ctrl/⌘ + Shift + ?
+					event.preventDefault();
+					await this.setState({
+						isKeyboardShortcutsModalOpen:
+							!this.state.isKeyboardShortcutsModalOpen,
+					});
+					trackEvent('ui', 'showKeyboardShortcutsShortcut');
+				} else if (event.keyCode === 27) {
+					await this.closeSavedItemsPane();
+				}
+			});
+		}
 
 		// Basic Focus trapping
 		window.addEventListener('focusin', (e) => {
@@ -674,10 +688,11 @@ BookLibService.Borrow(id) {
 		}
 		// Remove all layout classes
 		[1, 2, 3, 4, 5].forEach((layoutNumber) => {
-			window[`layoutBtn${layoutNumber}`].classList.remove('selected');
+			window[`layoutBtn${layoutNumber}`] &&
+				window[`layoutBtn${layoutNumber}`].classList.remove('selected');
 			document.body.classList.remove(`layout-${layoutNumber}`);
 		});
-		$('#layoutBtn' + mode).classList.add('selected');
+		$('#layoutBtn' + mode) && $('#layoutBtn' + mode).classList.add('selected');
 		document.body.classList.add('layout-' + mode);
 
 		await this.setState({ currentLayoutMode: mode }, () => {
@@ -1368,10 +1383,12 @@ BookLibService.Borrow(id) {
 	}
 
 	render() {
+		// remove field imageBase64 from currentItem and save it to a local variable as a copy
+		const { imageBase64, ...currentItem } = this.state.currentItem;
 		return (
 			<div>
-				<div class="main-container">
-					{window.zenumlDesktop ? null : (
+				<div class={clsx('main-container', this.isEmbed && 'embed-app')}>
+					{window.zenumlDesktop || this.isEmbed ? null : (
 						<MainHeader
 							externalLibCount={this.state.externalLibCount}
 							openBtnHandler={this.openBtnClickHandler.bind(this)}
@@ -1390,6 +1407,16 @@ BookLibService.Borrow(id) {
 							unsavedEditCount={this.state.unsavedEditCount}
 						/>
 					)}
+					{this.isEmbed && (
+						<EmbedHeader
+							title={this.searchParams.get('title')}
+							link={
+								`/?code=${JSON.stringify(
+										currentItem
+								)}&title=${this.searchParams.get('title')}` || ''
+							}
+						/>
+					)}
 					<ContentWrap
 						currentLayoutMode={this.state.currentLayoutMode}
 						currentItem={this.state.currentItem}
@@ -1403,39 +1430,41 @@ BookLibService.Borrow(id) {
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
 					/>
-					<Footer
-						prefs={this.state.prefs}
-						layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
-						helpBtnClickHandler={async () =>
-							await this.setState({ isHelpModalOpen: true })
-						}
-						settingsBtnClickHandler={async () =>
-							await this.setState({ isSettingsModalOpen: true })
-						}
-						notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
-							this
-						)}
-						supportDeveloperBtnClickHandler={this.supportDeveloperBtnClickHandler.bind(
-							this
-						)}
-						detachedPreviewBtnHandler={this.detachedPreviewBtnHandler.bind(
-							this
-						)}
-						codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
-						saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
-						keyboardShortcutsBtnClickHandler={async () =>
-							await this.setState({ isKeyboardShortcutsModalOpen: true })
-						}
-						screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
-							this
-						)}
-						onJs13KHelpBtnClick={this.js13KHelpBtnClickHandler.bind(this)}
-						onJs13KDownloadBtnClick={this.js13KDownloadBtnClickHandler.bind(
-							this
-						)}
-						hasUnseenChangelog={this.state.hasUnseenChangelog}
-						codeSize={this.state.codeSize}
-					/>
+					{this.isEmbed ? null : (
+						<Footer
+							prefs={this.state.prefs}
+							layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
+							helpBtnClickHandler={async () =>
+								await this.setState({ isHelpModalOpen: true })
+							}
+							settingsBtnClickHandler={async () =>
+								await this.setState({ isSettingsModalOpen: true })
+							}
+							notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
+								this
+							)}
+							supportDeveloperBtnClickHandler={this.supportDeveloperBtnClickHandler.bind(
+								this
+							)}
+							detachedPreviewBtnHandler={this.detachedPreviewBtnHandler.bind(
+								this
+							)}
+							codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
+							saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
+							keyboardShortcutsBtnClickHandler={async () =>
+								await this.setState({ isKeyboardShortcutsModalOpen: true })
+							}
+							screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
+								this
+							)}
+							onJs13KHelpBtnClick={this.js13KHelpBtnClickHandler.bind(this)}
+							onJs13KDownloadBtnClick={this.js13KDownloadBtnClickHandler.bind(
+								this
+							)}
+							hasUnseenChangelog={this.state.hasUnseenChangelog}
+							codeSize={this.state.codeSize}
+						/>
+					)}
 				</div>
 
 				<SavedItemPane
