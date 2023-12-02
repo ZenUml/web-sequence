@@ -11,7 +11,7 @@ const mysql = require('mysql');
 const dbConfig = {
   host: 'localhost',
   user: 'zenuml',
-  password: process.env.MYSQL_PASSWORD || 'Z3num1',
+  password: process.env.MYSQL_PASSWORD,
   database: 'zenuml',
 };
 
@@ -43,7 +43,7 @@ function convert(doc) {
   return { firebase_diagram_id: doc.id, name: doc.title, content: doc.js, author_id: '1', public: 0, updated_at: new Date(doc.updatedOn), description: 'Migrated diagram from https://app.zenuml.com' }
 }
 
-async function handleDoc(doc) {
+async function syncToMysql(doc) {
   const r = convert(doc.data());
 
   const mr = await queryMysql(`select * from diagrams where firebase_diagram_id = '${r.firebase_diagram_id}'`);
@@ -62,7 +62,7 @@ async function queryFirebase() {
     return;
   }
 
-  return await Promise.all(snapshot.docs.map(handleDoc));
+  return await Promise.all(snapshot.docs.map(syncToMysql));
 }
 
 queryFirebase().then(r => {
