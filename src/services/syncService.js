@@ -17,7 +17,6 @@ async function syncDiagram(currentItem) {
 	const data = {
 		token,
 		id,
-		imageBase64,
 		name: title,
 		content: js,
 		description: 'Shared diagram from https://app.zenuml.com',
