@@ -75,7 +75,7 @@ if (window.zenumlDesktop) {
 
 		async setItem(id, item) {
 			// Saving imageBase64 in localStorage often cause errors due to size limit.
-			item.imageBase64 = undefined;
+			delete item.imageBase64;
 			const d = deferred();
 			var remotePromise;
 			// TODO: check why we need to save locally always?
