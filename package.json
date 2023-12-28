@@ -51,7 +51,7 @@
 		"gulp-uglify": "^3.0.0",
 		"gulp-useref": "^4.0.1",
 		"gulp-zip": "^5.0.2",
-		"jest": "^24.9.0",
+		"jest": "^29.7.0",
 		"jest-preset-preact": "^1.0.0",
 		"preact-cli": "^3.5.0",
 		"run-sequence": "^2.2.1",
