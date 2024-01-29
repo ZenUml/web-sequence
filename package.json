@@ -53,7 +53,7 @@
 		"gulp-zip": "^5.0.2",
 		"jest": "^24.9.0",
 		"jest-preset-preact": "^1.0.0",
-		"preact-cli": "^3.5.0",
+		"preact-cli": "^3.5.1",
 		"run-sequence": "^2.2.1",
 		"sirv-cli": "1.0.3"
 	},
