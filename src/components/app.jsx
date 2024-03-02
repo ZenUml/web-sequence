@@ -1030,6 +1030,10 @@ BookLibService.Borrow(id) {
 		}
 	}
 	async openBtnClickHandler() {
+		if(!window.user) {
+			this.loginBtnClickHandler();
+			return;
+		}
 		trackEvent('ui', 'openBtnClick');
 		await this.openSavedItemsPane();
 	}

@@ -414,6 +414,10 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 	}
 	async exportPngClickHandler(e) {
+		if(!window.user) {
+			this.props.onLogin();
+			return;
+		}
 		const png = await this.getPngBlob();
 		saveAs(png, 'zenuml.png');
 		trackEvent('ui', 'downloadPng');
@@ -429,6 +433,10 @@ export default class ContentWrap extends Component {
 	}
 
 	async copyImageClickHandler(e) {
+		if(!window.user) {
+			this.props.onLogin();
+			return;
+		}
 		if (!navigator.clipboard || !navigator.clipboard.write) {
 			this.showCopyErrorNotice();
 			trackEvent('ui', 'copyImageFailed1');
