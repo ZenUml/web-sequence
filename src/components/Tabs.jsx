@@ -18,6 +18,14 @@ class Tabs extends Component {
 		};
 	};
 	onClickTabItem = async (tab) => {
+		const child = this.props.children.find(c => c.props.label === tab);
+		if(child && child.props.onBeforeActiviation) {
+			const result = child.props.onBeforeActiviation();
+			if(!result) {
+				return;
+			}
+		}
+
 		await this.setState({ activeTab: tab });
 		this.props.onChange(tab);
 	};

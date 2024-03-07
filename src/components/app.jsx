@@ -1433,6 +1433,7 @@ BookLibService.Borrow(id) {
 						prefs={this.state.prefs}
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
+						onProFeature={this.proBtnClickHandler.bind(this)}
 					/>
 					{this.isEmbed ? null : (
 						<Footer
