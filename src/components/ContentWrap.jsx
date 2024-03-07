@@ -19,6 +19,7 @@ import codeService from '../services/code_service';
 import { alertsService } from '../notifications';
 import { Popover } from './PopOver.jsx';
 import { SharePanel } from './SharePanel.jsx';
+import userService from '../services/user_service';
 
 const minCodeWrapSize = 33;
 
@@ -775,6 +776,17 @@ export default class ContentWrap extends Component {
 		}
 	}
 
+
+	onCSSActiviation() {
+		if(!window.user) {
+			this.props.onLogin();
+		} else if(userService.isPro()) {
+			return true;
+		} else {
+			this.props.onProFeature();
+		}
+	}
+
 	toolboxUpdateToApp(param) {
 		trackEvent('ui', 'code', 'toolbox');
 		const code = this.cm.js.getValue();
@@ -863,7 +875,7 @@ export default class ContentWrap extends Component {
 								{/* Inlet(scope.cm.js); */}
 							</div>
 						</div>
-						<div label="CSS">
+						<div label="CSS" onBeforeActiviation={this.onCSSActiviation.bind(this)}>
 							<div
 								data-code-wrap-id="1"
 								id="cssCodeEl"
