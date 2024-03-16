@@ -14,8 +14,7 @@ export function ProFeatureListModal(props) {
 					<li>(Free) Real-time sequence diagram converter</li>
 					<li>(Free) Export to PNG and JPEG</li>
 					<li>(Free) Hand-tuned themes</li>
-					<li>(Free) Up to 10 lines of code per diagram</li>
-					<li>(Pro) No limitation on lines of code</li>
+					<li>(Pro) Custom CSS</li>
 				</ul>
 			</section>
 			<section className={'call-for-action hide'}>
