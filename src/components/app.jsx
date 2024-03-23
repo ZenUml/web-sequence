@@ -49,6 +49,7 @@ import { currentBrowserTab } from '../services/browserService';
 import { syncDiagram, getShareLink } from '../services/syncService';
 import clsx from 'clsx';
 import EmbedHeader from './EmbedHeader.jsx';
+import userService from '../services/user_service';
 
 if (module.hot) {
 	require('preact/debug');
@@ -133,7 +134,7 @@ export default class App extends Component {
 			// window.zd_libraryBtHander = this.openAddLibrary.bind(this)
 		}
 		firebase.auth().onAuthStateChanged(async (user) => {
-			await this.setState({ isLoginModalOpen: false });
+						await this.setState({ isLoginModalOpen: false });
 			if (user) {
 				log('You are -> ', user);
 				alertsService.add('You are now logged in!');
@@ -450,6 +451,16 @@ BookLibService.Borrow(id) {
 
 		return d.promise;
 	}
+
+	checkItemsLimit() {
+		if(!this.state.user || Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
+			return true;
+		}
+
+		alert(`You have ${Object.keys(this.state.user.items).length} diagrams, the limit is 3. Upgrade now for unlimited storage.`);
+		this.proBtnClickHandler();
+	}
+
 	saveBtnClickHandler() {
 		trackEvent(
 			'ui',
@@ -460,6 +471,11 @@ BookLibService.Borrow(id) {
 				? 'saved'
 				: 'new'
 		);
+
+		if(!this.checkItemsLimit()) {
+			return;
+		}
+
 		if (this.state.user || window.zenumlDesktop) {
 			this.saveItem();
 			const numOfItems = Object.keys(this.state.savedItems).length;
@@ -1007,6 +1023,10 @@ BookLibService.Borrow(id) {
 		await this.removeItem(item);
 	}
 	async itemForkBtnClickHandler(item) {
+		if(!this.checkItemsLimit()) {
+			return;
+		}
+
 		await this.toggleSavedItemsPane();
 		setTimeout(() => {
 			this.forkItem(item);
@@ -1014,6 +1034,11 @@ BookLibService.Borrow(id) {
 	}
 	async newBtnClickHandler() {
 		trackEvent('ui', 'newBtnClick');
+
+		if(!this.checkItemsLimit()) {
+			return;
+		}
+
 		if (this.state.unsavedEditCount) {
 			var shouldDiscard = confirm(
 				'You have unsaved changes. Do you still want to create something new?'
@@ -1121,6 +1146,10 @@ BookLibService.Borrow(id) {
 		});
 	}
 	exportBtnClickHandler(e) {
+		if(!this.checkItemsLimit()) {
+			return;
+		}
+
 		this.exportItems();
 		e.preventDefault();
 		trackEvent('ui', 'exportBtnClicked');
