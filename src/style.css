@@ -758,41 +758,6 @@ body > #demo-frame {
 	font-weight: normal;
 }
 
-.logo {
-	display: inline-block;
-	height: 18px;
-	width: 18px;
-	margin-right: 5px;
-	background: url(icon-16.png) no-repeat;
-	vertical-align: middle;
-	-webkit-filter: grayscale(0.9);
-	filter: grayscale(0.9);
-	transition: 0.4s ease;
-	opacity: 0.3;
-	will-change: opacity, filter;
-}
-
-.logo.small {
-	height: 20px;
-	width: 20px;
-	margin-right: 0px;
-	background: url(icon-16.png) 0px 0px no-repeat;
-	-webkit-filter: grayscale(0);
-	filter: grayscale(0);
-	opacity: 1;
-}
-
-.logo.small.gray {
-	-webkit-filter: grayscale(0.9);
-	filter: grayscale(0.9);
-}
-
-.footer:hover .logo {
-	-webkit-filter: grayscale(0);
-	filter: grayscale(0);
-	opacity: 1;
-}
-
 .footer__right {
 	font-size: 0;
 	line-height: 0;

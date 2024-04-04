@@ -3,7 +3,7 @@ export default function EmbedHeader(props) {
 		<div className="embed-header">
 			<div className="embed-header__left">
 				<div className="header-logo">
-					<img src="assets/zenuml-icon.png" alt="zenuml logo" />
+					<img src="assets/logo-400x400.png" alt="zenuml logo" />
 				</div>
 				<div className="tit">{this.props.title || 'Untitled'}</div>
 			</div>

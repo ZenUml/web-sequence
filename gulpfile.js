@@ -61,6 +61,7 @@ gulp.task('copyFiles', function() {
 			'src/icon-16.png',
 			'src/icon-48.png',
 			'src/icon-128.png',
+			'src/logo-400x400.png',
 			'manifest.json'
 		]).pipe(gulp.dest('app')),
 		gulp.src('build/*.js')
@@ -154,6 +155,7 @@ gulp.task('packageExtension', function() {
 	childProcess.execSync('cp src/icon-16.png extension');
 	childProcess.execSync('cp src/icon-48.png extension');
 	childProcess.execSync('cp src/icon-128.png extension');
+	childProcess.execSync('cp src/logo-400x400.png extension');
 
 	childProcess.execSync(
 		'rm -rf extension/partials'

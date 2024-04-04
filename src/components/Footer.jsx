@@ -79,7 +79,6 @@ export default class Footer extends Component {
 							target="_blank"
 							rel="noopener noreferrer"
 						>
-							<div class="logo" />
 						</a>
 						&copy;
 						<span class="web-maker-with-tag">ZenUML</span> &nbsp;&nbsp;
