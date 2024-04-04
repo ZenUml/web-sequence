@@ -50,6 +50,7 @@ import { syncDiagram, getShareLink } from '../services/syncService';
 import clsx from 'clsx';
 import EmbedHeader from './EmbedHeader.jsx';
 import userService from '../services/user_service';
+import mixpanel from '../services/mixpanel.js';
 
 if (module.hot) {
 	require('preact/debug');
@@ -453,7 +454,7 @@ BookLibService.Borrow(id) {
 	}
 
 	checkItemsLimit() {
-		if(!this.state.user || Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
+		if(!this.state.user || this.state.user.items && Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
 			return true;
 		}
 
@@ -473,6 +474,7 @@ BookLibService.Borrow(id) {
 		);
 
 		if(!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Save' })
 			return;
 		}
 
@@ -1024,6 +1026,7 @@ BookLibService.Borrow(id) {
 	}
 	async itemForkBtnClickHandler(item) {
 		if(!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' })
 			return;
 		}
 
@@ -1036,6 +1039,7 @@ BookLibService.Borrow(id) {
 		trackEvent('ui', 'newBtnClick');
 
 		if(!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'New' })
 			return;
 		}
 
@@ -1147,6 +1151,7 @@ BookLibService.Borrow(id) {
 	}
 	exportBtnClickHandler(e) {
 		if(!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' })
 			return;
 		}
 
