@@ -5,8 +5,8 @@ const Mixpanel = require('mixpanel');
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
 
-//Mixpanel project: ZenUML-Test
-const mixpanel = Mixpanel.init('84ab821f52b5c7c9cef9213103f82f66');
+//Mixpanel project: Confluence Analytics(new)
+const mixpanel = Mixpanel.init('0c62cea9ed2247f4824bf196f6817941');
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
