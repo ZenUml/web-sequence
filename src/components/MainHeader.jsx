@@ -26,7 +26,7 @@ export function MainHeader(props) {
 	return (
 		<div className="main-header">
 			<div className="header-logo">
-				<img src="assets/zenuml-icon.png" alt="zenuml logo" />
+				<img src="assets/logo-400x400.png" alt="zenuml logo" />
 			</div>
 			{
 				isEditing ? (<input
@@ -96,7 +96,7 @@ export function MainHeader(props) {
 					aria-label="Open a saved creation (Ctrl/⌘ + O)"
 					onClick={props.openBtnHandler}
 				>
-					<span class="material-symbols-outlined">open_in_new</span>					
+					<span class="material-symbols-outlined">open_in_new</span>
 					<span>Open</span>
 				</button>
 				<Button

@@ -18,6 +18,12 @@
         "function": {
           "functionId": "authenticate"
         }
+      },
+      {
+        "source": "/track",
+        "function": {
+          "functionId": "track"
+        }
       }
     ]
   },

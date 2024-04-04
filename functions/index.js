@@ -1,8 +1,12 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const Mixpanel = require('mixpanel');
 
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
+
+//Mixpanel project: Confluence Analytics(new)
+const mixpanel = Mixpanel.init('0c62cea9ed2247f4824bf196f6817941');
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
@@ -73,6 +77,17 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
 
     request.write(data);
     request.end();
+});
+
+exports.track = functions.https.onRequest(async (req, res) => {
+    console.log('request:', req.body)
+    mixpanel.track(req.body.event, {
+        distinct_id: req.body.userId,
+        category: req.body.category,
+        label: req.body.label,
+        displayProductName: 'FireWeb'
+    });
+    res.send('ok');
 });
 
 exports.webhook = functions.https.onRequest(async (req, res) => {
