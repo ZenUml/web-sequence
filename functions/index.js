@@ -80,14 +80,18 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
 });
 
 exports.track = functions.https.onRequest(async (req, res) => {
-    console.log('request:', req.body)
+    if(!req.body.event) {
+        console.log('missing req.body.event');
+        res.status(400).send('invalid request');
+        return;
+    }
+    
     mixpanel.track(req.body.event, {
         distinct_id: req.body.userId,
-        category: req.body.category,
-        label: req.body.label,
+        event_category: req.body.category,
+        event_label: req.body.label,
         displayProductName: 'FireWeb'
     });
-    res.send('ok');
 });
 
 exports.webhook = functions.https.onRequest(async (req, res) => {
