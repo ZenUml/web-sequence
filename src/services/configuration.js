@@ -8,7 +8,7 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961'
     },
-    paddleProduct: 551167, //ZenUML Pro
+    paddleProduct: 879334, //ZenUML Pro
     features: {
       payment: true
     }
@@ -22,7 +22,7 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961'
     },
-    paddleProduct: 551167, //ZenUML Pro
+    paddleProduct: 879334, //ZenUML Pro
     features: {
       payment: false
     }
@@ -36,7 +36,7 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961'
     },
-    paddleProduct: 551167, //ZenUML Pro
+    paddleProduct: 879334, //ZenUML Pro
     features: {
       payment: false
     }
@@ -50,7 +50,7 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961'
     },
-    paddleProduct: 551167, //ZenUML Pro
+    paddleProduct: 879334, //ZenUML Pro
     features: {
       payment: false
     }
