@@ -64,7 +64,7 @@ export class SharePanel extends Component {
 					trigger={
 						<Button
 							aria-label="Copy link*"
-							className="button icon-button copy-button"
+							className="button icon-button copy-button text-sm"
 							title={link}
 							onClick={this.handleCopyLink.bind(this)}
 							disabled={isLoading}
