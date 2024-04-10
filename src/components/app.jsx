@@ -8,7 +8,6 @@ import Footer from './Footer.jsx';
 import SavedItemPane from './SavedItemPane.jsx';
 import AddLibrary from './AddLibrary.jsx';
 import Modal from './Modal.jsx';
-import Login from './Login.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import {
 	log,
@@ -19,29 +18,27 @@ import {
 	downloadFile,
 	getCompleteHtml,
 	getFilenameFromUrl,
-	blobToBase64,
+	blobToBase64
 } from '../utils';
 import { itemService } from '../itemService';
 import '../db';
 import { Notifications } from './Notifications';
-import Settings from './Settings.jsx';
 import { modes, HtmlModes, CssModes, JsModes } from '../codeModes';
 import { trackEvent, trackGaSetField, trackPageView } from '../analytics';
 import { deferred } from '../deferred';
 import { alertsService } from '../notifications';
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import { Profile } from './Profile';
 import { auth } from '../auth';
 import { SupportDeveloperModal } from './SupportDeveloperModal';
-import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { takeScreenshot } from '../takeScreenshot';
 import { AskToImportModal } from './AskToImportModal';
 import { Alerts } from './Alerts';
 import { HelpModal } from './HelpModal';
 import { ProFeatureListModal } from './subscription/ProFeatureListModal';
 import { Js13KModal } from './Js13KModal';
-import { CreateNewModal } from './CreateNewModal';
+import CreateNewModal from './CreateNewModal';
 import { Icons } from './Icons';
 import JSZip from 'jszip';
 import { loadSubscriptionToApp } from '../javascript/firebase/subscription';
@@ -51,6 +48,10 @@ import clsx from 'clsx';
 import EmbedHeader from './EmbedHeader.jsx';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel.js';
+import '../assets/tailwind.css';
+import CheatSheetModal from './CheatSheetModal';
+import SettingsModal from './SettingsModal';
+import LoginModal from './LoginModal';
 
 if (module.hot) {
 	require('preact/debug');
@@ -58,7 +59,7 @@ if (module.hot) {
 
 const LocalStorageKeys = {
 	LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
-	ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
+	ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations'
 };
 const UNSAVED_WARNING_COUNT = 15;
 const version = '3.6.1';
@@ -82,6 +83,7 @@ export default class App extends Component {
 			isOnboardModalOpen: false,
 			isJs13KModalOpen: false,
 			isCreateNewModalOpen: false,
+			openCheatSheet: false
 		};
 		this.state = {
 			isSavedItemPaneOpen: false,
@@ -89,8 +91,8 @@ export default class App extends Component {
 			prefs: {},
 			currentItem: {
 				title: '',
-				externalLibs: { js: '', css: '' },
-			},
+				externalLibs: { js: '', css: '' }
+			}
 		};
 		this.defaultSettings = {
 			preserveLastCode: true,
@@ -116,7 +118,7 @@ export default class App extends Component {
 			infiniteLoopTimeout: 1000,
 			layoutMode: 1,
 			isJs13kModeOn: false,
-			autoCloseTags: true,
+			autoCloseTags: true
 		};
 		this.searchParams = new URLSearchParams(location.search);
 		this.isEmbed = this.searchParams.get('embed');
@@ -135,7 +137,7 @@ export default class App extends Component {
 			// window.zd_libraryBtHander = this.openAddLibrary.bind(this)
 		}
 		firebase.auth().onAuthStateChanged(async (user) => {
-						await this.setState({ isLoginModalOpen: false });
+			await this.setState({ isLoginModalOpen: false });
 			if (user) {
 				log('You are -> ', user);
 				alertsService.add('You are now logged in!');
@@ -149,7 +151,7 @@ export default class App extends Component {
 						this.oldSavedItems = items;
 						this.oldSavedCreationsCount = items.length;
 						await this.setState({
-							isAskToImportModalOpen: true,
+							isAskToImportModalOpen: true
 						});
 						trackEvent('ui', 'askToImportModalSeen');
 					});
@@ -181,6 +183,7 @@ export default class App extends Component {
 			this.updateProfileUi();
 		});
 	}
+
 	componentWillMount() {
 		var lastCode;
 		window.onunload = () => {
@@ -193,7 +196,7 @@ export default class App extends Component {
 		db.local.get(
 			{
 				layoutMode: 1,
-				code: '',
+				code: ''
 			},
 			(result) => {
 				this.toggleLayout(result.layoutMode);
@@ -297,7 +300,7 @@ export default class App extends Component {
 			// Check if new user
 			if (!lastSeenVersion) {
 				await this.setState({
-					isOnboardModalOpen: true,
+					isOnboardModalOpen: true
 				});
 				if (document.cookie.indexOf('onboarded') === -1) {
 					trackEvent('ui', 'onboardModalSeen', version);
@@ -344,6 +347,7 @@ export default class App extends Component {
 		this.updateExternalLibCount();
 		this.contentWrap.refreshEditor();
 	}
+
 	// Creates a new item with passed item's contents
 	forkItem(sourceItem) {
 		if (this.state.unsavedEditCount) {
@@ -362,6 +366,7 @@ export default class App extends Component {
 		alertsService.add(`"${sourceItem.title}" was forked`);
 		trackEvent('fn', 'itemForked');
 	}
+
 	createNewItem() {
 		var d = new Date();
 		this.setCurrentItem({
@@ -395,14 +400,16 @@ BookLibService.Borrow(id) {
   return receipt
 }`,
 			externalLibs: { js: '', css: '' },
-			layoutMode: this.state.currentLayoutMode,
+			layoutMode: this.state.currentLayoutMode
 		}).then(() => this.refreshEditor());
 		alertsService.add('New item created');
 	}
+
 	openItem(item) {
 		this.setCurrentItem(item).then(() => this.refreshEditor());
 		alertsService.add('Saved item loaded');
 	}
+
 	async removeItem(item) {
 		var answer = confirm(`Are you sure you want to delete "${item.title}"?`);
 		if (!answer) {
@@ -424,11 +431,12 @@ BookLibService.Borrow(id) {
 		// Remove from cached list
 		delete this.state.savedItems[item.id];
 		await this.setState({
-			savedItems: { ...this.state.savedItems },
+			savedItems: { ...this.state.savedItems }
 		});
 
 		trackEvent('fn', 'itemRemoved');
 	}
+
 	async setCurrentItem(item) {
 		const d = deferred();
 		// TODO: remove later
@@ -469,12 +477,12 @@ BookLibService.Borrow(id) {
 			!this.state.user
 				? 'not-logged-in'
 				: this.state.currentItem.id
-				? 'saved'
-				: 'new'
+					? 'saved'
+					: 'new'
 		);
 
-		if(!this.checkItemsLimit()) {
-			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Save' })
+		if (!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Save' });
 			return;
 		}
 
@@ -490,17 +498,18 @@ BookLibService.Borrow(id) {
 	async populateItemsInSavedPane(items) {
 		// TODO: sort desc. by updation date
 		await this.setState({
-			savedItems: { ...this.state.savedItems },
+			savedItems: { ...this.state.savedItems }
 		});
 
 		await this.toggleSavedItemsPane();
 		// HACK: Set overflow after sometime so that the items can animate without getting cropped.
 		// setTimeout(() => $('#js-saved-items-wrap').style.overflowY = 'auto', 1000);
 	}
+
 	async toggleSavedItemsPane(shouldOpen) {
 		await this.setState({
 			isSavedItemPaneOpen:
-				shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen,
+				shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen
 		});
 
 		if (this.state.isSavedItemPaneOpen) {
@@ -564,21 +573,23 @@ BookLibService.Borrow(id) {
 
 	async openSavedItemsPane() {
 		await this.setState({
-			isFetchingItems: true,
+			isFetchingItems: true
 		});
 		this.fetchItems(true).then(async (items) => {
 			await this.setState({
-				isFetchingItems: false,
+				isFetchingItems: false
 			});
 			await this.populateItemsInSavedPane(items);
 		});
 	}
+
 	async openAddLibrary() {
 		await this.setState({ isAddLibraryModalOpen: true });
 	}
+
 	async closeSavedItemsPane() {
 		await this.setState({
-			isSavedItemPaneOpen: false,
+			isSavedItemPaneOpen: false
 		});
 		document.body.classList.remove('overlay-visible');
 
@@ -586,10 +597,12 @@ BookLibService.Borrow(id) {
 			this.editorWithFocus.focus();
 		}
 	}
+
 	componentDidMount() {
 		function setBodySize() {
 			document.body.style.height = `${window.innerHeight}px`;
 		}
+
 		window.addEventListener('resize', () => {
 			setBodySize();
 		});
@@ -627,7 +640,7 @@ BookLibService.Borrow(id) {
 					event.preventDefault();
 					await this.setState({
 						isKeyboardShortcutsModalOpen:
-							!this.state.isKeyboardShortcutsModalOpen,
+							!this.state.isKeyboardShortcutsModalOpen
 					});
 					trackEvent('ui', 'showKeyboardShortcutsShortcut');
 				} else if (event.keyCode === 27) {
@@ -660,22 +673,24 @@ BookLibService.Borrow(id) {
 		}
 
 		await this.setState({
-			...this.modalDefaultStates,
+			...this.modalDefaultStates
 		});
 	}
+
 	async onExternalLibChange(newValues) {
 		log('onExternalLibChange');
 		this.state.currentItem.externalLibs = {
 			js: newValues.js,
-			css: newValues.css,
+			css: newValues.css
 		};
 		await this.updateExternalLibCount();
 		await this.setState({
-			currentItem: { ...this.state.currentItem },
+			currentItem: { ...this.state.currentItem }
 		});
 		this.contentWrap.setPreviewContent(true);
 		alertsService.add('Libraries updated.');
 	}
+
 	async updateExternalLibCount() {
 		// Calculate no. of external libs
 		var noOfExternalLibs = 0;
@@ -690,9 +705,10 @@ BookLibService.Borrow(id) {
 		// 	.split('\n')
 		// 	.filter(lib => !!lib).length;
 		await this.setState({
-			externalLibCount: noOfExternalLibs,
+			externalLibCount: noOfExternalLibs
 		});
 	}
+
 	async toggleLayout(mode) {
 		/* eslint-disable no-param-reassign */
 		mode = window.innerWidth < 600 ? 2 : mode;
@@ -707,7 +723,7 @@ BookLibService.Borrow(id) {
 		// Remove all layout classes
 		[1, 2, 3, 4, 5].forEach((layoutNumber) => {
 			window[`layoutBtn${layoutNumber}`] &&
-				window[`layoutBtn${layoutNumber}`].classList.remove('selected');
+			window[`layoutBtn${layoutNumber}`].classList.remove('selected');
 			document.body.classList.remove(`layout-${layoutNumber}`);
 		});
 		$('#layoutBtn' + mode) && $('#layoutBtn' + mode).classList.add('selected');
@@ -735,7 +751,7 @@ BookLibService.Borrow(id) {
 			sizes = [
 				htmlCodeEl.style[dimensionProperty],
 				cssCodeEl.style[dimensionProperty],
-				jsCodeEl.style[dimensionProperty],
+				jsCodeEl.style[dimensionProperty]
 			];
 		} catch (e) {
 			sizes = [0, 30, 70];
@@ -755,7 +771,7 @@ BookLibService.Borrow(id) {
 		try {
 			sizes = [
 				+$('#js-code-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
-				+$('#js-demo-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
+				+$('#js-demo-side').style[dimensionProperty].match(/([\d.]+)%/)[1]
 			];
 		} catch (e) {
 			sizes = [50, 50];
@@ -766,10 +782,11 @@ BookLibService.Borrow(id) {
 			/* eslint-enable no-unsafe-finally */
 		}
 	}
+
 	saveSetting(setting, value) {
 		const d = deferred();
 		const obj = {
-			[setting]: value,
+			[setting]: value
 		};
 		db.local.set(obj, d.resolve);
 		return d.promise;
@@ -803,7 +820,7 @@ BookLibService.Borrow(id) {
 
 		try {
 			const result = await syncDiagram(this.state.currentItem);
-			if(result) {
+			if (result) {
 				this.state.currentItem.shareLink = getShareLink(result);
 			}
 		} catch (e) {
@@ -834,11 +851,11 @@ BookLibService.Borrow(id) {
 		this.state.currentItem.id =
 			this.state.currentItem.id || 'item-' + generateRandomId();
 		await this.setState({
-			isSaving: true,
+			isSaving: true
 		});
 		this.saveCode().then(async () => {
 			await this.setState({
-				isSaving: false,
+				isSaving: false
 			});
 			// TODO: May be setState with currentItem
 
@@ -856,16 +873,18 @@ BookLibService.Borrow(id) {
 			await itemService.setItemForUser(this.state.currentItem.id);
 		}
 	}
+
 	async onCodeModeChange(ofWhat, mode) {
 		const item = { ...this.state.currentItem };
 		item[`${ofWhat}Mode`] = mode;
 		await this.setState({ currentItem: item });
 	}
+
 	async onCodeChange(type, code, isUserChange) {
 		this.state.currentItem[type] = code;
 		if (isUserChange) {
 			await this.setState({
-				unsavedEditCount: this.state.unsavedEditCount + 1,
+				unsavedEditCount: this.state.unsavedEditCount + 1
 			});
 
 			if (
@@ -891,9 +910,10 @@ BookLibService.Borrow(id) {
 			}, 1000);
 		}
 	}
+
 	onCodeSettingsChange(type, settings) {
 		this.state.currentItem[`${type}Settings`] = {
-			acssConfig: settings,
+			acssConfig: settings
 		};
 	}
 
@@ -902,8 +922,8 @@ BookLibService.Borrow(id) {
 		this.setState({
 			currentItem: {
 				...this.state.currentItem,
-				title: e.target.value,
-			},
+				title: e.target.value
+			}
 		});
 		currentBrowserTab.setTitle(this.state.currentItem.title);
 		if (this.state.currentItem.id) {
@@ -918,18 +938,18 @@ BookLibService.Borrow(id) {
 	async updateSetting(e) {
 		// If this was triggered from user interaction, save the setting
 		if (e) {
-			var settingName = e.target.dataset.setting;
+			const { settingName, value } = e;
 			var obj = {};
 			var el = e.target;
-			log(settingName, el.type === 'checkbox' ? el.checked : el.value);
+			log(settingName, value);
 			const prefs = { ...this.state.prefs };
-			prefs[settingName] = el.type === 'checkbox' ? el.checked : el.value;
+			prefs[settingName] = value;
 			obj[settingName] = prefs[settingName];
 			await this.setState({ prefs });
 
 			// We always save locally so that it gets fetched
 			// faster on future loads.
-			db.sync.set(obj, function () {
+			db.sync.set(obj, function() {
 				alertsService.add('Setting saved');
 			});
 			if (window.user) {
@@ -938,7 +958,7 @@ BookLibService.Borrow(id) {
 						.collection('users')
 						.doc(window.user.uid)
 						.update({
-							[`settings.${settingName}`]: this.state.prefs[settingName],
+							[`settings.${settingName}`]: this.state.prefs[settingName]
 						})
 						.then((arg) => {
 							log(`Setting "${settingName}" for user`, arg);
@@ -977,16 +997,17 @@ BookLibService.Borrow(id) {
 		}
 	}
 
-	async loginBtnClickHandler() {
-		await this.setState({ isLoginModalOpen: true });
+	loginBtnClickHandler() {
+		this.setState({ isLoginModalOpen: true });
 	}
 
 	async proBtnClickHandler() {
 		trackEvent('ui', 'proBtnClick');
 		await this.setState({ isProFeatureListModalOpen: true });
 	}
-	async profileBtnClickHandler() {
-		await this.setState({ isProfileModalOpen: true });
+
+	profileBtnClickHandler() {
+		this.setState({ isProfileModalOpen: true });
 	}
 
 	async onUpdateImage(image) {
@@ -994,8 +1015,8 @@ BookLibService.Borrow(id) {
 		this.setState({
 			currentItem: {
 				...this.state.currentItem,
-				imageBase64,
-			},
+				imageBase64
+			}
 		});
 		trackEvent('ui', 'shareLink');
 	}
@@ -1021,12 +1042,14 @@ BookLibService.Borrow(id) {
 		}, 350);
 		await this.toggleSavedItemsPane();
 	}
+
 	async itemRemoveBtnClickHandler(item) {
 		await this.removeItem(item);
 	}
+
 	async itemForkBtnClickHandler(item) {
-		if(!this.checkItemsLimit()) {
-			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' })
+		if (!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' });
 			return;
 		}
 
@@ -1035,11 +1058,12 @@ BookLibService.Borrow(id) {
 			this.forkItem(item);
 		}, 350);
 	}
+
 	async newBtnClickHandler() {
 		trackEvent('ui', 'newBtnClick');
 
-		if(!this.checkItemsLimit()) {
-			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'New' })
+		if (!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'New' });
 			return;
 		}
 
@@ -1049,28 +1073,31 @@ BookLibService.Borrow(id) {
 			);
 			if (shouldDiscard) {
 				await this.setState({
-					isCreateNewModalOpen: true,
+					isCreateNewModalOpen: true
 				});
 			}
 		} else {
 			await this.setState({
-				isCreateNewModalOpen: true,
+				isCreateNewModalOpen: true
 			});
 		}
 	}
+
 	async openBtnClickHandler() {
-		if(!window.user) {
+		if (!window.user) {
 			this.loginBtnClickHandler();
 			return;
 		}
 		trackEvent('ui', 'openBtnClick');
 		await this.openSavedItemsPane();
 	}
+
 	detachedPreviewBtnHandler() {
 		trackEvent('ui', 'detachPreviewBtnClick');
 
 		this.contentWrap.detachPreview();
 	}
+
 	async notificationsBtnClickHandler() {
 		await this.setState({ isNotificationsModalOpen: true });
 
@@ -1082,10 +1109,11 @@ BookLibService.Borrow(id) {
 		trackEvent('ui', 'notificationButtonClick', version);
 		return false;
 	}
+
 	codepenBtnClickHandler(e) {
 		if (this.state.currentItem.cssMode === CssModes.ACSS) {
 			alert(
-				"Oops! CodePen doesn't supports Atomic CSS currently. \nHere is something you can still do -> https://medium.com/web-maker/sharing-your-atomic-css-work-on-codepen-a402001b26ab"
+				'Oops! CodePen doesn\'t supports Atomic CSS currently. \nHere is something you can still do -> https://medium.com/web-maker/sharing-your-atomic-css-work-on-codepen-a402001b26ab'
 			);
 			e.preventDefault();
 			return;
@@ -1104,7 +1132,7 @@ BookLibService.Borrow(id) {
 			css_external: this.state.currentItem.externalLibs.css
 				.split('\n')
 				.join(';'),
-			js_external: this.state.currentItem.externalLibs.js.split('\n').join(';'),
+			js_external: this.state.currentItem.externalLibs.js.split('\n').join(';')
 
 			/* eslint-enable camelcase */
 		};
@@ -1117,14 +1145,17 @@ BookLibService.Borrow(id) {
 		trackEvent('ui', 'openInCodepen');
 		e.preventDefault();
 	}
+
 	saveHtmlBtnClickHandler(e) {
 		saveAsHtml(this.state.currentItem);
 		trackEvent('ui', 'saveHtmlClick');
 		e.preventDefault();
 	}
+
 	runBtnClickHandler() {
 		trackEvent('ui', 'sponsorBtnClick');
 	}
+
 	exportItems() {
 		handleDownloadsPermission().then(() => {
 			this.fetchItems().then((items) => {
@@ -1136,11 +1167,11 @@ BookLibService.Borrow(id) {
 					d.getDate(),
 					d.getHours(),
 					d.getMinutes(),
-					d.getSeconds(),
+					d.getSeconds()
 				].join('-');
 				fileName += '.json';
 				var blob = new Blob([JSON.stringify(items, false, 2)], {
-					type: 'application/json;charset=UTF-8',
+					type: 'application/json;charset=UTF-8'
 				});
 
 				downloadFile(fileName, blob);
@@ -1149,9 +1180,10 @@ BookLibService.Borrow(id) {
 			});
 		});
 	}
+
 	exportBtnClickHandler(e) {
-		if(!this.checkItemsLimit()) {
-			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' })
+		if (!this.checkItemsLimit()) {
+			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'Fork' });
 			return;
 		}
 
@@ -1159,18 +1191,21 @@ BookLibService.Borrow(id) {
 		e.preventDefault();
 		trackEvent('ui', 'exportBtnClicked');
 	}
+
 	screenshotBtnClickHandler(e) {
 		this.contentWrap.getDemoFrame((frame) => {
 			takeScreenshot(frame.getBoundingClientRect());
 		});
 		e.preventDefault();
 	}
+
 	openSupportDeveloperModal() {
 		this.closeAllOverlays();
 		// this.setState({
 		// 	isSupportDeveloperModalOpen: true
 		// });
 	}
+
 	supportDeveloperBtnClickHandler(e) {
 		this.openSupportDeveloperModal(e);
 	}
@@ -1210,7 +1245,7 @@ BookLibService.Borrow(id) {
 		if (existingItemIds.length) {
 			var shouldReplace = confirm(
 				existingItemIds.length +
-					' creations already exist. Do you want to replace them?'
+				' creations already exist. Do you want to replace them?'
 			);
 			if (shouldReplace) {
 				log('shouldreplace', shouldReplace);
@@ -1248,6 +1283,7 @@ BookLibService.Borrow(id) {
 	editorFocusHandler(editor) {
 		this.editorWithFocus = editor;
 	}
+
 	async modalOverlayClickHandler() {
 		await this.closeAllOverlays();
 	}
@@ -1271,7 +1307,7 @@ BookLibService.Borrow(id) {
 			whitespace = /(\r?\n|\r|\s+)/g;
 
 		const ByteSize = {
-			count: function (text, options) {
+			count: function(text, options) {
 				// Set option defaults
 				options = options || {};
 				options.lineBreaks = options.lineBreaks || 1;
@@ -1295,7 +1331,7 @@ BookLibService.Borrow(id) {
 				}
 			},
 
-			format: function (count, plainText) {
+			format: function(count, plainText) {
 				var level = 0;
 
 				while (count > 1024) {
@@ -1314,11 +1350,12 @@ BookLibService.Borrow(id) {
 					level +
 					'B'
 				);
-			},
+			}
 		};
 
 		return ByteSize.count(text);
 	}
+
 	getExternalLibCode() {
 		const item = this.state.currentItem;
 		var libs = (item.externalLibs && item.externalLibs.js) || '';
@@ -1330,11 +1367,12 @@ BookLibService.Borrow(id) {
 				.then((data) => {
 					return {
 						code: data,
-						fileName: getFilenameFromUrl(lib),
+						fileName: getFilenameFromUrl(lib)
 					};
 				})
 		);
 	}
+
 	calculateCodeSize() {
 		const item = this.state.currentItem;
 		var htmlPromise = computeHtml(item.html, item.htmlMode);
@@ -1344,7 +1382,7 @@ BookLibService.Borrow(id) {
 			htmlPromise,
 			cssPromise,
 			jsPromise,
-			...this.getExternalLibCode(),
+			...this.getExternalLibCode()
 		]).then((result) => {
 			var html = result[0].code || '',
 				css = result[1].code || '',
@@ -1375,8 +1413,8 @@ BookLibService.Borrow(id) {
 					type: 'base64',
 					compression: 'DEFLATE',
 					compressionOptions: {
-						level: 9,
-					},
+						level: 9
+					}
 				});
 			}
 
@@ -1384,7 +1422,7 @@ BookLibService.Borrow(id) {
 				const zipContent = data;
 				const size = this.calculateTextSize(atob(data));
 				await this.setState({
-					codeSize: size,
+					codeSize: size
 				});
 				this.currentItemZipBase64Data = data;
 			});
@@ -1393,9 +1431,16 @@ BookLibService.Borrow(id) {
 
 	async js13KHelpBtnClickHandler() {
 		await this.setState({
-			isJs13KModalOpen: true,
+			isJs13KModalOpen: true
 		});
 	}
+
+	openCheatSheet() {
+		this.setState({
+			openCheatSheet: true
+		});
+	}
+
 	js13KDownloadBtnClickHandler() {
 		const a = document.createElement('a');
 		a.setAttribute('download', this.state.currentItem.title);
@@ -1404,6 +1449,7 @@ BookLibService.Borrow(id) {
 		a.click();
 		a.remove();
 	}
+
 	async blankTemplateSelectHandler() {
 		this.createNewItem();
 		await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
@@ -1428,6 +1474,10 @@ BookLibService.Borrow(id) {
 				<div class={clsx('main-container', this.isEmbed && 'embed-app')}>
 					{window.zenumlDesktop || this.isEmbed ? null : (
 						<MainHeader
+							openCheatSheet={this.openCheatSheet.bind(this)}
+							onUpdateImage={this.onUpdateImage.bind(this)}
+							currentItem={this.state.currentItem}
+							onLogin={this.loginBtnClickHandler.bind(this)}
 							externalLibCount={this.state.externalLibCount}
 							openBtnHandler={this.openBtnClickHandler.bind(this)}
 							newBtnHandler={this.newBtnClickHandler.bind(this)}
@@ -1439,9 +1489,13 @@ BookLibService.Borrow(id) {
 							runBtnClickHandler={this.runBtnClickHandler.bind(this)}
 							isFetchingItems={this.state.isFetchingItems}
 							isSaving={this.state.isSaving}
+							logoutBtnHandler={this.logout.bind(this)}
 							title={this.state.currentItem.title}
 							titleInputBlurHandler={this.titleInputBlurHandler.bind(this)}
 							user={this.state.user}
+							settingsBtnClickHandler={async () =>
+								await this.setState({ isSettingsModalOpen: true })
+							}
 							unsavedEditCount={this.state.unsavedEditCount}
 						/>
 					)}
@@ -1450,34 +1504,33 @@ BookLibService.Borrow(id) {
 							title={this.searchParams.get('title')}
 							link={
 								`/?code=${JSON.stringify(
-										currentItem
+									currentItem
 								)}&title=${this.searchParams.get('title')}` || ''
 							}
 						/>
 					)}
 					<ContentWrap
 						currentLayoutMode={this.state.currentLayoutMode}
-						currentItem={this.state.currentItem}
-						onLogin={this.loginBtnClickHandler.bind(this)}
 						onCodeChange={this.onCodeChange.bind(this)}
-						onUpdateImage={this.onUpdateImage.bind(this)}
+						currentItem={this.state.currentItem}
 						onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
 						onCodeModeChange={this.onCodeModeChange.bind(this)}
+						onLogin={this.loginBtnClickHandler.bind(this)}
 						onRef={(comp) => (this.contentWrap = comp)}
 						prefs={this.state.prefs}
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
 						onProFeature={this.proBtnClickHandler.bind(this)}
+						keyboardShortcutsBtnClickHandler={async () =>
+							await this.setState({ isKeyboardShortcutsModalOpen: true })
+						}
+						layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
 					/>
 					{this.isEmbed ? null : (
 						<Footer
 							prefs={this.state.prefs}
-							layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
 							helpBtnClickHandler={async () =>
 								await this.setState({ isHelpModalOpen: true })
-							}
-							settingsBtnClickHandler={async () =>
-								await this.setState({ isSettingsModalOpen: true })
 							}
 							notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
 								this
@@ -1490,9 +1543,6 @@ BookLibService.Borrow(id) {
 							)}
 							codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
 							saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
-							keyboardShortcutsBtnClickHandler={async () =>
-								await this.setState({ isKeyboardShortcutsModalOpen: true })
-							}
 							screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
 								this
 							)}
@@ -1520,15 +1570,15 @@ BookLibService.Borrow(id) {
 				<Alerts />
 
 				<form
-					style="display:none;"
-					action="https://codepen.io/pen/define"
-					method="POST"
-					target="_blank"
-					id="js-codepen-form"
+					style='display:none;'
+					action='https://codepen.io/pen/define'
+					method='POST'
+					target='_blank'
+					id='js-codepen-form'
 				>
 					<input
-						type="hidden"
-						name="data"
+						type='hidden'
+						name='data'
 						value='{"title": "New Pen!", "html": "<div>Hello, World!</div>"}'
 					/>
 				</form>
@@ -1563,38 +1613,19 @@ BookLibService.Borrow(id) {
 						onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					/>
 				</Modal>
-				<Modal
-					extraClasses="modal--settings"
-					show={this.state.isSettingsModalOpen}
-					closeHandler={async () =>
+				<SettingsModal
+					open={this.state.isSettingsModalOpen}
+					prefs={this.state.prefs}
+					onChange={this.updateSetting.bind(this)}
+					onClose={async () =>
 						await this.setState({ isSettingsModalOpen: false })
 					}
-				>
-					<Settings
-						prefs={this.state.prefs}
-						onChange={this.updateSetting.bind(this)}
-					/>
-				</Modal>
-				<Modal
-					extraClasses="login-modal"
-					show={this.state.isLoginModalOpen}
-					closeHandler={async () =>
-						await this.setState({ isLoginModalOpen: false })
-					}
-				>
-					<Login />
-				</Modal>
-				<Modal
-					show={this.state.isProfileModalOpen}
-					closeHandler={async () =>
-						await this.setState({ isProfileModalOpen: false })
-					}
-				>
-					<Profile
-						user={this.state.user}
-						logoutBtnHandler={this.logout.bind(this)}
-					/>
-				</Modal>
+				/>
+				<LoginModal
+					open={this.state.isLoginModalOpen}
+					onClose={async () => await this.setState({ isLoginModalOpen: false })}
+				/>
+
 				<HelpModal
 					show={this.state.isHelpModalOpen}
 					closeHandler={async () =>
@@ -1603,9 +1634,10 @@ BookLibService.Borrow(id) {
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
 					version={version}
 				/>
+
 				<ProFeatureListModal
-					show={this.state.isProFeatureListModalOpen}
-					closeHandler={async () =>
+					open={this.state.isProFeatureListModalOpen}
+					onClose={async () =>
 						await this.setState({ isProFeatureListModalOpen: false })
 					}
 					onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
@@ -1619,12 +1651,12 @@ BookLibService.Borrow(id) {
 						await this.setState({ isSupportDeveloperModalOpen: false })
 					}
 				/>
+
 				<KeyboardShortcutsModal
-					show={this.state.isKeyboardShortcutsModalOpen}
-					closeHandler={async () =>
-						await this.setState({ isKeyboardShortcutsModalOpen: false })
-					}
+					open={this.state.isKeyboardShortcutsModalOpen}
+					onClose={async () => await this.setState({ isKeyboardShortcutsModalOpen: false })}
 				/>
+
 				<AskToImportModal
 					show={this.state.isAskToImportModalOpen}
 					closeHandler={async () =>
@@ -1645,30 +1677,29 @@ BookLibService.Borrow(id) {
 				/>
 
 				<CreateNewModal
-					show={this.state.isCreateNewModalOpen}
-					closeHandler={async () =>
+					open={this.state.isCreateNewModalOpen}
+					onClose={async () =>
 						await this.setState({ isCreateNewModalOpen: false })
 					}
 					onBlankTemplateSelect={this.blankTemplateSelectHandler.bind(this)}
 					onTemplateSelect={this.templateSelectHandler.bind(this)}
 				/>
-
+				<CheatSheetModal open={this.state.openCheatSheet} onClose={() => this.setState({ openCheatSheet: false })} />
 				<div
-					class="modal-overlay"
+					class='modal-overlay bg-black/50 backdrop-blur-sm'
 					onClick={this.modalOverlayClickHandler.bind(this)}
 				/>
-
 				<Icons />
 				<form
-					style="display:none;"
-					action="https://codepen.io/pen/define"
-					method="POST"
-					target="_blank"
-					id="codepenForm"
+					style='display:none;'
+					action='https://codepen.io/pen/define'
+					method='POST'
+					target='_blank'
+					id='codepenForm'
 				>
 					<input
-						type="hidden"
-						name="data"
+						type='hidden'
+						name='data'
 						value='{"title": "New Pen!", "html": "<div>Hello, World!</div>"}'
 					/>
 				</form>
