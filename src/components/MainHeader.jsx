@@ -1,52 +1,139 @@
-import { h } from 'preact';
-import { useState } from 'preact/hooks'
+import React, { h } from 'preact';
+import { useCallback, useState } from 'preact/hooks';
 import { Button } from './common';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
 import featureToggle from '../services/feature_toggle';
-
-const DEFAULT_PROFILE_IMG =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='#ccc' d='M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z' /%3E%3C/svg%3E";
+import { Popover } from './PopOver';
+import { SharePanel } from './SharePanel';
+import { trackEvent } from '../analytics';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export function MainHeader(props) {
 	const [isEditing, setEditing] = useState(false);
+	const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
+	const [imageBase64] = useState();
 
 	const entryEditing = () => {
 		setEditing(true);
-	}
+	};
 
 	const exitEditing = () => {
 		setEditing(false);
-	}
+	};
+
+	const getPngBlob = async () => {
+		const mountingPoint = document.getElementById('demo-frame').contentWindow.document.getElementById('diagram');
+		// eslint-disable-next-line
+		return await mountingPoint
+			.getElementsByClassName('frame')[0]
+			.parentElement.__vue__.toBlob();
+	};
+
+	const shareClickHandler = async () => {
+		const image = await getPngBlob();
+		console.log(image)
+		await props.onUpdateImage(image);
+		setIsSharePanelVisible(true);
+		trackEvent('ui', 'shareLink');
+	};
+
+	const handleProfileClick = useCallback(() => {
+		if (props.user) {
+			props.profileBtnHandler();
+		} else {
+			props.loginBtnHandler();
+		}
+	}, [props.user]);
+
 
 	const onBlur = (e) => {
 		exitEditing();
 		props.titleInputBlurHandler(e);
-	}
+	};
 
 	return (
-		<div className="main-header">
-			<div className="header-logo">
-				<img src="assets/zenuml-icon.png" alt="zenuml logo" />
-			</div>
-			{
-				isEditing ? (<input
-				autoFocus
-				type="text"
-				id="titleInput"
-				title="Click to edit"
-				className="item-title-input"
-				value={props.title}
-				onBlur={onBlur}
-			/>) :  (<div className="title" onClick={() => entryEditing()}>
-								<span>{props.title || 'Untitled'} </span>
-								<span class="material-symbols-outlined">border_color</span>
-						</div>)
-			}
-			<div className="main-header__btn-wrap  flex  flex-v-center">
+		<div className='main-header py-4 px-8 flex justify-between border-b border-black-700 bg-black-500'>
+			<div className='flex items-center gap-4'>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger asChild>
+						<div
+							className='flex items-center p-1 hover:bg-[#454856] data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200'>
+							<svg className='h-9 w-9'>
+								<use xlinkHref='#outline-zenuml' />
+							</svg>
+							<span className='material-symbols-outlined'>arrow_drop_down</span>
+						</div>
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Portal>
+						<DropdownMenu.Content
+							className='w-[180px] bg-[#2c2d31] py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
+							sideOffset={5}
+							align='start'
+						>
+							<DropdownMenu.Item
+								onClick={() => props.openCheatSheet()}
+								className='cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+								<span className='material-symbols-outlined text-lg font-bold'>article</span>
+								Cheatsheet
+							</DropdownMenu.Item>
+							<DropdownMenu.Item
+								className='cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 relative select-none outline-none duration-200'>
+								<a className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank' href='https://zenuml.com/docs/category/language-guide'>
+									<span className='material-symbols-outlined text-lg font-bold'>open_in_new</span>
+									Language guide
+								</a>
+							</DropdownMenu.Item>
+						</DropdownMenu.Content>
+					</DropdownMenu.Portal>
+				</DropdownMenu.Root>
+
 				<button
-					id="runBtn"
-					className="hide btn--dark flex flex-v-center hint--rounded hint--bottom-left"
-					aria-label="Support ZenUML as an Open source project on Github"
+					className='px-4 py-1.5 bg-black-600 font-semibold text-gray-200 flex items-center gap-2 rounded-lg'
+					aria-label='Start a new creation'
+					onClick={props.newBtnHandler}
+				>
+					<span className='material-symbols-outlined font-bold text-lg'>add</span>
+					<span>New</span>
+				</button>
+				<button
+					id='openItemsBtn'
+					className={`px-4 py-1.5 bg-black-600 font-semibold text-gray-200 flex items-center gap-2 rounded-lg ${
+						props.isFetchingItems ? 'is-loading' : ''
+					}`}
+					aria-label='Open a saved creation (Ctrl/⌘ + O)'
+					onClick={props.openBtnHandler}
+				>
+					<span className='material-symbols-outlined font-bold text-lg'>photo_library</span>
+					<span>My library</span>
+				</button>
+
+			</div>
+			<div>
+				{
+					isEditing ? (
+							<input
+								autoFocus
+								type='text'
+								id='titleInput'
+								title='Click to edit'
+								className='font-semibold appearance-none bg-transparent px-3 py-1.5 outline-primary border-none'
+								value={props.title}
+								onBlur={onBlur}
+							/>
+						) :
+						(
+							<div className='flex items-center gap-2 font-semibold text-gray-200' onClick={() => entryEditing()}>
+								<span>{props.title || 'Untitled'} </span>
+								<span class='material-symbols-outlined text-base'>border_color</span>
+							</div>
+						)
+				}
+			</div>
+			<div className='flex gap-4'>
+				<button
+					id='runBtn'
+					className='hide btn--dark flex flex-v-center hint--rounded hint--bottom-left'
+					aria-label='Support ZenUML as an Open source project on Github'
 					onClick={props.runBtnClickHandler}
 				>
 					{/*<iframe src="https://github.com/sponsors/ZenUml/button" title="Sponsor ZenUml" height="35" width="107" style="border: 0;" />*/}
@@ -54,77 +141,123 @@ export function MainHeader(props) {
 
 				<Button
 					onClick={props.addLibraryBtnHandler}
-					data-event-category="ui"
-					data-event-action="addLibraryButtonClick"
-					className="btn--dark flex-v-center hint--rounded hint--bottom-left"
-					style="display: none"
-					aria-label="Add a JS/CSS library"
+					data-event-category='ui'
+					data-event-action='addLibraryButtonClick'
+					className='btn--dark flex-v-center hint--rounded hint--bottom-left'
+					style='display: none'
+					aria-label='Add a JS/CSS library'
 				>
 					Add library{' '}
 					<span
-						id="js-external-lib-count"
+						id='js-external-lib-count'
 						style={`display:${props.externalLibCount ? 'inline' : 'none'}`}
-						class="count-label"
+						class='count-label'
 					>
 						{props.externalLibCount}
 					</span>
 				</Button>
-				<button
-					className="btn--dark flex  flex-v-center hint--rounded hint--bottom-left button icon-button button-editor-solid"
-					aria-label="Start a new creation"
-					onClick={props.newBtnHandler}
-				>
-					<span class="material-symbols-outlined">add</span>
-					<span>New</span>
-				</button>
-				<button
-					id="saveBtn"
-					className={`btn--dark flex  flex-v-center hint--rounded hint--bottom-left button icon-button button-editor-solid ${
-						props.isSaving ? 'is-loading' : ''
-					} ${props.unsavedEditCount ? 'is-marked' : 0}`}
-					aria-label="Save current creation (Ctrl/⌘ + S)"
-					onClick={props.saveBtnHandler}
-				>
-					<span class="material-symbols-outlined">save</span>
-					<span>Save</span>
-				</button>
-				<button
-					id="openItemsBtn"
-					className={`btn--dark flex flex-v-center hint--rounded hint--bottom-left button icon-button button-editor-solid ${
-						props.isFetchingItems ? 'is-loading' : ''
-					}`}
-					aria-label="Open a saved creation (Ctrl/⌘ + O)"
-					onClick={props.openBtnHandler}
-				>
-					<span class="material-symbols-outlined">open_in_new</span>					
-					<span>Open</span>
-				</button>
-				<Button
-					onClick={props.loginBtnHandler}
-					data-event-category="ui"
-					data-event-action="loginButtonClick"
-					className="hide-on-login btn--dark flex  flex-v-center  hint--rounded  hint--bottom-left button icon-button button-editor-solid"
-					aria-label="Signin"
-				>
-					<span class="material-symbols-outlined">login</span>Sign in
-				</Button>
-				<Button
-					onClick={props.profileBtnHandler}
-					data-event-category="ui"
-					data-event-action="headerAvatarClick"
-					aria-label="See profile or Logout"
-					className="hide-on-logout btn--dark hint--rounded hint--bottom-left button button-editor-solid"
-				>
-					<img
-						id="headerAvatarImg"
-						width="20"
-						src={props.user ? props.user.photoURL || DEFAULT_PROFILE_IMG : ''}
-						className="main-header__avatar-img"
+
+				{/*<button*/}
+				{/*	id='saveBtn'*/}
+				{/*	className={`btn--dark flex  flex-v-center hint--rounded hint--bottom-left icon-button button-editor-solid ${*/}
+				{/*		props.isSaving ? 'is-loading' : ''*/}
+				{/*	} ${props.unsavedEditCount ? 'is-marked' : 0}`}*/}
+				{/*	aria-label='Save current creation (Ctrl/⌘ + S)'*/}
+				{/*	onClick={props.saveBtnHandler}*/}
+				{/*>*/}
+				{/*	<span class='material-symbols-outlined'>save</span>*/}
+				{/*	<span>Save</span>*/}
+				{/*</button>*/}
+
+				{!window.user ? (
+					<button
+						className='h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold'
+						aria-label='Share diagram link'
+						onClick={props.onLogin.bind(this)}
+					>
+						<span>Share Link</span>
+					</button>
+				) : (
+					<Popover
+						closeOnBlur={true}
+						hasArrow={true}
+						placement={'bottom'}
+						isVisible={isSharePanelVisible}
+						onVisibilityChange={setIsSharePanelVisible}
+						trigger={
+							<button
+								className='h-10 px-4 bg-primary rounded-lg text-white'
+								aria-label='Share diagram link'
+								onClick={shareClickHandler}
+							>
+								<span>Share Link</span>
+							</button>
+						}
+						content={
+							<SharePanel
+								author={
+									window.user ? window.user.displayName : 'author'
+								}
+								currentItem={props.currentItem}
+								imageBase64={imageBase64}
+							/>
+						}
 					/>
-				</Button>
-				{ featureToggle.isPaymentEnabled ? (
+				)}
+				{featureToggle.isPaymentEnabled ? (
 					<ProductVersionLabel user={props.user} clickHandler={props.proBtnHandler} />
-					) : null }
+				) : null}
+
+				{
+					props.user ? (
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger asChild>
+								<button className='border-2 border-gray-200 w-10 h-10 rounded-full overflow-hidden'>
+									<img
+										id='headerAvatarImg'
+										className='h-full w-full appearance-none'
+										src={props.user.photoURL}
+										className=''
+									/>
+								</button>
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Portal>
+								<DropdownMenu.Content
+									className='min-w-[150px] bg-[#2c2d31] py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
+									sideOffset={5}
+									align='end'
+								>
+									<div className='px-6 py-3'>
+										<p className='font-semibold text-base text-primary-100'>{props.user.displayName}</p>
+										<p className='text-sm text-gray-600'>{props.user.email}</p>
+									</div>
+									<DropdownMenu.Item
+										onClick={props.settingsBtnClickHandler}
+										className='text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+										<span class='material-symbols-outlined text-lg font-light text-gray-500'>settings</span>
+										Settings
+									</DropdownMenu.Item>
+									<DropdownMenu.Item
+										onClick={props.logoutBtnHandler}
+										className='text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+										<span className='material-symbols-outlined text-lg font-bold text-gray-500'>logout</span>
+										Log Out
+									</DropdownMenu.Item>
+								</DropdownMenu.Content>
+							</DropdownMenu.Portal>
+						</DropdownMenu.Root>
+					) : (
+						<Button
+							onClick={handleProfileClick}
+							data-event-category='ui'
+							data-event-action='headerAvatarClick'
+							aria-label='See profile or Logout'
+							className='border-2 border-gray-200 w-10 h-10 rounded-full overflow-hidden'
+						>
+							<span className='material-symbols-outlined text-xl'>person</span>
+						</Button>
+					)
+				}
 			</div>
 		</div>
 	);
