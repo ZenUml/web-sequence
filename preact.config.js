@@ -1,8 +1,9 @@
 const webpack = require('webpack');
-const path = require('path')
 const {GitRevisionPlugin} = require('git-revision-webpack-plugin')
-const fsUtil = require('./fs-util');
-
+import tailwindcss from 'tailwindcss';
+import postcssCustomMedia from 'postcss-custom-media';
+import optionalChaining from '@babel/plugin-proposal-optional-chaining'
+import nullishOperator from '@babel/plugin-proposal-nullish-coalescing-operator'
 /**
  * Function that mutates original webpack config.
  * Supports asynchronous changes when promise is returned.
@@ -33,6 +34,20 @@ export default function(config, env, helpers) {
 		// 	})
 		// );
 
+	}
+	const babelLoader = helpers.getLoadersByName(config, 'babel-loader')
+	for (const result of babelLoader) {
+		console.log(result.loader.options)
+		result.loader.options.plugins.push(optionalChaining)
+		result.loader.options.plugins.push(nullishOperator)
+	}
+	const results = helpers.getLoadersByName(config, 'postcss-loader');
+	for (const result of results) {
+		result.loader.options.postcssOptions.plugins = [
+			postcssCustomMedia,
+			tailwindcss('./tailwind.config.js'),
+			...result.loader.options.postcssOptions.plugins
+		];
 	}
 
 	const gitRevisionPlugin = new GitRevisionPlugin({commithashCommand: 'rev-parse --short HEAD'});
