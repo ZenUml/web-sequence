@@ -12,7 +12,7 @@ const UpgradeLink = (props) => {
 			successCallback: props.postActionCallback
 		});
 	};
-	return <a id="UpgradeLink" href='#' onClick={checkout}>Upgrade</a>;
+	return <a className='block rounded-lg w-full py-2 px-3 bg-primary text-sm text-gray-100 hover:no-underline' id="UpgradeLink" href='#' onClick={checkout}>Upgrade now</a>;
 };
 
 export { UpgradeLink };
