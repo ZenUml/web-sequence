@@ -60,13 +60,13 @@ export default class Modal extends Component {
 					ref={el => (this.overlayEl = el)}
 					onClick={this.onOverlayClick.bind(this)}
 				>
-					<div class="modal__content">
+					<div class="modal__content bg-black-400 backdrop-blur rounded-lg">
 						<button
 							type="button"
 							onClick={this.props.closeHandler}
 							aria-label="Close modal"
 							title="Close"
-							className="js-modal__close-btn modal__close-btn"
+							className="js-modal__close-btn modal__close-btn "
 						>
 							<span class="material-symbols-outlined">close</span>
 						</button>
