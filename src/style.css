@@ -1,14 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 
 :root {
 	--color-text: #d4cde9;
 	--color-bg: #252637;
 	--color-popup: #3a2b63;
-	--code-font-size: 16px;
+	--code-font-size: 15px;
 	--color-button: #d3a447;
 	--color-focus-outline: #d3a447;
 	--color-form-control-bg: #2c214b;
-
 	--footer-height: 37px;
 	--console-height: 30px;
 }
@@ -23,9 +22,7 @@ body {
 	font-size: 87.5%;
 	/* speocifically for mobile when keyboard is open */
 	position: relative;
-	font-family: 'Ubuntu', sans-serif;
-	/* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
-		sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol'; */
+	font-family: Inter
 }
 
 h1 {
@@ -287,13 +284,6 @@ a > svg {
 .btn:hover {
 	text-decoration: none;
 	box-shadow: 0 5px 5px 0 rgba(0, 0, 0, 0.25);
-}
-
-*:focus {
-	outline-width: 4px;
-	outline-color: var(--color-button);
-	outline-style: solid;
-	outline-offset: 1px;
 }
 
 .btn-icon > svg {
@@ -582,7 +572,7 @@ body:not(.light-version).overlay-visible .main-container {
 
 .cm-s-monokai.CodeMirror,
 .cm-s-monokai .CodeMirror-gutters {
-	background: var(--color-bg);
+	background: var(red);
 }
 
 .cm-s-monokai .CodeMirror-guttermarker-subtle {
@@ -624,8 +614,6 @@ li.CodeMirror-hint-active {
 	height: calc(100%);
 	/*height: calc(100% - 29px); height reserved for console*/
 	/*  minus minimized console height */
-	position: absolute;
-	z-index: 1;
 	background: white;
 }
 
@@ -636,7 +624,6 @@ body > #demo-frame {
 	/* Because console is no more here */
 }
 
-.main-header,
 .embed-header,
 .footer {
 	padding: 0.5rem 1rem;
@@ -654,6 +641,8 @@ body > #demo-frame {
 }
 
 .main-header {
+	background-color: rgb(18, 19, 27);
+	color: rgba(255, 255, 255, 0.45);
 	display: flex;
 	flex-wrap: nowrap;
 	align-items: center;
@@ -939,7 +928,7 @@ body > #demo-frame {
 	position: relative;
 	border-radius: 5px;
 	/*opacity: 0;*/ /* TODO: Add this back. This has impact when we click the signin/up button */
-	padding: 3em;
+	padding: 1.5em;
 	font-size: 1.1em;
 	line-height: 1.4;
 	max-width: 85vw;
@@ -1745,12 +1734,12 @@ while the theme CSS file is loading */
 }
 
 .cm-s-monokai.CodeMirror {
-	background: #272822;
+	background: #202020;
 	color: #f8f8f2;
 }
 
 .cm-s-monokai .CodeMirror-gutters {
-	background: #272822;
+	background: #202020;
 	border-right: 0px;
 }
 
@@ -1880,7 +1869,7 @@ while the theme CSS file is loading */
 	font-size: 30px;
 	font-weight: 100;
 	color: #fff;
-	background: #30dbb5;
+	background: #6786f7;
 }
 
 .feature-list .header h1,
@@ -2012,7 +2001,6 @@ ol.editor-nav li {
 	position: absolute;
 	background: #fff;
 	border: 1px solid #ccc;
-	border-radius: 4px;
 	z-index: 3;
 }
 
@@ -2072,7 +2060,7 @@ ol.editor-nav li {
 .share-panel {
 	position: relative;
 	color: #000;
-	width: 400px;
+	width: 460px;
 	padding: 20px;
 	display: flex;
 	flex-direction: column;
