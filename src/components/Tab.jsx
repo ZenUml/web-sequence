@@ -23,10 +23,10 @@ class Tab extends Component {
 			},
 		} = this;
 
-		let className = 'tab-list-item';
-		
+		let className = 'h-12 flex items-center px-10 tab-list-item bg-black-800 font-semibold';
+
 		if (activeTab === label) {
-			className += ' tab-list-active';
+			className += ' border-b border-primary bg-black-500 text-primary-400';
 		}
 		let loc;
 		if (lineOfCode > 0) {
@@ -37,7 +37,7 @@ class Tab extends Component {
 			<li
 				className={className}
 				onClick={onClick}
-			>{label} {loc}</li>
+			>{label}</li>
 		);
 	}
 }
