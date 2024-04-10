@@ -11,36 +11,43 @@ export default class SavedItemPane extends Component {
 		super(props);
 		this.items = [];
 		this.state = {
-			searchText: null,
+			searchText: null
 		};
 	}
+
 	componentWillUpdate(nextProps) {
 		if (this.props.items !== nextProps.items) {
 			this.items = Object.values(nextProps.items);
-			this.items.sort(function (a, b) {
+			this.items.sort(function(a, b) {
 				return b.updatedOn - a.updatedOn;
 			});
 		}
 	}
+
 	componentDidUpdate(prevProps) {
 		if (this.props.isOpen && !prevProps.isOpen) {
 			window.searchInput.value = '';
 		}
 	}
+
 	onCloseIntent() {
 		this.props.closeHandler();
 	}
+
 	itemClickHandler(item) {
 		this.props.itemClickHandler(item);
 	}
+
 	itemRemoveBtnClickHandler(item, e) {
 		e.stopPropagation();
 		this.props.itemRemoveBtnClickHandler(item);
 	}
+
 	itemForkBtnClickHandler(item, e) {
 		e.stopPropagation();
 		this.props.itemForkBtnClickHandler(item);
 	}
+
 	keyDownHandler(event) {
 		if (!this.props.isOpen) {
 			return;
@@ -122,7 +129,7 @@ export default class SavedItemPane extends Component {
 		console.log('search input handler');
 		const text = e.target.value;
 		await this.setState({
-			searchText: text,
+			searchText: text
 		});
 		trackEvent('ui', 'searchInputType');
 	}
@@ -138,48 +145,50 @@ export default class SavedItemPane extends Component {
 	render() {
 		return (
 			<div
-				id="js-saved-items-pane"
-				class={`saved-items-pane ${this.props.isOpen ? 'is-open' : ''}`}
+				id='js-saved-items-pane'
+				class={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-500/90 backdrop-blur duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
 				onKeyDown={this.keyDownHandler.bind(this)}
 			>
 				<button
 					onClick={this.onCloseIntent.bind(this)}
-					class="btn icon-button modal__close-btn"
-					id="js-saved-items-pane-close-btn"
+					class='btn icon-button modal__close-btn'
+					id='js-saved-items-pane-close-btn'
 				>
-					<span class="material-symbols-outlined">close</span>
+					<span class='material-symbols-outlined'>close</span>
 				</button>
-				<div class="flex flex-v-center header-container">
-					<h3>My Library ({this.items.length})</h3>
-					<div className="my-library-buttons">
+				<div class='flex items-center justify-between my-10 px-5'>
+					<h3 className='text-lg text-gray-200'>My Library <span className='text-sm'>({this.items.length})</span></h3>
+					<div className='my-library-buttons'>
 						<button
 							onClick={this.props.exportBtnClickHandler}
-							class="btn--dark hint--bottom-left hint--rounded hint--medium icon-button"
-							aria-label="Export all your creations into a single importable file."
+							class='text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200'
+							aria-label='Export all your creations into a single importable file.'
 						>
-							<span class="material-symbols-outlined">file_download</span>
+							<span class='material-symbols-outlined text-lg font-bold'>file_download</span>
 							<span>Export</span>
 						</button>
 						<button
 							onClick={this.importBtnClickHandler.bind(this)}
-							class="btn--dark hint--bottom-left hint--rounded hint--medium icon-button"
+							class='text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200'
 							aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
 						>
-							<span class="material-symbols-outlined">file_upload</span>
+							<span class='material-symbols-outlined text-lg font-bold'>file_upload</span>
 							<span>Import</span>
 						</button>
 					</div>
 				</div>
-				<input
-					id="searchInput"
-					class="search-input"
-					onInput={this.searchInputHandler.bind(this)}
-					placeholder="Search your creations here..."
-				/>
+				<div className='px-5'>
+					<input
+						id='searchInput'
+						className='appearance-none px-3 py-2 w-full rounded-lg'
+						onInput={this.searchInputHandler.bind(this)}
+						placeholder='Search your creations here...'
+					/>
+				</div>
 
-				<div id="js-saved-items-wrap" class="saved-items-pane__container">
+				<div id='js-saved-items-wrap' class='px-5 overflow-y-auto'>
 					{!this.filteredItems().length && this.items.length ? (
-						<div class="mt-1">No match found.</div>
+						<div class='mt-1'>No match found.</div>
 					) : null}
 					{this.filteredItems().map((item) => (
 						<ItemTile
@@ -190,7 +199,7 @@ export default class SavedItemPane extends Component {
 						/>
 					))}
 					{!this.items.length ? (
-						<h2 class="opacity--30">Nothing saved here.</h2>
+						<h2 class='opacity--30'>Nothing saved here.</h2>
 					) : null}
 				</div>
 			</div>
