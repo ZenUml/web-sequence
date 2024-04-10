@@ -34,7 +34,7 @@ export default class ContentWrap extends Component {
 			isConsoleOpen: false,
 			isCssSettingsModalOpen: false,
 			imageBase64: null,
-			isSharePanelVisible: false,
+			isSharePanelVisible: false
 		};
 		this.updateTimer = null;
 		this.updateDelay = 500;
@@ -54,6 +54,7 @@ export default class ContentWrap extends Component {
 		// `clearConsole` is on window because it gets called from inside iframe also.
 		window.clearConsole = this.clearConsole.bind(this);
 	}
+
 	// shouldComponentUpdate(nextProps, nextState) - removed, but not quite sure.
 
 	componentDidUpdate() {
@@ -65,6 +66,7 @@ export default class ContentWrap extends Component {
 		// this.refreshEditor();
 		// }
 	}
+
 	componentDidMount() {
 		this.props.onRef(this);
 		window.addEventListener('message', this.handleMessageCodeUpdate.bind(this));
@@ -84,6 +86,7 @@ export default class ContentWrap extends Component {
 			this.cm.js.refresh();
 		}
 	}
+
 	onHtmlCodeChange(editor, change) {
 		this.cmCodes.html = editor.getValue();
 		this.props.onCodeChange(
@@ -93,6 +96,7 @@ export default class ContentWrap extends Component {
 		);
 		this.onCodeChange(editor, change);
 	}
+
 	onCssCodeChange(editor, change) {
 		this.cmCodes.css = editor.getValue();
 		this.props.onCodeChange(
@@ -102,6 +106,7 @@ export default class ContentWrap extends Component {
 		);
 		this.onCodeChange(editor, change);
 	}
+
 	async onJsCodeChange(editor, change) {
 		await this.setState({ lineOfCode: editor.doc.size });
 		this.cmCodes.js = editor.getValue();
@@ -116,6 +121,7 @@ export default class ContentWrap extends Component {
 			document.getElementById('demo-frame').contentWindow;
 		targetWindow.postMessage({ code: this.cmCodes.js }, '*');
 	}
+
 	onCursorMove(editor) {
 		const cursor = editor.getCursor();
 		const line = cursor.line;
@@ -130,6 +136,7 @@ export default class ContentWrap extends Component {
 			document.getElementById('demo-frame').contentWindow;
 		targetWindow.postMessage({ cursor: pos }, '*');
 	}
+
 	onCodeChange(editor, change) {
 		clearTimeout(this.updateTimer);
 
@@ -173,7 +180,7 @@ export default class ContentWrap extends Component {
 			trackEvent.hasTrackedCode = true;
 		}
 		const that = this;
-		that.frame.onload = function () {
+		that.frame.onload = function() {
 			that.frame.contentWindow.postMessage({ code: that.cmCodes.js }, '*');
 		};
 
@@ -195,8 +202,8 @@ export default class ContentWrap extends Component {
 
 	showErrors(lang, errors) {
 		var editor = this.cm[lang];
-		errors.forEach(function (e) {
-			editor.operation(function () {
+		errors.forEach(function(e) {
+			editor.operation(function() {
 				var n = document.createElement('div');
 				n.setAttribute('data-title', e.message);
 				n.classList.add('gutter-error-marker');
@@ -223,7 +230,7 @@ export default class ContentWrap extends Component {
 
 		var currentCode = {
 			css: this.cmCodes.css,
-			js: this.cmCodes.js,
+			js: this.cmCodes.js
 		};
 		log('🔎 setPreviewContent', isForced);
 		const targetFrame = this.detachedWindow
@@ -286,9 +293,11 @@ export default class ContentWrap extends Component {
 		this.codeInPreview.css = currentCode.css;
 		this.codeInPreview.js = currentCode.js;
 	}
+
 	isValidItem(item) {
 		return !!item.title;
 	}
+
 	refreshEditor() {
 		this.cmCodes.css = this.props.currentItem.css;
 		this.cmCodes.js = this.props.currentItem.js;
@@ -304,9 +313,10 @@ export default class ContentWrap extends Component {
 		Promise.all([
 			this.updateHtmlMode(this.props.currentItem.htmlMode),
 			this.updateCssMode(this.props.currentItem.cssMode),
-			this.updateJsMode(this.props.currentItem.jsMode),
+			this.updateJsMode(this.props.currentItem.jsMode)
 		]).then(() => this.setPreviewContent(true));
 	}
+
 	applyCodemirrorSettings(prefs) {
 		if (!this.cm) {
 			return;
@@ -360,7 +370,7 @@ export default class ContentWrap extends Component {
 			const { currentLayoutMode } = this.props;
 			const prop =
 				currentLayoutMode === 2 || currentLayoutMode === 5 ? 'width' : 'height';
-			[htmlCodeEl, cssCodeEl, jsCodeEl].forEach(function (el) {
+			[htmlCodeEl, cssCodeEl, jsCodeEl].forEach(function(el) {
 				const bounds = el.getBoundingClientRect();
 				const size = bounds[prop];
 				if (size < 100) {
@@ -390,7 +400,7 @@ export default class ContentWrap extends Component {
 			var arr = [
 				`${minCodeWrapSize}px`,
 				`${minCodeWrapSize}px`,
-				`${minCodeWrapSize}px`,
+				`${minCodeWrapSize}px`
 			];
 			arr[id] = `calc(100% - ${minCodeWrapSize * 2}px)`;
 
@@ -406,6 +416,7 @@ export default class ContentWrap extends Component {
 		this.toggleCodeWrapCollapse(codeWrapParent);
 		trackEvent('ui', 'paneCollapseBtnClick', codeWrapParent.dataset.type);
 	}
+
 	codeWrapHeaderDblClickHandler(e) {
 		if (!e.target.classList.contains('js-code-wrap__header')) {
 			return;
@@ -414,8 +425,9 @@ export default class ContentWrap extends Component {
 		this.toggleCodeWrapCollapse(codeWrapParent);
 		trackEvent('ui', 'paneHeaderDblClick', codeWrapParent.dataset.type);
 	}
+
 	async exportPngClickHandler(e) {
-		if(!window.user) {
+		if (!window.user) {
 			this.props.onLogin();
 			return;
 		}
@@ -434,7 +446,7 @@ export default class ContentWrap extends Component {
 	}
 
 	async copyImageClickHandler(e) {
-		if(!window.user) {
+		if (!window.user) {
 			this.props.onLogin();
 			return;
 		}
@@ -449,8 +461,8 @@ export default class ContentWrap extends Component {
 					'image/png': new Promise(async (resolve) => {
 						const png = await this.getPngBlob();
 						resolve(png);
-					}),
-				}),
+					})
+				})
 			])
 			.then(
 				() => alertsService.add('PNG file was copied'),
@@ -479,9 +491,10 @@ export default class ContentWrap extends Component {
 	async resetSplitting() {
 		await this.setState({
 			codeSplitSizes: this.getCodeSplitSizes(),
-			mainSplitSizes: this.getMainSplitSizesToApply(),
+			mainSplitSizes: this.getMainSplitSizesToApply()
 		});
 	}
+
 	updateSplits() {
 		this.props.onSplitUpdate();
 		// Not using setState to avoid re-render
@@ -501,7 +514,7 @@ export default class ContentWrap extends Component {
 					? [currentItem.mainSizes[1], currentItem.mainSizes[0]]
 					: currentItem.mainSizes;
 		} else {
-			mainSplitSizes = currentLayoutMode === 5 ? [75, 25] : [50, 50];
+			mainSplitSizes = currentLayoutMode === 5 ? [75, 25] : [30, 70];
 		}
 		return mainSplitSizes;
 	}
@@ -523,14 +536,17 @@ export default class ContentWrap extends Component {
 		}
 		this.updateSplits();
 	}
+
 	codeSplitDragStart() {
 		document.body.classList.add('is-dragging');
 	}
+
 	codeSplitDragEnd() {
 		this.updateCodeWrapCollapseStates();
 		document.body.classList.remove('is-dragging');
 		this.updateSplits();
 	}
+
 	/**
 	 * Loaded the code comiler based on the mode selected
 	 */
@@ -555,7 +571,7 @@ export default class ContentWrap extends Component {
 		} else if (mode === CssModes.LESS) {
 			loadJS(`${baseTranspilerPath}/less.min.js`).then(setLoadedFlag);
 		} else if (mode === CssModes.SCSS || mode === CssModes.SASS) {
-			loadJS(`${baseTranspilerPath}/sass.js`).then(function () {
+			loadJS(`${baseTranspilerPath}/sass.js`).then(function() {
 				window.sass = new Sass(`${baseTranspilerPath}/sass.worker.js`);
 				setLoadedFlag();
 			});
@@ -585,6 +601,7 @@ export default class ContentWrap extends Component {
 		);
 		return this.handleModeRequirements(value);
 	}
+
 	updateCssMode(value) {
 		this.props.onCodeModeChange('css', value);
 		this.props.currentItem.cssMode = value;
@@ -592,13 +609,14 @@ export default class ContentWrap extends Component {
 		this.cm.css.setOption('readOnly', modes[value].cmDisable);
 		window.cssSettingsBtn.classList[
 			modes[value].hasSettings ? 'remove' : 'add'
-		]('hide');
+			]('hide');
 		CodeMirror.autoLoadMode(
 			this.cm.css,
 			modes[value].cmPath || modes[value].cmMode
 		);
 		return this.handleModeRequirements(value);
 	}
+
 	updateJsMode(value) {
 		this.props.onCodeModeChange('js', value);
 		this.props.currentItem.jsMode = value;
@@ -609,13 +627,14 @@ export default class ContentWrap extends Component {
 		);
 		return this.handleModeRequirements(value);
 	}
+
 	codeModeChangeHandler(e) {
 		var mode = e.target.value;
 		var type = e.target.dataset.type;
 		var currentMode =
 			this.props.currentItem[
 				type === 'html' ? 'htmlMode' : type === 'css' ? 'cssMode' : 'jsMode'
-			];
+				];
 		if (currentMode !== mode) {
 			if (type === 'html') {
 				this.updateHtmlMode(mode).then(() => this.setPreviewContent(true));
@@ -644,10 +663,10 @@ export default class ContentWrap extends Component {
 			`width=${iframeWidth},height=${iframeHeight},resizable,scrollbars=yes,status=1`
 		);
 		const that = this;
-		this.detachedWindow.onload = function () {
+		this.detachedWindow.onload = function() {
 			that.setPreviewContent(true);
 			const frm = that.detachedWindow.document.querySelector('iframe');
-			frm.onload = function () {
+			frm.onload = function() {
 				that.detachedWindow.postMessage({ code: that.cmCodes.js }, '*');
 			};
 		};
@@ -686,16 +705,16 @@ export default class ContentWrap extends Component {
 			try {
 				this.consoleCm.replaceRange(
 					arg +
-						' ' +
-						((arg + '').match(/\[object \w+]/) ? JSON.stringify(arg) : '') +
-						'\n',
+					' ' +
+					((arg + '').match(/\[object \w+]/) ? JSON.stringify(arg) : '') +
+					'\n',
 					{
-						line: Infinity,
+						line: Infinity
 					}
 				);
 			} catch (e) {
 				this.consoleCm.replaceRange('🌀\n', {
-					line: Infinity,
+					line: Infinity
 				});
 			}
 			this.consoleCm.scrollTo(0, Infinity);
@@ -715,6 +734,7 @@ export default class ContentWrap extends Component {
 		await this.setState({ isConsoleOpen: !this.state.isConsoleOpen });
 		trackEvent('ui', 'consoleToggle');
 	}
+
 	consoleHeaderDblClickHandler(e) {
 		if (!e.target.classList.contains('js-console__header')) {
 			return;
@@ -722,11 +742,13 @@ export default class ContentWrap extends Component {
 		trackEvent('ui', 'consoleToggleDblClick');
 		this.toggleConsole();
 	}
+
 	clearConsole() {
 		this.consoleCm.setValue('');
 		this.logCount = 0;
 		this.updateLogCount();
 	}
+
 	clearConsoleBtnClickHandler() {
 		this.clearConsole();
 		trackEvent('ui', 'consoleClearBtnClick');
@@ -749,17 +771,21 @@ export default class ContentWrap extends Component {
 			trackEvent('fn', 'evalConsoleExpr');
 		}
 	}
+
 	async cssSettingsBtnClickHandler() {
 		await this.setState({ isCssSettingsModalOpen: true });
 		trackEvent('ui', 'cssSettingsBtnClick');
 	}
+
 	cssSettingsChangeHandler(settings) {
 		this.props.onCodeSettingsChange('css', settings);
 		this.setPreviewContent(true);
 	}
+
 	getDemoFrame(callback) {
 		callback(this.frame);
 	}
+
 	editorFocusHandler(editor) {
 		this.props.onEditorFocus(editor);
 	}
@@ -778,9 +804,9 @@ export default class ContentWrap extends Component {
 
 
 	onCSSActiviation() {
-		if(!window.user) {
+		if (!window.user) {
 			this.props.onLogin();
-		} else if(userService.isPro()) {
+		} else if (userService.isPro()) {
 			return true;
 		} else {
 			this.props.onProFeature();
@@ -796,28 +822,29 @@ export default class ContentWrap extends Component {
 	render() {
 		return (
 			<SplitPane
-				class="content-wrap  flex  flex-grow"
-				id="content-wrap"
+				class='content-wrap  flex  flex-grow'
+				id='content-wrap'
 				sizes={this.state.mainSplitSizes}
-				minSize={150}
-				style=""
+				minSize={580}
+				style=''
 				direction={
 					this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
 				}
 				onDragEnd={this.mainSplitDragEndHandler.bind(this)}
 			>
-				<div id="js-code-side">
+				<div id='js-code-side'>
 					<Tabs
+						keyboardShortcutsBtnClickHandler={this.props.keyboardShortcutsBtnClickHandler}
 						ref={(tabs) => (this.tabsRef = tabs)}
 						onChange={this.onTabChanges.bind(this)}
-						style="height: 100%;display:flex;flex-direction: column;"
+						style='display:flex;flex-direction: column;'
 					>
-						<div label="ZenUML" lineOfCode={this.state.lineOfCode}>
+						<div label='ZenUML' lineOfCode={this.state.lineOfCode}>
 							<div
-								data-code-wrap-id="2"
-								id="jsCodeEl"
-								data-type="js"
-								className="code-wrap"
+								data-code-wrap-id='2'
+								id='jsCodeEl'
+								data-type='js'
+								className='code-wrap'
 								onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 							>
 								{/* <div
@@ -857,13 +884,13 @@ export default class ContentWrap extends Component {
 										profile: 'xhtml',
 										gutters: [
 											'CodeMirror-linenumbers',
-											'CodeMirror-foldgutter',
+											'CodeMirror-foldgutter'
 										],
 										noAutocomplete: true,
 										matchTags: { bothTags: true },
 										prettier: true,
 										prettierParser: 'html',
-										emmet: true,
+										emmet: true
 									}}
 									prefs={this.props.prefs}
 									autoComplete={this.props.prefs.autoComplete}
@@ -872,52 +899,51 @@ export default class ContentWrap extends Component {
 									onCreation={(el) => (this.cm.js = el)}
 									onFocus={this.editorFocusHandler.bind(this)}
 								/>
-								{/* Inlet(scope.cm.js); */}
 							</div>
 						</div>
-						<div label="CSS" onBeforeActiviation={this.onCSSActiviation.bind(this)}>
+						<div label='CSS' onBeforeActiviation={this.onCSSActiviation.bind(this)}>
 							<div
-								data-code-wrap-id="1"
-								id="cssCodeEl"
-								data-type="css"
-								className="code-wrap"
+								data-code-wrap-id='1'
+								id='cssCodeEl'
+								data-type='css'
+								className='code-wrap'
 								onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
 							>
 								<div
-									className="js-code-wrap__header  code-wrap__header"
-									title="Double click to toggle code pane"
+									className='js-code-wrap__header  code-wrap__header'
+									titl e='Double click to toggle code pane'
 									ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
 								>
-									<span className="caret" />
-									<label className="btn-group" title="Click to change">
-										<span className="code-wrap__header-label">
+									<span className='caret' />
+									<label className='btn-group' title='Click to change'>
+										<span className='code-wrap__header-label'>
 											{modes[this.props.currentItem.cssMode || 'css'].label}
 										</span>
 
 										<select
-											data-type="css"
-											className="js-mode-select  hidden-select"
+											data-type='css'
+											className='js-mode-select  hidden-select'
 											onChange={this.codeModeChangeHandler.bind(this)}
 											value={this.props.currentItem.cssMode}
 										>
-											<option value="css">CSS</option>
-											<option value="scss">SCSS</option>
-											<option value="sass">SASS</option>
-											<option value="less">LESS</option>
-											<option value="stylus">Stylus</option>
-											<option value="acss">Atomic CSS</option>
+											<option value='css'>CSS</option>
+											<option value='scss'>SCSS</option>
+											<option value='sass'>SASS</option>
+											<option value='less'>LESS</option>
+											<option value='stylus'>Stylus</option>
+											<option value='acss'>Atomic CSS</option>
 										</select>
 									</label>
-									<div className="code-wrap__header-right-options">
+									<div className='code-wrap__header-right-options'>
 										<a
-											href="#"
-											id="cssSettingsBtn"
-											title="Atomic CSS configuration"
+											href='#'
+											id='cssSettingsBtn'
+											title='Atomic CSS configuration'
 											onClick={this.cssSettingsBtnClickHandler.bind(this)}
-											className="code-wrap__header-btn hide"
+											className='code-wrap__header-btn hide'
 										>
 											<svg>
-												<use xlinkHref="#settings-icon" />
+												<use xlinkHref='#settings-icon' />
 											</svg>
 										</a>
 										{/* <a
@@ -934,11 +960,11 @@ export default class ContentWrap extends Component {
 										gutters: [
 											'error-gutter',
 											'CodeMirror-linenumbers',
-											'CodeMirror-foldgutter',
+											'CodeMirror-foldgutter'
 										],
 										emmet: true,
 										prettier: true,
-										prettierParser: 'css',
+										prettierParser: 'css'
 									}}
 									prefs={this.props.prefs}
 									onChange={this.onCssCodeChange.bind(this)}
@@ -947,97 +973,97 @@ export default class ContentWrap extends Component {
 								/>
 							</div>
 						</div>
-						<div label="Cheat sheet">
-							<div
-								data-code-wrap-id="0"
-								id="htmlCodeEl"
-								data-type="html"
-								class="code-wrap"
-								onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
-							>
-								{/* <div
-								class="js-code-wrap__header  code-wrap__header"
-								onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}
-							>
-								<label class="btn-group" dropdow title="Click to change">
-									About
-								</label>
-								<div class="code-wrap__header-right-options">
-									<a
-										class="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"
-										title="Toggle code pane"
-										onClick={this.collapseBtnHandler.bind(this)}
-									/>
-								</div>
-							</div> */}
-								<div className="cheat-sheet">
-									<table>
-										<tr>
-											<th>Feature</th>
-											<th>Sample</th>
-										</tr>
-										<tr>
-											<td>Participant</td>
-											<td>
-												ParticipantA
-												<br />
-												ParticipantB
-											</td>
-										</tr>
-										<tr>
-											<td>Message</td>
-											<td>A.messageA()</td>
-										</tr>
-										<tr>
-											<td>Asyc message</td>
-											<td>Alice-&gt;Bob: How are you?</td>
-										</tr>
-										<tr>
-											<td>Nested message</td>
-											<td>
-												A.messageA() {'{'}
-												<br />
-												&nbsp;&nbsp;B.messageB()
-												<br />
-												{'}'}
-											</td>
-										</tr>
-										<tr>
-											<td class="tg-0pky">Self-message</td>
-											<td class="tg-0pky">internalMessage()</td>
-										</tr>
-										<tr>
-											<td>Alt</td>
-											<td>
-												if (condition1) {'{'}
-												<br />
-												&nbsp;&nbsp;A.methodA()
-												<br />
-												{'}'} else if (condition2) {'{'}
-												<br />
-												&nbsp;&nbsp;B.methodB()
-												<br />
-												{'}'} else {'{'}
-												<br />
-												&nbsp;&nbsp;C.methodC()
-												<br />
-												{'}'}
-											</td>
-										</tr>
-										<tr>
-											<td>Loop</td>
-											<td>
-												while (condition) {'{'}
-												<br />
-												&nbsp;&nbsp;A.methodA()
-												<br />
-												{'}'}
-											</td>
-										</tr>
-									</table>
-								</div>
-							</div>
-						</div>
+						{/*<div label="Cheat sheet">*/}
+						{/*	<div*/}
+						{/*		data-code-wrap-id="0"*/}
+						{/*		id="htmlCodeEl"*/}
+						{/*		data-type="html"*/}
+						{/*		class="code-wrap"*/}
+						{/*		onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}*/}
+						{/*	>*/}
+						{/*		/!* <div*/}
+						{/*		class="js-code-wrap__header  code-wrap__header"*/}
+						{/*		onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}*/}
+						{/*	>*/}
+						{/*		<label class="btn-group" dropdow title="Click to change">*/}
+						{/*			About*/}
+						{/*		</label>*/}
+						{/*		<div class="code-wrap__header-right-options">*/}
+						{/*			<a*/}
+						{/*				class="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"*/}
+						{/*				title="Toggle code pane"*/}
+						{/*				onClick={this.collapseBtnHandler.bind(this)}*/}
+						{/*			/>*/}
+						{/*		</div>*/}
+						{/*	</div> *!/*/}
+						{/*		<div className="cheat-sheet">*/}
+						{/*			<table>*/}
+						{/*				<tr>*/}
+						{/*					<th>Feature</th>*/}
+						{/*					<th>Sample</th>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Participant</td>*/}
+						{/*					<td>*/}
+						{/*						ParticipantA*/}
+						{/*						<br />*/}
+						{/*						ParticipantB*/}
+						{/*					</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Message</td>*/}
+						{/*					<td>A.messageA()</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Asyc message</td>*/}
+						{/*					<td>Alice-&gt;Bob: How are you?</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Nested message</td>*/}
+						{/*					<td>*/}
+						{/*						A.messageA() {'{'}*/}
+						{/*						<br />*/}
+						{/*						&nbsp;&nbsp;B.messageB()*/}
+						{/*						<br />*/}
+						{/*						{'}'}*/}
+						{/*					</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td class="tg-0pky">Self-message</td>*/}
+						{/*					<td class="tg-0pky">internalMessage()</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Alt</td>*/}
+						{/*					<td>*/}
+						{/*						if (condition1) {'{'}*/}
+						{/*						<br />*/}
+						{/*						&nbsp;&nbsp;A.methodA()*/}
+						{/*						<br />*/}
+						{/*						{'}'} else if (condition2) {'{'}*/}
+						{/*						<br />*/}
+						{/*						&nbsp;&nbsp;B.methodB()*/}
+						{/*						<br />*/}
+						{/*						{'}'} else {'{'}*/}
+						{/*						<br />*/}
+						{/*						&nbsp;&nbsp;C.methodC()*/}
+						{/*						<br />*/}
+						{/*						{'}'}*/}
+						{/*					</td>*/}
+						{/*				</tr>*/}
+						{/*				<tr>*/}
+						{/*					<td>Loop</td>*/}
+						{/*					<td>*/}
+						{/*						while (condition) {'{'}*/}
+						{/*						<br />*/}
+						{/*						&nbsp;&nbsp;A.methodA()*/}
+						{/*						<br />*/}
+						{/*						{'}'}*/}
+						{/*					</td>*/}
+						{/*				</tr>*/}
+						{/*			</table>*/}
+						{/*		</div>*/}
+						{/*	</div>*/}
+						{/*</div>*/}
 					</Tabs>
 				</div>
 				{/*<SplitPane*/}
@@ -1059,101 +1085,101 @@ export default class ContentWrap extends Component {
 				{/**/}
 				{/*</Tabs>*/}
 				<div
-					class="demo-side"
-					id="js-demo-side"
-					style="overflow-y: auto; -webkit-overflow-scrolling: touch;"
+					class='demo-side'
+					id='js-demo-side'
 				>
-					{window.zenumlDesktop ? null : (
-						<div className="promotion">
-							<div className="actions">
-								{!window.user ? (
-									<Button
-										className="button icon-button hint--rounded hint--bottom-left"
-										/* Highlight this button for more traction */
-										style="background-color: #ffa900; color: #fff;"
-										aria-label="Share Your Work"
-										onClick={this.props.onLogin.bind(this)}
-									>
-										<span className="material-symbols-outlined">share</span>
-										<span>Share</span>
-									</Button>
-								) : (
-									<Popover
-										closeOnBlur={true}
-										hasArrow={true}
-										placement={'bottom'}
-										isVisible={this.state.isSharePanelVisible}
-										onVisibilityChange={(isVisible) =>
-											this.setState({ isSharePanelVisible: isVisible })
-										}
-										trigger={
-											<Button
-												className="button icon-button hint--rounded hint--bottom-left"
-												/* Highlight this button for more traction */
-												style="background-color: #ffa900; color: #fff;"
-												aria-label="Share Your Work"
-												onClick={this.shareClickHandler.bind(this)}
-											>
-												<span className="material-symbols-outlined">share</span>
-												<span>Share</span>
-											</Button>
-										}
-										content={
-											<SharePanel
-												author={
-													window.user ? window.user.displayName : 'author'
-												}
-												currentItem={this.props.currentItem}
-												imageBase64={this.state.imageBase64}
-											/>
-										}
-									/>
-								)}
-								<Button
-									className="btn--dark button icon-button hint--rounded hint--bottom-left"
-									aria-label="Export as PNG"
-									onClick={this.exportPngClickHandler.bind(this)}
-								>
-									<span class="material-symbols-outlined">file_download</span>
-									<span>PNG</span>
-								</Button>
-								<Button
-									className="btn--dark button icon-button hint--rounded hint--bottom-left"
-									aria-label="Copy PNG to Clipboard"
-									onClick={this.copyImageClickHandler.bind(this)}
-								>
-									<span class="material-symbols-outlined">file_copy</span>
-									<span>Copy PNG</span>
-								</Button>
-							</div>
+					<div className='h-full flex flex-col'>
+						<div
+							className='flex-grow'
+							style='overflow-y: auto; -webkit-overflow-scrolling: touch; '
+						>
+							<iframe
+								ref={(el) => (this.frame = el)}
+								frameBorder='0'
+								id='demo-frame'
+								allowFullScreen
+							/>
 						</div>
-					)}
-
-					<iframe
-						ref={(el) => (this.frame = el)}
-						frameborder="0"
-						id="demo-frame"
-						allowfullscreen
-					/>
-					<Console
-						isConsoleOpen={this.state.isConsoleOpen}
-						onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
-							this
+						{window.zenumlDesktop ? null : (
+							<div className='shrink-0 relative z-10 bg-gray-200 py-3 px-6 flex justify-between'>
+								<div className='flex gap-4 items-center'>
+									<button
+										onClick={() => this.props.layoutBtnClickHandler(1)}
+										id='layoutBtn1'
+										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
+										aria-label='Switch to layout with preview on right'
+									>
+										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
+											<path
+												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM4 1.75H12.25V8.25H1.75V4C1.75 2.423 2.423 1.75 4 1.75ZM1.75 14V9.75H12.25V16.25H4C2.423 16.25 1.75 15.577 1.75 14ZM18.25 14C18.25 15.577 17.577 16.25 16 16.25H13.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4V14Z'
+												fill='#7C7C7C' />
+										</svg>
+									</button>
+									<button
+										onClick={() => this.props.layoutBtnClickHandler(2)}
+										id='layoutBtn2'
+										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
+										aria-label='Switch to layout with preview on bottom'
+									>
+										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
+											<path
+												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM18.25 4V10.25H10.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4ZM4 1.75H9.25V10.25H1.75V4C1.75 2.423 2.423 1.75 4 1.75ZM16 16.25H4C2.423 16.25 1.75 15.577 1.75 14V11.75H18.25V14C18.25 15.577 17.577 16.25 16 16.25Z'
+												fill='#7C7C7C' />
+										</svg>
+									</button>
+									<button
+										onClick={() => this.props.layoutBtnClickHandler(3)}
+										id='layoutBtn3'
+										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
+										aria-label='Switch to layout with preview on left'
+									>
+										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
+											<path
+												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM18.25 4V8.25H7.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4ZM1.75 14V4C1.75 2.423 2.423 1.75 4 1.75H6.25V16.25H4C2.423 16.25 1.75 15.577 1.75 14ZM16 16.25H7.75V9.75H18.25V14C18.25 15.577 17.577 16.25 16 16.25Z'
+												fill='#7C7C7C' />
+										</svg>
+									</button>
+								</div>
+								<div className='flex items-center gap-3 text-sm font-semibold'>
+									<button
+										className='px-3 py-0.5 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-200 duration-200'
+										aria-label='Export as PNG'
+										onClick={this.exportPngClickHandler.bind(this)}
+									>
+										<span className='material-symbols-outlined text-base font-bold'>file_download</span>
+										<span>PNG</span>
+									</button>
+									<button
+										className='px-3 py-0.5 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg  hover:bg-gray-200 duration-200'
+										aria-label='Copy PNG to Clipboard'
+										onClick={this.copyImageClickHandler.bind(this)}
+									>
+										<span className='material-symbols-outlined text-base font-bold'>file_copy</span>
+										<span>Copy PNG</span>
+									</button>
+								</div>
+							</div>
 						)}
-						onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(this)}
-						toggleConsole={this.toggleConsole.bind(this)}
-						onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-						onReady={(el) => (this.consoleCm = el)}
-					/>
-					<CssSettingsModal
-						show={this.state.isCssSettingsModalOpen}
-						closeHandler={async () =>
-							await this.setState({ isCssSettingsModalOpen: false })
-						}
-						onChange={this.cssSettingsChangeHandler.bind(this)}
-						settings={this.props.currentItem.cssSettings}
-						editorTheme={this.props.prefs.editorTheme}
-					/>
+						<Console
+							isConsoleOpen={this.state.isConsoleOpen}
+							onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
+								this
+							)}
+							onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(this)}
+							toggleConsole={this.toggleConsole.bind(this)}
+							onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
+							onReady={(el) => (this.consoleCm = el)}
+						/>
+						<CssSettingsModal
+							show={this.state.isCssSettingsModalOpen}
+							closeHandler={async () =>
+								await this.setState({ isCssSettingsModalOpen: false })
+							}
+							onChange={this.cssSettingsChangeHandler.bind(this)}
+							settings={this.props.currentItem.cssSettings}
+							editorTheme={this.props.prefs.editorTheme}
+						/>
+					</div>
 				</div>
 			</SplitPane>
 		);
