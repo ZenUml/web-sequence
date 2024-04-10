@@ -5,7 +5,7 @@ export class Popover extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			isVisible: false,
+			isVisible: false
 		};
 		this.popoverRef = createRef();
 	}
@@ -25,10 +25,10 @@ export class Popover extends Component {
 	togglePopover = () => {
 		if (this.props.isVisible !== undefined) {
 			this.props.onVisibilityChange &&
-				this.props.onVisibilityChange(!this.props.isVisible);
+			this.props.onVisibilityChange(!this.props.isVisible);
 		} else {
 			this.setState((prevState) => ({
-				isVisible: !prevState.isVisible,
+				isVisible: !prevState.isVisible
 			}));
 		}
 	};
@@ -53,13 +53,13 @@ export class Popover extends Component {
 
 		return (
 			<div className={`popover`}>
-				<div className="popover-trigger" onClick={this.togglePopover}>
+				<div className='popover-trigger mb-3' onClick={this.togglePopover}>
 					{trigger}
 				</div>
 				<div style={{ display: isVisible ? 'block' : 'none' }}>
-					{closeOnBlur && <div className="popover-backdrop" />}
+					{closeOnBlur && <div className='popover-backdrop' />}
 					<div
-						className={`popover-content ${placement}  ${
+						className={`popover-content rounded-lg ${placement}  ${
 							hasShadow ? 'shadow' : ''
 						}`}
 						ref={this.popoverRef}
@@ -81,5 +81,5 @@ Popover.propTypes = {
 	closeOnBlur: PropTypes.bool,
 	hasArrow: PropTypes.bool,
 	hasShadow: PropTypes.bool,
-	placement: PropTypes.oneOf(['top', 'bottom']),
+	placement: PropTypes.oneOf(['top', 'bottom'])
 };
