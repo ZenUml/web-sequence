@@ -76,9 +76,9 @@ class Tabs extends Component {
 					<button
 						onClick={this.props.keyboardShortcutsBtnClickHandler}
 						className='text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-400 rounded-lg gap-2 flex items-center duration-200'>
-							<span className='material-symbols-outlined text-base font-bold'>
-								keyboard_alt
-							</span>
+						<svg className='w-4 h-4'>
+							<use xlinkHref='#icon-keyboard' />
+						</svg>
 						Shortcuts
 					</button>
 				</div>

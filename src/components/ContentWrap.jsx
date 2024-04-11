@@ -1109,10 +1109,8 @@ export default class ContentWrap extends Component {
 										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
 										aria-label='Switch to layout with preview on right'
 									>
-										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
-											<path
-												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM4 1.75H12.25V8.25H1.75V4C1.75 2.423 2.423 1.75 4 1.75ZM1.75 14V9.75H12.25V16.25H4C2.423 16.25 1.75 15.577 1.75 14ZM18.25 14C18.25 15.577 17.577 16.25 16 16.25H13.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4V14Z'
-												fill='#7C7C7C' />
+										<svg className='w-5 h-5'>
+											<use xlinkHref='#icon-layout-1' />
 										</svg>
 									</button>
 									<button
@@ -1121,10 +1119,8 @@ export default class ContentWrap extends Component {
 										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
 										aria-label='Switch to layout with preview on bottom'
 									>
-										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
-											<path
-												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM18.25 4V10.25H10.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4ZM4 1.75H9.25V10.25H1.75V4C1.75 2.423 2.423 1.75 4 1.75ZM16 16.25H4C2.423 16.25 1.75 15.577 1.75 14V11.75H18.25V14C18.25 15.577 17.577 16.25 16 16.25Z'
-												fill='#7C7C7C' />
+										<svg className='w-5 h-5'>
+											<use xlinkHref='#icon-layout-2' />
 										</svg>
 									</button>
 									<button
@@ -1133,28 +1129,31 @@ export default class ContentWrap extends Component {
 										className='w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200'
 										aria-label='Switch to layout with preview on left'
 									>
-										<svg width='20' height='18' viewBox='0 0 20 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
-											<path
-												d='M16 0.25H4C1.582 0.25 0.25 1.582 0.25 4V14C0.25 16.418 1.582 17.75 4 17.75H16C18.418 17.75 19.75 16.418 19.75 14V4C19.75 1.582 18.418 0.25 16 0.25ZM18.25 4V8.25H7.75V1.75H16C17.577 1.75 18.25 2.423 18.25 4ZM1.75 14V4C1.75 2.423 2.423 1.75 4 1.75H6.25V16.25H4C2.423 16.25 1.75 15.577 1.75 14ZM16 16.25H7.75V9.75H18.25V14C18.25 15.577 17.577 16.25 16 16.25Z'
-												fill='#7C7C7C' />
+										<svg className='w-5 h-5'>
+											<use xlinkHref='#icon-layout-3' />
 										</svg>
+
 									</button>
 								</div>
 								<div className='flex items-center gap-3 text-sm font-semibold'>
 									<button
-										className='px-3 py-0.5 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-200 duration-200'
+										className='px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200'
 										aria-label='Export as PNG'
 										onClick={this.exportPngClickHandler.bind(this)}
 									>
-										<span className='material-symbols-outlined text-base font-bold'>file_download</span>
+										<svg className='w-5 h-5 fill-current'>
+											<use xlinkHref='#icon-download' />
+										</svg>
 										<span>PNG</span>
 									</button>
 									<button
-										className='px-3 py-0.5 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg  hover:bg-gray-200 duration-200'
+										className='px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200'
 										aria-label='Copy PNG to Clipboard'
 										onClick={this.copyImageClickHandler.bind(this)}
 									>
-										<span className='material-symbols-outlined text-base font-bold'>file_copy</span>
+										<svg className='w-5 h-5 fill-current'>
+											<use xlinkHref='#icon-copy' />
+										</svg>
 										<span>Copy PNG</span>
 									</button>
 								</div>

@@ -7,6 +7,7 @@ import { Popover } from './PopOver';
 import { SharePanel } from './SharePanel';
 import { trackEvent } from '../analytics';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import userService from '../services/user_service';
 
 export function MainHeader(props) {
 	const [isEditing, setEditing] = useState(false);
@@ -31,7 +32,7 @@ export function MainHeader(props) {
 
 	const shareClickHandler = async () => {
 		const image = await getPngBlob();
-		console.log(image)
+
 		await props.onUpdateImage(image);
 		setIsSharePanelVisible(true);
 		trackEvent('ui', 'shareLink');
@@ -45,40 +46,44 @@ export function MainHeader(props) {
 		}
 	}, [props.user]);
 
-
 	const onBlur = (e) => {
 		exitEditing();
 		props.titleInputBlurHandler(e);
 	};
 
+	const isPro = userService.isPro();
+
 	return (
-		<div className='main-header py-4 px-8 flex justify-between border-b border-black-700 bg-black-500'>
+		<div className='main-header text-gray-400 py-4 px-8 flex justify-between border-b border-black-700 bg-black-500'>
 			<div className='flex items-center gap-4'>
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger asChild>
 						<div
-							className='flex items-center p-1 hover:bg-[#454856] data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200'>
+							className='flex items-center p-1 hover:bg-gray-700 data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200'>
 							<svg className='h-9 w-9'>
 								<use xlinkHref='#outline-zenuml' />
 							</svg>
-							<span className='material-symbols-outlined'>arrow_drop_down</span>
+							<svg className='h-6 w-6'>
+								<use xlinkHref='#icon-arrow-down' />
+							</svg>
 						</div>
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Portal>
 						<DropdownMenu.Content
-							className='w-[180px] bg-[#2c2d31] py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
+							className='w-[180px] bg-black-400 py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
 							sideOffset={5}
 							align='start'
 						>
 							<DropdownMenu.Item
 								onClick={() => props.openCheatSheet()}
-								className='cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+								className='cursor-pointer hover:bg-black-600 text-sm leading-none flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
 								<span className='material-symbols-outlined text-lg font-bold'>article</span>
 								Cheatsheet
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
-								className='cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 relative select-none outline-none duration-200'>
-								<a className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank' href='https://zenuml.com/docs/category/language-guide'>
+								className='cursor-pointer hover:bg-black-600 text-sm leading-none relative select-none outline-none duration-200'>
+								<a className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank'
+									 href='https://zenuml.com/docs/category/language-guide'>
 									<span className='material-symbols-outlined text-lg font-bold'>open_in_new</span>
 									Language guide
 								</a>
@@ -88,22 +93,26 @@ export function MainHeader(props) {
 				</DropdownMenu.Root>
 
 				<button
-					className='px-4 py-1.5 bg-black-600 font-semibold text-gray-200 flex items-center gap-2 rounded-lg'
+					className='px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg'
 					aria-label='Start a new creation'
 					onClick={props.newBtnHandler}
 				>
-					<span className='material-symbols-outlined font-bold text-lg'>add</span>
+					<svg className='h-5 w-5'>
+						<use xlinkHref='#icon-plus' />
+					</svg>
 					<span>New</span>
 				</button>
 				<button
 					id='openItemsBtn'
-					className={`px-4 py-1.5 bg-black-600 font-semibold text-gray-200 flex items-center gap-2 rounded-lg ${
+					className={`px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg ${
 						props.isFetchingItems ? 'is-loading' : ''
 					}`}
 					aria-label='Open a saved creation (Ctrl/⌘ + O)'
 					onClick={props.openBtnHandler}
 				>
-					<span className='material-symbols-outlined font-bold text-lg'>photo_library</span>
+					<svg className='h-5 w-5'>
+						<use xlinkHref='#icon-gallery' />
+					</svg>
 					<span>My library</span>
 				</button>
 
@@ -122,14 +131,16 @@ export function MainHeader(props) {
 							/>
 						) :
 						(
-							<div className='flex items-center gap-2 font-semibold text-gray-200' onClick={() => entryEditing()}>
+							<div className='flex items-center gap-2 font-semibold' onClick={() => entryEditing()}>
 								<span>{props.title || 'Untitled'} </span>
-								<span class='material-symbols-outlined text-base'>border_color</span>
+								<svg className='h-5 w-5'>
+									<use xlinkHref='#icon-pen' />
+								</svg>
 							</div>
 						)
 				}
 			</div>
-			<div className='flex gap-4'>
+			<div className='flex gap-4 items-center'>
 				<button
 					id='runBtn'
 					className='hide btn--dark flex flex-v-center hint--rounded hint--bottom-left'
@@ -156,22 +167,9 @@ export function MainHeader(props) {
 						{props.externalLibCount}
 					</span>
 				</Button>
-
-				{/*<button*/}
-				{/*	id='saveBtn'*/}
-				{/*	className={`btn--dark flex  flex-v-center hint--rounded hint--bottom-left icon-button button-editor-solid ${*/}
-				{/*		props.isSaving ? 'is-loading' : ''*/}
-				{/*	} ${props.unsavedEditCount ? 'is-marked' : 0}`}*/}
-				{/*	aria-label='Save current creation (Ctrl/⌘ + S)'*/}
-				{/*	onClick={props.saveBtnHandler}*/}
-				{/*>*/}
-				{/*	<span class='material-symbols-outlined'>save</span>*/}
-				{/*	<span>Save</span>*/}
-				{/*</button>*/}
-
 				{!window.user ? (
 					<button
-						className='h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold'
+						className='h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200'
 						aria-label='Share diagram link'
 						onClick={props.onLogin.bind(this)}
 					>
@@ -186,7 +184,7 @@ export function MainHeader(props) {
 						onVisibilityChange={setIsSharePanelVisible}
 						trigger={
 							<button
-								className='h-10 px-4 bg-primary rounded-lg text-white'
+								className='h-10 px-4 bg-primary rounded-lg text-white font-semibold hover:opacity-80 duration-200'
 								aria-label='Share diagram link'
 								onClick={shareClickHandler}
 							>
@@ -212,13 +210,23 @@ export function MainHeader(props) {
 					props.user ? (
 						<DropdownMenu.Root>
 							<DropdownMenu.Trigger asChild>
-								<button className='border-2 border-gray-200 w-10 h-10 rounded-full overflow-hidden'>
-									<img
-										id='headerAvatarImg'
-										className='h-full w-full appearance-none'
-										src={props.user.photoURL}
-										className=''
-									/>
+								<button className='relative w-10 h-10 outline-0'>
+									<div className='h-full w-full border-2 border-gray-200 rounded-full overflow-hidden'>
+										<img
+											id='headerAvatarImg'
+											className='h-full w-full appearance-none'
+											crossOrigin='anonymous'
+											src={props.user.photoURL}
+											className=''
+										/>
+									</div>
+									{
+										isPro && (
+											<svg className='w-4 h-4 fill-current absolute bottom-0 right-0'>
+												<use xlinkHref='#icon-pro' />
+											</svg>
+										)
+									}
 								</button>
 							</DropdownMenu.Trigger>
 							<DropdownMenu.Portal>
@@ -231,15 +239,25 @@ export function MainHeader(props) {
 										<p className='font-semibold text-base text-primary-100'>{props.user.displayName}</p>
 										<p className='text-sm text-gray-600'>{props.user.email}</p>
 									</div>
+									{
+										isPro && <DropdownMenu.Item
+											onClick={props.proBtnHandler}
+											className='text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200'>
+											<svg className='w-4 h-4 fill-current'>
+												<use xlinkHref='#icon-pro' />
+											</svg>
+											My Pro Plan
+										</DropdownMenu.Item>
+									}
 									<DropdownMenu.Item
 										onClick={props.settingsBtnClickHandler}
-										className='text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+										className='text-primary-100 cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200'>
 										<span class='material-symbols-outlined text-lg font-light text-gray-500'>settings</span>
 										Settings
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
 										onClick={props.logoutBtnHandler}
-										className='text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
+										className='text-primary-100 cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200'>
 										<span className='material-symbols-outlined text-lg font-bold text-gray-500'>logout</span>
 										Log Out
 									</DropdownMenu.Item>
@@ -254,7 +272,9 @@ export function MainHeader(props) {
 							aria-label='See profile or Logout'
 							className='border-2 border-gray-200 w-10 h-10 rounded-full overflow-hidden'
 						>
-							<span className='material-symbols-outlined text-xl'>person</span>
+							<svg className='w-6 h-6 fill-current mx-auto'>
+								<use xlinkHref='#icon-user' />
+							</svg>
 						</Button>
 					)
 				}
