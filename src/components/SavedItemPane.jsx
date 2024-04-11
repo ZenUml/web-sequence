@@ -1,9 +1,6 @@
-import { h, Component } from 'preact';
+import React, { h, Component } from 'preact';
 import { log } from '../utils';
 import { trackEvent } from '../analytics';
-import { itemService } from '../itemService';
-import { alertsService } from '../notifications';
-import { deferred } from '../deferred';
 import { ItemTile } from './ItemTile';
 
 export default class SavedItemPane extends Component {
@@ -146,7 +143,7 @@ export default class SavedItemPane extends Component {
 		return (
 			<div
 				id='js-saved-items-pane'
-				class={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-500/90 backdrop-blur duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
+				class={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-400 duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
 				onKeyDown={this.keyDownHandler.bind(this)}
 			>
 				<button
@@ -164,7 +161,9 @@ export default class SavedItemPane extends Component {
 							class='text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200'
 							aria-label='Export all your creations into a single importable file.'
 						>
-							<span class='material-symbols-outlined text-lg font-bold'>file_download</span>
+							<svg className='w-4 h-4 fill-current'>
+								<use xlinkHref='#icon-download' />
+							</svg>
 							<span>Export</span>
 						</button>
 						<button
@@ -172,7 +171,9 @@ export default class SavedItemPane extends Component {
 							class='text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200'
 							aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
 						>
-							<span class='material-symbols-outlined text-lg font-bold'>file_upload</span>
+							<svg className='w-4 h-4 fill-current'>
+								<use xlinkHref='#icon-upload' />
+							</svg>
 							<span>Import</span>
 						</button>
 					</div>

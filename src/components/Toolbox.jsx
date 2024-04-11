@@ -507,15 +507,14 @@ class Toolbox extends Component {
 					</svg>
 				</button>
 				<button className='hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between'>
-					<svg width='100%' height='100%' viewBox='0 0 29 29' fill='none' onClick={() => {
+					<svg width='100%' height='16' viewBox='0 0 20 16' fill='none' onClick={() => {
 						this.insertCode('//Note\nA.message()');
 					}}>
-						<title>Note</title>
-						<g>
-							<path d='M26 26H3L3 8H20.2404L26 13.4493V26Z' stroke='#A5A5A5' stroke-width='2' />
-							<line x1='19' y1='9' x2='19' y2='15' stroke='#A5A5A5' stroke-width='2' />
-							<line x1='18' y1='15' x2='26' y2='15' stroke='#A5A5A5' stroke-width='2' />
-						</g>
+						<path fill-rule='evenodd' clip-rule='evenodd'
+									d='M1.9998 14.3999H18.3998V4.82084L15.8231 1.5999H1.9998V14.3999ZM16.3998 0.399902L19.5998 4.3999V15.5999H0.799805V0.399902H16.3998Z'
+									fill='#C2C2C2' />
+						<path fill-rule='evenodd' clip-rule='evenodd' d='M15 0.799805H16.2V4.1998H19.2V5.3998H15V0.799805Z'
+									fill='#C2C2C2' />
 					</svg>
 				</button>
 			</div>
