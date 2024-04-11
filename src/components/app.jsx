@@ -447,12 +447,7 @@ BookLibService.Borrow(id) {
 
 		await this.setState({ currentItem: item }, d.resolve);
 
-		// Reset auto-saving flag
-		if (window.zenumlDesktop) {
-			this.saveItem(); // in desktop mode, always enable auto-saving
-		} else {
-			this.isAutoSavingEnabled = false;
-		}
+		this.saveItem()
 
 		// Reset unsaved count, in UI also.
 		await this.setState({ unsavedEditCount: 0 });
@@ -806,8 +801,6 @@ BookLibService.Borrow(id) {
 				alertsService.add(
 					'Item saved locally. Will save to account when you are online.'
 				);
-			} else {
-				alertsService.add('Item saved.');
 			}
 			await this.setState({ unsavedEditCount: 0 });
 		}
@@ -865,7 +858,6 @@ BookLibService.Borrow(id) {
 			// auto-save notification overrides the `saveCode` function's notification.
 			if (!this.isAutoSavingEnabled && this.state.prefs.autoSave) {
 				this.isAutoSavingEnabled = true;
-				alertsService.add('Auto-save enabled.');
 			}
 		});
 		// Push into the items hash if its a new item being saved
@@ -939,10 +931,10 @@ BookLibService.Borrow(id) {
 		// If this was triggered from user interaction, save the setting
 		if (e) {
 			const { settingName, value } = e;
-			var obj = {};
-			var el = e.target;
+			const obj = {};
 			log(settingName, value);
 			const prefs = { ...this.state.prefs };
+
 			prefs[settingName] = value;
 			obj[settingName] = prefs[settingName];
 			await this.setState({ prefs });
@@ -1080,6 +1072,7 @@ BookLibService.Borrow(id) {
 			await this.setState({
 				isCreateNewModalOpen: true
 			});
+			mixpanel.track({ event: 'New Modal Open', category: '3 diagrams limit', label: 'New' });
 		}
 	}
 
@@ -1658,8 +1651,8 @@ BookLibService.Borrow(id) {
 				/>
 
 				<AskToImportModal
-					show={this.state.isAskToImportModalOpen}
-					closeHandler={async () =>
+					open={this.state.isAskToImportModalOpen}
+					onClose={async () =>
 						await this.setState({ isAskToImportModalOpen: false })
 					}
 					oldSavedCreationsCount={this.oldSavedCreationsCount}
