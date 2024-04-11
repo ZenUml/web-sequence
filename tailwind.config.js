@@ -27,11 +27,15 @@ module.exports = {
 					400: '#c2c2c2',
 					500: '#A5A5A5',
 					600: '#5A5A5A',
+					700: '#454856',
 				},
 				primary: {
 					100: '#E2E5E9',
 					400: '#8ab2ff',
-					DEFAULT: '#6786f7'
+					DEFAULT: '#6786f7',
+				},
+				neutral: {
+					400: '#98a2b3'
 				},
 				black: {
 					400: '#2c2d31',
