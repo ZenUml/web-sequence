@@ -7,8 +7,9 @@ import * as RadioGroup from '@radix-ui/react-radio-group';
 function CheckboxSetting({ title, label, onChange, pref, name, showWhenExtension }) {
 	return (
 		<div className='flex gap-2 items-center'>
-			<div
-				className={classNames(showWhenExtension ? 'show-when-extension' : '', 'h-6 w-11 relative')}
+			<label
+				for={name}
+				className={classNames(showWhenExtension ? 'show-when-extension' : '', 'h-5 w-11 relative')}
 				title={title}
 			>
 				<input
@@ -20,8 +21,8 @@ function CheckboxSetting({ title, label, onChange, pref, name, showWhenExtension
 					data-setting={name}
 				/>{' '}
 				<span
-					className='absolute inset-0 left-1 bottom-1 duration-300 rounded-[32px] bg-gray-600 peer-checked:bg-primary before:absolute before:w-4 before:h-4 before:left-[2px] before:bottom-[2px] before:bg-white before:rounded-full before:duration-300 peer-checked:before:translate-x-[20px]'></span>
-			</div>
+					className='absolute h-full inset-0 left-1 bottom-1 duration-300 rounded-[32px] bg-gray-600 peer-checked:bg-primary before:absolute before:w-4 before:h-4 before:left-[2px] before:bottom-[2px] before:bg-white before:rounded-full before:duration-300 peer-checked:before:translate-x-[20px]'></span>
+			</label>
 			<label for={name}>{label}</label>
 		</div>
 
@@ -40,8 +41,8 @@ export default function SettingsModal(props) {
 				<Dialog.Overlay
 					className='bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow fixed inset-0' />
 				<Dialog.Content
-					className='text-sm text-gray-500 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-500 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
-					<Dialog.Title className='m-0 text-[17px] font-medium text-xl font-semibold'>
+					className='text-sm overflow-y-auto text-gray-500 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
+					<Dialog.Title className='font-medium text-xl font-semibold'>
 						Keyboard Shortcuts
 					</Dialog.Title>
 					<div className='my-6'>
@@ -369,7 +370,10 @@ export default function SettingsModal(props) {
 											value={props.prefs.editorCustomFont}
 											placeholder='Custom font name here'
 											data-setting='editorCustomFont'
-											onChange={updateSetting.bind(this)}
+											onChange={(e) => props.onChange({
+												settingName: 'editorFont',
+												value: e.target.value
+											})}
 										/>
 									)}
 								</div>
@@ -485,71 +489,108 @@ export default function SettingsModal(props) {
 									title='Toggle wrapping of long sentences onto new line'
 									label='Line wrap'
 									pref={props.prefs.lineWrap}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'lineWrap',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='autoCloseTags'
 									title='Add the closing tag automatically on seeing an opening tag in HTML'
 									label='Auto-close tags'
 									pref={props.prefs.autoCloseTags}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'autoCloseTags',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='refreshOnResize'
 									title='Your Preview will refresh when you resize the preview split'
 									label='Refresh preview on resize'
 									pref={props.prefs.refreshOnResize}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'refreshOnResize',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='autoComplete'
 									title='Turns on the auto-completion suggestions as you type'
 									label='Auto-complete suggestions'
 									pref={props.prefs.autoComplete}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'autoComplete',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='autoPreview'
 									title='Refreshes the preview as you code. Otherwise use the Run button'
 									label='Auto-preview'
 									pref={props.prefs.autoPreview}
-									onChange={updateSetting.bind(this)}
-								/>
-								<CheckboxSetting
-									name='autoSave'
-									title='Auto-save keeps saving your code at regular intervals after you hit the first save manually'
-									label='Auto-save'
-									pref={props.prefs.autoSave}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'autoPreview',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='preserveLastCode'
 									title='Loads the last open creation when app starts'
 									label='Preserve last written code'
 									pref={props.prefs.preserveLastCode}
-									onChange={updateSetting.bind(this)}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'preserveLastCode',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='replaceNewTab'
 									title='Turning this on will start showing ZenUML in every new tab you open'
 									label='Replace new tab page'
 									pref={props.prefs.replaceNewTab}
-									onChange={updateSetting.bind(this)}
-									// showWhenExtension
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'replaceNewTab',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='preserveConsoleLogs'
 									title='Preserves the console logs across your preview refreshes'
 									label='Preserve console logs'
 									pref={props.prefs.preserveConsoleLogs}
-									onChange={updateSetting}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'preserveConsoleLogs',
+											value: e.target.checked
+										});
+									}}
 								/>
 								<CheckboxSetting
 									name='lightVersion'
 									title='Switch to lighter version for better performance. Removes things like blur etc.'
 									label='Fast/light version'
 									pref={props.prefs.lightVersion}
-									onChange={updateSetting}
+									onChange={(e) => {
+										props.onChange({
+											settingName: 'lightVersion',
+											value: e.target.checked
+										});
+									}}
 								/>
 							</div>
 						</div>
