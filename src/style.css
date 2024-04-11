@@ -1342,7 +1342,7 @@ body > #demo-frame {
 	position: fixed;
 	will-change: transform;
 	left: 50%;
-	top: -5px;
+	top: 10px;
 	padding: 10px;
 	background: white;
 	border: 1px solid #eee;
@@ -1350,9 +1350,9 @@ body > #demo-frame {
 	box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 	/*color: #333;*/
 	font-size: 1rem;
-	border-radius: 3px;
+	border-radius: 4px;
 	z-index: 6;
-	transform: translateX(-50%) translateY(-100%);
+	transform: translateX(-50%) translateY(calc(-100% - 10px));
 	transition: 0.3s ease;
 }
 

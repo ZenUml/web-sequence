@@ -8,8 +8,8 @@ const CheatSheetModal = ({ open, onClose }) => {
 			<Dialog.Portal>
 				<Dialog.Overlay className='bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow fixed inset-0' />
 				<Dialog.Content
-					className='text-gray-400 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[550px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-500/90 backdrop-blur p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
-					<Dialog.Title className='m-0 text-[17px] font-medium text-lg text-gray-100'>
+					className='text-gray-400 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[550px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
+					<Dialog.Title className='font-medium text-lg text-gray-100'>
 						Cheat sheet
 					</Dialog.Title>
 					<div className='mt-6 w-full'>

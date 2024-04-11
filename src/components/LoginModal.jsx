@@ -30,8 +30,8 @@ export default function LoginModal({ open, onClose }) {
 				<Dialog.Overlay
 					className='bg-black/50 backdrop-blur data-[state=open]:animate-overlayShow fixed inset-0' />
 				<Dialog.Content
-					className='text-gray-500 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[350px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-500/90 backdrop-blur p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
-					<Dialog.Title className='m-0 text-[17px] mb-10 font-medium text-lg text-gray-100'>
+					className='text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[466px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none'>
+					<Dialog.Title className='mt-10 mb-10 font-medium text-lg text-gray-100'>
 						<svg className='h-10 w-10 -mx-1'>
 							<use xlinkHref='#outline-zenuml' />
 						</svg>
@@ -42,7 +42,7 @@ export default function LoginModal({ open, onClose }) {
 							<button
 								type='button'
 								onClick={login}
-								className='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-gray-600 text-gray-400 hover:bg-black-500/90'
+								className='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90'
 								data-auth-provider='github'
 								data-hint='You logged in with Github last time'
 							>
@@ -56,7 +56,7 @@ export default function LoginModal({ open, onClose }) {
 							<button
 								type='button'
 								onClick={login}
-								className='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-gray-600 text-gray-400 hover:bg-black-500/90'
+								className='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90'
 								data-auth-provider='google'
 								data-hint='You logged in with Google last time'
 							>
@@ -70,7 +70,7 @@ export default function LoginModal({ open, onClose }) {
 							<button
 								type='button'
 								onClick={login}
-								class='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-gray-600 text-gray-400 hover:bg-black-500/90'
+								class='flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90'
 								data-auth-provider='facebook'
 								data-hint='You logged in with Facebook last time'
 							>

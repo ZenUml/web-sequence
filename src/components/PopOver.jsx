@@ -53,7 +53,7 @@ export class Popover extends Component {
 
 		return (
 			<div className={`popover`}>
-				<div className='popover-trigger mb-3' onClick={this.togglePopover}>
+				<div className='popover-trigger' onClick={this.togglePopover}>
 					{trigger}
 				</div>
 				<div style={{ display: isVisible ? 'block' : 'none' }}>
