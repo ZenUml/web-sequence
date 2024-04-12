@@ -153,7 +153,7 @@ export default class App extends Component {
 						await this.setState({
 							isAskToImportModalOpen: true
 						});
-						trackEvent('ui', 'askToImportModalSeen');
+						mixpanel.track({ event: 'askToImportModalSeen', category: 'ui' });
 					});
 				}
 				window.db.getUser(user.uid).then(async (customUser) => {
@@ -364,7 +364,7 @@ export default class App extends Component {
 		fork.updatedOn = Date.now();
 		this.setCurrentItem(fork).then(() => this.refreshEditor());
 		alertsService.add(`"${sourceItem.title}" was forked`);
-		trackEvent('fn', 'itemForked');
+		mixpanel.track({ event: 'itemForked', category: 'fn' });
 	}
 
 	createNewItem() {
@@ -433,8 +433,7 @@ BookLibService.Borrow(id) {
 		await this.setState({
 			savedItems: { ...this.state.savedItems }
 		});
-
-		trackEvent('fn', 'itemRemoved');
+		mixpanel.track({ event: 'itemRemoved', category: 'fn' });
 	}
 
 	async setCurrentItem(item) {
@@ -447,7 +446,7 @@ BookLibService.Borrow(id) {
 
 		await this.setState({ currentItem: item }, d.resolve);
 
-		this.saveItem()
+		this.saveItem();
 
 		// Reset unsaved count, in UI also.
 		await this.setState({ unsavedEditCount: 0 });
@@ -484,7 +483,7 @@ BookLibService.Borrow(id) {
 		if (this.state.user || window.zenumlDesktop) {
 			this.saveItem();
 			const numOfItems = Object.keys(this.state.savedItems).length;
-			trackEvent('fn', 'save', 'no_of_files_' + numOfItems);
+			mixpanel.track({ event: 'save', category: 'fn', label: 'no_of_files_' + numOfItems });
 		} else {
 			this.loginBtnClickHandler();
 		}
@@ -732,7 +731,7 @@ BookLibService.Borrow(id) {
 
 	layoutBtnClickHandler(layoutId) {
 		this.saveSetting('layoutMode', layoutId);
-		trackEvent('ui', 'toggleLayoutClick', layoutId);
+		mixpanel.track({ event: 'toggleLayoutClick', category: 'ui', label:  layoutId});
 		this.toggleLayout(layoutId);
 	}
 
@@ -920,7 +919,7 @@ BookLibService.Borrow(id) {
 		currentBrowserTab.setTitle(this.state.currentItem.title);
 		if (this.state.currentItem.id) {
 			this.saveItem();
-			trackEvent('ui', 'titleChanged');
+			mixpanel.track({ event: 'titleChanged', category: 'ui' });
 		}
 	}
 
@@ -994,7 +993,7 @@ BookLibService.Borrow(id) {
 	}
 
 	async proBtnClickHandler() {
-		trackEvent('ui', 'proBtnClick');
+		mixpanel.track({ event: 'proBtnClick', category: 'ui' });
 		await this.setState({ isProFeatureListModalOpen: true });
 	}
 
@@ -1022,7 +1021,7 @@ BookLibService.Borrow(id) {
 				return;
 			}
 		}
-		trackEvent('fn', 'loggedOut');
+		mixpanel.track({ event: 'loggedOut', category: 'fn' });
 		auth.logout();
 		await this.setState({ isProfileModalOpen: false });
 		alertsService.add('Log out successful');
@@ -1052,7 +1051,7 @@ BookLibService.Borrow(id) {
 	}
 
 	async newBtnClickHandler() {
-		trackEvent('ui', 'newBtnClick');
+		mixpanel.track({ event: 'newBtnClick', category: 'ui' });
 
 		if (!this.checkItemsLimit()) {
 			mixpanel.track({ event: 'Free Limit', category: '3 diagrams limit', label: 'New' });
@@ -1081,13 +1080,12 @@ BookLibService.Borrow(id) {
 			this.loginBtnClickHandler();
 			return;
 		}
-		trackEvent('ui', 'openBtnClick');
+		mixpanel.track({ event: 'openMyLibrary', category: 'ui' });
 		await this.openSavedItemsPane();
 	}
 
 	detachedPreviewBtnHandler() {
-		trackEvent('ui', 'detachPreviewBtnClick');
-
+		mixpanel.track({ event: 'detachPreviewBtnClick', category: 'ui' });
 		this.contentWrap.detachPreview();
 	}
 
@@ -1210,7 +1208,7 @@ BookLibService.Borrow(id) {
 		await this.setState({ isAskToImportModalOpen: false });
 		window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS] = true;
 		if (e) {
-			trackEvent('ui', 'dontAskToImportBtnClick');
+			mixpanel.track({ event: 'dontAskToImportBtnClick', category: 'ui' });
 		}
 	}
 
@@ -1432,6 +1430,7 @@ BookLibService.Borrow(id) {
 		this.setState({
 			openCheatSheet: true
 		});
+		mixpanel.track({ event: 'openCheatSheet', category: 'ui'});
 	}
 
 	js13KDownloadBtnClickHandler() {
@@ -1441,6 +1440,11 @@ BookLibService.Borrow(id) {
 		document.body.appendChild(a);
 		a.click();
 		a.remove();
+	}
+
+	async handleSettingsBtnClick() {
+		await this.setState({ isSettingsModalOpen: true });
+		mixpanel.track({ event: 'openSettingsModal', category: 'ui' });
 	}
 
 	async blankTemplateSelectHandler() {
@@ -1457,6 +1461,11 @@ BookLibService.Borrow(id) {
 			});
 		await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
 		this.contentWrap.resetTabs();
+	}
+
+	async handleShortcutsModalOpen() {
+		await this.setState({ isKeyboardShortcutsModalOpen: true });
+		mixpanel.track({ event: 'openSettingsModal', category: 'ui' });
 	}
 
 	render() {
@@ -1486,9 +1495,7 @@ BookLibService.Borrow(id) {
 							title={this.state.currentItem.title}
 							titleInputBlurHandler={this.titleInputBlurHandler.bind(this)}
 							user={this.state.user}
-							settingsBtnClickHandler={async () =>
-								await this.setState({ isSettingsModalOpen: true })
-							}
+							settingsBtnClickHandler={this.handleSettingsBtnClick.bind(this)}
 							unsavedEditCount={this.state.unsavedEditCount}
 						/>
 					)}
@@ -1514,9 +1521,7 @@ BookLibService.Borrow(id) {
 						onEditorFocus={this.editorFocusHandler.bind(this)}
 						onSplitUpdate={this.splitUpdateHandler.bind(this)}
 						onProFeature={this.proBtnClickHandler.bind(this)}
-						keyboardShortcutsBtnClickHandler={async () =>
-							await this.setState({ isKeyboardShortcutsModalOpen: true })
-						}
+						keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(this)}
 						layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
 					/>
 					{this.isEmbed ? null : (

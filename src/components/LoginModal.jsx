@@ -1,13 +1,12 @@
-import React, { h, Component } from 'preact';
-import { trackEvent } from '../analytics';
 import { auth } from '../auth';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect } from 'preact-compat';
+import mixpanel from '../services/mixpanel';
 
 export default function LoginModal({ open, onClose }) {
 	const login = (e) => {
 		const provider = e.target.dataset.authProvider;
-		trackEvent('ui', 'loginProviderClick', provider);
+		mixpanel.track({ event: 'loginProviderClick', category: 'ui', label: provider });
 		auth.login(provider);
 	};
 

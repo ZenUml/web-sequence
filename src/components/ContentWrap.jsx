@@ -6,8 +6,6 @@ import Tabs from './Tabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
 import { getCompleteHtml, loadJS, log } from '../utils';
-
-import { Button } from './common';
 import { SplitPane } from './SplitPane.jsx';
 import { trackEvent } from '../analytics';
 import CodeMirror from '../CodeMirror';
@@ -17,9 +15,8 @@ import { deferred } from '../deferred';
 import CssSettingsModal from './CssSettingsModal';
 import codeService from '../services/code_service';
 import { alertsService } from '../notifications';
-import { Popover } from './PopOver.jsx';
-import { SharePanel } from './SharePanel.jsx';
 import userService from '../services/user_service';
+import mixpanel from '../services/mixpanel';
 
 const minCodeWrapSize = 33;
 
@@ -433,7 +430,7 @@ export default class ContentWrap extends Component {
 		}
 		const png = await this.getPngBlob();
 		saveAs(png, 'zenuml.png');
-		trackEvent('ui', 'downloadPng');
+		mixpanel.track({ event: 'downloadPng', category: 'ui' });
 	}
 
 	async getPngBlob() {
@@ -452,7 +449,7 @@ export default class ContentWrap extends Component {
 		}
 		if (!navigator.clipboard || !navigator.clipboard.write) {
 			this.showCopyErrorNotice();
-			trackEvent('ui', 'copyImageFailed1');
+			mixpanel.track({ event: 'copyImageFailed1', category: 'ui' });
 			return;
 		}
 		navigator.clipboard
@@ -469,10 +466,10 @@ export default class ContentWrap extends Component {
 				(err) => {
 					this.showCopyErrorNotice();
 					console.log(err);
-					trackEvent('ui', 'copyImageFailed2');
+					mixpanel.track({ event: 'copyImageFailed2', category: 'ui' });
 				}
 			);
-		trackEvent('ui', 'copyImage');
+		mixpanel.track({ event: 'copyImage', category: 'ui' });
 	}
 
 	showCopyErrorNotice() {
@@ -797,8 +794,10 @@ export default class ContentWrap extends Component {
 	onTabChanges(tab) {
 		if (tab === 'ZenUML') {
 			this.dslEditor.refreshEditor();
+			mixpanel.track({ event: 'switchToZenUMLTab', category: 'ui' });
 		} else {
 			this.cssEditor.refreshEditor();
+			mixpanel.track({ event: 'switchToCSSTab', category: 'ui' });
 		}
 	}
 
