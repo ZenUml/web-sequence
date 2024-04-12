@@ -58,7 +58,8 @@
 		"postcss-custom-media": "^10.0.4",
 		"preact-cli": "^3.5.1",
 		"run-sequence": "^2.2.1",
-		"sirv-cli": "1.0.3"
+		"sirv-cli": "1.0.3",
+		"tailwindcss": "^3.4.3"
 	},
 	"dependencies": {
 		"@emmetio/codemirror-plugin": "^1.1.3",
