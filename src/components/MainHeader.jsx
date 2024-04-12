@@ -60,7 +60,7 @@ export function MainHeader(props) {
   const isPro = userService.isPro();
 
   return (
-    <div className="main-header text-gray-400 py-4 px-8 flex justify-between border-b border-black-700 bg-black-500">
+    <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

@@ -7,8 +7,8 @@ class Toolbox extends Component {
 
   render() {
     return (
-      <div className="flex gap-6 px-10 py-3 bg-black-400 flex-wrap">
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+      <div className="flex gap-6 px-10 py-2 bg-black-400 flex-wrap">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addNewParticipantButton"
             width="100%"
@@ -42,7 +42,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addAsyncMessageButton"
             width="100%"
@@ -106,7 +106,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addSyncMessageButton"
             width="100%"
@@ -159,7 +159,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addReturnValueButton"
             width="100%"
@@ -272,7 +272,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addSelfMessageButton"
             width="100%"
@@ -334,7 +334,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addNewInstanceButton"
             width="100%"
@@ -393,7 +393,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addConditionalButton"
             width="100%"
@@ -450,7 +450,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addLoopButton"
             width="100%"
@@ -507,7 +507,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-between">
+        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             width="100%"
             height="16"

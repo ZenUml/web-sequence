@@ -1,5 +1,4 @@
-import { h, Component } from 'preact';
-import { Button } from './common';
+import { Component } from 'preact';
 
 class JS13K extends Component {
   constructor(props) {
@@ -95,8 +94,8 @@ export default class Footer extends Component {
             >
               <svg
                 style={{
-                  width: '20px',
-                  height: '20px',
+                  width: '16px',
+                  height: '16px',
                   verticalAlign: 'text-bottom',
                   fill: 'currentColor',
                 }}

@@ -1102,7 +1102,7 @@ export default class ContentWrap extends Component {
               />
             </div>
             {window.zenumlDesktop ? null : (
-              <div className="shrink-0 relative z-10 bg-gray-200 py-3 px-6 flex justify-between">
+              <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
                 <div className="flex gap-4 items-center">
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(1)}
