@@ -74,21 +74,25 @@ export function MainHeader(props) {
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Portal>
 						<DropdownMenu.Content
-							className='w-[180px] bg-black-400 py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
+							className='w-[200px] bg-black-400 py-2.5 rounded-md shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200'
 							sideOffset={5}
 							align='start'
 						>
 							<DropdownMenu.Item
 								onClick={() => props.openCheatSheet()}
 								className='cursor-pointer hover:bg-black-600 text-sm leading-none flex items-center h-10 px-6 relative select-none outline-none gap-2 duration-200'>
-								<span className='material-symbols-outlined text-lg font-bold'>article</span>
+								<svg className='h-5 w-5'>
+									<use xlinkHref='#icon-cheatsheet' />
+								</svg>
 								Cheatsheet
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
 								className='cursor-pointer hover:bg-black-600 text-sm leading-none relative select-none outline-none duration-200'>
 								<a onClick={handleTrack} className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank'
 									 href='https://zenuml.com/docs/category/language-guide'>
-									<span className='material-symbols-outlined text-lg font-bold'>open_in_new</span>
+									<svg className='h-5 w-5'>
+										<use xlinkHref='#icon-guide' />
+									</svg>
 									Language guide
 								</a>
 							</DropdownMenu.Item>
