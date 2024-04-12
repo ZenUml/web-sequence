@@ -4,27 +4,25 @@
   "manifest_version": 3,
   "description": "Real-time & offline tool for generating sequence diagrams",
   "homepage_url": "https://zenuml.com",
-  "permissions": [
-	"storage"
-  ],
+  "permissions": ["storage"],
   "options_ui": {
-	"page": "options.html",
-	"open_in_tab": false
+    "page": "options.html",
+    "open_in_tab": false
   },
   "action": {
-	"default_title": "Start ZenUML Sequence",
-	"default_icon": {
-	  "16": "icon-16.png",
-	  "48": "icon-48.png",
-	  "128": "icon-128.png"
-	}
+    "default_title": "Start ZenUML Sequence",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
   },
   "background": {
-	"service_worker": "eventPage.js"
+    "service_worker": "eventPage.js"
   },
   "icons": {
-	"16": "icon-16.png",
-	"48": "icon-48.png",
-	"128": "icon-128.png"
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
   }
 }

@@ -7,7 +7,7 @@
 
 - `for`, `while` & `dowhile` loops should be instrumented in the generated JavaScript code.
 - Import should confirm the overriding of existing items.
-- Opening a smaller DOM item shouldn't show  left over HTML from a previously open bigger DOM item.
+- Opening a smaller DOM item shouldn't show left over HTML from a previously open bigger DOM item.
 
 ## Interface
 
@@ -19,8 +19,8 @@
 - Clicking on an item in saved items pane should open that item in the editor.
 - Clicking the close button in the saved item tile should confirm first, and then remove that item from DOM & storage.
 - If the item being removed is open in the editor, a new item should be created & opened after removal.
-- Clicking the *export* button should download a JSON formatted export file of saved items.
-- Clicking on *import* button should ask to select a JSON file to import.
+- Clicking the _export_ button should download a JSON formatted export file of saved items.
+- Clicking on _import_ button should ask to select a JSON file to import.
 
 ## Settings
 

@@ -1,5 +1,5 @@
-import config from './configuration'
+import config from './configuration';
 
 export default {
-    isPaymentEnabled: config.features.payment
-}
+  isPaymentEnabled: config.features.payment,
+};

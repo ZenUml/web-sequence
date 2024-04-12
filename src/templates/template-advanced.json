@@ -1,11 +1,11 @@
 {
-	"title": "Advanced",
-	"mainSizes": [30, 70],
-	"htmlMode": "html",
-	"cssMode": "css",
-	"jsMode": "js",
-	"layoutMode": 1,
-	"js": "// This is a sample to document ZenUML\n// This sample is not intendet to be realistic, but instead show the features of ZenUML\n\n// Comments at the beginning are not shown in the diagram\n\n\n// Change order of participant (by appearance) - list them here\nLibraryApp\nUnknownBookException\nLibraryDB\n// Define a Starter or leave it without\n@Starter(User)\n\n// Ask for a book\nbook = LibraryApp.getBook(Treasure_Island, Stevenson) {\n  // create a new instance using \"new\"\n  bm = new BookManager()\n  // call on an other object with return value:\n  bookID = \"bm:BookManager\".getBook(Treasure_Island, Stevenson) {\n    // LOOP: use for, foreach or while\n    foreach(author) {\n      // self-call (explicit object)\n      \"bm:BookManager\".search(Stevenson)\n    }\n  }\n}\n",
-	"css": "#diagram #LibraryDB {\n  background: lightblue;\n}\n#diagram [signature=\"getBook(Treasure_Island, Stevenson)\"] .fragment.loop {\n  background: yellowgreen\n}\n",
-    "html": ""
+  "title": "Advanced",
+  "mainSizes": [30, 70],
+  "htmlMode": "html",
+  "cssMode": "css",
+  "jsMode": "js",
+  "layoutMode": 1,
+  "js": "// This is a sample to document ZenUML\n// This sample is not intendet to be realistic, but instead show the features of ZenUML\n\n// Comments at the beginning are not shown in the diagram\n\n\n// Change order of participant (by appearance) - list them here\nLibraryApp\nUnknownBookException\nLibraryDB\n// Define a Starter or leave it without\n@Starter(User)\n\n// Ask for a book\nbook = LibraryApp.getBook(Treasure_Island, Stevenson) {\n  // create a new instance using \"new\"\n  bm = new BookManager()\n  // call on an other object with return value:\n  bookID = \"bm:BookManager\".getBook(Treasure_Island, Stevenson) {\n    // LOOP: use for, foreach or while\n    foreach(author) {\n      // self-call (explicit object)\n      \"bm:BookManager\".search(Stevenson)\n    }\n  }\n}\n",
+  "css": "#diagram #LibraryDB {\n  background: lightblue;\n}\n#diagram [signature=\"getBook(Treasure_Island, Stevenson)\"] .fragment.loop {\n  background: yellowgreen\n}\n",
+  "html": ""
 }

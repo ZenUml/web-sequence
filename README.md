@@ -8,46 +8,48 @@
 ![Screenshot](/screenshots/ss1.png)
 
 ## Table of Contents
+
 - [Web Sequence](#web-sequence)
-	- [Table of Contents](#table-of-contents)
-	- [Installation](#installation)
-		- [Features](#features)
-	- [Development](#development)
-	- [CI/CD](#cicd)
-		- [Staging environment](#staging-environment)
-		- [Production environment](#production-environment)
-	- [Support](#support)
-	- [Acknowledgements](#acknowledgements)
-		- [License](#license)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Features](#features)
+  - [Development](#development)
+  - [CI/CD](#cicd)
+    - [Staging environment](#staging-environment)
+    - [Production environment](#production-environment)
+  - [Support](#support)
+  - [Acknowledgements](#acknowledgements)
+    - [License](#license)
 
 ## Installation
+
 1. Web App - https://app.zenuml.com
-2. Chrome Extension - [Chrome Web Store - ZenUML Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef). 
+2. Chrome Extension - [Chrome Web Store - ZenUML Sequence](https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef).
 
 ### Features
 
-* Supports method call, internal method, alt (if/else) and loop (for, foreach, while) keywords
-* Works offline
-* Save and load your creations
-* Auto-save feature
-* Code auto-completion
-* Import & Export all creations anytime, anywhere
-* Multiple editor themes & other configurable settings
-* Font options + use any system font!
-* Very easily accessible. Simply open a new tab in Chrome! (in chrome extension only)
-* Capture preview screenshot (in Chrome extension only)
+- Supports method call, internal method, alt (if/else) and loop (for, foreach, while) keywords
+- Works offline
+- Save and load your creations
+- Auto-save feature
+- Code auto-completion
+- Import & Export all creations anytime, anywhere
+- Multiple editor themes & other configurable settings
+- Font options + use any system font!
+- Very easily accessible. Simply open a new tab in Chrome! (in chrome extension only)
+- Capture preview screenshot (in Chrome extension only)
 
 Follow [@ZenUml](https://twitter.com/intent/follow?screen_name=ZenUml) for updates or tweet out feature requests and suggestions.
 
 ## Development
 
-````
+```
 $ yarn install  // instal modules
 $ yarn start    // start a local server
 
 $ yarn build    // build a staging release
 $ yarn release  // copy resources to app / extension
-````
+```
 
 ## CI/CD
 
@@ -58,18 +60,18 @@ $ yarn release  // copy resources to app / extension
 
 ### Production environment
 
-Create a tag as `release-<version>`, and push it to the remote. It doesn't matter which branch you are on. The CI/CD 
+Create a tag as `release-<version>`, and push it to the remote. It doesn't matter which branch you are on. The CI/CD
 pipeline will create a production release. The link to the production site is https://app.zenuml.com.
 
 ## Support
 
-Web Sequence is completely free and open-source. If you find it useful, you can show your support by sharing it in your 
+Web Sequence is completely free and open-source. If you find it useful, you can show your support by sharing it in your
 social network or by simply letting me know how much you 💖 it by tweeting to [@ZenUml](https://twitter.com/ZenUml).
 
 ## Acknowledgements
 
-* This project is a fork of [Web Maker](https://github.com/chinchang/web-maker)
-* The diagram generator is built on top of [VueJs](https://vuejs.org/)
+- This project is a fork of [Web Maker](https://github.com/chinchang/web-maker)
+- The diagram generator is built on top of [VueJs](https://vuejs.org/)
 
 ### License
 
