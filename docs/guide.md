@@ -8,8 +8,8 @@
   window.$docsify = {
     repo: 'QingWei-Li/docsify',
     maxLevel: 3,
-    coverpage: true
-  }
+    coverpage: true,
+  };
 </script>
 
 <!-- or data-* -->
@@ -17,8 +17,8 @@
   src="//unpkg.com/docsify"
   data-repo="QingWei-Li/docsify"
   data-max-level="3"
-  data-coverpage>
-</script>
+  data-coverpage
+></script>
 ```
 
 Both ways are compatible. However, the first way is recommended. It is clear and can be configured in a separate file.
@@ -34,8 +34,8 @@ The DOM element to be mounted on initialization. It can be a CSS selector string
 
 ```js
 window.$docsify = {
-  el: '#app'
-}
+  el: '#app',
+};
 ```
 
 ## repo
@@ -49,8 +49,8 @@ Configure the repository url or a string of `username/repo` can add the [GitHub 
 window.$docsify = {
   repo: 'QingWei-Li/docsify',
   // or
-  repo: 'https://github.com/QingWei-Li/docsify/'
-}
+  repo: 'https://github.com/QingWei-Li/docsify/',
+};
 ```
 
 ## max-level
@@ -62,8 +62,8 @@ Maximum Table of content level.
 
 ```js
 window.$docsify = {
-  maxLevel: 4
-}
+  maxLevel: 4,
+};
 ```
 
 ## load-navbar
@@ -79,8 +79,8 @@ window.$docsify = {
   loadNavbar: true,
 
   // load from nav.md
-  loadNavbar: 'nav.md'
-}
+  loadNavbar: 'nav.md',
+};
 ```
 
 ## load-sidebar
@@ -96,8 +96,8 @@ window.$docsify = {
   loadSidebar: true,
 
   // load from summary.md
-  loadSidebar: 'summary.md'
-}
+  loadSidebar: 'summary.md',
+};
 ```
 
 ## sub-max-level
@@ -109,8 +109,8 @@ Add table of contents (TOC) in custom sidebar.
 
 ```js
 window.$docsify = {
-  subMaxLevel: 2
-}
+  subMaxLevel: 2,
+};
 ```
 
 ## auto2top
@@ -122,8 +122,8 @@ Scrolls to the top of the screen when the route is changed.
 
 ```js
 window.$docsify = {
-  auto2top: true
-}
+  auto2top: true,
+};
 ```
 
 ## homepage
@@ -139,8 +139,9 @@ window.$docsify = {
   homepage: 'home.md',
 
   // Or use the readme in your repo
-  homepage: 'https://raw.githubusercontent.com/QingWei-Li/docsify/master/README.md'
-}
+  homepage:
+    'https://raw.githubusercontent.com/QingWei-Li/docsify/master/README.md',
+};
 ```
 
 ## base-path
@@ -157,8 +158,9 @@ window.$docsify = {
   basePath: 'https://docsify.js.org/',
 
   // Even can load files from other repo
-  basePath: 'https://raw.githubusercontent.com/ryanmcdermott/clean-code-javascript/master/'
-}
+  basePath:
+    'https://raw.githubusercontent.com/ryanmcdermott/clean-code-javascript/master/',
+};
 ```
 
 ## coverpage
@@ -173,8 +175,8 @@ window.$docsify = {
   coverpage: true,
 
   // Custom file name
-  coverpage: 'cover.md'
-}
+  coverpage: 'cover.md',
+};
 ```
 
 ## name
@@ -185,8 +187,8 @@ Website name as it appears in the sidebar.
 
 ```js
 window.$docsify = {
-  name: 'docsify'
-}
+  name: 'docsify',
+};
 ```
 
 ## name-link
@@ -203,9 +205,9 @@ window.$docsify = {
   // For each route
   nameLink: {
     '/zh-cn/': '/zh-cn/',
-    '/': '/'
-  }
-}
+    '/': '/',
+  },
+};
 ```
 
 ## markdown
@@ -220,18 +222,18 @@ window.$docsify = {
   markdown: {
     smartypants: true,
     renderer: {
-      link: function() {
+      link: function () {
         // ...
-      }
-    }
+      },
+    },
   },
 
   // function
   markdown: function (marked, renderer) {
     // ...
-    return marked
-  }
-}
+    return marked;
+  },
+};
 ```
 
 ## theme-color
@@ -242,8 +244,8 @@ Customize the theme color. Use [CSS3 variables](https://developer.mozilla.org/en
 
 ```js
 window.$docsify = {
-  themeColor: '#3F51B5'
-}
+  themeColor: '#3F51B5',
+};
 ```
 
 ## alias
@@ -257,9 +259,10 @@ window.$docsify = {
   alias: {
     '/foo/(+*)': '/bar/$1', // supports regexp
     '/zh-cn/changelog': '/changelog',
-    '/changelog': 'https://raw.githubusercontent.com/QingWei-Li/docsify/master/CHANGELOG'
-  }
-}
+    '/changelog':
+      'https://raw.githubusercontent.com/QingWei-Li/docsify/master/CHANGELOG',
+  },
+};
 ```
 
 ## auto-header
@@ -271,20 +274,20 @@ If `loadSidebar` and `autoHeader` are both enabled, for each link in `_sidebar.m
 ```js
 window.$docsify = {
   loadSidebar: true,
-  autoHeader: true
-}
+  autoHeader: true,
+};
 ```
 
 ## execute-script
 
 - type: `Boolean`
 
-Execute the script on the page. Only parse the first script tag([demo](themes)).  If Vue is present, it is turned on by default.
+Execute the script on the page. Only parse the first script tag([demo](themes)). If Vue is present, it is turned on by default.
 
 ```js
 window.$docsify = {
-  executeScript: true
-}
+  executeScript: true,
+};
 ```
 
 ```markdown
@@ -305,8 +308,8 @@ Disabled emoji parse.
 
 ```js
 window.$docsify = {
-  noEmoji: true
-}
+  noEmoji: true,
+};
 ```
 
 ## merge-navbar
@@ -317,8 +320,8 @@ Navbar will be merged with the sidebar on smaller screens.
 
 ```js
 window.$docsify = {
-  mergeNavbar: true
-}
+  mergeNavbar: true,
+};
 ```
 
 ## format-updated
@@ -327,6 +330,7 @@ window.$docsify = {
 
 We can display the file update date through **{docsify-updated<span>}</span>** variable. And format it by `formatUpdated`.
 See https://github.com/lukeed/tinydate#patterns
+
 ```js
 window.$docsify = {
   formatUpdated: '{MM}/{DD} {HH}:{mm}',
@@ -334,9 +338,9 @@ window.$docsify = {
   formatUpdated: function (time) {
     // ...
 
-    return time
-  }
-}
+    return time;
+  },
+};
 ```
 
 ## external-link-target
@@ -348,8 +352,8 @@ Target to open external links. Default `'_blank'` (new window/tab)
 
 ```js
 window.$docsify = {
-  externalLinkTarget: '_self' // default: '_blank'
-}
+  externalLinkTarget: '_self', // default: '_blank'
+};
 ```
 
 ## router-mode
@@ -359,24 +363,18 @@ window.$docsify = {
 
 ```js
 window.$docsify = {
-  routerMode: 'history' // default: 'hash'
-}
+  routerMode: 'history', // default: 'hash'
+};
 ```
 
 ## noCompileLinks
 
 - type: `Array`
 
-
 Sometimes we do not want docsify to handle our links. See [#203](https://github.com/QingWei-Li/docsify/issues/203)
-
 
 ```js
 window.$docsify = {
-  noCompileLinks: [
-    '/foo',
-    '/bar/.*'
-  ]
-}
+  noCompileLinks: ['/foo', '/bar/.*'],
+};
 ```
-

@@ -9,7 +9,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -36,4 +35,3 @@ jobs:
           asset_path: ./extension.zip
           asset_name: chrome-extension.zip
           asset_content_type: application/zip
-
