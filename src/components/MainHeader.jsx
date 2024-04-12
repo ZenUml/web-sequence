@@ -5,9 +5,9 @@ import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVers
 import featureToggle from '../services/feature_toggle';
 import { Popover } from './PopOver';
 import { SharePanel } from './SharePanel';
-import { trackEvent } from '../analytics';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
+import mixpanel from '../services/mixpanel';
 
 export function MainHeader(props) {
 	const [isEditing, setEditing] = useState(false);
@@ -35,7 +35,7 @@ export function MainHeader(props) {
 
 		await props.onUpdateImage(image);
 		setIsSharePanelVisible(true);
-		trackEvent('ui', 'shareLink');
+		mixpanel.track({ event: 'shareLink', category: 'ui' });
 	};
 
 	const handleProfileClick = useCallback(() => {
@@ -49,6 +49,10 @@ export function MainHeader(props) {
 	const onBlur = (e) => {
 		exitEditing();
 		props.titleInputBlurHandler(e);
+	};
+
+	const handleTrack = () => {
+		mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
 	};
 
 	const isPro = userService.isPro();
@@ -82,7 +86,7 @@ export function MainHeader(props) {
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
 								className='cursor-pointer hover:bg-black-600 text-sm leading-none relative select-none outline-none duration-200'>
-								<a className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank'
+								<a onClick={handleTrack} className='flex items-center h-10 px-6 gap-2 !no-underline' target='_blank'
 									 href='https://zenuml.com/docs/category/language-guide'>
 									<span className='material-symbols-outlined text-lg font-bold'>open_in_new</span>
 									Language guide
