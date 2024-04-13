@@ -1103,11 +1103,11 @@ export default class ContentWrap extends Component {
             </div>
             {window.zenumlDesktop ? null : (
               <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-4 items-center text-black-100">
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(1)}
                     id="layoutBtn1"
-                    className="w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200"
+                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
                     aria-label="Switch to layout with preview on right"
                   >
                     <svg className="w-5 h-5">
@@ -1117,7 +1117,7 @@ export default class ContentWrap extends Component {
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(2)}
                     id="layoutBtn2"
-                    className="w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200"
+                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
                     aria-label="Switch to layout with preview on bottom"
                   >
                     <svg className="w-5 h-5">
@@ -1127,7 +1127,7 @@ export default class ContentWrap extends Component {
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(3)}
                     id="layoutBtn3"
-                    className="w-7 h-7 hover:bg-gray-300 flex items-center justify-center rounded-lg duration-200"
+                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
                     aria-label="Switch to layout with preview on left"
                   >
                     <svg className="w-5 h-5">
