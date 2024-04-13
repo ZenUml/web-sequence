@@ -304,10 +304,6 @@ a > svg {
   display: none;
 }
 
-.is-loading > svg {
-  display: none;
-}
-
 .is-loading .btn-loader {
   display: inline-block;
 }

@@ -148,10 +148,10 @@ export default class SavedItemPane extends Component {
       >
         <button
           onClick={this.onCloseIntent.bind(this)}
-          class="btn icon-button modal__close-btn"
+          class="btn icon-button modal__close-btn w-7 h-7 rounded-md"
           id="js-saved-items-pane-close-btn"
         >
-          <span class="material-symbols-outlined">close</span>
+          <span class="material-symbols-outlined text-lg">close</span>
         </button>
         <div class="flex items-center justify-between my-10 px-5">
           <h3 className="text-lg text-gray-200">
@@ -160,7 +160,7 @@ export default class SavedItemPane extends Component {
           <div className="my-library-buttons">
             <button
               onClick={this.props.exportBtnClickHandler}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200"
+              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
               aria-label="Export all your creations into a single importable file."
             >
               <svg className="w-4 h-4 fill-current">
@@ -170,7 +170,7 @@ export default class SavedItemPane extends Component {
             </button>
             <button
               onClick={this.importBtnClickHandler.bind(this)}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:bg-black-700 rounded-lg gap-1.5 flex items-center duration-200"
+              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
               aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
             >
               <svg className="w-4 h-4 fill-current">
