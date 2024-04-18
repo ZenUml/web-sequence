@@ -454,7 +454,7 @@ BookLibService.Borrow(id) {
 	}
 
 	checkItemsLimit() {
-		if(!this.state.user || this.state.user.items && Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
+		if(!this.state.user || !this.state.user.items || Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
 			return true;
 		}
 
