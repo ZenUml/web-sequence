@@ -1,10 +1,10 @@
 {
-	"title": "Basic",
-	"mainSizes": [30, 70],
-	"htmlMode": "html",
-	"cssMode": "css",
-	"jsMode": "js",
-	"layoutMode": 1,
-	"js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
-	"html": ""
+  "title": "Basic",
+  "mainSizes": [30, 70],
+  "htmlMode": "html",
+  "cssMode": "css",
+  "jsMode": "js",
+  "layoutMode": 1,
+  "js": "// This is a sample\nA.method() {\n  if(condition) {\n    B.method()\n  }\n}",
+  "html": ""
 }

@@ -1,5 +1,5 @@
- Error: Couldn't find preset "preact-cli/babel" relative to directory 
- "/Users/pengxiao/workspaces/zenuml/vue-sequence/dist"
+Error: Couldn't find preset "preact-cli/babel" relative to directory
+"/Users/pengxiao/workspaces/zenuml/vue-sequence/dist"
 
 This is happening when we use linked node module locally.
 

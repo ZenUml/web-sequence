@@ -1,4 +1,4 @@
 import App from './components/app.jsx';
-import './config/paddleInit'
+import './config/paddleInit';
 
 export default App;

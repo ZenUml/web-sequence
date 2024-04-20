@@ -1,3 +1,5 @@
 src/lib/
 app/
 build/
+node_modules
+static/
