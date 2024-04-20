@@ -45,7 +45,7 @@
     "eslint": "^8.54.0",
     "eslint-config-preact": "^1.1.0",
     "git-revision-webpack-plugin": "^5.0.0",
-    "gulp": "^3.9.1",
+    "gulp": "^5.0.0",
     "gulp-clean-css": "^4.3.0",
     "gulp-concat": "^2.6.1",
     "gulp-hash-filename": "^3.0.0",
