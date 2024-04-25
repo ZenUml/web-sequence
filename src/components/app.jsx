@@ -36,7 +36,7 @@ import { takeScreenshot } from '../takeScreenshot';
 import { AskToImportModal } from './AskToImportModal';
 import { Alerts } from './Alerts';
 import { HelpModal } from './HelpModal';
-import { ProFeatureListModal } from './subscription/ProFeatureListModal';
+import { PricingModal } from './subscription/PricingModal';
 import { Js13KModal } from './Js13KModal';
 import CreateNewModal from './CreateNewModal';
 import { Icons } from './Icons';
@@ -73,7 +73,7 @@ export default class App extends Component {
       isAddLibraryModalOpen: false,
       isSettingsModalOpen: false,
       isHelpModalOpen: false,
-      isProFeatureListModalOpen: false,
+      isPricingModalOpen: false,
       isNotificationsModalOpen: false,
       isLoginModalOpen: false,
       isProfileModalOpen: false,
@@ -1012,7 +1012,7 @@ BookLibService.Borrow(id) {
 
   async proBtnClickHandler() {
     mixpanel.track({ event: 'proBtnClick', category: 'ui' });
-    await this.setState({ isProFeatureListModalOpen: true });
+    await this.setState({ isPricingModalOpen: true });
   }
 
   profileBtnClickHandler() {
@@ -1669,10 +1669,10 @@ BookLibService.Borrow(id) {
           version={version}
         />
 
-        <ProFeatureListModal
-          open={this.state.isProFeatureListModalOpen}
+        <PricingModal
+          open={this.state.isPricingModalOpen}
           onClose={async () =>
-            await this.setState({ isProFeatureListModalOpen: false })
+            await this.setState({ isPricingModalOpen: false })
           }
           onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
           version={version}
