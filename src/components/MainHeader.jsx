@@ -8,6 +8,7 @@ import { SharePanel } from './SharePanel';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
+import user_service from '../services/user_service';
 
 export function MainHeader(props) {
   const [isEditing, setEditing] = useState(false);
@@ -57,7 +58,7 @@ export function MainHeader(props) {
     mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
   };
 
-  const isPro = userService.isPro();
+  const isSubscribed = userService.isSubscribed();
 
   return (
     <div className="main-header text-gray-400 py-4 px-8 flex justify-between border-b border-black-700 bg-black-500">
@@ -232,7 +233,7 @@ export function MainHeader(props) {
                     className=""
                   />
                 </div>
-                {isPro && (
+                {isSubscribed && (
                   <svg className="w-4 h-4 fill-current absolute bottom-0 right-0">
                     <use xlinkHref="#icon-pro" />
                   </svg>
@@ -251,7 +252,7 @@ export function MainHeader(props) {
                   </p>
                   <p className="text-sm text-gray-600">{props.user.email}</p>
                 </div>
-                {isPro && (
+                {isSubscribed && (
                   <DropdownMenu.Item
                     onClick={props.proBtnHandler}
                     className="text-primary-100 cursor-pointer hover:bg-black-600 text-[13px] leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
@@ -259,7 +260,7 @@ export function MainHeader(props) {
                     <svg className="w-4 h-4 fill-current">
                       <use xlinkHref="#icon-pro" />
                     </svg>
-                    My Pro Plan
+                    My Plan ({user_service.getPlanType()})
                   </DropdownMenu.Item>
                 )}
                 <DropdownMenu.Item

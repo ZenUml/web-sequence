@@ -1,5 +1,6 @@
 import userService from '../../services/user_service';
 import { UpgradeLink } from './UpgradeLink';
+import { DisabledUpgradeLink } from './DisabledUpgradeLink';
 import { CancellationLink } from './CancellationLink';
 
 const SubscriptionAction = (props) => {
@@ -9,15 +10,24 @@ const SubscriptionAction = (props) => {
     return null;
   }
 
-  if (userService.isPro()) {
+  if (userService.isSubscribed()) {
     const subscription = userService.subscription();
-    return <CancellationLink cancelUrl={subscription.cancel_url} />;
+    if (props.planType == userService.getPlanType()) {
+      return <CancellationLink cancelUrl={subscription.cancel_url} />;
+    }
+    return <DisabledUpgradeLink upgradeBtnName={props.upgradeBtnName} />;
+  }
+
+  if (props.planType == 'free') {
+    return <DisabledUpgradeLink upgradeBtnName={props.upgradeBtnName} />;
   }
 
   return (
     <UpgradeLink
       userId={user.uid}
       userEmail={user.email}
+      planType={props.planType}
+      upgradeBtnName={props.upgradeBtnName}
       preActionCallback={props.preActionCallback}
       postActionCallback={props.postActionCallback}
     />

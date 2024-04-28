@@ -460,13 +460,16 @@ BookLibService.Borrow(id) {
       !this.state.user ||
       (this.state.user.items &&
         Object.keys(this.state.user.items).length <= 3) ||
-      userService.isPro()
+      userService.isPlusOrAdvanced() ||
+      (this.state.user.items &&
+        Object.keys(this.state.user.items).length <= 20 &&
+        userService.isBasic())
     ) {
       return true;
     }
 
     alert(
-      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is 3. Upgrade now for unlimited storage.`,
+      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is ${userService.isBasic() ? 20 : 3}. Upgrade now for more storage.`,
     );
     this.proBtnClickHandler();
   }

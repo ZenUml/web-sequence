@@ -122,7 +122,12 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     if (valid) {
       if (alertParser.supports(req)) {
         const subscription = alertParser.parse(req);
-        const userId = subscription.passthrough;
+
+        // Compatible with previous pro users, before subscription.passthrough only stored userId
+        const userId =
+          typeof subscription.passthrough === 'string'
+            ? subscription.passthrough
+            : subscription.passthrough.userId;
 
         const user = await db.collection('users').doc(userId).get();
         if (user.exists) {

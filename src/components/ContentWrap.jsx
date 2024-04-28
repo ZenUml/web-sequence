@@ -804,7 +804,7 @@ export default class ContentWrap extends Component {
   onCSSActiviation() {
     if (!window.user) {
       this.props.onLogin();
-    } else if (userService.isPro()) {
+    } else if (userService.isPlusOrAdvanced()) {
       return true;
     } else {
       this.props.onProFeature();

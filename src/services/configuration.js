@@ -97,7 +97,10 @@ const defaultConfig = {
     storageBucket: 'staging-zenuml.appspot.com',
     messagingSenderId: '937016595307',
   },
-  paddleProduct: 552378, //Test Plan1
+  paddleProductBasicMonthly: 'pro_01hwh74tng14hkwpmyr346fdqp', //Test Plan1
+  paddleProductPlusMonthly: 'pro_01hwh7sh9zm3zjtprwwmr8ayyj', //Test Plan1
+  paddleProductBasicYearly: 'pro_01hwh7b9xhfhr1r0q47en6watg', //Test Plan1
+  paddleProductPlusYearly: 'pro_01hwh7w73vd8av1x0tft21jxxg', //Test Plan1
   features: {
     payment: true,
   },

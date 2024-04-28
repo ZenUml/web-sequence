@@ -1,25 +1,24 @@
-import config from '../../services/configuration';
-
+import planService from '../../services/planService';
 const UpgradeLink = (props) => {
   const checkout = (e) => {
     e.preventDefault();
     props.preActionCallback();
 
     Paddle.Checkout.open({
-      product: config.paddleProduct,
+      product: planService.getProductByPlanType(props.planType),
       email: props.userEmail,
-      passthrough: props.userId,
+      passthrough: { userId: props.userId, planType: props.planType },
       successCallback: props.postActionCallback,
     });
   };
+
   return (
     <a
-      className="block rounded-lg w-full py-2 px-3 bg-primary text-sm text-gray-100 hover:no-underline"
-      id="UpgradeLink"
+      className="mt-2 block w-full bg-blue-500 border border-transparent rounded-md py-2 text-sm text-center hover:no-underline"
       href="#"
       onClick={checkout}
     >
-      Upgrade now
+      {props.upgradeBtnName}
     </a>
   );
 };
