@@ -68,6 +68,10 @@ const configByDomain = {
       messagingSenderId: '937016595307',
     },
     paddleProduct: 552378, //Test Plan1
+    paddleProductBasicMonthly: 'pro_01hwh74tng14hkwpmyr346fdqp', //Test Plan
+    paddleProductPlusMonthly: 'pro_01hwh7sh9zm3zjtprwwmr8ayyj', //Test Plan
+    paddleProductBasicYearly: 'pro_01hwh7b9xhfhr1r0q47en6watg', //Test Plan
+    paddleProductPlusYearly: 'pro_01hwh7w73vd8av1x0tft21jxxg', //Test Plan
     features: {
       payment: true,
     },
@@ -82,6 +86,10 @@ const configByDomain = {
       appId: '1:269086080449:web:524e822dbd66f7bb594340',
     },
     paddleProduct: 552378, //Test Plan1
+    paddleProductBasicMonthly: 'pro_01hwh74tng14hkwpmyr346fdqp', //Test Plan
+    paddleProductPlusMonthly: 'pro_01hwh7sh9zm3zjtprwwmr8ayyj', //Test Plan
+    paddleProductBasicYearly: 'pro_01hwh7b9xhfhr1r0q47en6watg', //Test Plan
+    paddleProductPlusYearly: 'pro_01hwh7w73vd8av1x0tft21jxxg', //Test Plan
     features: {
       payment: true,
     },
@@ -98,6 +106,10 @@ const defaultConfig = {
     messagingSenderId: '937016595307',
   },
   paddleProduct: 552378, //Test Plan1
+  paddleProductBasicMonthly: 'pro_01hwh74tng14hkwpmyr346fdqp', //Test Plan
+  paddleProductPlusMonthly: 'pro_01hwh7sh9zm3zjtprwwmr8ayyj', //Test Plan
+  paddleProductBasicYearly: 'pro_01hwh7b9xhfhr1r0q47en6watg', //Test Plan
+  paddleProductPlusYearly: 'pro_01hwh7w73vd8av1x0tft21jxxg', //Test Plan
   features: {
     payment: true,
   },

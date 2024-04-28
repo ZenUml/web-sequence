@@ -7,7 +7,7 @@ export function ProductVersionLabel(props) {
     ? 'Please login to upgrade to Pro'
     : 'Get more out of ZenUML — Go Pro';
 
-  if (!window.user || userService.isPro()) return null;
+  if (!window.user || userService.isSubscribed()) return null;
 
   return (
     <ProductVersionLabelBasic
