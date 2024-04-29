@@ -180,6 +180,7 @@ export function computeJs(
 	  if (code && app) {
 		  app.render(code, {
 				enableMultiTheme: false,
+		    theme: "theme-default",
 				onContentChange: (code) => {
 					window.parent.postMessage({ code })
 				},
