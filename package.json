@@ -71,7 +71,7 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@zenuml/core": "3.22.1",
-    "clsx": "^2.0.0",
+    "clsx": "^2.1.1",
     "code-blast-codemirror": "chinchang/code-blast-codemirror#web-maker",
     "codemirror": "^5.65.16",
     "dom-to-image": "github:MichalBryxi/dom-to-image",
