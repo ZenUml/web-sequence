@@ -119,6 +119,7 @@ export function PricingModal({
               </div>
             </div>
           </div>
+          <div class="checkout-container"></div>
           <Dialog.Close asChild>
             <button
               className="text-gray-100 hover:bg-white/10 absolute top-4 right-4 inline-flex h-8 w-8 p-1.5 hover:bg-gray-600 appearance-none items-center justify-center rounded-lg outline-none"
