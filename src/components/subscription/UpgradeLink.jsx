@@ -2,28 +2,18 @@ import planService from '../../services/planService';
 
 const UpgradeLink = (props) => {
   const checkout = (e) => {
-    //e.preventDefault();
-    //props.preActionCallback();
+    e.preventDefault();
+    props.preActionCallback();
 
-    let itemsList = [
-      {
-        priceId: 'pri_01hwwezba0hte3vyw1cpv9km8w', //Plus-Monthly
-        quantity: 1,
-      },
-      // ,
-      // {
-      //   priceId: 'pri_01hwh7xf9fhp00vhpwyhv3vdss', //Plus-Yearly
-      //   quantity: 1,
-      // },
-    ];
-    Paddle.Checkout.open({
-      items: itemsList,
+    props.Paddle.Checkout.open({
+      items: [
+        {
+          priceId: planService.getProductByPlanType(props.planType),
+          quantity: 1,
+        },
+      ],
       settings: {
         displayMode: 'overlay',
-        frameTarget: 'checkout-container',
-        frameInitialHeight: '450',
-        frameStyle:
-          'width: 100%; min-width: 312px; background-color: transparent; border: none;',
       },
     });
   };

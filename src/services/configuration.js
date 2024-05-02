@@ -68,10 +68,10 @@ const configByDomain = {
       messagingSenderId: '937016595307',
     },
     paddleProduct: 552378, //Test Plan1
-    paddleProductBasicMonthly: '552378', //Test Plan
-    paddleProductPlusMonthly: '552378', //Test Plan
-    paddleProductBasicYearly: '552378', //Test Plan
-    paddleProductPlusYearly: '552378', //Test Plan
+    paddleProductBasicMonthly: 'pri_01hwwjyhr74eanm0apqedk8hqk', //Test Plan
+    paddleProductPlusMonthly: 'pri_01hwwk3gepttg1vbwdrgq80a38', //Test Plan
+    paddleProductBasicYearly: 'pri_01hwwk1z848mde6vr6cawjh1yg', //Test Plan
+    paddleProductPlusYearly: 'pri_01hwwk4m9ks7knvnmtkeas6wy6', //Test Plan
     features: {
       payment: true,
     },
@@ -86,10 +86,10 @@ const configByDomain = {
       appId: '1:269086080449:web:524e822dbd66f7bb594340',
     },
     paddleProduct: 552378, //Test Plan1
-    paddleProductBasicMonthly: '552378', //Test Plan
-    paddleProductPlusMonthly: '552378', //Test Plan
-    paddleProductBasicYearly: '552378', //Test Plan
-    paddleProductPlusYearly: '552378', //Test Plan
+    paddleProductBasicMonthly: 'pri_01hwwjyhr74eanm0apqedk8hqk', //Test Plan
+    paddleProductPlusMonthly: 'pri_01hwwk3gepttg1vbwdrgq80a38', //Test Plan
+    paddleProductBasicYearly: 'pri_01hwwk1z848mde6vr6cawjh1yg', //Test Plan
+    paddleProductPlusYearly: 'pri_01hwwk4m9ks7knvnmtkeas6wy6', //Test Plan
     features: {
       payment: true,
     },
@@ -106,10 +106,10 @@ const defaultConfig = {
     messagingSenderId: '937016595307',
   },
   paddleProduct: 552378, //Test Plan1
-  paddleProductBasicMonthly: '552378', //Test Plan
-  paddleProductPlusMonthly: '552378', //Test Plan
-  paddleProductBasicYearly: '552378', //Test Plan
-  paddleProductPlusYearly: '552378', //Test Plan
+  paddleProductBasicMonthly: 'pri_01hwwjyhr74eanm0apqedk8hqk', //Test Plan
+  paddleProductPlusMonthly: 'pri_01hwwk3gepttg1vbwdrgq80a38', //Test Plan
+  paddleProductBasicYearly: 'pri_01hwwk1z848mde6vr6cawjh1yg', //Test Plan
+  paddleProductPlusYearly: 'pri_01hwwk4m9ks7knvnmtkeas6wy6', //Test Plan
   features: {
     payment: true,
   },
