@@ -12,9 +12,6 @@ const UpgradeLink = (props) => {
           quantity: 1,
         },
       ],
-      settings: {
-        displayMode: 'overlay',
-      },
     });
   };
 
