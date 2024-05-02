@@ -22,3 +22,7 @@ Paddle---POST-Request-->Firebase
 
 - `firebase -P prod functions:config:set larasite.host=sequence-diagram.zenuml.com`
 - `firebase -P prod functions:config:set larasite.public_base_url=https://zenuml.com/sequence-diagram`
+
+### Webhook
+
+https://console.firebase.google.com/u/0/project/staging-zenuml-27954/functions
