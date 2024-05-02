@@ -5,7 +5,7 @@ const UpgradeLink = (props) => {
     e.preventDefault();
     props.preActionCallback();
 
-    props.Paddle.Checkout.open({
+    Paddle.Checkout.open({
       items: [
         {
           priceId: planService.getProductByPlanType(props.planType),
