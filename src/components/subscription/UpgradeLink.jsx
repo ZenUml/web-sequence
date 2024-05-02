@@ -10,15 +10,16 @@ const UpgradeLink = (props) => {
         priceId: 'pri_01hwwezba0hte3vyw1cpv9km8w', //Plus-Monthly
         quantity: 1,
       },
-      {
-        priceId: 'pri_01hwh7xf9fhp00vhpwyhv3vdss', //Plus-Yearly
-        quantity: 1,
-      },
+      // ,
+      // {
+      //   priceId: 'pri_01hwh7xf9fhp00vhpwyhv3vdss', //Plus-Yearly
+      //   quantity: 1,
+      // },
     ];
     Paddle.Checkout.open({
       items: itemsList,
       settings: {
-        displayMode: 'inline',
+        displayMode: 'overlay',
         frameTarget: 'checkout-container',
         frameInitialHeight: '450',
         frameStyle:
