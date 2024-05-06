@@ -12,6 +12,10 @@ const UpgradeLink = (props) => {
           quantity: 1,
         },
       ],
+      customer: {
+        email: props.userEmail,
+      },
+      customData: { userId: props.userId, planType: props.planType },
     });
   };
 
