@@ -69,9 +69,9 @@ const configByDomain = {
     },
     paddleProduct: 552378, //Test Plan1
     paddleProductBasicMonthly: '552378', //Test Plan
-    paddleProductPlusMonthly: '552378', //Test Plan
-    paddleProductBasicYearly: '552378', //Test Plan
-    paddleProductPlusYearly: '552378', //Test Plan
+    paddleProductPlusMonthly: '882893', //Test Plan
+    paddleProductBasicYearly: '882890', //Test Plan
+    paddleProductPlusYearly: '882891', //Test Plan
     features: {
       payment: true,
     },
@@ -87,9 +87,9 @@ const configByDomain = {
     },
     paddleProduct: 552378, //Test Plan1
     paddleProductBasicMonthly: '552378', //Test Plan
-    paddleProductPlusMonthly: '552378', //Test Plan
-    paddleProductBasicYearly: '552378', //Test Plan
-    paddleProductPlusYearly: '552378', //Test Plan
+    paddleProductPlusMonthly: '882893', //Test Plan
+    paddleProductBasicYearly: '882890', //Test Plan
+    paddleProductPlusYearly: '882891', //Test Plan
     features: {
       payment: true,
     },
@@ -107,9 +107,9 @@ const defaultConfig = {
   },
   paddleProduct: 552378, //Test Plan1
   paddleProductBasicMonthly: '552378', //Test Plan
-  paddleProductPlusMonthly: '552378', //Test Plan
-  paddleProductBasicYearly: '552378', //Test Plan
-  paddleProductPlusYearly: '552378', //Test Plan
+  paddleProductPlusMonthly: '882893', //Test Plan
+  paddleProductBasicYearly: '882890', //Test Plan
+  paddleProductPlusYearly: '882891', //Test Plan
   features: {
     payment: true,
   },
