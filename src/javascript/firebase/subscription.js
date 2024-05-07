@@ -32,6 +32,7 @@ function loadSubscriptionToApp(app) {
       );
     })
     .then((subscription) => {
+      console.debug('Feng loadSubscriptionToApp', subscription);
       app.setState((state) => {
         const newUser = state.user;
         newUser.subscription = subscription;

@@ -122,11 +122,7 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     if (valid) {
       if (alertParser.supports(req)) {
         const subscription = alertParser.parse(req);
-        const userId =
-          typeof subscription.passthrough === 'string'
-            ? subscription.passthrough
-            : subscription.passthrough.userId;
-
+        const userId = getUserIdFromPassthrough(subscription.passthrough);
         const user = await db.collection('users').doc(userId).get();
         if (user.exists) {
           await db
@@ -148,3 +144,18 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     res.send('Invaid request');
   }
 });
+
+function getUserIdFromPassthrough(passthrough) {
+  return isJSONString(passthrough)
+    ? JSON.parse(passthrough).userId
+    : passthrough;
+}
+
+function isJSONString(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

@@ -5,6 +5,7 @@ export default {
   user: user,
   subscription: subscription,
   isSubscribed: function () {
+    console.debug('Feng subscription', subscription());
     return (
       subscription() &&
       (subscription().status === 'active' ||
@@ -23,12 +24,22 @@ export default {
   getPlanType: function () {
     if (!this.isSubscribed()) return 'free';
     const currentSubscription = subscription();
-
-    // Compatible with previous pro users, before subscription.passthrough only stored userId
-    if (typeof currentSubscription.passthrough === 'string') {
-      return 'basic-monthly';
-    }
-
-    return currentSubscription.passthrough.planType;
+    return getPlanTypeFromPassthrough(currentSubscription.passthrough);
   },
 };
+
+// Compatible with previous pro users, before subscription.passthrough only stored userId
+function getPlanTypeFromPassthrough(passthrough) {
+  return isJSONString(passthrough)
+    ? JSON.parse(passthrough).planType
+    : 'basic-monthly';
+}
+
+function isJSONString(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

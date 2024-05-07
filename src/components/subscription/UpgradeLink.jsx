@@ -8,7 +8,10 @@ const UpgradeLink = (props) => {
     Paddle.Checkout.open({
       product: planService.getProductByPlanType(props.planType),
       email: props.userEmail,
-      passthrough: { userId: props.userId, planType: props.planType },
+      passthrough: JSON.stringify({
+        userId: props.userId,
+        planType: props.planType,
+      }),
       successCallback: props.postActionCallback,
     });
   };
