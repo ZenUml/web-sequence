@@ -1,6 +1,6 @@
 const alertParsers = {
   subscription_created: (req) => ({
-    cancel_url: req.body.cancel_url,
+    cancel_url: req.body.cancel_url || '',
     checkout_id: req.body.checkout_id,
     currency: req.body.currency,
     email: req.body.email,
@@ -13,7 +13,7 @@ const alertParsers = {
     subscription_id: req.body.subscription_id,
     subscription_plan_id: req.body.subscription_plan_id,
     unit_price: req.body.unit_price,
-    update_url: req.body.update_url,
+    update_url: req.body.update_url || '',
   }),
   subscription_cancelled: (req) => ({
     cancellation_effective_date: req.body.cancellation_effective_date,
