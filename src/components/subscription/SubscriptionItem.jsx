@@ -21,7 +21,7 @@ export function SubscriptionItem(props) {
           )}
           {props.priceTerm && <span class="text-base">{props.priceTerm}</span>}
         </p>
-        {props.planName != 'Enterprice' && featureToggle.isPaymentEnabled && (
+        {props.planName != 'Enterprise' && featureToggle.isPaymentEnabled && (
           <SubscriptionAction
             planType={props.planType}
             upgradeBtnName={props.upgradeBtnName}
@@ -30,7 +30,7 @@ export function SubscriptionItem(props) {
             postActionCallback={props.postActionCallback}
           />
         )}
-        {props.planName == 'Enterprice' && (
+        {props.planName == 'Enterprise' && (
           <ContactUsLink upgradeBtnName={props.upgradeBtnName} />
         )}
         {props.includeDesc && (
