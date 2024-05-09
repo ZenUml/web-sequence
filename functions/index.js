@@ -51,12 +51,15 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
   const supportedProductIds = (functions.config().paddle.product_ids || '')
     .split(',')
     .filter(Boolean);
-  const checkSupportedProductIds = (productId) =>
-    Boolean(productId && supportedProductIds.includes(productId));
+  const checkSupportedProductIds = (productId) => {
+    return productId && supportedProductIds.includes(productId);
+  };
 
-  exports.supportedProductIds = functions.https.onRequest(async (req, res) => {
-    res.status(200).send(JSON.stringify(supportedProductIds));
-  });
+  exports.supported_product_ids = functions.https.onRequest(
+    async (req, res) => {
+      res.status(200).send(JSON.stringify(supportedProductIds));
+    },
+  );
 
   const replaceBaseUrlInShareLink = (responseData) => {
     const data = JSON.parse(responseData);
