@@ -48,6 +48,16 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
   console.log('using LaraSite URL:', baseUrlHttps);
   console.log('using publicBaseUrl:', publicBaseUrl);
 
+  const supportedProductIds = (functions.config().paddle.product_ids || '')
+    .split(',')
+    .filter(Boolean);
+  const checkSupportedProductIds = (productId) =>
+    Boolean(productId && supportedProductIds.includes(productId));
+
+  exports.supportedProductIds = functions.https.onRequest(async (req, res) => {
+    res.status(200).send(JSON.stringify(supportedProductIds));
+  });
+
   const replaceBaseUrlInShareLink = (responseData) => {
     const data = JSON.parse(responseData);
     data.page_share = data.page_share
@@ -122,6 +132,12 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     if (valid) {
       if (alertParser.supports(req)) {
         const subscription = alertParser.parse(req);
+        if (!checkSupportedProductIds(subscription.subscription_plan_id)) {
+          res.send(
+            `subscription_plan_id:${subscription.subscription_plan_id} not supported`,
+          );
+          return;
+        }
         const userId = getUserIdFromPassthrough(subscription.passthrough);
         const user = await db.collection('users').doc(userId).get();
         if (user.exists) {
