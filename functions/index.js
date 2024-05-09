@@ -19,6 +19,17 @@ exports.info = functions.https.onRequest((req, res) => {
 
 const verifyIdToken = (token) => admin.auth().verifyIdToken(token);
 
+const supportedProductIds = (functions.config().paddle.product_ids || '')
+  .split(',')
+  .filter(Boolean);
+const checkSupportedProductIds = (productId) => {
+  return productId && supportedProductIds.includes(productId);
+};
+
+exports.supported_product_ids = functions.https.onRequest(async (req, res) => {
+  res.status(200).send(JSON.stringify(supportedProductIds));
+});
+
 exports.authenticate = functions.https.onRequest(async (req, res) => {
   console.log('request:', req);
   const auth = req.get('Authorization');
@@ -47,19 +58,6 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     'https://zenuml.com/sequence-diagram';
   console.log('using LaraSite URL:', baseUrlHttps);
   console.log('using publicBaseUrl:', publicBaseUrl);
-
-  const supportedProductIds = (functions.config().paddle.product_ids || '')
-    .split(',')
-    .filter(Boolean);
-  const checkSupportedProductIds = (productId) => {
-    return productId && supportedProductIds.includes(productId);
-  };
-
-  exports.supported_product_ids = functions.https.onRequest(
-    async (req, res) => {
-      res.status(200).send(JSON.stringify(supportedProductIds));
-    },
-  );
 
   const replaceBaseUrlInShareLink = (responseData) => {
     const data = JSON.parse(responseData);
