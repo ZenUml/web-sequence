@@ -328,8 +328,17 @@ export default class App extends Component {
     });
   }
 
+  onSubscriptionChange() {
+    alertRefreshPage();
+    loadUserSubscription();
+  }
+
   loadUserSubscription() {
     loadSubscriptionToApp(this).then(() => this.refreshEditor());
+  }
+
+  alertRefreshPage() {
+    alert('Please refresh the page later to display subscriptions.');
   }
 
   updateProfileUi() {
@@ -1677,7 +1686,7 @@ BookLibService.Borrow(id) {
           }
           onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
           version={version}
-          onSubscriptionChange={this.loadUserSubscription.bind(this)}
+          onSubscriptionChange={this.onSubscriptionChange.bind(this)}
           loginHandler={this.loginBtnClickHandler.bind(this)}
         />
         <SupportDeveloperModal
