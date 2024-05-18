@@ -1,6 +1,6 @@
 import config from './configuration';
 
-//TODO: refactor: It is necessary to integrate more plan-related logic into this module.
+//TODO(refactor): It is necessary to integrate more plan-related logic into this module.
 
 const getProductByPlanType = (planType) => {
   const productMap = {

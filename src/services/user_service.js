@@ -5,7 +5,7 @@ export default {
   user: user,
   subscription: subscription,
   isSubscribed: function () {
-    console.debug('Feng subscription', subscription());
+    //console.debug('subscription', subscription());
     return (
       subscription() &&
       (subscription().status === 'active' ||
