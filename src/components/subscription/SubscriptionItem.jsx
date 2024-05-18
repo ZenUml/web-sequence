@@ -16,11 +16,28 @@ export function SubscriptionItem(props) {
       <div class="p-3">
         <h2 class="text-xs font-semibold leading-6">{props.planName}</h2>
         <p class="mt-1">
-          {props.priceDesc && (
-            <span class="text-2xl font-semibold">{props.priceDesc}</span>
+          {props.price && (
+            <span class="text-2xl font-semibold">{props.price}</span>
           )}
           {props.priceTerm && <span class="text-base">{props.priceTerm}</span>}
         </p>
+        <div>
+          {props.priceDesc && props.priceDesc != ' ' && (
+            <p class="mt-2 text-xs font-semibold">{props.priceDesc}</p>
+          )}
+          {props.priceDesc && props.priceDesc == ' ' && (
+            <p class="invisible mt-2 text-xs font-semibold">&nbsp;</p>
+          )}
+
+          {props.priceSaveDesc && props.priceSaveDesc != ' ' && (
+            <p class="text-green-500 text-xs font-semibold">
+              {props.priceSaveDesc}
+            </p>
+          )}
+          {props.priceSaveDesc && props.priceSaveDesc == ' ' && (
+            <p class="invisible text-xs font-semibold">&nbsp;</p>
+          )}
+        </div>
         {props.planName != 'Enterprise' && featureToggle.isPaymentEnabled && (
           <SubscriptionAction
             planType={props.planType}

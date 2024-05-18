@@ -10,7 +10,7 @@ export function PricingModal({
   loginHandler,
   onSubscriptionChange,
 }) {
-  const [isMonthlyType, setIsMonthlyType] = useState(true);
+  const [isMonthlyType, setIsMonthlyType] = useState(false);
   const monthlyBillingClicked = (e) => {
     setIsMonthlyType(true);
   };
@@ -41,7 +41,7 @@ export function PricingModal({
                     onClick={yearlyBillingClicked}
                     class={`${isMonthlyType ? '' : 'bg-black'} ml-0.5 relative border border-transparent rounded-md py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none sm:w-auto sm:px-8`}
                   >
-                    Yearly{' '}
+                    Billed Yearly{' '}
                     <span
                       className={`${isMonthlyType ? '' : 'text-green-500'}`}
                     >
@@ -57,7 +57,9 @@ export function PricingModal({
                 <SubscriptionItem
                   planName="Starter"
                   planType="free"
-                  priceDesc="Free"
+                  price="Free"
+                  priceDesc="Free for everyone"
+                  priceSaveDesc={isMonthlyType ? '' : ' '}
                   upgradeBtnName={
                     userService.getPlanType() == 'free'
                       ? 'Current plan'
@@ -75,8 +77,10 @@ export function PricingModal({
                 />
                 <SubscriptionItem
                   planName="Basic"
-                  priceDesc={isMonthlyType ? '$4.99' : '$0.83'}
+                  price={isMonthlyType ? '$4.99' : '$0.83'}
                   priceTerm="/month"
+                  priceDesc={isMonthlyType ? ' ' : 'Billed yearly'}
+                  priceSaveDesc={isMonthlyType ? '' : 'Save 49.92 USD'}
                   planType={isMonthlyType ? 'basic-monthly' : 'basic-yearly'}
                   upgradeBtnName="Upgrade to Basic"
                   preActionCallback={onClose}
@@ -88,9 +92,11 @@ export function PricingModal({
                 />
                 <SubscriptionItem
                   planName="Plus"
-                  priceDesc={isMonthlyType ? '$7.99' : '$1.25'}
+                  price={isMonthlyType ? '$7.99' : '$1.25'}
                   priceTerm="/month"
                   planType={isMonthlyType ? 'plus-monthly' : 'plus-yearly'}
+                  priceDesc={isMonthlyType ? ' ' : 'Billed yearly'}
+                  priceSaveDesc={isMonthlyType ? '' : 'Save 80.88 USD'}
                   upgradeBtnName="Upgrade to Plus"
                   preActionCallback={onClose}
                   loginCallback={loginHandler}
@@ -104,8 +110,10 @@ export function PricingModal({
                 />
                 <SubscriptionItem
                   planName="Enterprise"
-                  priceDesc="-"
+                  price="Custom"
                   planType="enterprise"
+                  priceDesc=" "
+                  priceSaveDesc={isMonthlyType ? '' : ' '}
                   upgradeBtnName="Contact us"
                   preActionCallback={onClose}
                   loginCallback={loginHandler}
