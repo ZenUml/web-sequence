@@ -329,16 +329,11 @@ export default class App extends Component {
   }
 
   onSubscriptionChange() {
-    alertRefreshPage();
-    loadUserSubscription();
+    alert('Please refresh the page later to display subscriptions.');
   }
 
   loadUserSubscription() {
     loadSubscriptionToApp(this).then(() => this.refreshEditor());
-  }
-
-  alertRefreshPage() {
-    alert('Please refresh the page later to display subscriptions.');
   }
 
   updateProfileUi() {
