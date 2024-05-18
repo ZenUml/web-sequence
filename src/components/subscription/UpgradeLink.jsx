@@ -1,4 +1,5 @@
 import planService from '../../services/planService';
+import userService from '../../services/user_service';
 
 const UpgradeLink = (props) => {
   const checkout = (e) => {
@@ -12,7 +13,10 @@ const UpgradeLink = (props) => {
         userId: props.userId,
         planType: props.planType,
       }),
-      successCallback: props.postActionCallback,
+      successCallback: () => {
+        alert('Please refresh the page later to display subscriptions.');
+        props.postActionCallback();
+      },
     });
   };
   return (
