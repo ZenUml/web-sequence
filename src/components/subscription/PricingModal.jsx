@@ -34,7 +34,7 @@ export function PricingModal({
                     onClick={monthlyBillingClicked}
                     class={`${isMonthlyType ? 'bg-black' : ''} relative  rounded-md shadow-sm py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none  sm:w-auto sm:px-8`}
                   >
-                    Monthly billing
+                    Billed Monthly
                   </button>
                   <button
                     type="button"
