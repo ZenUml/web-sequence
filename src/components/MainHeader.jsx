@@ -8,6 +8,7 @@ import { SharePanel } from './SharePanel';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
+import { SaveStatusButton } from './SaveStatusButton';
 
 export function MainHeader(props) {
   const [isEditing, setEditing] = useState(false);
@@ -188,6 +189,7 @@ export function MainHeader(props) {
             {props.externalLibCount}
           </span>
         </Button>
+        <SaveStatusButton isSaving={props.isSaving} />
         {!window.user ? (
           <button
             className="h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"
