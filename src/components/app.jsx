@@ -36,7 +36,7 @@ import { takeScreenshot } from '../takeScreenshot';
 import { AskToImportModal } from './AskToImportModal';
 import { Alerts } from './Alerts';
 import { HelpModal } from './HelpModal';
-import { ProFeatureListModal } from './subscription/ProFeatureListModal';
+import { PricingModal } from './subscription/PricingModal';
 import { Js13KModal } from './Js13KModal';
 import CreateNewModal from './CreateNewModal';
 import { Icons } from './Icons';
@@ -73,7 +73,7 @@ export default class App extends Component {
       isAddLibraryModalOpen: false,
       isSettingsModalOpen: false,
       isHelpModalOpen: false,
-      isProFeatureListModalOpen: false,
+      isPricingModalOpen: false,
       isNotificationsModalOpen: false,
       isLoginModalOpen: false,
       isProfileModalOpen: false,
@@ -455,13 +455,19 @@ BookLibService.Borrow(id) {
     return d.promise;
   }
 
-	checkItemsLimit() {
-		if(!this.state.user || !this.state.user.items || Object.keys(this.state.user.items).length <= 3 || userService.isPro()) {
-			return true;
-		}
+  checkItemsLimit() {
+    if (
+      !this.state.user ||
+      !this.state.user.items ||
+      Object.keys(this.state.user.items).length <= 3 ||
+      userService.isPlusOrAdvanced() ||
+      (Object.keys(this.state.user.items).length <= 20 && userService.isBasic())
+    ) {
+      return true;
+    }
 
     alert(
-      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is 3. Upgrade now for unlimited storage.`,
+      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is ${userService.isBasic() ? 20 : 3}. Upgrade now for more storage.`,
     );
     this.proBtnClickHandler();
   }
@@ -785,7 +791,7 @@ BookLibService.Borrow(id) {
       sizes = [50, 50];
     } finally {
       /* eslint-disable no-unsafe-finally */
-			return sizes;
+      return sizes;
       /* eslint-enable no-unsafe-finally */
     }
   }
@@ -1007,7 +1013,7 @@ BookLibService.Borrow(id) {
 
   async proBtnClickHandler() {
     mixpanel.track({ event: 'proBtnClick', category: 'ui' });
-    await this.setState({ isProFeatureListModalOpen: true });
+    await this.setState({ isPricingModalOpen: true });
   }
 
   profileBtnClickHandler() {
@@ -1664,10 +1670,10 @@ BookLibService.Borrow(id) {
           version={version}
         />
 
-        <ProFeatureListModal
-          open={this.state.isProFeatureListModalOpen}
+        <PricingModal
+          open={this.state.isPricingModalOpen}
           onClose={async () =>
-            await this.setState({ isProFeatureListModalOpen: false })
+            await this.setState({ isPricingModalOpen: false })
           }
           onSupportBtnClick={this.openSupportDeveloperModal.bind(this)}
           version={version}

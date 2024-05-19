@@ -9,7 +9,7 @@ const esprima = require('esprima');
  to whatever mode is selected and resolve the returned promise with the code.*/
 
 export function computeHtml(userCode, mode) {
-  // const enableExportButton = !featureToggle.isPaymentEnabled || userService.isPro();
+  // const enableExportButton = !featureToggle.isPaymentEnabled || userService.isSubscribed();
   var code = `<main id="demo">
 			<div id="diagram">
 			  <div id="mounting-point">

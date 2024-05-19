@@ -8,7 +8,10 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961',
     },
-    paddleProduct: 879334, //ZenUML Pro
+    paddleProductBasicMonthly: '879334', //production
+    paddleProductPlusMonthly: '883078', //production
+    paddleProductBasicYearly: '879927', //production
+    paddleProductPlusYearly: '883082', //production
     features: {
       payment: true,
     },
@@ -23,7 +26,10 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961',
     },
-    paddleProduct: 879334, //ZenUML Pro
+    paddleProductBasicMonthly: '879334', //production
+    paddleProductPlusMonthly: '883078', //production
+    paddleProductBasicYearly: '879927', //production
+    paddleProductPlusYearly: '883082', //production
     features: {
       payment: false,
     },
@@ -38,7 +44,10 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961',
     },
-    paddleProduct: 879334, //ZenUML Pro
+    paddleProductBasicMonthly: '879334', //production
+    paddleProductPlusMonthly: '883078', //production
+    paddleProductBasicYearly: '879927', //production
+    paddleProductPlusYearly: '883082', //production
     features: {
       payment: false,
     },
@@ -53,7 +62,10 @@ const configByDomain = {
       storageBucket: 'web-sequence-local.appspot.com',
       messagingSenderId: '542187884961',
     },
-    paddleProduct: 879334, //ZenUML Pro
+    paddleProductBasicMonthly: '879334', //production
+    paddleProductPlusMonthly: '883078', //production
+    paddleProductBasicYearly: '879927', //production
+    paddleProductPlusYearly: '883082', //production
     features: {
       payment: false,
     },
@@ -67,7 +79,10 @@ const configByDomain = {
       storageBucket: 'staging-zenuml.appspot.com',
       messagingSenderId: '937016595307',
     },
-    paddleProduct: 552378, //Test Plan1
+    paddleProductBasicMonthly: '552378', //Test Plan
+    paddleProductPlusMonthly: '882893', //Test Plan
+    paddleProductBasicYearly: '882890', //Test Plan
+    paddleProductPlusYearly: '882891', //Test Plan
     features: {
       payment: true,
     },
@@ -82,6 +97,10 @@ const configByDomain = {
       appId: '1:269086080449:web:524e822dbd66f7bb594340',
     },
     paddleProduct: 552378, //Test Plan1
+    paddleProductBasicMonthly: '552378', //Test Plan
+    paddleProductPlusMonthly: '882893', //Test Plan
+    paddleProductBasicYearly: '882890', //Test Plan
+    paddleProductPlusYearly: '882891', //Test Plan
     features: {
       payment: true,
     },
@@ -97,7 +116,10 @@ const defaultConfig = {
     storageBucket: 'staging-zenuml.appspot.com',
     messagingSenderId: '937016595307',
   },
-  paddleProduct: 552378, //Test Plan1
+  paddleProductBasicMonthly: '552378', //Test Plan
+  paddleProductPlusMonthly: '882893', //Test Plan
+  paddleProductBasicYearly: '882890', //Test Plan
+  paddleProductPlusYearly: '882891', //Test Plan
   features: {
     payment: true,
   },

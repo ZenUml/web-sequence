@@ -10,7 +10,7 @@ const CancellationLink = (props) => {
       href={props.cancelUrl}
       onClick={handleClick}
       target="_blank"
-      className="px-3 py-2 border-gray-400 border w-full rounded-lg block !no-underline decoration-0 hover:bg-gray-500/20"
+      className="no-underline mt-2 block w-full bg-red-500 border border-transparent rounded-md py-2 text-sm text-center hover:no-underline"
     >
       Cancel subscription
     </a>

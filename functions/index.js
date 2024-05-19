@@ -19,6 +19,17 @@ exports.info = functions.https.onRequest((req, res) => {
 
 const verifyIdToken = (token) => admin.auth().verifyIdToken(token);
 
+const supportedProductIds = (functions.config().paddle.product_ids || '')
+  .split(',')
+  .filter(Boolean);
+const checkSupportedProductIds = (productId) => {
+  return productId && supportedProductIds.includes(productId);
+};
+
+exports.supported_product_ids = functions.https.onRequest(async (req, res) => {
+  res.status(200).send(JSON.stringify(supportedProductIds));
+});
+
 exports.authenticate = functions.https.onRequest(async (req, res) => {
   console.log('request:', req);
   const auth = req.get('Authorization');
@@ -122,8 +133,13 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     if (valid) {
       if (alertParser.supports(req)) {
         const subscription = alertParser.parse(req);
-        const userId = subscription.passthrough;
-
+        if (!checkSupportedProductIds(subscription.subscription_plan_id)) {
+          res.send(
+            `subscription_plan_id:${subscription.subscription_plan_id} not supported`,
+          );
+          return;
+        }
+        const userId = getUserIdFromPassthrough(subscription.passthrough);
         const user = await db.collection('users').doc(userId).get();
         if (user.exists) {
           await db
@@ -145,3 +161,18 @@ exports.webhook = functions.https.onRequest(async (req, res) => {
     res.send('Invaid request');
   }
 });
+
+function getUserIdFromPassthrough(passthrough) {
+  return isJSONString(passthrough)
+    ? JSON.parse(passthrough).userId
+    : passthrough;
+}
+
+function isJSONString(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
