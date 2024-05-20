@@ -88,7 +88,6 @@ export function PricingModal({
                   postActionCallback={onSubscriptionChange}
                   includeDesc="All features from Free Tier"
                   features={['Up to 20 saved diagram files']}
-                  isMostSelect={true}
                 />
                 <SubscriptionItem
                   planName="Plus"
@@ -107,6 +106,7 @@ export function PricingModal({
                     'Customized CSS',
                     'Premium support for our expert to design your unique diagram style',
                   ]}
+                  isMostSelect={true}
                 />
                 <SubscriptionItem
                   planName="Enterprise"
