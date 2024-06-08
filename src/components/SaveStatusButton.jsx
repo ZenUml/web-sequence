@@ -21,13 +21,13 @@ function SaveStatusButton({ isSaving }) {
   }, [isSaving]);
 
   return (
-    <div class="relative flex">
+    <div class="flex justify-end" style="width: 130px;">
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        class="relative flex space-x-1"
+        class="flex space-x-1"
       >
-        <div>
+        <div class="relative">
           <span
             className={`${isShowSaved ? '' : 'bg-black-600'} h-6 w-6 rounded-lg  flex items-center justify-center`}
           >
@@ -41,6 +41,32 @@ function SaveStatusButton({ isSaving }) {
               />
             </svg>
           </span>
+          {isShowTip && (
+            <div class="border border-gray-300 mt-3 absolute bg-green-50  rounded text-sm z-50 flex items-center justify-center right-auto left-0 transform -translate-x-1/2">
+              <div>
+                <span class="h-5 w-5 rounded-lg flex items-center justify-center">
+                  <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7.33398 10.0027H4.43865C2.72398 10 1.33398 8.66201 1.33398 7.01134C1.33398 5.36134 2.72398 4.02334 4.43865 4.02334C4.70065 2.84868 5.63465 1.89001 6.88865 1.50801C8.14198 1.12668 9.52598 1.37934 10.518 2.17468C11.51 2.96801 11.9593 4.17934 11.698 5.35401H12.358C13.2833 5.35401 14.0813 5.90068 14.45 6.69201M10.0007 10.6667L11.334 12L14.0007 9.33334"
+                      stroke="#08895A"
+                      stroke-width="1.33333"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+              </div>
+              <div class="whitespace-nowrap flex-1 flex items-center justify-center ">
+                <p class="text-xs text-black p-1">
+                  All changes auto-save to cloud
+                </p>
+              </div>
+            </div>
+          )}
         </div>
         {isShowSaved && (
           <div class="min-w-0 flex-1 flex items-center justify-center">
@@ -48,30 +74,6 @@ function SaveStatusButton({ isSaving }) {
           </div>
         )}
       </div>
-      {isShowTip && (
-        <div class="border border-gray-300 mt-8 absolute bg-green-50  rounded text-sm z-50 flex items-center justify-center right-auto left-0 transform -translate-x-1/2">
-          <div>
-            <span class="h-5 w-5 rounded-lg flex items-center justify-center">
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M7.33398 10.0027H4.43865C2.72398 10 1.33398 8.66201 1.33398 7.01134C1.33398 5.36134 2.72398 4.02334 4.43865 4.02334C4.70065 2.84868 5.63465 1.89001 6.88865 1.50801C8.14198 1.12668 9.52598 1.37934 10.518 2.17468C11.51 2.96801 11.9593 4.17934 11.698 5.35401H12.358C13.2833 5.35401 14.0813 5.90068 14.45 6.69201M10.0007 10.6667L11.334 12L14.0007 9.33334"
-                  stroke="#08895A"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-          </div>
-          <div class="whitespace-nowrap flex-1 flex items-center justify-center ">
-            <p class="text-xs text-black p-1">All changes auto-save to cloud</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
