@@ -859,6 +859,10 @@ BookLibService.Borrow(id) {
       trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
     }
     var isNewItem = !this.state.currentItem.id;
+    if (isNewItem && this.checkItemsLimit()) {
+      this.proBtnClickHandler();
+      return;
+    }
     this.state.currentItem.id =
       this.state.currentItem.id || 'item-' + generateRandomId();
     await this.setState({
@@ -1300,6 +1304,14 @@ BookLibService.Borrow(id) {
    * Called from inside ask-to-import-modal
    */
   importCreationsAndSettingsIntoApp() {
+    if (!this.checkItemsLimit()) {
+      mixpanel.track({
+        event: 'Free Limit',
+        category: '3 diagrams limit',
+        label: 'ImportCreations',
+      });
+      return;
+    }
     this.mergeImportedItems(this.oldSavedItems).then(() => {
       trackEvent('fn', 'oldItemsImported');
       this.dontAskToImportAnymore();
