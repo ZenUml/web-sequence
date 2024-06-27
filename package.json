@@ -86,7 +86,7 @@
     "preact-router": "^4.1.2",
     "split.js": "1.6.0",
     "svg-transform-loader": "^2.0.12",
-    "vue": "^3.2.45",
+    "vue": "^3.4.30",
     "vuex": "^4.1.0"
   },
   "resolutions": {
