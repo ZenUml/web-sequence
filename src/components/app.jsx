@@ -463,23 +463,21 @@ BookLibService.Borrow(id) {
   }
 
   alertItemsLimit() {
+    var plan = userService.getPlan();
     alert(
-      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is ${userService.isBasic() ? 20 : 3}. Upgrade now for more storage.`,
+      `You have ${this.getUserItemsCount()} diagrams, the limit is ${plan.getMaxItemsCount()}. Upgrade now for more storage.`,
     );
     this.proBtnClickHandler();
   }
 
+  getUserItemsCount() {
+    if (!this.state.user || !this.state.user.items) return 0;
+    return Object.keys(this.state.user.items).length;
+  }
+
   checkItemsLimit() {
-    if (
-      !this.state.user ||
-      !this.state.user.items ||
-      Object.keys(this.state.user.items).length <= 3 ||
-      userService.isPlusOrAdvanced() ||
-      (Object.keys(this.state.user.items).length <= 20 && userService.isBasic())
-    ) {
-      return true;
-    }
-    return false;
+    var currentItemsCount = this.getUserItemsCount();
+    return userService.getPlan().getMaxItemsCount() >= currentItemsCount;
   }
 
   isNewItem(itemId) {

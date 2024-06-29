@@ -1,3 +1,4 @@
+import planService from './planService';
 const user = () => window.user;
 const subscription = () => user() && user().subscription;
 
@@ -25,6 +26,9 @@ export default {
     if (!this.isSubscribed()) return 'free';
     const currentSubscription = subscription();
     return getPlanTypeFromPassthrough(currentSubscription.passthrough);
+  },
+  getPlan: function () {
+    return planService.getPlanByType(this.getPlanType());
   },
 };
 
