@@ -874,9 +874,12 @@ BookLibService.Borrow(id) {
       trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
     }
     var isNewItem = this.isNewItem(this.state.currentItem.id);
-    let check = this.checkItemsLimit();
-    console.log(`saveItem checkItemsLimit:${check} isNewItem:${isNewItem}`);
-    if (isNewItem && !check) {
+    const check = this.checkItemsLimit();
+    var preventedSaving = isNewItem && !check;
+    console.debug(
+      `saveItem preventedSaving:${preventedSaving} user:${window.user} isManual:${isManual} checkItemsLimit:${check} isNewItem:${isNewItem}`,
+    );
+    if (preventedSaving) {
       if (isManual) this.alertItemsLimit();
       return;
     }
