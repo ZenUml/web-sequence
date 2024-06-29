@@ -13,15 +13,6 @@ export default {
         subscription().status === 'trialing')
     );
   },
-  isBasic: function () {
-    return this.getPlanType().includes('basic');
-  },
-  isPlus: function () {
-    return this.getPlanType().includes('plus');
-  },
-  isPlusOrAdvanced: function () {
-    return this.isPlus();
-  },
   getPlanType: function () {
     if (!this.isSubscribed()) return 'free';
     const currentSubscription = subscription();
