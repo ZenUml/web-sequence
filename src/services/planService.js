@@ -2,20 +2,6 @@ import config from './configuration';
 
 //TODO(refactor): It is necessary to integrate more plan-related logic into this module.
 
-const getProductByPlanType = (planType) => {
-  const productMap = {
-    'basic-monthly': config.paddleProductBasicMonthly,
-    'plus-monthly': config.paddleProductPlusMonthly,
-    'basic-yearly': config.paddleProductBasicYearly,
-    'plus-yearly': config.paddleProductPlusYearly,
-  };
-
-  const product = productMap[planType] || '';
-  console.debug('getProductByPlanType', planType, product);
-  return product;
-};
-
-// 定义接口
 const IPlan = {
   getMaxItemsCount: () => {},
   canCustomizeCSS: () => {},
@@ -60,6 +46,5 @@ const getPlanByType = (planType) => {
   return planMap[planType] || planMap['free'];
 };
 export default {
-  getProductByPlanType: getProductByPlanType,
   getPlanByType: getPlanByType,
 };
