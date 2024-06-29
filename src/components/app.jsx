@@ -137,7 +137,6 @@ export default class App extends Component {
       // window.zd_libraryBtHander = this.openAddLibrary.bind(this)
     }
     firebase.auth().onAuthStateChanged(async (user) => {
-      console.debug('feng onAuthStateChanged');
       await this.setState({ isLoginModalOpen: false });
       if (user) {
         log('You are -> ', user);
@@ -506,7 +505,6 @@ BookLibService.Borrow(id) {
           ? 'saved'
           : 'new',
     );
-    console.log('feng saveBtnClickHandler');
     if (this.alertAndTrackIfExceedItemsLimit('Save')) return;
 
     if (this.state.user || window.zenumlDesktop) {
@@ -563,7 +561,6 @@ BookLibService.Borrow(id) {
     var items = [];
     if ((window.user || window.zenumlDesktop) && !shouldFetchLocally) {
       items = await itemService.getAllItems();
-      console.log(`feng fetchItems got items:${items.length}`);
       log('got items');
       if (shouldSaveGlobally) {
         items.forEach((item) => {
@@ -603,7 +600,6 @@ BookLibService.Borrow(id) {
     await this.setState({
       isFetchingItems: true,
     });
-    console.log('feng openSavedItemsPane');
     this.fetchItems(true).then(async (items) => {
       await this.setState({
         isFetchingItems: false,
@@ -860,7 +856,6 @@ BookLibService.Borrow(id) {
 
   // Save current item to storage
   async saveItem(isManual = false) {
-    console.log('feng saveItem');
     if (
       !window.user &&
       !window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN] &&
@@ -880,23 +875,13 @@ BookLibService.Borrow(id) {
     }
     var isNewItem = this.isNewItem(this.state.currentItem.id);
     let check = this.checkItemsLimit();
-    console.log(
-      `feng saveItem checkItemsLimit:${check} isNewItem:${isNewItem}`,
-    );
+    console.log(`saveItem checkItemsLimit:${check} isNewItem:${isNewItem}`);
     if (isNewItem && !check) {
       if (isManual) this.alertItemsLimit();
       return;
     }
-    console.log(
-      'feng saveItem before currentItem.id',
-      this.state.currentItem.id,
-    );
     this.state.currentItem.id =
       this.state.currentItem.id || 'item-' + generateRandomId();
-    console.log(
-      'feng saveItem after currentItem.id',
-      this.state.currentItem.id,
-    );
     await this.setState({
       isSaving: true,
     });
@@ -1094,7 +1079,6 @@ BookLibService.Borrow(id) {
   }
 
   async itemForkBtnClickHandler(item) {
-    console.log('feng itemForkBtnClickHandler');
     if (this.alertAndTrackIfExceedItemsLimit('Fork')) return;
 
     await this.toggleSavedItemsPane();
@@ -1105,7 +1089,6 @@ BookLibService.Borrow(id) {
 
   async newBtnClickHandler() {
     mixpanel.track({ event: 'newBtnClick', category: 'ui' });
-    console.log('feng newBtnClickHandler');
     if (this.alertAndTrackIfExceedItemsLimit('New')) return;
 
     if (this.state.unsavedEditCount) {
@@ -1227,7 +1210,6 @@ BookLibService.Borrow(id) {
   }
 
   exportBtnClickHandler(e) {
-    console.log('feng exportBtnClickHandler');
     if (this.alertAndTrackIfExceedItemsLimit('Export')) return;
 
     this.exportItems();
@@ -1317,7 +1299,6 @@ BookLibService.Borrow(id) {
    * Called from inside ask-to-import-modal
    */
   importCreationsAndSettingsIntoApp() {
-    console.log('feng importCreationsAndSettingsIntoApp');
     if (this.alertAndTrackIfExceedItemsLimit('Import')) return;
     this.mergeImportedItems(this.oldSavedItems).then(() => {
       trackEvent('fn', 'oldItemsImported');

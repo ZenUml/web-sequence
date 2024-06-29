@@ -20,7 +20,6 @@ if (window.zenumlDesktop) {
     async getUserItemIds() {
       if (window.user) {
         return new Promise((resolve) => {
-          console.log('feng getUserItemIds step1');
           resolve(window.user.items || {});
         });
       }
@@ -32,7 +31,6 @@ if (window.zenumlDesktop) {
           if (!doc.exists) {
             return {};
           }
-          console.log('feng getUserItemIds step2');
           return doc.data().items;
         });
     },
@@ -41,7 +39,6 @@ if (window.zenumlDesktop) {
       var t = Date.now();
       var d = deferred();
       let itemIds = await this.getUserItemIds();
-      console.log(`feng getAllItems itemIds:${Object.keys(itemIds).length}`);
       itemIds = Object.getOwnPropertyNames(itemIds || {});
       log('itemids', itemIds);
 
@@ -159,7 +156,6 @@ if (window.zenumlDesktop) {
               [`items.${id}`]: true,
             });
             // Set these items on our cached user object too
-            console.log('feng saveItems');
             window.user.items = window.user.items || {};
             window.user.items[id] = true;
           }
@@ -213,7 +209,6 @@ if (window.zenumlDesktop) {
         })
         .then((arg) => {
           log(`Item ${itemId} set for user`, arg);
-          console.log('feng set user.items');
           window.user.items = window.user.items || {};
           window.user.items[itemId] = true;
         })
