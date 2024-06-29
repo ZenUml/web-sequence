@@ -45,6 +45,29 @@ const getPlanByType = (planType) => {
 
   return planMap[planType] || planMap['free'];
 };
+
+const checkPlanTypeFromUserSubscription = (
+  isSubscribed,
+  getSubscriptionPassthroughFunc,
+) => {
+  if (!isSubscribed) return 'free';
+  // Compatible with previous pro users, before subscription.passthrough only stored userId
+  const passthrough = getSubscriptionPassthroughFunc();
+  return isJSONString(passthrough)
+    ? JSON.parse(passthrough).planType
+    : 'basic-monthly';
+};
+
+function isJSONString(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export default {
+  checkPlanTypeFromUserSubscription: checkPlanTypeFromUserSubscription,
   getPlanByType: getPlanByType,
 };
