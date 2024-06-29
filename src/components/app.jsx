@@ -456,16 +456,23 @@ BookLibService.Borrow(id) {
     return d.promise;
   }
 
-  alertIfExceedItemsLimit() {
-    const r = this.checkItemsLimit();
-    if (!r) this.alertItemsLimit();
-    return r;
+  alertAndTrackIfExceedItemsLimit(userActionName) {
+    const exceed = !this.checkItemsLimit();
+    if (exceed) {
+      this.alertItemsLimit();
+      var plan = userService.getPlan();
+      mixpanel.track({
+        event: `${plan.getPlanType()} Limit`,
+        category: `${plan.getMaxItemsCount()} diagrams limit`,
+        label: userActionName,
+      });
+    }
+    return exceed;
   }
 
   alertItemsLimit() {
-    var plan = userService.getPlan();
     alert(
-      `You have ${this.getUserItemsCount()} diagrams, the limit is ${plan.getMaxItemsCount()}. Upgrade now for more storage.`,
+      `You have ${this.getUserItemsCount()} diagrams, the limit is ${userService.getPlan().getMaxItemsCount()}. Upgrade now for more storage.`,
     );
     this.proBtnClickHandler();
   }
@@ -476,8 +483,7 @@ BookLibService.Borrow(id) {
   }
 
   checkItemsLimit() {
-    var currentItemsCount = this.getUserItemsCount();
-    return userService.getPlan().getMaxItemsCount() >= currentItemsCount;
+    return userService.getPlan().getMaxItemsCount() >= this.getUserItemsCount();
   }
 
   isNewItem(itemId) {
@@ -501,14 +507,7 @@ BookLibService.Borrow(id) {
           : 'new',
     );
     console.log('feng saveBtnClickHandler');
-    if (!this.alertIfExceedItemsLimit()) {
-      mixpanel.track({
-        event: 'Free Limit',
-        category: '3 diagrams limit',
-        label: 'Save',
-      });
-      return;
-    }
+    if (this.alertAndTrackIfExceedItemsLimit('Save')) return;
 
     if (this.state.user || window.zenumlDesktop) {
       this.saveItem();
@@ -1096,14 +1095,7 @@ BookLibService.Borrow(id) {
 
   async itemForkBtnClickHandler(item) {
     console.log('feng itemForkBtnClickHandler');
-    if (!this.alertIfExceedItemsLimit()) {
-      mixpanel.track({
-        event: 'Free Limit',
-        category: '3 diagrams limit',
-        label: 'Fork',
-      });
-      return;
-    }
+    if (this.alertAndTrackIfExceedItemsLimit('Fork')) return;
 
     await this.toggleSavedItemsPane();
     setTimeout(() => {
@@ -1114,14 +1106,7 @@ BookLibService.Borrow(id) {
   async newBtnClickHandler() {
     mixpanel.track({ event: 'newBtnClick', category: 'ui' });
     console.log('feng newBtnClickHandler');
-    if (!this.alertIfExceedItemsLimit()) {
-      mixpanel.track({
-        event: 'Free Limit',
-        category: '3 diagrams limit',
-        label: 'New',
-      });
-      return;
-    }
+    if (this.alertAndTrackIfExceedItemsLimit('New')) return;
 
     if (this.state.unsavedEditCount) {
       var shouldDiscard = confirm(
@@ -1243,14 +1228,7 @@ BookLibService.Borrow(id) {
 
   exportBtnClickHandler(e) {
     console.log('feng exportBtnClickHandler');
-    if (!this.alertIfExceedItemsLimit()) {
-      mixpanel.track({
-        event: 'Free Limit',
-        category: '3 diagrams limit',
-        label: 'Fork',
-      });
-      return;
-    }
+    if (this.alertAndTrackIfExceedItemsLimit('Export')) return;
 
     this.exportItems();
     e.preventDefault();
@@ -1340,14 +1318,7 @@ BookLibService.Borrow(id) {
    */
   importCreationsAndSettingsIntoApp() {
     console.log('feng importCreationsAndSettingsIntoApp');
-    if (!this.alertIfExceedItemsLimit()) {
-      mixpanel.track({
-        event: 'Free Limit',
-        category: '3 diagrams limit',
-        label: 'ImportCreations',
-      });
-      return;
-    }
+    if (this.alertAndTrackIfExceedItemsLimit('Import')) return;
     this.mergeImportedItems(this.oldSavedItems).then(() => {
       trackEvent('fn', 'oldItemsImported');
       this.dontAskToImportAnymore();
