@@ -13,6 +13,7 @@ export default class SavedItemPane extends Component {
   }
 
   componentWillUpdate(nextProps) {
+    console.log('feng componentWillUpdate');
     if (this.props.items !== nextProps.items) {
       this.items = Object.values(nextProps.items);
       this.items.sort(function (a, b) {

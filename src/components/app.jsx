@@ -137,6 +137,7 @@ export default class App extends Component {
       // window.zd_libraryBtHander = this.openAddLibrary.bind(this)
     }
     firebase.auth().onAuthStateChanged(async (user) => {
+      console.debug('feng onAuthStateChanged');
       await this.setState({ isLoginModalOpen: false });
       if (user) {
         log('You are -> ', user);
@@ -455,6 +456,19 @@ BookLibService.Borrow(id) {
     return d.promise;
   }
 
+  alertIfExceedItemsLimit() {
+    const r = this.checkItemsLimit();
+    if (!r) this.alertItemsLimit();
+    return r;
+  }
+
+  alertItemsLimit() {
+    alert(
+      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is ${userService.isBasic() ? 20 : 3}. Upgrade now for more storage.`,
+    );
+    this.proBtnClickHandler();
+  }
+
   checkItemsLimit() {
     if (
       !this.state.user ||
@@ -465,11 +479,17 @@ BookLibService.Borrow(id) {
     ) {
       return true;
     }
+    return false;
+  }
 
-    alert(
-      `You have ${Object.keys(this.state.user.items).length} diagrams, the limit is ${userService.isBasic() ? 20 : 3}. Upgrade now for more storage.`,
-    );
-    this.proBtnClickHandler();
+  isNewItem(itemId) {
+    if (!itemId) return true;
+    const { user } = this.state;
+    if (user && user.items) {
+      const found = Object.keys(user.items).some((key) => itemId === key);
+      return !found;
+    }
+    return true;
   }
 
   saveBtnClickHandler() {
@@ -482,8 +502,8 @@ BookLibService.Borrow(id) {
           ? 'saved'
           : 'new',
     );
-
-    if (!this.checkItemsLimit()) {
+    console.log('feng saveBtnClickHandler');
+    if (!this.alertIfExceedItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',
@@ -546,6 +566,7 @@ BookLibService.Borrow(id) {
     var items = [];
     if ((window.user || window.zenumlDesktop) && !shouldFetchLocally) {
       items = await itemService.getAllItems();
+      console.log(`feng fetchItems got items:${items.length}`);
       log('got items');
       if (shouldSaveGlobally) {
         items.forEach((item) => {
@@ -585,6 +606,7 @@ BookLibService.Borrow(id) {
     await this.setState({
       isFetchingItems: true,
     });
+    console.log('feng openSavedItemsPane');
     this.fetchItems(true).then(async (items) => {
       await this.setState({
         isFetchingItems: false,
@@ -624,7 +646,7 @@ BookLibService.Borrow(id) {
         // Ctrl/⌘ + S
         if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
           event.preventDefault();
-          this.saveItem();
+          this.saveItem(true);
           trackEvent('ui', 'saveItemKeyboardShortcut');
         }
         // Ctrl/⌘ + Shift + 5
@@ -840,7 +862,8 @@ BookLibService.Borrow(id) {
   }
 
   // Save current item to storage
-  async saveItem() {
+  async saveItem(isManual = false) {
+    console.log('feng saveItem');
     if (
       !window.user &&
       !window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN] &&
@@ -858,13 +881,25 @@ BookLibService.Borrow(id) {
       }
       trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
     }
-    var isNewItem = !this.state.currentItem.id;
-    if (isNewItem && this.checkItemsLimit()) {
-      this.proBtnClickHandler();
+    var isNewItem = this.isNewItem(this.state.currentItem.id);
+    let check = this.checkItemsLimit();
+    console.log(
+      `feng saveItem checkItemsLimit:${check} isNewItem:${isNewItem}`,
+    );
+    if (isNewItem && !check) {
+      if (isManual) this.alertItemsLimit();
       return;
     }
+    console.log(
+      'feng saveItem before currentItem.id',
+      this.state.currentItem.id,
+    );
     this.state.currentItem.id =
       this.state.currentItem.id || 'item-' + generateRandomId();
+    console.log(
+      'feng saveItem after currentItem.id',
+      this.state.currentItem.id,
+    );
     await this.setState({
       isSaving: true,
     });
@@ -1062,7 +1097,8 @@ BookLibService.Borrow(id) {
   }
 
   async itemForkBtnClickHandler(item) {
-    if (!this.checkItemsLimit()) {
+    console.log('feng itemForkBtnClickHandler');
+    if (!this.alertIfExceedItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',
@@ -1079,8 +1115,8 @@ BookLibService.Borrow(id) {
 
   async newBtnClickHandler() {
     mixpanel.track({ event: 'newBtnClick', category: 'ui' });
-
-    if (!this.checkItemsLimit()) {
+    console.log('feng newBtnClickHandler');
+    if (!this.alertIfExceedItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',
@@ -1208,7 +1244,8 @@ BookLibService.Borrow(id) {
   }
 
   exportBtnClickHandler(e) {
-    if (!this.checkItemsLimit()) {
+    console.log('feng exportBtnClickHandler');
+    if (!this.alertIfExceedItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',
@@ -1304,7 +1341,8 @@ BookLibService.Borrow(id) {
    * Called from inside ask-to-import-modal
    */
   importCreationsAndSettingsIntoApp() {
-    if (!this.checkItemsLimit()) {
+    console.log('feng importCreationsAndSettingsIntoApp');
+    if (!this.alertIfExceedItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',

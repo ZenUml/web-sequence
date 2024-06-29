@@ -123,6 +123,7 @@ import { log } from './utils';
   }
 
   async function getUser(userId) {
+    console.log('feng db getUser');
     const remoteDb = await getDb();
     return remoteDb
       .doc(`users/${userId}`)
@@ -135,7 +136,11 @@ import { log } from './utils';
               merge: true,
             },
           );
+        //user.items value source
         const user = doc.data();
+        console.log(
+          `feng db getUser user.items:${Object.keys(user.items).length}`,
+        );
         Object.assign(window.user, user);
         return user;
       });
