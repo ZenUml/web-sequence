@@ -16,30 +16,35 @@ const getPlanByType = (planType) => {
       canCustomizeCSS: () => false,
       getProductId: () => '',
       getPlanType: () => 'free',
+      isSubscribed: () => false,
     },
     'basic-monthly': {
       getMaxItemsCount: () => 20,
       canCustomizeCSS: () => false,
       getProductId: () => config.paddleProductBasicMonthly,
       getPlanType: () => 'basic-monthly',
+      isSubscribed: () => true,
     },
     'plus-monthly': {
       getMaxItemsCount: () => 999999,
       canCustomizeCSS: () => true,
       getProductId: () => config.paddleProductPlusMonthly,
       getPlanType: () => 'plus-monthly',
+      isSubscribed: () => true,
     },
     'basic-yearly': {
       getMaxItemsCount: () => 20,
       canCustomizeCSS: () => false,
       getProductId: () => config.paddleProductBasicYearly,
       getPlanType: () => 'basic-yearly',
+      isSubscribed: () => true,
     },
     'plus-yearly': {
       getMaxItemsCount: () => 999999,
       canCustomizeCSS: () => true,
       getProductId: () => config.paddleProductPlusYearly,
       getPlanType: () => 'plus-yearly',
+      isSubscribed: () => true,
     },
   };
 

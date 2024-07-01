@@ -57,7 +57,7 @@ export function MainHeader(props) {
     mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
   };
 
-  const isSubscribed = userService.isSubscribed();
+  const isSubscribed = userService.getPlan().isSubscribed();
 
   return (
     <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">

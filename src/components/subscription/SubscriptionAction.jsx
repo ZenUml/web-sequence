@@ -10,9 +10,10 @@ const SubscriptionAction = (props) => {
     return null;
   }
 
-  if (userService.isSubscribed()) {
+  const plan = userService.getPlan();
+  if (plan.isSubscribed()) {
     const subscription = userService.subscription();
-    if (props.planType == userService.getPlanType()) {
+    if (props.planType == plan.getPlanType()) {
       return <CancellationLink cancelUrl={subscription.cancel_url} />;
     }
     return <DisabledUpgradeLink upgradeBtnName={props.upgradeBtnName} />;

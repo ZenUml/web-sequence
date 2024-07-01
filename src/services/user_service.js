@@ -5,16 +5,11 @@ const subscription = () => user() && user().subscription;
 export default {
   user: user,
   subscription: subscription,
-  isSubscribed: function () {
-    return (
-      subscription() &&
-      (subscription().status === 'active' ||
-        subscription().status === 'trialing')
-    );
-  },
   getPlanType: function () {
+    const status = subscription()?.status;
+    const isSubscribed = status === 'active' || status === 'trialing';
     return planService.checkPlanTypeFromUserSubscription(
-      this.isSubscribed(),
+      isSubscribed,
       () => subscription().passthrough,
     );
   },
