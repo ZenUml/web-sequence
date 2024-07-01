@@ -1,14 +1,5 @@
 import config from './configuration';
 
-//TODO(refactor): It is necessary to integrate more plan-related logic into this module.
-
-const IPlan = {
-  getMaxItemsCount: () => {},
-  canCustomizeCSS: () => {},
-  getProductId: () => {},
-  getPlanType: () => {},
-};
-
 const getPlanByType = (planType) => {
   const planMap = {
     free: {
