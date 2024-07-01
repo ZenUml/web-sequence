@@ -59,10 +59,10 @@ const checkPlanTypeFromUserSubscription = (
 
   try {
     return (
-      JSON.parse(getSubscriptionPassthroughFunc())?.planType || 'basic-monthly'
+      JSON.parse(getSubscriptionPassthroughFunc())?.planType || 'plus-monthly'
     );
   } catch {
-    return 'basic-monthly';
+    return 'plus-monthly';
   }
 };
 
