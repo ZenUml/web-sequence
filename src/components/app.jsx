@@ -143,29 +143,33 @@ export default class App extends Component {
         alertsService.add('You are now logged in!');
         await this.setState({ user });
         window.user = user;
-        if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
-          this.fetchItems(false, true).then(async (items) => {
-            if (!items.length) {
-              return;
-            }
-            this.oldSavedItems = items;
-            this.oldSavedCreationsCount = items.length;
-            await this.setState({
-              isAskToImportModalOpen: true,
-            });
-            mixpanel.track({ event: 'askToImportModalSeen', category: 'ui' });
-          });
-        }
         window.db.getUser(user.uid).then(async (customUser) => {
           if (customUser) {
             const prefs = { ...this.state.prefs };
             Object.assign(prefs, user.settings);
             await this.setState({ prefs: prefs });
             await this.updateSetting();
+            await this.fetchSavedItems();
           }
 
           if (this.onUserItemsResolved) {
             this.onUserItemsResolved(user.items);
+          }
+
+          if (
+            !window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]
+          ) {
+            this.fetchItems(false, true).then(async (items) => {
+              if (!items.length) {
+                return;
+              }
+              this.oldSavedItems = items;
+              this.oldSavedCreationsCount = items.length;
+              await this.setState({
+                isAskToImportModalOpen: true,
+              });
+              mixpanel.track({ event: 'askToImportModalSeen', category: 'ui' });
+            });
           }
         });
 
@@ -455,8 +459,8 @@ BookLibService.Borrow(id) {
     return d.promise;
   }
 
-  alertAndTrackIfExceedItemsLimit(userActionName) {
-    const exceed = !this.checkItemsLimit();
+  alertAndTrackIfExceedItemsLimit(userActionName, isNewItem = false) {
+    const exceed = !this.checkItemsLimit(isNewItem);
     if (exceed) {
       this.alertItemsLimit();
       var plan = userService.getPlan();
@@ -477,19 +481,27 @@ BookLibService.Borrow(id) {
   }
 
   getUserItemsCount() {
-    if (!this.state.user || !this.state.user.items) return 0;
-    return Object.keys(this.state.user.items).length;
+    return Object.keys(this.getUserItems()).length;
   }
 
-  checkItemsLimit() {
-    return userService.getPlan().getMaxItemsCount() >= this.getUserItemsCount();
+  getUserItems() {
+    if (!this.state.savedItems) return [];
+    return this.state.savedItems;
+  }
+
+  checkItemsLimit(isNewItem = false) {
+    let count = this.getUserItemsCount();
+    if (isNewItem) count++;
+    return userService.getPlan().getMaxItemsCount() >= count;
   }
 
   isNewItem(itemId) {
     if (!itemId) return true;
     const { user } = this.state;
     if (user && user.items) {
-      const found = Object.keys(user.items).some((key) => itemId === key);
+      const found = Object.keys(this.getUserItems()).some(
+        (key) => itemId === key,
+      );
       return !found;
     }
     return true;
@@ -525,7 +537,6 @@ BookLibService.Borrow(id) {
     await this.setState({
       savedItems: { ...this.state.savedItems },
     });
-
     await this.toggleSavedItemsPane();
     // HACK: Set overflow after sometime so that the items can animate without getting cropped.
     // setTimeout(() => $('#js-saved-items-wrap').style.overflowY = 'auto', 1000);
@@ -597,6 +608,12 @@ BookLibService.Borrow(id) {
   }
 
   async openSavedItemsPane() {
+    await this.fetchSavedItems(async (items) => {
+      await this.populateItemsInSavedPane(items);
+    });
+  }
+
+  async fetchSavedItems(callbackFunc) {
     await this.setState({
       isFetchingItems: true,
     });
@@ -604,7 +621,9 @@ BookLibService.Borrow(id) {
       await this.setState({
         isFetchingItems: false,
       });
-      await this.populateItemsInSavedPane(items);
+      if (callbackFunc) {
+        callbackFunc(items);
+      }
     });
   }
 
@@ -874,7 +893,7 @@ BookLibService.Borrow(id) {
       trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
     }
     var isNewItem = this.isNewItem(this.state.currentItem.id);
-    const check = this.checkItemsLimit();
+    const check = this.checkItemsLimit(isNewItem);
     var preventedSaving = isNewItem && !check;
     console.debug(
       `saveItem preventedSaving:${preventedSaving} user:${window.user} isManual:${isManual} checkItemsLimit:${check} isNewItem:${isNewItem}`,
@@ -905,6 +924,7 @@ BookLibService.Borrow(id) {
     // Push into the items hash if its a new item being saved
     if (isNewItem) {
       await itemService.setItemForUser(this.state.currentItem.id);
+      await this.fetchSavedItems();
     }
   }
 
@@ -1082,7 +1102,7 @@ BookLibService.Borrow(id) {
   }
 
   async itemForkBtnClickHandler(item) {
-    if (this.alertAndTrackIfExceedItemsLimit('Fork')) return;
+    if (this.alertAndTrackIfExceedItemsLimit('Fork', true)) return;
 
     await this.toggleSavedItemsPane();
     setTimeout(() => {
@@ -1092,7 +1112,7 @@ BookLibService.Borrow(id) {
 
   async newBtnClickHandler() {
     mixpanel.track({ event: 'newBtnClick', category: 'ui' });
-    if (this.alertAndTrackIfExceedItemsLimit('New')) return;
+    if (this.alertAndTrackIfExceedItemsLimit('New', true)) return;
 
     if (this.state.unsavedEditCount) {
       var shouldDiscard = confirm(
@@ -1302,7 +1322,7 @@ BookLibService.Borrow(id) {
    * Called from inside ask-to-import-modal
    */
   importCreationsAndSettingsIntoApp() {
-    if (this.alertAndTrackIfExceedItemsLimit('Import')) return;
+    if (this.alertAndTrackIfExceedItemsLimit('Import', true)) return;
     this.mergeImportedItems(this.oldSavedItems).then(() => {
       trackEvent('fn', 'oldItemsImported');
       this.dontAskToImportAnymore();
