@@ -459,8 +459,8 @@ BookLibService.Borrow(id) {
     return d.promise;
   }
 
-  alertAndTrackIfExceedItemsLimit(userActionName, isNewItem = false) {
-    const exceed = !this.checkItemsLimit(isNewItem);
+  alertAndTrackIfExceedItemsLimit(userActionName, addingItemsCount = 0) {
+    const exceed = !this.checkItemsLimit(addingItemsCount);
     if (exceed) {
       this.alertItemsLimit();
       var plan = userService.getPlan();
@@ -489,10 +489,11 @@ BookLibService.Borrow(id) {
     return this.state.savedItems;
   }
 
-  checkItemsLimit(isNewItem = false) {
-    let count = this.getUserItemsCount();
-    if (isNewItem) count++;
-    return userService.getPlan().getMaxItemsCount() >= count;
+  checkItemsLimit(addingItemsCount = 0) {
+    return (
+      userService.getPlan().getMaxItemsCount() >=
+      this.getUserItemsCount() + addingItemsCount
+    );
   }
 
   isNewItem(itemId) {
@@ -893,7 +894,7 @@ BookLibService.Borrow(id) {
       trackEvent('ui', LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN, 'local');
     }
     var isNewItem = this.isNewItem(this.state.currentItem.id);
-    const check = this.checkItemsLimit(isNewItem);
+    const check = this.checkItemsLimit(isNewItem ? 1 : 0);
     var preventedSaving = isNewItem && !check;
     console.debug(
       `saveItem preventedSaving:${preventedSaving} user:${window.user} isManual:${isManual} checkItemsLimit:${check} isNewItem:${isNewItem}`,
@@ -1102,7 +1103,7 @@ BookLibService.Borrow(id) {
   }
 
   async itemForkBtnClickHandler(item) {
-    if (this.alertAndTrackIfExceedItemsLimit('Fork', true)) return;
+    if (this.alertAndTrackIfExceedItemsLimit('Fork', 1)) return;
 
     await this.toggleSavedItemsPane();
     setTimeout(() => {
@@ -1112,7 +1113,7 @@ BookLibService.Borrow(id) {
 
   async newBtnClickHandler() {
     mixpanel.track({ event: 'newBtnClick', category: 'ui' });
-    if (this.alertAndTrackIfExceedItemsLimit('New', true)) return;
+    if (this.alertAndTrackIfExceedItemsLimit('New', 1)) return;
 
     if (this.state.unsavedEditCount) {
       var shouldDiscard = confirm(
@@ -1270,6 +1271,7 @@ BookLibService.Borrow(id) {
   }
 
   mergeImportedItems(items) {
+    if (this.alertAndTrackIfExceedItemsLimit('Merge', items.length)) return;
     var existingItemIds = [];
     var toMergeItems = {};
     const d = deferred();
@@ -1322,7 +1324,10 @@ BookLibService.Borrow(id) {
    * Called from inside ask-to-import-modal
    */
   importCreationsAndSettingsIntoApp() {
-    if (this.alertAndTrackIfExceedItemsLimit('Import', true)) return;
+    if (
+      this.alertAndTrackIfExceedItemsLimit('Import', this.oldSavedItems.length)
+    )
+      return;
     this.mergeImportedItems(this.oldSavedItems).then(() => {
       trackEvent('fn', 'oldItemsImported');
       this.dontAskToImportAnymore();
