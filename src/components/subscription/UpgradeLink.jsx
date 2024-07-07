@@ -1,5 +1,4 @@
 import planService from '../../services/planService';
-import userService from '../../services/user_service';
 
 const UpgradeLink = (props) => {
   const checkout = (e) => {
@@ -7,7 +6,7 @@ const UpgradeLink = (props) => {
     props.preActionCallback();
 
     Paddle.Checkout.open({
-      product: planService.getProductByPlanType(props.planType),
+      product: planService.getPlanByType(props.planType).getProductId(),
       email: props.userEmail,
       passthrough: JSON.stringify({
         userId: props.userId,
