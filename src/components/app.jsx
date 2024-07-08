@@ -51,7 +51,9 @@ import mixpanel from '../services/mixpanel.js';
 import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
-import LoginModal from './LoginModal';
+import { PricingModal } from './subscription/PricingModal';
+import { SupportDeveloperModal } from './SupportDeveloperModal';
+import { SavedItemLimitModal } from './SavedItemLimitModal';
 
 if (module.hot) {
   require('preact/debug');
@@ -71,6 +73,7 @@ export default class App extends Component {
     this.modalDefaultStates = {
       isModalOpen: false,
       isAddLibraryModalOpen: false,
+      isSavedItemLimitModalOpen: false,
       isSettingsModalOpen: false,
       isHelpModalOpen: false,
       isPricingModalOpen: false,
@@ -93,6 +96,7 @@ export default class App extends Component {
         title: '',
         externalLibs: { js: '', css: '' },
       },
+      savedItemLimitAlert: '',
     };
     this.defaultSettings = {
       preserveLastCode: true,
@@ -474,10 +478,11 @@ BookLibService.Borrow(id) {
   }
 
   alertItemsLimit() {
-    alert(
-      `You have ${this.getUserItemsCount()} diagrams, the limit is ${userService.getPlan().getMaxItemsCount()}. Upgrade now for more storage.`,
-    );
-    this.proBtnClickHandler();
+    const alertMessage = `You have ${this.getUserItemsCount()} diagrams, the limit is ${userService.getPlan().getMaxItemsCount()}. Upgrade now for more storage.`;
+    this.setState({
+      isSavedItemLimitModalOpen: true,
+      savedItemLimitAlert: alertMessage,
+    });
   }
 
   getUserItemsCount() {
@@ -1752,6 +1757,23 @@ BookLibService.Borrow(id) {
         <CheatSheetModal
           open={this.state.openCheatSheet}
           onClose={() => this.setState({ openCheatSheet: false })}
+        />
+        <SavedItemLimitModal
+          open={this.state.isSavedItemLimitModalOpen}
+          description={this.state.savedItemLimitAlert}
+          onConfirm={() =>
+            this.setState({
+              isSavedItemLimitModalOpen: false,
+              isPricingModalOpen: true,
+              savedItemLimitAlert: '',
+            })
+          }
+          onClose={() =>
+            this.setState({
+              isSavedItemLimitModalOpen: false,
+              savedItemLimitAlert: '',
+            })
+          }
         />
         <div
           class="modal-overlay bg-black/50 backdrop-blur-sm"
