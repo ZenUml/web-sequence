@@ -21,7 +21,7 @@ export function SavedItemLimitModal({ description, open, onConfirm, onClose }) {
               Upgrade
             </button>
             <button
-              className="text-gray-400 px-4 py-1 bg-black-600 hover:text-gray-100 duration-200 font-semibold"
+              className="text-gray-400 px-4 py-1 rounded-lg bg-black-600 hover:text-gray-100 duration-200 font-semibold"
               onClick={onClose}
             >
               Dismiss

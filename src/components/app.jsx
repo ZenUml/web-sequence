@@ -51,8 +51,7 @@ import mixpanel from '../services/mixpanel.js';
 import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
-import { PricingModal } from './subscription/PricingModal';
-import { SupportDeveloperModal } from './SupportDeveloperModal';
+import LoginModal from './LoginModal';
 import { SavedItemLimitModal } from './SavedItemLimitModal';
 
 if (module.hot) {
