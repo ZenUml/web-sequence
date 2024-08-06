@@ -70,7 +70,7 @@
     "@radix-ui/react-radio-group": "^1.1.3",
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-tooltip": "^1.0.7",
-    "@zenuml/core": "3.23.26",
+    "@zenuml/core": "^3.24.2",
     "clsx": "^2.0.0",
     "code-blast-codemirror": "chinchang/code-blast-codemirror#web-maker",
     "codemirror": "^5.65.16",
