@@ -3,6 +3,9 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
+import Vue from '!!file-loader!vue/dist/vue.global';
+import Vuex from '!!file-loader!vuex/dist/vuex.global';
+import zenuml from '!!file-loader!@zenuml/core/dist/zenuml';
 const esprima = require('esprima');
 
 // window.Store = Store;
@@ -277,7 +280,9 @@ export function getCompleteHtml(html, css, js, item) {
     html +
     '\n';
 
-  contents += '<script src="https://cdn.jsdelivr.net/npm/@zenuml/core@3.23.26/dist/zenuml.js"></script>';
+  contents += '<script src="' + getUrl(Vue) + '"></script>';
+  contents += '<script src="' + getUrl(Vuex) + '"></script>';
+  contents += '<script src="' + getUrl(zenuml) + '"></script>';
 
   if (item.jsMode === JsModes.ES6) {
     contents +=
