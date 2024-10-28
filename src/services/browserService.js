@@ -1,6 +1,6 @@
 const currentBrowserTab = {
   setTitle: (title) => {
-    window.document.title = title;
+    window.document.title = title || 'ZenUML | Untitled';
   },
   getTitle: () => window.document.title,
 };
