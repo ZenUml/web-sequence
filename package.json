@@ -78,7 +78,7 @@
     "esprima": "^4.0.0",
     "file-saver": "^2.0.2",
     "firebase": "^7.16.1",
-    "firebase-tools": "13.6.0",
+    "firebase-tools": "^13.6.0",
     "http-server": "^0.12.3",
     "jszip": "3.8.0",
     "preact": "10.18.1",
