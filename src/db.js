@@ -135,6 +135,7 @@ import { log } from './utils';
               merge: true,
             },
           );
+        //user.items value source
         const user = doc.data();
         Object.assign(window.user, user);
         return user;
