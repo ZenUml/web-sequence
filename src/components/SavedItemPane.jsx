@@ -133,9 +133,13 @@ export default class SavedItemPane extends Component {
 
   filteredItems() {
     return this.items.filter(
-      (item) =>
-        !this.state.searchText ||
-        item.title.toLowerCase().indexOf(this.state.searchText) !== -1,
+      (item) => {
+        const searchQuery = this.state.searchText?.toLowerCase() || '';
+        const titleMatch = item.title?.toLowerCase().includes(searchQuery);
+        const dslMatch = item.js?.toLowerCase().includes(searchQuery);
+
+        return !this.state.searchText || titleMatch || dslMatch;
+      },
     );
   }
 

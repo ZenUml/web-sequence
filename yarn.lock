@@ -3302,10 +3302,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@zenuml/core@^3.24.30":
-  version "3.24.30"
-  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.24.30.tgz#86747967b0f80c0be2bd799c146e744a96e2e3c3"
-  integrity sha512-2VFkVw86f0i/dV0Orw5Nh7+uTyO6+2JLeD092zCWsSX/TaXs8OnjQePDVVce6AwttB2vjHXfLiYQSZ8pZrkZcA==
+"@zenuml/core@^3.27.9":
+  version "3.27.9"
+  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.27.9.tgz#24c399692694d106c137765fc6a92681758a464f"
+  integrity sha512-GzUJGKICKk/ZkgEb742ml4XnOaYmkbVkItEiEWP0Or+j2MYUvpaNcnDbtfKvtXd72D5x6IW/XD3fpyW9zs2Kpw==
   dependencies:
     "@headlessui-float/vue" "^0.14.0"
     "@headlessui/tailwindcss" "^0.2.0"
@@ -3327,7 +3327,6 @@
     ramda "^0.28.0"
     tailwindcss "^3.2.4"
     vue "^3.2.45"
-    vue-property-decorator "^9.1.2"
     vuex "^4.1.0"
 
 abab@^2.0.0:
@@ -17566,11 +17565,6 @@ vue-demi@>=0.13.0:
   version "0.14.8"
   resolved "https://registry.yarnpkg.com/vue-demi/-/vue-demi-0.14.8.tgz#00335e9317b45e4a68d3528aaf58e0cec3d5640a"
   integrity sha512-Uuqnk9YE9SsWeReYqK2alDI5YzciATE0r2SkA6iMAtuXvNTMNACJLJEXNXaEy94ECuBe4Sk6RzRU80kjdbIo1Q==
-
-vue-property-decorator@^9.1.2:
-  version "9.1.2"
-  resolved "https://registry.yarnpkg.com/vue-property-decorator/-/vue-property-decorator-9.1.2.tgz#266a2eac61ba6527e2e68a6933cfb98fddab5457"
-  integrity sha512-xYA8MkZynPBGd/w5QFJ2d/NM0z/YeegMqYTphy7NJQXbZcuU6FC6AOdUAcy4SXP+YnkerC6AfH+ldg7PDk9ESQ==
 
 vue@^3.2.45:
   version "3.3.4"
