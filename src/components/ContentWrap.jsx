@@ -428,9 +428,9 @@ export default class ContentWrap extends Component {
       this.props.onLogin();
       return;
     }
-    const png = await this.getPngBlob();
-    saveAs(png, 'zenuml.png');
-    mixpanel.track({ event: 'downloadPng', category: 'ui' });
+      const png = await this.getPngBlob();
+      saveAs(png, 'zenuml.png');
+      mixpanel.track({ event: 'downloadPng', category: 'ui' });
   }
 
   async getPngBlob() {
@@ -818,11 +818,42 @@ export default class ContentWrap extends Component {
   }
 
   async toggleFullscreen() {
-    if (this.frame) {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await this.frame.requestFullscreen();
+    const demoElement = document.getElementById('js-demo-side');
+    if (!document.fullscreenElement) {
+      if (demoElement.requestFullscreen) {
+        demoElement.requestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.mozRequestFullScreen) { /* Firefox */
+        demoElement.mozRequestFullScreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+        demoElement.webkitRequestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.msRequestFullscreen) { /* IE/Edge */
+        demoElement.msRequestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.mozCancelFullScreen) { /* Firefox */
+        document.mozCancelFullScreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+        document.webkitExitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.msExitFullscreen) { /* IE/Edge */
+        document.msExitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
       }
     }
   }
@@ -972,16 +1003,6 @@ export default class ContentWrap extends Component {
               <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
                 <div className="flex gap-4 items-center text-black-100">
                   <button
-                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                    aria-label="Toggle Fullscreen"
-                    onClick={this.toggleFullscreen.bind(this)}
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#fullscreen-icon" />
-                    </svg>
-                    <span>Fullscreen</span>
-                  </button>
-                  <button
                     onClick={() => this.props.layoutBtnClickHandler(1)}
                     id="layoutBtn1"
                     className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
@@ -1014,22 +1035,33 @@ export default class ContentWrap extends Component {
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold">
                   <button
-                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                    aria-label="Export as PNG"
-                    onClick={this.exportPngClickHandler.bind(this)}
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Toggle Fullscreen"
+                      onClick={this.toggleFullscreen.bind(this)}
+                      title="Toggle Fullscreen Presenting Mode"
                   >
                     <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-download" />
+                      <use xlinkHref="#fullscreen-icon"/>
+                    </svg>
+                    <span>Present</span>
+                  </button>
+                  <button
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Export as PNG"
+                      onClick={this.exportPngClickHandler.bind(this)}
+                  >
+                    <svg className="w-5 h-5 fill-current">
+                      <use xlinkHref="#icon-download"/>
                     </svg>
                     <span>PNG</span>
                   </button>
                   <button
-                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                    aria-label="Copy PNG to Clipboard"
-                    onClick={this.copyImageClickHandler.bind(this)}
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Copy PNG to Clipboard"
+                      onClick={this.copyImageClickHandler.bind(this)}
                   >
                     <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-copy" />
+                      <use xlinkHref="#icon-copy"/>
                     </svg>
                     <span>Copy PNG</span>
                   </button>
@@ -1037,19 +1069,19 @@ export default class ContentWrap extends Component {
               </div>
             )}
             <Console
-              isConsoleOpen={this.state.isConsoleOpen}
-              onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
-                this,
-              )}
-              onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
-                this,
-              )}
-              toggleConsole={this.toggleConsole.bind(this)}
-              onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-              onReady={(el) => (this.consoleCm = el)}
+                isConsoleOpen={this.state.isConsoleOpen}
+                onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
+                    this,
+                )}
+                onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
+                    this,
+                )}
+                toggleConsole={this.toggleConsole.bind(this)}
+                onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
+                onReady={(el) => (this.consoleCm = el)}
             />
             <CssSettingsModal
-              show={this.state.isCssSettingsModalOpen}
+                show={this.state.isCssSettingsModalOpen}
               closeHandler={async () =>
                 await this.setState({ isCssSettingsModalOpen: false })
               }
