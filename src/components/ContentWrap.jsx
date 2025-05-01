@@ -817,6 +817,16 @@ export default class ContentWrap extends Component {
     this.cm.js.setValue(codeService.addCode(code, param));
   }
 
+  async toggleFullscreen() {
+    if (this.frame) {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await this.frame.requestFullscreen();
+      }
+    }
+  }
+
   render() {
     return (
       <SplitPane
@@ -847,35 +857,6 @@ export default class ContentWrap extends Component {
                 className="code-wrap"
                 onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
               >
-                {/* <div
-								className="js-code-wrap__header  code-wrap__header"
-								title="Double click to toggle code pane"
-								ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
-							>
-								<label className="btn-group" title="Click to change">
-									<span className="code-wrap__header-label">ZenUML</span>
-									<span className="caret" style="display:none" />
-									<select
-										data-type="js"
-										className="js-mode-select  hidden-select"
-										style="display: none"
-										onChange={this.codeModeChangeHandler.bind(this)}
-										value={this.props.currentItem.jsMode}
-									>
-										<option value="js">JS</option>
-										<option value="coffee">CoffeeScript</option>
-										<option value="es6">ES6 (Babel)</option>
-										<option value="typescript">TypeScript</option>
-									</select>
-								</label>
-								<div className="code-wrap__header-right-options">
-									<a
-										className="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"
-										title="Toggle code pane"
-										onClick={this.collapseBtnHandler.bind(this)}
-									/>
-								</div>
-							</div> */}
                 <Toolbox clickSvg={this.toolboxUpdateToApp.bind(this)} />
                 <UserCodeMirror
                   ref={(dslEditor) => (this.dslEditor = dslEditor)}
@@ -950,11 +931,6 @@ export default class ContentWrap extends Component {
                         <use xlinkHref="#settings-icon" />
                       </svg>
                     </a>
-                    {/* <a
-										className="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"
-										title="Toggle code pane"
-										onClick={this.collapseBtnHandler.bind(this)}
-									/> */}
                   </div>
                 </div>
                 <UserCodeMirror
@@ -977,117 +953,8 @@ export default class ContentWrap extends Component {
                 />
               </div>
             </div>
-            {/*<div label="Cheat sheet">*/}
-            {/*	<div*/}
-            {/*		data-code-wrap-id="0"*/}
-            {/*		id="htmlCodeEl"*/}
-            {/*		data-type="html"*/}
-            {/*		class="code-wrap"*/}
-            {/*		onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}*/}
-            {/*	>*/}
-            {/*		/!* <div*/}
-            {/*		class="js-code-wrap__header  code-wrap__header"*/}
-            {/*		onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}*/}
-            {/*	>*/}
-            {/*		<label class="btn-group" dropdow title="Click to change">*/}
-            {/*			About*/}
-            {/*		</label>*/}
-            {/*		<div class="code-wrap__header-right-options">*/}
-            {/*			<a*/}
-            {/*				class="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"*/}
-            {/*				title="Toggle code pane"*/}
-            {/*				onClick={this.collapseBtnHandler.bind(this)}*/}
-            {/*			/>*/}
-            {/*		</div>*/}
-            {/*	</div> *!/*/}
-            {/*		<div className="cheat-sheet">*/}
-            {/*			<table>*/}
-            {/*				<tr>*/}
-            {/*					<th>Feature</th>*/}
-            {/*					<th>Sample</th>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Participant</td>*/}
-            {/*					<td>*/}
-            {/*						ParticipantA*/}
-            {/*						<br />*/}
-            {/*						ParticipantB*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Message</td>*/}
-            {/*					<td>A.messageA()</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Asyc message</td>*/}
-            {/*					<td>Alice-&gt;Bob: How are you?</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Nested message</td>*/}
-            {/*					<td>*/}
-            {/*						A.messageA() {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;B.messageB()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td class="tg-0pky">Self-message</td>*/}
-            {/*					<td class="tg-0pky">internalMessage()</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Alt</td>*/}
-            {/*					<td>*/}
-            {/*						if (condition1) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;A.methodA()*/}
-            {/*						<br />*/}
-            {/*						{'}'} else if (condition2) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;B.methodB()*/}
-            {/*						<br />*/}
-            {/*						{'}'} else {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;C.methodC()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Loop</td>*/}
-            {/*					<td>*/}
-            {/*						while (condition) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;A.methodA()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*			</table>*/}
-            {/*		</div>*/}
-            {/*	</div>*/}
-            {/*</div>*/}
           </Tabs>
         </div>
-        {/*<SplitPane*/}
-        {/*class="code-side"*/}
-        {/*id="js-code-side"*/}
-        {/*sizes={this.state.codeSplitSizes}*/}
-        {/*minSize={minCodeWrapSize}*/}
-        {/*direction={*/}
-        {/*this.props.currentLayoutMode === 2 ||*/}
-        {/*this.props.currentLayoutMode === 5*/}
-        {/*? 'horizontal'*/}
-        {/*: 'vertical'*/}
-        {/*}*/}
-        {/*onDragStart={this.codeSplitDragStart.bind(this)}*/}
-        {/*onDragEnd={this.codeSplitDragEnd.bind(this)}*/}
-        {/*onSplit={splitInstance => (this.codeSplitInstance = splitInstance)}*/}
-        {/*>*/}
-        {/**/}
-        {/**/}
-        {/*</Tabs>*/}
         <div class="demo-side" id="js-demo-side">
           <div className="h-full flex flex-col">
             <div
@@ -1104,6 +971,16 @@ export default class ContentWrap extends Component {
             {window.zenumlDesktop ? null : (
               <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
                 <div className="flex gap-4 items-center text-black-100">
+                  <button
+                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                    aria-label="Toggle Fullscreen"
+                    onClick={this.toggleFullscreen.bind(this)}
+                  >
+                    <svg className="w-5 h-5 fill-current">
+                      <use xlinkHref="#fullscreen-icon" />
+                    </svg>
+                    <span>Fullscreen</span>
+                  </button>
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(1)}
                     id="layoutBtn1"
