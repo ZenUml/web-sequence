@@ -132,6 +132,9 @@ export function Icons() {
         <symbol id="keyboard-icon" viewBox="0 0 24 24">
           <path d="M19,10H17V8H19M19,13H17V11H19M16,10H14V8H16M16,13H14V11H16M16,17H8V15H16M7,10H5V8H7M7,13H5V11H7M8,11H10V13H8M8,8H10V10H8M11,11H13V13H11M11,8H13V10H11M20,5H4C2.89,5 2,5.89 2,7V17A2,2 0 0,0 4,19H20A2,2 0 0,0 22,17V7C22,5.89 21.1,5 20,5Z" />
         </symbol>
+        <symbol id="fullscreen-icon" viewBox="0 0 24 24">
+          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </symbol>
         <symbol id="mode-icon" viewBox="0 0 100 100">
           <g>
             <rect x={0} y={0} width={28} height={47} />

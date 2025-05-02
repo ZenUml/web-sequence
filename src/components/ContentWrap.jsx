@@ -428,9 +428,9 @@ export default class ContentWrap extends Component {
       this.props.onLogin();
       return;
     }
-    const png = await this.getPngBlob();
-    saveAs(png, 'zenuml.png');
-    mixpanel.track({ event: 'downloadPng', category: 'ui' });
+      const png = await this.getPngBlob();
+      saveAs(png, 'zenuml.png');
+      mixpanel.track({ event: 'downloadPng', category: 'ui' });
   }
 
   async getPngBlob() {
@@ -817,6 +817,47 @@ export default class ContentWrap extends Component {
     this.cm.js.setValue(codeService.addCode(code, param));
   }
 
+  async toggleFullscreen() {
+    const demoElement = document.getElementById('js-demo-side');
+    if (!document.fullscreenElement) {
+      if (demoElement.requestFullscreen) {
+        demoElement.requestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.mozRequestFullScreen) { /* Firefox */
+        demoElement.mozRequestFullScreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+        demoElement.webkitRequestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      } else if (demoElement.msRequestFullscreen) { /* IE/Edge */
+        demoElement.msRequestFullscreen();
+        trackEvent('ui', 'enterFullscreen');
+        mixpanel.track('Enter Fullscreen');
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.mozCancelFullScreen) { /* Firefox */
+        document.mozCancelFullScreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+        document.webkitExitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      } else if (document.msExitFullscreen) { /* IE/Edge */
+        document.msExitFullscreen();
+        trackEvent('ui', 'exitFullscreen');
+        mixpanel.track('Exit Fullscreen');
+      }
+    }
+  }
+
   render() {
     return (
       <SplitPane
@@ -847,35 +888,6 @@ export default class ContentWrap extends Component {
                 className="code-wrap"
                 onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}
               >
-                {/* <div
-								className="js-code-wrap__header  code-wrap__header"
-								title="Double click to toggle code pane"
-								ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
-							>
-								<label className="btn-group" title="Click to change">
-									<span className="code-wrap__header-label">ZenUML</span>
-									<span className="caret" style="display:none" />
-									<select
-										data-type="js"
-										className="js-mode-select  hidden-select"
-										style="display: none"
-										onChange={this.codeModeChangeHandler.bind(this)}
-										value={this.props.currentItem.jsMode}
-									>
-										<option value="js">JS</option>
-										<option value="coffee">CoffeeScript</option>
-										<option value="es6">ES6 (Babel)</option>
-										<option value="typescript">TypeScript</option>
-									</select>
-								</label>
-								<div className="code-wrap__header-right-options">
-									<a
-										className="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"
-										title="Toggle code pane"
-										onClick={this.collapseBtnHandler.bind(this)}
-									/>
-								</div>
-							</div> */}
                 <Toolbox clickSvg={this.toolboxUpdateToApp.bind(this)} />
                 <UserCodeMirror
                   ref={(dslEditor) => (this.dslEditor = dslEditor)}
@@ -950,11 +962,6 @@ export default class ContentWrap extends Component {
                         <use xlinkHref="#settings-icon" />
                       </svg>
                     </a>
-                    {/* <a
-										className="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"
-										title="Toggle code pane"
-										onClick={this.collapseBtnHandler.bind(this)}
-									/> */}
                   </div>
                 </div>
                 <UserCodeMirror
@@ -977,117 +984,8 @@ export default class ContentWrap extends Component {
                 />
               </div>
             </div>
-            {/*<div label="Cheat sheet">*/}
-            {/*	<div*/}
-            {/*		data-code-wrap-id="0"*/}
-            {/*		id="htmlCodeEl"*/}
-            {/*		data-type="html"*/}
-            {/*		class="code-wrap"*/}
-            {/*		onTransitionEnd={this.updateCodeWrapCollapseStates.bind(this)}*/}
-            {/*	>*/}
-            {/*		/!* <div*/}
-            {/*		class="js-code-wrap__header  code-wrap__header"*/}
-            {/*		onDblClick={this.codeWrapHeaderDblClickHandler.bind(this)}*/}
-            {/*	>*/}
-            {/*		<label class="btn-group" dropdow title="Click to change">*/}
-            {/*			About*/}
-            {/*		</label>*/}
-            {/*		<div class="code-wrap__header-right-options">*/}
-            {/*			<a*/}
-            {/*				class="js-code-collapse-btn  code-wrap__header-btn  code-wrap__collapse-btn"*/}
-            {/*				title="Toggle code pane"*/}
-            {/*				onClick={this.collapseBtnHandler.bind(this)}*/}
-            {/*			/>*/}
-            {/*		</div>*/}
-            {/*	</div> *!/*/}
-            {/*		<div className="cheat-sheet">*/}
-            {/*			<table>*/}
-            {/*				<tr>*/}
-            {/*					<th>Feature</th>*/}
-            {/*					<th>Sample</th>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Participant</td>*/}
-            {/*					<td>*/}
-            {/*						ParticipantA*/}
-            {/*						<br />*/}
-            {/*						ParticipantB*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Message</td>*/}
-            {/*					<td>A.messageA()</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Asyc message</td>*/}
-            {/*					<td>Alice-&gt;Bob: How are you?</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Nested message</td>*/}
-            {/*					<td>*/}
-            {/*						A.messageA() {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;B.messageB()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td class="tg-0pky">Self-message</td>*/}
-            {/*					<td class="tg-0pky">internalMessage()</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Alt</td>*/}
-            {/*					<td>*/}
-            {/*						if (condition1) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;A.methodA()*/}
-            {/*						<br />*/}
-            {/*						{'}'} else if (condition2) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;B.methodB()*/}
-            {/*						<br />*/}
-            {/*						{'}'} else {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;C.methodC()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*				<tr>*/}
-            {/*					<td>Loop</td>*/}
-            {/*					<td>*/}
-            {/*						while (condition) {'{'}*/}
-            {/*						<br />*/}
-            {/*						&nbsp;&nbsp;A.methodA()*/}
-            {/*						<br />*/}
-            {/*						{'}'}*/}
-            {/*					</td>*/}
-            {/*				</tr>*/}
-            {/*			</table>*/}
-            {/*		</div>*/}
-            {/*	</div>*/}
-            {/*</div>*/}
           </Tabs>
         </div>
-        {/*<SplitPane*/}
-        {/*class="code-side"*/}
-        {/*id="js-code-side"*/}
-        {/*sizes={this.state.codeSplitSizes}*/}
-        {/*minSize={minCodeWrapSize}*/}
-        {/*direction={*/}
-        {/*this.props.currentLayoutMode === 2 ||*/}
-        {/*this.props.currentLayoutMode === 5*/}
-        {/*? 'horizontal'*/}
-        {/*: 'vertical'*/}
-        {/*}*/}
-        {/*onDragStart={this.codeSplitDragStart.bind(this)}*/}
-        {/*onDragEnd={this.codeSplitDragEnd.bind(this)}*/}
-        {/*onSplit={splitInstance => (this.codeSplitInstance = splitInstance)}*/}
-        {/*>*/}
-        {/**/}
-        {/**/}
-        {/*</Tabs>*/}
         <div class="demo-side" id="js-demo-side">
           <div className="h-full flex flex-col">
             <div
@@ -1137,22 +1035,33 @@ export default class ContentWrap extends Component {
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold">
                   <button
-                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                    aria-label="Export as PNG"
-                    onClick={this.exportPngClickHandler.bind(this)}
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Toggle Fullscreen"
+                      onClick={this.toggleFullscreen.bind(this)}
+                      title="Toggle Fullscreen Presenting Mode"
                   >
                     <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-download" />
+                      <use xlinkHref="#fullscreen-icon"/>
+                    </svg>
+                    <span>Present</span>
+                  </button>
+                  <button
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Export as PNG"
+                      onClick={this.exportPngClickHandler.bind(this)}
+                  >
+                    <svg className="w-5 h-5 fill-current">
+                      <use xlinkHref="#icon-download"/>
                     </svg>
                     <span>PNG</span>
                   </button>
                   <button
-                    className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                    aria-label="Copy PNG to Clipboard"
-                    onClick={this.copyImageClickHandler.bind(this)}
+                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                      aria-label="Copy PNG to Clipboard"
+                      onClick={this.copyImageClickHandler.bind(this)}
                   >
                     <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-copy" />
+                      <use xlinkHref="#icon-copy"/>
                     </svg>
                     <span>Copy PNG</span>
                   </button>
@@ -1160,19 +1069,19 @@ export default class ContentWrap extends Component {
               </div>
             )}
             <Console
-              isConsoleOpen={this.state.isConsoleOpen}
-              onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
-                this,
-              )}
-              onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
-                this,
-              )}
-              toggleConsole={this.toggleConsole.bind(this)}
-              onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-              onReady={(el) => (this.consoleCm = el)}
+                isConsoleOpen={this.state.isConsoleOpen}
+                onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
+                    this,
+                )}
+                onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
+                    this,
+                )}
+                toggleConsole={this.toggleConsole.bind(this)}
+                onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
+                onReady={(el) => (this.consoleCm = el)}
             />
             <CssSettingsModal
-              show={this.state.isCssSettingsModalOpen}
+                show={this.state.isCssSettingsModalOpen}
               closeHandler={async () =>
                 await this.setState({ isCssSettingsModalOpen: false })
               }
