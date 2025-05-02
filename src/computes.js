@@ -167,10 +167,8 @@ export function computeJs(
   shouldPreventInfiniteLoops,
   infiniteLoopTimeout,
 ) {
-  console.log('Is it recomputing?');
   let code = `
 	window.addEventListener("load", function(event) {
-		console.log("window loaded");
 		window.app = new window.zenuml.default('#mounting-point')
 	});
 	window.addEventListener('message', (e) => {

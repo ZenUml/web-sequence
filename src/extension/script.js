@@ -1,5 +1,4 @@
 window.addEventListener('load', function (event) {
-  console.log('window loaded');
   window.app = new window.zenuml.default('#mounting-point');
 });
 window.addEventListener(
