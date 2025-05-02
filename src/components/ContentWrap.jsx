@@ -823,37 +823,37 @@ export default class ContentWrap extends Component {
       if (demoElement.requestFullscreen) {
         demoElement.requestFullscreen();
         trackEvent('ui', 'enterFullscreen');
-        mixpanel.track('Enter Fullscreen');
+        mixpanel.track({ event: 'enterFullscreen', category: 'ui' });
       } else if (demoElement.mozRequestFullScreen) { /* Firefox */
         demoElement.mozRequestFullScreen();
         trackEvent('ui', 'enterFullscreen');
-        mixpanel.track('Enter Fullscreen');
+        mixpanel.track({ event: 'enterFullscreen', category: 'ui' });
       } else if (demoElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
         demoElement.webkitRequestFullscreen();
         trackEvent('ui', 'enterFullscreen');
-        mixpanel.track('Enter Fullscreen');
+        mixpanel.track({ event: 'enterFullscreen', category: 'ui' });
       } else if (demoElement.msRequestFullscreen) { /* IE/Edge */
         demoElement.msRequestFullscreen();
         trackEvent('ui', 'enterFullscreen');
-        mixpanel.track('Enter Fullscreen');
+        mixpanel.track({ event: 'enterFullscreen', category: 'ui' });
       }
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen();
         trackEvent('ui', 'exitFullscreen');
-        mixpanel.track('Exit Fullscreen');
+        mixpanel.track({ event: 'exitFullscreen', category: 'ui' });
       } else if (document.mozCancelFullScreen) { /* Firefox */
         document.mozCancelFullScreen();
         trackEvent('ui', 'exitFullscreen');
-        mixpanel.track('Exit Fullscreen');
+        mixpanel.track({ event: 'exitFullscreen', category: 'ui' });
       } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
         document.webkitExitFullscreen();
         trackEvent('ui', 'exitFullscreen');
-        mixpanel.track('Exit Fullscreen');
+        mixpanel.track({ event: 'exitFullscreen', category: 'ui' });
       } else if (document.msExitFullscreen) { /* IE/Edge */
         document.msExitFullscreen();
         trackEvent('ui', 'exitFullscreen');
-        mixpanel.track('Exit Fullscreen');
+        mixpanel.track({ event: 'exitFullscreen', category: 'ui' });
       }
     }
   }
