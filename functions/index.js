@@ -125,6 +125,9 @@ exports.track = functions.https.onRequest(async (req, res) => {
     event_label: req.body.label,
     displayProductName: 'FireWeb',
   });
+  
+  // Send a success response to prevent 502 Bad Gateway error
+  res.status(200).send('Event tracked successfully');
 });
 
 exports.webhook = functions.https.onRequest(async (req, res) => {
