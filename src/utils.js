@@ -272,8 +272,22 @@ export function getCompleteHtml(html, css, js, item) {
     '<meta charset="UTF-8" />\n' +
     '<style id="zenumlstyle">\n' +
     css +
-    '\n</style>\n' +
-    '</head>\n' +
+    '\n</style>\n';
+    
+  // Add Microsoft Clarity tracking code to the iframe content
+  // This ensures Clarity can track user interactions inside the iframe
+  if (window.clarity) {
+    contents += 
+      '<script type="text/javascript">\n' +
+      '(function(c,l,a,r,i,t,y){\n' +
+      '  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};\n' +
+      '  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;\n' +
+      '  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);\n' +
+      '})(window, document, "clarity", "script", window.CLARITY_PROJECT_ID || "");\n' +
+      '</script>\n';
+  }
+  
+  contents += '</head>\n' +
     '<body>\n' +
     html +
     '\n';
@@ -299,6 +313,7 @@ export function getCompleteHtml(html, css, js, item) {
 
   return contents;
 }
+/* eslint-disable max-params */
 
 export function saveAsHtml(item) {
   var htmlPromise = computeHtml(item.html, item.htmlMode);
