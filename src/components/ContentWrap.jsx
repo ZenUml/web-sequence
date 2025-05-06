@@ -184,12 +184,19 @@ export default class ContentWrap extends Component {
     if (this.detachedWindow) {
       this.detachedWindow.postMessage({ contents }, '*');
     } else {
-      this.frame.src = this.frame.src;
-      setTimeout(() => {
-        that.frame.contentDocument.open();
-        that.frame.contentDocument.write(contents);
-        that.frame.contentDocument.close();
-      }, 10);
+      // Use srcdoc attribute which works better with Microsoft Clarity
+      // This allows Clarity to properly track interactions inside the iframe
+      if ('srcdoc' in this.frame) {
+        this.frame.srcdoc = contents;
+      } else {
+        // Fallback for older browsers that don't support srcdoc
+        this.frame.src = 'about:blank';
+        setTimeout(() => {
+          that.frame.contentDocument.open();
+          that.frame.contentDocument.write(contents);
+          that.frame.contentDocument.close();
+        }, 10);
+      }
     }
   }
 
