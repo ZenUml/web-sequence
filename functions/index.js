@@ -10,7 +10,7 @@ const mixpanel = Mixpanel.init('0c62cea9ed2247f4824bf196f6817941');
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
-const pubKey = functions.config().paddle.pub_key;
+const pubKey = functions.config().paddle?.pub_key;
 const https = require('https');
 
 exports.info = functions.https.onRequest((req, res) => {
@@ -19,7 +19,7 @@ exports.info = functions.https.onRequest((req, res) => {
 
 const verifyIdToken = (token) => admin.auth().verifyIdToken(token);
 
-const supportedProductIds = (functions.config().paddle.product_ids || '')
+const supportedProductIds = (functions.config().paddle?.product_ids || '')
   .split(',')
   .filter(Boolean);
 const checkSupportedProductIds = (productId) => {
@@ -125,7 +125,7 @@ exports.track = functions.https.onRequest(async (req, res) => {
     event_label: req.body.label,
     displayProductName: 'FireWeb',
   });
-  
+
   // Send a success response to prevent 502 Bad Gateway error
   res.status(200).send('Event tracked successfully');
 });
