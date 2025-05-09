@@ -1,6 +1,7 @@
 import { deferred } from './deferred';
 import { log } from 'util';
 import firebase from 'firebase/app';
+import { generateRandomId } from './utils';
 
 export let itemService;
 
@@ -103,6 +104,19 @@ if (window.zenumlDesktop) {
         log(`Starting to save item ${id}`);
         /* eslint-disable */
         item.createdBy = window.user.uid;
+        
+        // Ensure the item has a pages array if it doesn't already
+        if (!item.pages || !Array.isArray(item.pages)) {
+          item.pages = [{
+            id: generateRandomId(),
+            title: "Page 1",
+            js: item.js || "",
+            css: item.css || "",
+            isDefault: true
+          }];
+          item.currentPageId = item.pages[0].id;
+        }
+        
         remotePromise = remoteDb
           .collection('items')
           .doc(id)

@@ -41,7 +41,15 @@ export default class ContentWrap extends Component {
     this.jsMode = JsModes.JS;
     this.prefs = {};
     this.codeInPreview = { html: null, css: null, js: null };
-    this.cmCodes = { html: props.currentItem.html, css: '', js: '' };
+    
+    // Initialize with the current page's content if available
+    const currentPage = this.getCurrentPage();
+    this.cmCodes = { 
+      html: props.currentItem.html, 
+      css: currentPage ? currentPage.css : props.currentItem.css || '', 
+      js: currentPage ? currentPage.js : props.currentItem.js || '' 
+    };
+    
     this.cm = {};
     this.logCount = 0;
 
@@ -94,29 +102,88 @@ export default class ContentWrap extends Component {
     this.onCodeChange(editor, change);
   }
 
-  onCssCodeChange(editor, change) {
-    this.cmCodes.css = editor.getValue();
-    this.props.onCodeChange(
-      'css',
-      this.cmCodes.css,
-      change.origin !== 'setValue',
-    );
-    this.onCodeChange(editor, change);
-  }
-
   async onJsCodeChange(editor, change) {
     await this.setState({ lineOfCode: editor.doc.size });
     this.cmCodes.js = editor.getValue();
-    this.props.onCodeChange(
-      'js',
-      this.cmCodes.js,
-      change.origin !== 'setValue',
-    );
+    
+    // Update the current page's JS content
+    const currentPage = this.getCurrentPage();
+    if (currentPage) {
+      const updatedPage = {
+        ...currentPage,
+        js: editor.getValue()
+      };
+      
+      // Find the index of the current page
+      const pageIndex = this.props.currentItem.pages.findIndex(
+        page => page.id === currentPage.id
+      );
+      
+      if (pageIndex !== -1) {
+        // Create updated pages array
+        const updatedPages = [...this.props.currentItem.pages];
+        updatedPages[pageIndex] = updatedPage;
+        
+        // Update the current item with the new pages array
+        const updatedItem = {
+          ...this.props.currentItem,
+          pages: updatedPages,
+          // Also update the js field for backward compatibility
+          js: editor.getValue()
+        };
+        
+        // Only call onCodeChange once with the updated item
+        this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue', updatedItem);
+      } else {
+        this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue');
+      }
+    } else {
+      this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue');
+    }
 
     const targetWindow =
       this.detachedWindow ||
       document.getElementById('demo-frame').contentWindow;
     targetWindow.postMessage({ code: this.cmCodes.js }, '*');
+  }
+
+  async onCssCodeChange(editor, change) {
+    this.cmCodes.css = editor.getValue();
+    
+    // Update the current page's CSS content
+    const currentPage = this.getCurrentPage();
+    if (currentPage) {
+      const updatedPage = {
+        ...currentPage,
+        css: editor.getValue()
+      };
+      
+      // Find the index of the current page
+      const pageIndex = this.props.currentItem.pages.findIndex(
+        page => page.id === currentPage.id
+      );
+      
+      if (pageIndex !== -1) {
+        // Create updated pages array
+        const updatedPages = [...this.props.currentItem.pages];
+        updatedPages[pageIndex] = updatedPage;
+        
+        // Update the current item with the new pages array
+        const updatedItem = {
+          ...this.props.currentItem,
+          pages: updatedPages,
+          // Also update the css field for backward compatibility
+          css: editor.getValue()
+        };
+        
+        // Only call onCodeChange once with the updated item
+        this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue', updatedItem);
+      } else {
+        this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue');
+      }
+    } else {
+      this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue');
+    }
   }
 
   onCursorMove(editor) {
@@ -157,6 +224,19 @@ export default class ContentWrap extends Component {
         }
       }
     }, this.updateDelay);
+  }
+
+  /**
+   * Gets the current active page from the current item
+   * @returns {Object|null} The current page or null if not found
+   */
+  getCurrentPage() {
+    const { currentItem } = this.props;
+    if (!currentItem || !currentItem.pages || !currentItem.currentPageId) {
+      return null;
+    }
+    
+    return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
   }
 
   // Called for both detached window and non-detached window
@@ -303,10 +383,18 @@ export default class ContentWrap extends Component {
   }
 
   refreshEditor() {
-    this.cmCodes.css = this.props.currentItem.css;
-    this.cmCodes.js = this.props.currentItem.js;
-    this.cm.css.setValue(this.cmCodes.css || '');
-    this.cm.js.setValue(this.cmCodes.js || '');
+    const currentPage = this.getCurrentPage();
+    
+    if (currentPage) {
+      this.cmCodes.css = currentPage.css || '';
+      this.cmCodes.js = currentPage.js || '';
+    } else {
+      this.cmCodes.css = this.props.currentItem.css || '';
+      this.cmCodes.js = this.props.currentItem.js || '';
+    }
+    
+    this.cm.css.setValue(this.cmCodes.css);
+    this.cm.js.setValue(this.cmCodes.js);
     this.cm.css.refresh();
     this.cm.js.refresh();
 
