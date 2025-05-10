@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
+import PageTabs from './PageTabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
 import { getCompleteHtml, loadJS, log } from '../utils';
@@ -1083,6 +1084,13 @@ export default class ContentWrap extends Component {
         </div>
         <div class="demo-side" id="js-demo-side">
           <div className="h-full flex flex-col">
+            {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
+              <PageTabs
+                pages={this.props.currentItem.pages}
+                currentPageId={this.props.currentItem.currentPageId}
+                onTabClick={this.props.onPageSwitch}
+              />
+            )}
             <div
               className="flex-grow"
               style="overflow-y: auto; -webkit-overflow-scrolling: touch; "

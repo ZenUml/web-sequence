@@ -1679,6 +1679,7 @@ BookLibService.Borrow(id) {
             onEditorFocus={this.editorFocusHandler.bind(this)}
             onSplitUpdate={this.splitUpdateHandler.bind(this)}
             onProFeature={this.proBtnClickHandler.bind(this)}
+            onPageSwitch={this.switchToPage.bind(this)}
             keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
               this,
             )}
