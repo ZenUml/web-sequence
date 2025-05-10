@@ -1516,9 +1516,23 @@ BookLibService.Borrow(id) {
     return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
   }
 
-  addNewPage(title = 'New Page') {
+  addNewPage(title) {
     const { currentItem } = this.state;
     if (!currentItem) return null;
+    
+    // Ensure pages array exists
+    if (!currentItem.pages || !Array.isArray(currentItem.pages)) {
+      // Migrate the item to the pages format if needed
+      const migratedItem = migrateItemToPages(currentItem);
+      this.setState({ currentItem: migratedItem });
+      return this.addNewPage(title); // Retry after migration
+    }
+    
+    // If no title is provided, generate one based on the number of pages
+    if (!title) {
+      const pageCount = currentItem.pages.length + 1;
+      title = `Page ${pageCount}`;
+    }
     
     const newPage = {
       id: generateRandomId(),

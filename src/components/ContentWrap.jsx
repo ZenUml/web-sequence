@@ -647,6 +647,13 @@ export default class ContentWrap extends Component {
     const baseTranspilerPath = 'lib/transpilers';
     // Exit if already loaded
     var d = deferred();
+    
+    // Add null check for modes[mode]
+    if (!mode || !modes[mode]) {
+      d.resolve();
+      return d.promise;
+    }
+    
     if (modes[mode].hasLoaded) {
       d.resolve();
       return d.promise;
@@ -688,36 +695,57 @@ export default class ContentWrap extends Component {
   updateHtmlMode(value) {
     this.props.onCodeModeChange('html', value);
     this.props.currentItem.htmlMode = value;
-    CodeMirror.autoLoadMode(
-      this.cm.html,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined (reading 'cmPath')" error
+    if (this.cm && this.cm.html && modes[value]) {
+      CodeMirror.autoLoadMode(
+        this.cm.html,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
     return this.handleModeRequirements(value);
   }
 
   updateCssMode(value) {
     this.props.onCodeModeChange('css', value);
     this.props.currentItem.cssMode = value;
-    this.cm.css.setOption('mode', modes[value].cmMode);
-    this.cm.css.setOption('readOnly', modes[value].cmDisable);
-    window.cssSettingsBtn.classList[
-      modes[value].hasSettings ? 'remove' : 'add'
-    ]('hide');
-    CodeMirror.autoLoadMode(
-      this.cm.css,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined" error
+    if (this.cm && this.cm.css && modes[value]) {
+      this.cm.css.setOption('mode', modes[value].cmMode);
+      this.cm.css.setOption('readOnly', modes[value].cmDisable);
+      
+      CodeMirror.autoLoadMode(
+        this.cm.css,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
+    // Only modify DOM if the element exists
+    if (window.cssSettingsBtn && modes[value]) {
+      window.cssSettingsBtn.classList[
+        modes[value].hasSettings ? 'remove' : 'add'
+      ]('hide');
+    }
+    
     return this.handleModeRequirements(value);
   }
 
   updateJsMode(value) {
     this.props.onCodeModeChange('js', value);
     this.props.currentItem.jsMode = value;
-    this.cm.js.setOption('mode', modes[value].cmMode);
-    CodeMirror.autoLoadMode(
-      this.cm.js,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined" error
+    if (this.cm && this.cm.js && modes[value]) {
+      this.cm.js.setOption('mode', modes[value].cmMode);
+      
+      CodeMirror.autoLoadMode(
+        this.cm.js,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
     return this.handleModeRequirements(value);
   }
 
@@ -988,17 +1016,15 @@ export default class ContentWrap extends Component {
                 <UserCodeMirror
                   ref={(dslEditor) => (this.dslEditor = dslEditor)}
                   options={{
-                    mode: 'htmlmixed',
-                    profile: 'xhtml',
+                    mode: 'javascript',
                     gutters: [
                       'CodeMirror-linenumbers',
                       'CodeMirror-foldgutter',
                     ],
                     noAutocomplete: true,
-                    matchTags: { bothTags: true },
                     prettier: true,
-                    prettierParser: 'html',
-                    emmet: true,
+                    prettierParser: 'babel',
+                    emmet: false,
                   }}
                   prefs={this.props.prefs}
                   autoComplete={this.props.prefs.autoComplete}
