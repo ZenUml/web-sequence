@@ -19,6 +19,7 @@ import {
   getCompleteHtml,
   getFilenameFromUrl,
   blobToBase64,
+  migrateItemToPages,
 } from '../utils';
 import { itemService } from '../itemService';
 import '../db';
@@ -65,8 +66,8 @@ const UNSAVED_WARNING_COUNT = 15;
 const version = '3.6.1';
 
 export default class App extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.AUTO_SAVE_INTERVAL = 15000; // 15 seconds
     this.modalDefaultStates = {
       isModalOpen: false,
@@ -438,20 +439,9 @@ BookLibService.Borrow(id) {
 
   async setCurrentItem(item) {
     const d = deferred();
-    // TODO: remove later
-    item.htmlMode =
-      item.htmlMode || this.state.prefs.htmlMode || HtmlModes.HTML;
-    item.cssMode = item.cssMode || this.state.prefs.cssMode || CssModes.CSS;
-    item.jsMode = item.jsMode || this.state.prefs.jsMode || JsModes.JS;
-
-    await this.setState({ currentItem: item }, d.resolve);
-
-    this.saveItem();
-
-    // Reset unsaved count, in UI also.
-    await this.setState({ unsavedEditCount: 0 });
-    currentBrowserTab.setTitle(item.title);
-
+    // Migrate the item to the new pages format if needed
+    const migratedItem = migrateItemToPages(item);
+    await this.setState({ currentItem: migratedItem }, d.resolve);
     return d.promise;
   }
 
@@ -675,6 +665,9 @@ BookLibService.Borrow(id) {
 
     trackGaSetField('page', '/');
     trackPageView();
+
+    // Expose app instance for testing
+    window._app = this;
   }
 
   async closeAllOverlays() {
@@ -890,25 +883,36 @@ BookLibService.Borrow(id) {
     await this.setState({ currentItem: item });
   }
 
-  async onCodeChange(type, code, isUserChange) {
-    this.state.currentItem[type] = code;
-    if (isUserChange) {
+  async onCodeChange(type, code, isUserChange, updatedItem) {
+    // If an updatedItem is provided (with updated pages), use it instead of just updating the type
+    if (updatedItem) {
       await this.setState({
-        unsavedEditCount: this.state.unsavedEditCount + 1,
+        currentItem: updatedItem,
+        unsavedEditCount: isUserChange ? this.state.unsavedEditCount + 1 : this.state.unsavedEditCount
       });
-
-      if (
-        this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
-        this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
-      ) {
-        window.saveBtn.classList.add('animated');
-        window.saveBtn.classList.add('wobble');
-        window.saveBtn.addEventListener('animationend', () => {
-          window.saveBtn.classList.remove('animated');
-          window.saveBtn.classList.remove('wobble');
+    } else {
+      // Original behavior
+      this.state.currentItem[type] = code;
+      if (isUserChange) {
+        await this.setState({
+          unsavedEditCount: this.state.unsavedEditCount + 1,
         });
       }
     }
+
+    if (
+      isUserChange && 
+      this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
+      this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
+    ) {
+      window.saveBtn.classList.add('animated');
+      window.saveBtn.classList.add('wobble');
+      window.saveBtn.addEventListener('animationend', () => {
+        window.saveBtn.classList.remove('animated');
+        window.saveBtn.classList.remove('wobble');
+      });
+    }
+    
     if (this.state.prefs.isJs13kModeOn) {
       // Throttling codesize calculation
       if (this.codeSizeCalculationTimeout) {
@@ -1503,6 +1507,139 @@ BookLibService.Borrow(id) {
     mixpanel.track({ event: 'openSettingsModal', category: 'ui' });
   }
 
+  getCurrentPage() {
+    const { currentItem } = this.state;
+    if (!currentItem || !currentItem.pages || !currentItem.currentPageId) {
+      return null;
+    }
+    
+    return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
+  }
+
+  addNewPage(title) {
+    const { currentItem } = this.state;
+    if (!currentItem) return null;
+    
+    // Ensure pages array exists
+    if (!currentItem.pages || !Array.isArray(currentItem.pages)) {
+      // Migrate the item to the pages format if needed
+      const migratedItem = migrateItemToPages(currentItem);
+      this.setState({ currentItem: migratedItem });
+      return this.addNewPage(title); // Retry after migration
+    }
+    
+    // If no title is provided, generate one based on the number of pages
+    if (!title) {
+      const pageCount = currentItem.pages.length + 1;
+      title = `Page ${pageCount}`;
+    }
+    
+    const newPage = {
+      id: generateRandomId(),
+      title,
+      js: '',
+      css: '',
+      isDefault: false
+    };
+    
+    const updatedItem = {
+      ...currentItem,
+      pages: [...currentItem.pages, newPage]
+    };
+    
+    this.setState({ currentItem: updatedItem });
+    
+    // Switch to the new page
+    this.switchToPage(newPage.id);
+    
+    return newPage.id;
+  }
+
+  switchToPage(pageId) {
+    const { currentItem } = this.state;
+    if (!currentItem) return;
+    
+    const pageExists = currentItem.pages.some(page => page.id === pageId);
+    if (!pageExists) return;
+    
+    const updatedItem = {
+      ...currentItem,
+      currentPageId: pageId
+    };
+    
+    this.setState({ currentItem: updatedItem }, () => {
+      // Refresh the editor to show the new page content
+      if (this.contentWrap) {
+        this.contentWrap.refreshEditor();
+      }
+    });
+  }
+
+  updatePage(pageId, updates) {
+    const { currentItem } = this.state;
+    if (!currentItem) return;
+    
+    const pageIndex = currentItem.pages.findIndex(page => page.id === pageId);
+    if (pageIndex === -1) return;
+    
+    const updatedPages = [...currentItem.pages];
+    updatedPages[pageIndex] = {
+      ...updatedPages[pageIndex],
+      ...updates
+    };
+    
+    const updatedItem = {
+      ...currentItem,
+      pages: updatedPages
+    };
+    
+    // If we're updating the current page's js or css, also update the item's js/css for backward compatibility
+    if (pageId === currentItem.currentPageId) {
+      if (updates.js !== undefined) {
+        updatedItem.js = updates.js;
+      }
+      if (updates.css !== undefined) {
+        updatedItem.css = updates.css;
+      }
+    }
+    
+    this.setState({ currentItem: updatedItem });
+  }
+
+  deletePage(pageId) {
+    const { currentItem } = this.state;
+    if (!currentItem) return;
+    
+    // Don't allow deleting the last page
+    if (currentItem.pages.length <= 1) return;
+    
+    const pageIndex = currentItem.pages.findIndex(page => page.id === pageId);
+    if (pageIndex === -1) return;
+    
+    const updatedPages = currentItem.pages.filter(page => page.id !== pageId);
+    
+    // If we're deleting the current page, switch to another page
+    let updatedCurrentPageId = currentItem.currentPageId;
+    if (pageId === currentItem.currentPageId) {
+      // Find the nearest page to switch to
+      const newPageIndex = Math.min(pageIndex, updatedPages.length - 1);
+      updatedCurrentPageId = updatedPages[newPageIndex].id;
+    }
+    
+    const updatedItem = {
+      ...currentItem,
+      pages: updatedPages,
+      currentPageId: updatedCurrentPageId
+    };
+    
+    this.setState({ currentItem: updatedItem }, () => {
+      // If we switched pages, refresh the editor
+      if (pageId === currentItem.currentPageId && this.contentWrap) {
+        this.contentWrap.refreshEditor();
+      }
+    });
+  }
+
   render() {
     // remove field imageBase64 from currentItem and save it to a local variable as a copy
     const { imageBase64, ...currentItem } = this.state.currentItem;
@@ -1556,6 +1693,8 @@ BookLibService.Borrow(id) {
             onEditorFocus={this.editorFocusHandler.bind(this)}
             onSplitUpdate={this.splitUpdateHandler.bind(this)}
             onProFeature={this.proBtnClickHandler.bind(this)}
+            onPageSwitch={this.switchToPage.bind(this)}
+            onAddPage={this.addNewPage.bind(this)}
             keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
               this,
             )}

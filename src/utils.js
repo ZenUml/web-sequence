@@ -405,6 +405,42 @@ export function blobToBase64(blob) {
   });
 }
 
+/**
+ * Migrates an existing item to the new pages format
+ * @param {Object} item - The item to migrate
+ * @returns {Object} - The migrated item with pages
+ */
+export function migrateItemToPages(item) {
+  // If the item already has pages, return it as is
+  if (item.pages && Array.isArray(item.pages) && item.pages.length > 0) {
+    return item;
+  }
+
+  // Create a default page with the current content
+  const defaultPage = {
+    id: generateRandomId(),
+    title: "Page 1",
+    js: item.js || "",
+    css: item.css || "",
+    isDefault: true
+  };
+  
+  // Create a copy of the item to avoid mutating the original
+  const migratedItem = { ...item };
+  
+  // Add pages array with default page
+  migratedItem.pages = [defaultPage];
+  migratedItem.currentPageId = defaultPage.id;
+  
+  // Keep original js/css for backward compatibility
+  // Future updates will modify the pages content
+  
+  return migratedItem;
+}
+
+// Expose the migration function to the window object for testing
+window.migrateItemToPages = migrateItemToPages;
+
 if (window.IS_EXTENSION) {
   document.body.classList.add('is-extension');
 } else {

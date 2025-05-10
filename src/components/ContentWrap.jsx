@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
 import Tabs from './Tabs.jsx';
+import PageTabs from './PageTabs.jsx';
 import { computeCss, computeHtml, computeJs } from '../computes';
 import { CssModes, HtmlModes, JsModes, modes } from '../codeModes';
 import { getCompleteHtml, loadJS, log } from '../utils';
@@ -41,7 +42,15 @@ export default class ContentWrap extends Component {
     this.jsMode = JsModes.JS;
     this.prefs = {};
     this.codeInPreview = { html: null, css: null, js: null };
-    this.cmCodes = { html: props.currentItem.html, css: '', js: '' };
+    
+    // Initialize with the current page's content if available
+    const currentPage = this.getCurrentPage();
+    this.cmCodes = { 
+      html: props.currentItem.html, 
+      css: currentPage ? currentPage.css : props.currentItem.css || '', 
+      js: currentPage ? currentPage.js : props.currentItem.js || '' 
+    };
+    
     this.cm = {};
     this.logCount = 0;
 
@@ -94,29 +103,88 @@ export default class ContentWrap extends Component {
     this.onCodeChange(editor, change);
   }
 
-  onCssCodeChange(editor, change) {
-    this.cmCodes.css = editor.getValue();
-    this.props.onCodeChange(
-      'css',
-      this.cmCodes.css,
-      change.origin !== 'setValue',
-    );
-    this.onCodeChange(editor, change);
-  }
-
   async onJsCodeChange(editor, change) {
     await this.setState({ lineOfCode: editor.doc.size });
     this.cmCodes.js = editor.getValue();
-    this.props.onCodeChange(
-      'js',
-      this.cmCodes.js,
-      change.origin !== 'setValue',
-    );
+    
+    // Update the current page's JS content
+    const currentPage = this.getCurrentPage();
+    if (currentPage) {
+      const updatedPage = {
+        ...currentPage,
+        js: editor.getValue()
+      };
+      
+      // Find the index of the current page
+      const pageIndex = this.props.currentItem.pages.findIndex(
+        page => page.id === currentPage.id
+      );
+      
+      if (pageIndex !== -1) {
+        // Create updated pages array
+        const updatedPages = [...this.props.currentItem.pages];
+        updatedPages[pageIndex] = updatedPage;
+        
+        // Update the current item with the new pages array
+        const updatedItem = {
+          ...this.props.currentItem,
+          pages: updatedPages,
+          // Also update the js field for backward compatibility
+          js: editor.getValue()
+        };
+        
+        // Only call onCodeChange once with the updated item
+        this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue', updatedItem);
+      } else {
+        this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue');
+      }
+    } else {
+      this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue');
+    }
 
     const targetWindow =
       this.detachedWindow ||
       document.getElementById('demo-frame').contentWindow;
     targetWindow.postMessage({ code: this.cmCodes.js }, '*');
+  }
+
+  async onCssCodeChange(editor, change) {
+    this.cmCodes.css = editor.getValue();
+    
+    // Update the current page's CSS content
+    const currentPage = this.getCurrentPage();
+    if (currentPage) {
+      const updatedPage = {
+        ...currentPage,
+        css: editor.getValue()
+      };
+      
+      // Find the index of the current page
+      const pageIndex = this.props.currentItem.pages.findIndex(
+        page => page.id === currentPage.id
+      );
+      
+      if (pageIndex !== -1) {
+        // Create updated pages array
+        const updatedPages = [...this.props.currentItem.pages];
+        updatedPages[pageIndex] = updatedPage;
+        
+        // Update the current item with the new pages array
+        const updatedItem = {
+          ...this.props.currentItem,
+          pages: updatedPages,
+          // Also update the css field for backward compatibility
+          css: editor.getValue()
+        };
+        
+        // Only call onCodeChange once with the updated item
+        this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue', updatedItem);
+      } else {
+        this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue');
+      }
+    } else {
+      this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue');
+    }
   }
 
   onCursorMove(editor) {
@@ -157,6 +225,19 @@ export default class ContentWrap extends Component {
         }
       }
     }, this.updateDelay);
+  }
+
+  /**
+   * Gets the current active page from the current item
+   * @returns {Object|null} The current page or null if not found
+   */
+  getCurrentPage() {
+    const { currentItem } = this.props;
+    if (!currentItem || !currentItem.pages || !currentItem.currentPageId) {
+      return null;
+    }
+    
+    return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
   }
 
   // Called for both detached window and non-detached window
@@ -303,10 +384,18 @@ export default class ContentWrap extends Component {
   }
 
   refreshEditor() {
-    this.cmCodes.css = this.props.currentItem.css;
-    this.cmCodes.js = this.props.currentItem.js;
-    this.cm.css.setValue(this.cmCodes.css || '');
-    this.cm.js.setValue(this.cmCodes.js || '');
+    const currentPage = this.getCurrentPage();
+    
+    if (currentPage) {
+      this.cmCodes.css = currentPage.css || '';
+      this.cmCodes.js = currentPage.js || '';
+    } else {
+      this.cmCodes.css = this.props.currentItem.css || '';
+      this.cmCodes.js = this.props.currentItem.js || '';
+    }
+    
+    this.cm.css.setValue(this.cmCodes.css);
+    this.cm.js.setValue(this.cmCodes.js);
     this.cm.css.refresh();
     this.cm.js.refresh();
 
@@ -558,6 +647,13 @@ export default class ContentWrap extends Component {
     const baseTranspilerPath = 'lib/transpilers';
     // Exit if already loaded
     var d = deferred();
+    
+    // Add null check for modes[mode]
+    if (!mode || !modes[mode]) {
+      d.resolve();
+      return d.promise;
+    }
+    
     if (modes[mode].hasLoaded) {
       d.resolve();
       return d.promise;
@@ -599,36 +695,57 @@ export default class ContentWrap extends Component {
   updateHtmlMode(value) {
     this.props.onCodeModeChange('html', value);
     this.props.currentItem.htmlMode = value;
-    CodeMirror.autoLoadMode(
-      this.cm.html,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined (reading 'cmPath')" error
+    if (this.cm && this.cm.html && modes[value]) {
+      CodeMirror.autoLoadMode(
+        this.cm.html,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
     return this.handleModeRequirements(value);
   }
 
   updateCssMode(value) {
     this.props.onCodeModeChange('css', value);
     this.props.currentItem.cssMode = value;
-    this.cm.css.setOption('mode', modes[value].cmMode);
-    this.cm.css.setOption('readOnly', modes[value].cmDisable);
-    window.cssSettingsBtn.classList[
-      modes[value].hasSettings ? 'remove' : 'add'
-    ]('hide');
-    CodeMirror.autoLoadMode(
-      this.cm.css,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined" error
+    if (this.cm && this.cm.css && modes[value]) {
+      this.cm.css.setOption('mode', modes[value].cmMode);
+      this.cm.css.setOption('readOnly', modes[value].cmDisable);
+      
+      CodeMirror.autoLoadMode(
+        this.cm.css,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
+    // Only modify DOM if the element exists
+    if (window.cssSettingsBtn && modes[value]) {
+      window.cssSettingsBtn.classList[
+        modes[value].hasSettings ? 'remove' : 'add'
+      ]('hide');
+    }
+    
     return this.handleModeRequirements(value);
   }
 
   updateJsMode(value) {
     this.props.onCodeModeChange('js', value);
     this.props.currentItem.jsMode = value;
-    this.cm.js.setOption('mode', modes[value].cmMode);
-    CodeMirror.autoLoadMode(
-      this.cm.js,
-      modes[value].cmPath || modes[value].cmMode,
-    );
+    
+    // Add null check to prevent "Cannot read properties of undefined" error
+    if (this.cm && this.cm.js && modes[value]) {
+      this.cm.js.setOption('mode', modes[value].cmMode);
+      
+      CodeMirror.autoLoadMode(
+        this.cm.js,
+        modes[value].cmPath || modes[value].cmMode,
+      );
+    }
+    
     return this.handleModeRequirements(value);
   }
 
@@ -899,17 +1016,15 @@ export default class ContentWrap extends Component {
                 <UserCodeMirror
                   ref={(dslEditor) => (this.dslEditor = dslEditor)}
                   options={{
-                    mode: 'htmlmixed',
-                    profile: 'xhtml',
+                    mode: 'javascript',
                     gutters: [
                       'CodeMirror-linenumbers',
                       'CodeMirror-foldgutter',
                     ],
                     noAutocomplete: true,
-                    matchTags: { bothTags: true },
                     prettier: true,
-                    prettierParser: 'html',
-                    emmet: true,
+                    prettierParser: 'babel',
+                    emmet: false,
                   }}
                   prefs={this.props.prefs}
                   autoComplete={this.props.prefs.autoComplete}
@@ -995,6 +1110,14 @@ export default class ContentWrap extends Component {
         </div>
         <div class="demo-side" id="js-demo-side">
           <div className="h-full flex flex-col">
+            {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
+              <PageTabs
+                pages={this.props.currentItem.pages}
+                currentPageId={this.props.currentItem.currentPageId}
+                onTabClick={this.props.onPageSwitch}
+                onAddPage={this.props.onAddPage}
+              />
+            )}
             <div
               className="flex-grow"
               style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
