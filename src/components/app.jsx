@@ -439,9 +439,19 @@ BookLibService.Borrow(id) {
 
   async setCurrentItem(item) {
     const d = deferred();
+    // TODO: remove later
+    item.htmlMode =
+        item.htmlMode || this.state.prefs.htmlMode || HtmlModes.HTML;
+    item.cssMode = item.cssMode || this.state.prefs.cssMode || CssModes.CSS;
+    item.jsMode = item.jsMode || this.state.prefs.jsMode || JsModes.JS;
     // Migrate the item to the new pages format if needed
     const migratedItem = migrateItemToPages(item);
     await this.setState({ currentItem: migratedItem }, d.resolve);
+    this.saveItem();
+
+    // Reset unsaved count, in UI also.
+    await this.setState({ unsavedEditCount: 0 });
+    currentBrowserTab.setTitle(item.title);
     return d.promise;
   }
 
@@ -901,7 +911,7 @@ BookLibService.Borrow(id) {
     }
 
     if (
-      isUserChange && 
+      isUserChange &&
       this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
       this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
     ) {
@@ -912,7 +922,7 @@ BookLibService.Borrow(id) {
         window.saveBtn.classList.remove('wobble');
       });
     }
-    
+
     if (this.state.prefs.isJs13kModeOn) {
       // Throttling codesize calculation
       if (this.codeSizeCalculationTimeout) {
@@ -1512,7 +1522,7 @@ BookLibService.Borrow(id) {
     if (!currentItem || !currentItem.pages || !currentItem.currentPageId) {
       return null;
     }
-    
+
     return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
   }
 
@@ -1533,7 +1543,7 @@ BookLibService.Borrow(id) {
       const pageCount = currentItem.pages.length + 1;
       title = `Page ${pageCount}`;
     }
-    
+
     const newPage = {
       id: generateRandomId(),
       title,
@@ -1541,32 +1551,32 @@ BookLibService.Borrow(id) {
       css: '',
       isDefault: false
     };
-    
+
     const updatedItem = {
       ...currentItem,
       pages: [...currentItem.pages, newPage]
     };
-    
+
     this.setState({ currentItem: updatedItem });
-    
+
     // Switch to the new page
     this.switchToPage(newPage.id);
-    
+
     return newPage.id;
   }
 
   switchToPage(pageId) {
     const { currentItem } = this.state;
     if (!currentItem) return;
-    
+
     const pageExists = currentItem.pages.some(page => page.id === pageId);
     if (!pageExists) return;
-    
+
     const updatedItem = {
       ...currentItem,
       currentPageId: pageId
     };
-    
+
     this.setState({ currentItem: updatedItem }, () => {
       // Refresh the editor to show the new page content
       if (this.contentWrap) {
@@ -1578,21 +1588,21 @@ BookLibService.Borrow(id) {
   updatePage(pageId, updates) {
     const { currentItem } = this.state;
     if (!currentItem) return;
-    
+
     const pageIndex = currentItem.pages.findIndex(page => page.id === pageId);
     if (pageIndex === -1) return;
-    
+
     const updatedPages = [...currentItem.pages];
     updatedPages[pageIndex] = {
       ...updatedPages[pageIndex],
       ...updates
     };
-    
+
     const updatedItem = {
       ...currentItem,
       pages: updatedPages
     };
-    
+
     // If we're updating the current page's js or css, also update the item's js/css for backward compatibility
     if (pageId === currentItem.currentPageId) {
       if (updates.js !== undefined) {
@@ -1602,22 +1612,22 @@ BookLibService.Borrow(id) {
         updatedItem.css = updates.css;
       }
     }
-    
+
     this.setState({ currentItem: updatedItem });
   }
 
   deletePage(pageId) {
     const { currentItem } = this.state;
     if (!currentItem) return;
-    
+
     // Don't allow deleting the last page
     if (currentItem.pages.length <= 1) return;
-    
+
     const pageIndex = currentItem.pages.findIndex(page => page.id === pageId);
     if (pageIndex === -1) return;
-    
+
     const updatedPages = currentItem.pages.filter(page => page.id !== pageId);
-    
+
     // If we're deleting the current page, switch to another page
     let updatedCurrentPageId = currentItem.currentPageId;
     if (pageId === currentItem.currentPageId) {
@@ -1625,13 +1635,13 @@ BookLibService.Borrow(id) {
       const newPageIndex = Math.min(pageIndex, updatedPages.length - 1);
       updatedCurrentPageId = updatedPages[newPageIndex].id;
     }
-    
+
     const updatedItem = {
       ...currentItem,
       pages: updatedPages,
       currentPageId: updatedCurrentPageId
     };
-    
+
     this.setState({ currentItem: updatedItem }, () => {
       // If we switched pages, refresh the editor
       if (pageId === currentItem.currentPageId && this.contentWrap) {
