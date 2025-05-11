@@ -7,7 +7,7 @@ class Toolbox extends Component {
 
   render() {
     return (
-      <div className="flex gap-6 px-10 py-2 bg-black-400 flex-wrap">
+      <div className="flex gap-0.5 px-2 py-2 bg-black-400 flex-wrap">
         <button id="newParticipantBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between">
           <svg
             id="addNewParticipantButton"
