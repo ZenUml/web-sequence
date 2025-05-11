@@ -42,15 +42,15 @@ export default class ContentWrap extends Component {
     this.jsMode = JsModes.JS;
     this.prefs = {};
     this.codeInPreview = { html: null, css: null, js: null };
-    
+
     // Initialize with the current page's content if available
     const currentPage = this.getCurrentPage();
-    this.cmCodes = { 
-      html: props.currentItem.html, 
-      css: currentPage ? currentPage.css : props.currentItem.css || '', 
-      js: currentPage ? currentPage.js : props.currentItem.js || '' 
+    this.cmCodes = {
+      html: props.currentItem.html,
+      css: currentPage ? currentPage.css : props.currentItem.css || '',
+      js: currentPage ? currentPage.js : props.currentItem.js || ''
     };
-    
+
     this.cm = {};
     this.logCount = 0;
 
@@ -106,7 +106,7 @@ export default class ContentWrap extends Component {
   async onJsCodeChange(editor, change) {
     await this.setState({ lineOfCode: editor.doc.size });
     this.cmCodes.js = editor.getValue();
-    
+
     // Update the current page's JS content
     const currentPage = this.getCurrentPage();
     if (currentPage) {
@@ -114,17 +114,17 @@ export default class ContentWrap extends Component {
         ...currentPage,
         js: editor.getValue()
       };
-      
+
       // Find the index of the current page
       const pageIndex = this.props.currentItem.pages.findIndex(
         page => page.id === currentPage.id
       );
-      
+
       if (pageIndex !== -1) {
         // Create updated pages array
         const updatedPages = [...this.props.currentItem.pages];
         updatedPages[pageIndex] = updatedPage;
-        
+
         // Update the current item with the new pages array
         const updatedItem = {
           ...this.props.currentItem,
@@ -132,7 +132,7 @@ export default class ContentWrap extends Component {
           // Also update the js field for backward compatibility
           js: editor.getValue()
         };
-        
+
         // Only call onCodeChange once with the updated item
         this.props.onCodeChange('js', editor.getValue(), change.origin !== 'setValue', updatedItem);
       } else {
@@ -150,7 +150,7 @@ export default class ContentWrap extends Component {
 
   async onCssCodeChange(editor, change) {
     this.cmCodes.css = editor.getValue();
-    
+
     // Update the current page's CSS content
     const currentPage = this.getCurrentPage();
     if (currentPage) {
@@ -158,17 +158,17 @@ export default class ContentWrap extends Component {
         ...currentPage,
         css: editor.getValue()
       };
-      
+
       // Find the index of the current page
       const pageIndex = this.props.currentItem.pages.findIndex(
         page => page.id === currentPage.id
       );
-      
+
       if (pageIndex !== -1) {
         // Create updated pages array
         const updatedPages = [...this.props.currentItem.pages];
         updatedPages[pageIndex] = updatedPage;
-        
+
         // Update the current item with the new pages array
         const updatedItem = {
           ...this.props.currentItem,
@@ -176,7 +176,7 @@ export default class ContentWrap extends Component {
           // Also update the css field for backward compatibility
           css: editor.getValue()
         };
-        
+
         // Only call onCodeChange once with the updated item
         this.props.onCodeChange('css', editor.getValue(), change.origin !== 'setValue', updatedItem);
       } else {
@@ -236,7 +236,7 @@ export default class ContentWrap extends Component {
     if (!currentItem || !currentItem.pages || !currentItem.currentPageId) {
       return null;
     }
-    
+
     return currentItem.pages.find(page => page.id === currentItem.currentPageId) || null;
   }
 
@@ -385,7 +385,7 @@ export default class ContentWrap extends Component {
 
   refreshEditor() {
     const currentPage = this.getCurrentPage();
-    
+
     if (currentPage) {
       this.cmCodes.css = currentPage.css || '';
       this.cmCodes.js = currentPage.js || '';
@@ -393,7 +393,7 @@ export default class ContentWrap extends Component {
       this.cmCodes.css = this.props.currentItem.css || '';
       this.cmCodes.js = this.props.currentItem.js || '';
     }
-    
+
     this.cm.css.setValue(this.cmCodes.css);
     this.cm.js.setValue(this.cmCodes.js);
     this.cm.css.refresh();
@@ -647,13 +647,13 @@ export default class ContentWrap extends Component {
     const baseTranspilerPath = 'lib/transpilers';
     // Exit if already loaded
     var d = deferred();
-    
+
     // Add null check for modes[mode]
     if (!mode || !modes[mode]) {
       d.resolve();
       return d.promise;
     }
-    
+
     if (modes[mode].hasLoaded) {
       d.resolve();
       return d.promise;
@@ -695,7 +695,7 @@ export default class ContentWrap extends Component {
   updateHtmlMode(value) {
     this.props.onCodeModeChange('html', value);
     this.props.currentItem.htmlMode = value;
-    
+
     // Add null check to prevent "Cannot read properties of undefined (reading 'cmPath')" error
     if (this.cm && this.cm.html && modes[value]) {
       CodeMirror.autoLoadMode(
@@ -703,49 +703,49 @@ export default class ContentWrap extends Component {
         modes[value].cmPath || modes[value].cmMode,
       );
     }
-    
+
     return this.handleModeRequirements(value);
   }
 
   updateCssMode(value) {
     this.props.onCodeModeChange('css', value);
     this.props.currentItem.cssMode = value;
-    
+
     // Add null check to prevent "Cannot read properties of undefined" error
     if (this.cm && this.cm.css && modes[value]) {
       this.cm.css.setOption('mode', modes[value].cmMode);
       this.cm.css.setOption('readOnly', modes[value].cmDisable);
-      
+
       CodeMirror.autoLoadMode(
         this.cm.css,
         modes[value].cmPath || modes[value].cmMode,
       );
     }
-    
+
     // Only modify DOM if the element exists
     if (window.cssSettingsBtn && modes[value]) {
       window.cssSettingsBtn.classList[
         modes[value].hasSettings ? 'remove' : 'add'
       ]('hide');
     }
-    
+
     return this.handleModeRequirements(value);
   }
 
   updateJsMode(value) {
     this.props.onCodeModeChange('js', value);
     this.props.currentItem.jsMode = value;
-    
+
     // Add null check to prevent "Cannot read properties of undefined" error
     if (this.cm && this.cm.js && modes[value]) {
       this.cm.js.setOption('mode', modes[value].cmMode);
-      
+
       CodeMirror.autoLoadMode(
         this.cm.js,
         modes[value].cmPath || modes[value].cmMode,
       );
     }
-    
+
     return this.handleModeRequirements(value);
   }
 
@@ -988,7 +988,7 @@ export default class ContentWrap extends Component {
         class="content-wrap  flex  flex-grow"
         id="content-wrap"
         sizes={this.state.mainSplitSizes}
-        minSize={580}
+        minSize={80}
         style=""
         direction={
           this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
