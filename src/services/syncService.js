@@ -1,10 +1,13 @@
 import firebase from 'firebase/app';
 
+const larasiteBaseUrl = 'https://sequence-diagram.zenuml.com';
+const publicBaseUrl = 'https://zenuml.com/sequence-diagram';
+
 async function syncDiagram(currentItem) {
-  if (location.host === 'localhost:8080') {
-    console.log('Skipping sync-diagram call in local environment');
-    return;
-  }
+  // if (location.host === 'localhost:8080') {
+  //   console.log('Skipping sync-diagram call in local environment');
+  //   return;
+  // }
 
   const { id, title, js } = currentItem;
   if (!js || !title) {
@@ -15,28 +18,44 @@ async function syncDiagram(currentItem) {
     return;
   }
 
-  const token = await firebase.auth().currentUser.getIdToken(true);
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
+    console.error('No user is logged in');
+    return;
+  }
+
+  const token = await currentUser.getIdToken(true);
+  const user = {
+    name: currentUser.displayName,
+    id: currentUser.uid,
+    email: currentUser.email,
+    email_verified: currentUser.emailVerified,
+    picture: currentUser.photoURL,
+  };
 
   const data = {
     token,
-    id,
+    user,
+    firebase_diagram_id: id,
     name: title,
     content: js,
     description: 'Shared diagram from https://app.zenuml.com',
   };
-  console.log('calling /sync-diagram with data:', data);
+  console.log('calling LaraSite with data:', data);
   try {
-    const response = await fetch('/sync-diagram', {
+    const response = await fetch(`${larasiteBaseUrl}/diagrams`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
     });
     const result = await response.json();
-    console.log('save to php app result: ', result);
+
+    result.page_share = result.page_share.replace(larasiteBaseUrl.replace('https://', 'http://'), publicBaseUrl);
+    console.log('save to LaraSite result: ', result);
     return result;
   } catch (error) {
-    console.warn('Error when calling /sync-diagram', error);
-    throw Error('Error when calling /sync-diagram');
+    console.warn('Error when calling LaraSite', error);
+    throw Error('Error when calling LaraSite');
   }
 }
 
