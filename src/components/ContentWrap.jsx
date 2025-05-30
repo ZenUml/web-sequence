@@ -995,7 +995,7 @@ export default class ContentWrap extends Component {
         }
         onDragEnd={this.mainSplitDragEndHandler.bind(this)}
       >
-        <div id="js-code-side">
+        <div id="js-code-side" className={this.props.isEditorCollapsed ? 'hidden' : ''}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler

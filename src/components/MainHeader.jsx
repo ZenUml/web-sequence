@@ -137,6 +137,26 @@ export function MainHeader(props) {
           </svg>
           <span>My library</span>
         </button>
+        <button
+          className={`px-4 py-1.5 bg-black-600 duration-200 font-semibold flex items-center gap-2 rounded-lg ${
+            props.isEditorCollapsed 
+              ? 'hover:opacity-80' 
+              : 'hover:bg-primary-700 text-white'
+          }`}
+          aria-label="Toggle editor pane"
+          title={props.isEditorCollapsed ? "Expand editor pane" : "Collapse editor pane"}
+          onClick={props.onToggleEditorCollapse}
+        >
+          <svg 
+            className={`h-5 w-5 transition-transform duration-200 ${
+              props.currentLayoutMode === 2 ? 'rotate-90' : 
+              props.currentLayoutMode === 3 ? 'rotate-180' : 
+              'rotate-0'
+            }`}
+          >
+            <use xlinkHref="#icon-sidebar" />
+          </svg>
+        </button>
       </div>
       <div>
         {isEditing ? (
@@ -243,7 +263,6 @@ export function MainHeader(props) {
                     className="h-full w-full appearance-none"
                     crossOrigin="anonymous"
                     src={props.user.photoURL}
-                    className=""
                   />
                 </div>
                 {isSubscribed && (

@@ -94,6 +94,7 @@ export default class App extends Component {
         title: '',
         externalLibs: { js: '', css: '' },
       },
+      isEditorCollapsed: false,
     };
     this.defaultSettings = {
       preserveLastCode: true,
@@ -756,6 +757,25 @@ BookLibService.Borrow(id) {
       label: layoutId,
     });
     this.toggleLayout(layoutId);
+  }
+
+  async toggleEditorCollapse() {
+    await this.setState({
+      isEditorCollapsed: !this.state.isEditorCollapsed,
+    });
+    
+    // Apply CSS class to body to control layout
+    if (this.state.isEditorCollapsed) {
+      document.body.classList.add('editor-collapsed');
+    } else {
+      document.body.classList.remove('editor-collapsed');
+    }
+    
+    mixpanel.track({
+      event: 'toggleEditorCollapse',
+      category: 'ui',
+      label: this.state.isEditorCollapsed ? 'collapsed' : 'expanded',
+    });
   }
 
   // Calculates the sizes of html, css & js code panes.
@@ -1661,6 +1681,7 @@ BookLibService.Borrow(id) {
               openCheatSheet={this.openCheatSheet.bind(this)}
               onUpdateImage={this.onUpdateImage.bind(this)}
               currentItem={this.state.currentItem}
+              currentLayoutMode={this.state.currentLayoutMode}
               onLogin={this.loginBtnClickHandler.bind(this)}
               externalLibCount={this.state.externalLibCount}
               openBtnHandler={this.openBtnClickHandler.bind(this)}
@@ -1679,6 +1700,8 @@ BookLibService.Borrow(id) {
               user={this.state.user}
               settingsBtnClickHandler={this.handleSettingsBtnClick.bind(this)}
               unsavedEditCount={this.state.unsavedEditCount}
+              isEditorCollapsed={this.state.isEditorCollapsed}
+              onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
             />
           )}
           {this.isEmbed && (
@@ -1709,6 +1732,8 @@ BookLibService.Borrow(id) {
               this,
             )}
             layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
+            isEditorCollapsed={this.state.isEditorCollapsed}
+            onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
           />
           {this.isEmbed ? null : (
             <Footer
