@@ -353,6 +353,7 @@ body:not(.light-version).overlay-visible .main-container {
 .code-side,
 .demo-side {
   flex-basis: inherit;
+  flex-grow: 1;
   position: relative;
   width: 50%;
 }
