@@ -62,6 +62,22 @@ export function MainHeader(props) {
   return (
     <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
+         <button
+          className="py-1.5 duration-200 font-semibold flex items-center gap-2 rounded-lg"
+          aria-label="Toggle editor pane"
+          title={props.isEditorCollapsed ? "Expand editor pane" : "Collapse editor pane"}
+          onClick={props.onToggleEditorCollapse}
+        >
+          <svg 
+            className={`h-8 w-8 transition-transform duration-200 ${
+              props.currentLayoutMode === 2 ? 'rotate-90' : 
+              props.currentLayoutMode === 3 ? 'rotate-180' : 
+              'rotate-0'
+            }`}
+          >
+            <use xlinkHref={props.isEditorCollapsed ? "#icon-expand" : "#icon-collapse"} />
+          </svg>
+        </button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <div className="flex items-center p-1 hover:bg-gray-700 data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200">
@@ -243,7 +259,6 @@ export function MainHeader(props) {
                     className="h-full w-full appearance-none"
                     crossOrigin="anonymous"
                     src={props.user.photoURL}
-                    className=""
                   />
                 </div>
                 {isSubscribed && (

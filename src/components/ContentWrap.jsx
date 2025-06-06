@@ -995,7 +995,7 @@ export default class ContentWrap extends Component {
         }
         onDragEnd={this.mainSplitDragEndHandler.bind(this)}
       >
-        <div id="js-code-side">
+        <div id="js-code-side" className={this.props.isEditorCollapsed ? 'hidden' : ''}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler
@@ -1135,7 +1135,7 @@ export default class ContentWrap extends Component {
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(1)}
                     id="layoutBtn1"
-                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
+                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 1 ? 'text-gray-800' : ''}`}
                     aria-label="Switch to layout with preview on right"
                   >
                     <svg className="w-5 h-5">
@@ -1145,7 +1145,7 @@ export default class ContentWrap extends Component {
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(2)}
                     id="layoutBtn2"
-                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
+                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 2 ? 'text-gray-800' : ''}`}
                     aria-label="Switch to layout with preview on bottom"
                   >
                     <svg className="w-5 h-5">
@@ -1155,7 +1155,7 @@ export default class ContentWrap extends Component {
                   <button
                     onClick={() => this.props.layoutBtnClickHandler(3)}
                     id="layoutBtn3"
-                    className="w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200"
+                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 3 ? 'text-gray-800' : ''}`}
                     aria-label="Switch to layout with preview on left"
                   >
                     <svg className="w-5 h-5">
