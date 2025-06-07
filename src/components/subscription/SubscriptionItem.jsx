@@ -1,7 +1,7 @@
 import { SubscriptionAction } from './SubscriptionAction';
 import { ContactUsLink } from './ContactUsLink';
 import featureToggle from '../../services/feature_toggle';
-import React from 'preact';
+import { h } from 'preact';
 
 export function SubscriptionItem(props) {
   return (

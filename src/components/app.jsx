@@ -6,7 +6,7 @@ import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
 import SavedItemPane from './SavedItemPane.jsx';
-import AddLibrary from './AddLibrary.jsx';
+
 import Modal from './Modal.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import {
@@ -54,10 +54,6 @@ import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
 
-if (module.hot) {
-  require('preact/debug');
-}
-
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
   ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
@@ -71,7 +67,7 @@ export default class App extends Component {
     this.AUTO_SAVE_INTERVAL = 15000; // 15 seconds
     this.modalDefaultStates = {
       isModalOpen: false,
-      isAddLibraryModalOpen: false,
+
       isSettingsModalOpen: false,
       isHelpModalOpen: false,
       isPricingModalOpen: false,
@@ -594,9 +590,7 @@ BookLibService.Borrow(id) {
     });
   }
 
-  async openAddLibrary() {
-    await this.setState({ isAddLibraryModalOpen: true });
-  }
+
 
   async closeSavedItemsPane() {
     await this.setState({
@@ -763,14 +757,14 @@ BookLibService.Borrow(id) {
     await this.setState({
       isEditorCollapsed: !this.state.isEditorCollapsed,
     });
-    
+
     // Apply CSS class to body to control layout
     if (this.state.isEditorCollapsed) {
       document.body.classList.add('editor-collapsed');
     } else {
       document.body.classList.remove('editor-collapsed');
     }
-    
+
     mixpanel.track({
       event: 'toggleEditorCollapse',
       category: 'ui',
@@ -858,7 +852,17 @@ BookLibService.Borrow(id) {
         this.state.currentItem.shareLink = getShareLink(result);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Sync diagram error:', e);
+
+      // Handle specific authentication errors
+      if (e.message && e.message.includes('authentication')) {
+        console.warn('Diagram sync skipped: User not authenticated');
+        // Don't show error to user for authentication issues during save
+        // The save operation itself still succeeds locally
+      } else {
+        // For other errors, we can log them but don't disrupt the save flow
+        console.warn('Failed to sync diagram to external service:', e.message);
+      }
     }
   }
 
@@ -1549,7 +1553,7 @@ BookLibService.Borrow(id) {
   addNewPage(title) {
     const { currentItem } = this.state;
     if (!currentItem) return null;
-    
+
     // Ensure pages array exists
     if (!currentItem.pages || !Array.isArray(currentItem.pages)) {
       // Migrate the item to the pages format if needed
@@ -1557,7 +1561,7 @@ BookLibService.Borrow(id) {
       this.setState({ currentItem: migratedItem });
       return this.addNewPage(title); // Retry after migration
     }
-    
+
     // If no title is provided, generate one based on the number of pages
     if (!title) {
       const pageCount = currentItem.pages.length + 1;
@@ -1690,7 +1694,7 @@ BookLibService.Borrow(id) {
               loginBtnHandler={this.loginBtnClickHandler.bind(this)}
               proBtnHandler={this.proBtnClickHandler.bind(this)}
               profileBtnHandler={this.profileBtnClickHandler.bind(this)}
-              addLibraryBtnHandler={this.openAddLibrary.bind(this)}
+    
               runBtnClickHandler={this.runBtnClickHandler.bind(this)}
               isFetchingItems={this.state.isFetchingItems}
               isSaving={this.state.isSaving}
@@ -1792,26 +1796,7 @@ BookLibService.Borrow(id) {
           />
         </form>
 
-        <Modal
-          show={this.state.isAddLibraryModalOpen}
-          closeHandler={async () =>
-            await this.setState({ isAddLibraryModalOpen: false })
-          }
-        >
-          <AddLibrary
-            js={
-              this.state.currentItem.externalLibs
-                ? this.state.currentItem.externalLibs.js
-                : ''
-            }
-            css={
-              this.state.currentItem.externalLibs
-                ? this.state.currentItem.externalLibs.css
-                : ''
-            }
-            onChange={this.onExternalLibChange.bind(this)}
-          />
-        </Modal>
+
         <Modal
           show={this.state.isNotificationsModalOpen}
           closeHandler={async () =>

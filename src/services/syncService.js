@@ -15,7 +15,14 @@ async function syncDiagram(currentItem) {
     return;
   }
 
-  const token = await firebase.auth().currentUser.getIdToken(true);
+  // Check if user is authenticated before attempting to get token
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
+    console.warn('User is not authenticated. Cannot sync diagram.');
+    throw new Error('User authentication required to sync diagram');
+  }
+
+  const token = await currentUser.getIdToken(true);
 
   const data = {
     token,

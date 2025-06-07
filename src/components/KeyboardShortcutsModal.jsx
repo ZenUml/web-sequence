@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import React from 'preact';
+import { h } from 'preact';
 
 const KeyboardShortcutsModal = ({ open, onClose }) => {
   return (

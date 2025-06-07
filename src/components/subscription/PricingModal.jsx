@@ -1,6 +1,6 @@
 import { SubscriptionItem } from './SubscriptionItem';
 import * as Dialog from '@radix-ui/react-dialog';
-import React from 'preact';
+import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import userService from '../../services/user_service';
 

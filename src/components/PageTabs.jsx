@@ -1,4 +1,4 @@
-import React from 'preact';
+import { h } from 'preact';
 
 /**
  * PageTabs component displays tabs for each page and handles tab switching
