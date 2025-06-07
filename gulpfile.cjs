@@ -11,7 +11,7 @@ const childProcess = require('child_process');
 const merge = require('merge-stream');
 const zip = require('gulp-zip');
 const hashFilename = require('gulp-hash-filename');
-const fsUtil = require('./fs-util');
+const fsUtil = require('./fs-util.cjs');
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
 function minifyJs(fileName) {
@@ -31,12 +31,15 @@ function minifyJs(fileName) {
 
 gulp.task('copyFiles', function () {
   return merge(
+    // Copy static assets
     gulp.src('static/**/*').pipe(gulp.dest('app/static')),
     gulp.src('help/**/*').pipe(gulp.dest('app/help')),
     gulp.src('privacy-policy/*').pipe(gulp.dest('app/privacy-policy')),
     gulp
       .src('End-User-License-Agreement/*')
       .pipe(gulp.dest('app/End-User-License-Agreement')),
+
+    // Copy library files that are still needed
     gulp
       .src('src/lib/codemirror/lib/*')
       .pipe(gulp.dest('app/lib/codemirror/lib')),
@@ -57,6 +60,8 @@ gulp.task('copyFiles', function () {
     gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
     gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
     gulp.src('icons/*').pipe(gulp.dest('app/icons')),
+
+    // Copy root files
     gulp
       .src([
         'help.html',
@@ -65,29 +70,14 @@ gulp.task('copyFiles', function () {
         'src/icon-16.png',
         'src/icon-48.png',
         'src/icon-128.png',
-        'manifest.json',
+        'static/manifest.json',
       ])
       .pipe(gulp.dest('app')),
-    gulp.src('build/*.js').pipe(gulp.dest('app')),
-    gulp.src('build/*.css').pipe(gulp.dest('app')),
-    // Following CSS are copied to build/ folder where they'll be referenced by
-    // useRef plugin to concat into one.
-    gulp
-      .src('src/lib/codemirror/lib/codemirror.css')
-      .pipe(gulp.dest('build/lib/codemirror/lib')),
-    gulp
-      .src('src/lib/codemirror/addon/hint/show-hint.css')
-      .pipe(gulp.dest('build/lib/codemirror/addon/hint')),
-    gulp
-      .src('src/lib/codemirror/addon/fold/foldgutter.css')
-      .pipe(gulp.dest('build/lib/codemirror/addon/fold')),
-    gulp
-      .src('src/lib/codemirror/addon/dialog/dialog.css')
-      .pipe(gulp.dest('build/lib/codemirror/addon/dialog')),
-    gulp.src('src/lib/hint.min.css').pipe(gulp.dest('build/lib')),
-    gulp.src('src/lib/inlet.css').pipe(gulp.dest('build/lib')),
-    gulp.src('src/style.css').pipe(hashFilename()).pipe(gulp.dest('build')),
-    gulp.src('src/preview.html').pipe(gulp.dest('build')),
+
+    // Copy Vite build output from dist/ instead of build/
+    gulp.src('dist/**/*').pipe(gulp.dest('app')),
+
+    // Copy fonts
     gulp
       .src([
         'src/FiraCode.ttf',
@@ -99,73 +89,74 @@ gulp.task('copyFiles', function () {
   );
 });
 
-// Generate script.js, vendor.js, style.css and vendor.css and index.html under ./app/
-gulp.task('useRef', function () {
-  return gulp.src('build/*.html').pipe(useref()).pipe(gulp.dest('app'));
+// This task is no longer needed since Vite handles HTML processing
+gulp.task('useRef', function (callback) {
+  // Skip useRef since Vite already processes HTML files
+  callback();
 });
 
-const bundleJs = () => fsUtil.getBundleJs('build');
-
-gulp.task('concat', function () {
-  // TODO: Don't understand what does it do
-  gulp
-    .src([`app/${bundleJs()}`])
-    .pipe(concat(bundleJs()))
-    .pipe(gulp.dest('app'));
+// This task is no longer needed since Vite handles bundling
+gulp.task('concat', function (callback) {
+  // Skip concat since Vite already handles bundling
+  callback();
 });
 
 gulp.task('minify', function () {
-  // TODO: don't know why it causes unknown error: `Uncaught IllegalState`
-  // minifyJs(`app/${bundleJs()}`);
-  minifyJs('app/lib/screenlog.js');
+  // Only minify specific files that need additional processing
+  if (fs.existsSync('app/lib/screenlog.js')) {
+    minifyJs('app/lib/screenlog.js');
+  }
 
-  gulp
-    .src('app/*.css')
-    .pipe(
-      cleanCSS(
-        {
-          debug: true,
-        },
-        (details) => {
-          console.log(`${details.name}: ${details.stats.originalSize}`);
-          console.log(`${details.name}: ${details.stats.minifiedSize}`);
-        },
-      ),
-    )
-    .pipe(gulp.dest('app'));
+  // Minify CSS files if they exist
+  if (fs.existsSync('app') && fs.readdirSync('app').some(file => file.endsWith('.css'))) {
+    gulp
+      .src('app/*.css')
+      .pipe(
+        cleanCSS(
+          {
+            debug: true,
+          },
+          (details) => {
+            console.log(`${details.name}: ${details.stats.originalSize}`);
+            console.log(`${details.name}: ${details.stats.minifiedSize}`);
+          },
+        ),
+      )
+      .pipe(gulp.dest('app'));
+  }
 });
 
-gulp.task('fixIndex', function () {
-  var contents = fs.readFileSync('build/index.html', 'utf8');
-  // style.css is replaced with style-[hash].css
-  contents = contents.replace(
-    /style\.css/g,
-    fsUtil.getHashedFile('build', 'style-', 'css'),
-  );
-  fs.writeFileSync('build/index.html', contents, 'utf8');
-  contents = fs.readFileSync('build/preview.html', 'utf8');
-  // style.css is replaced with style-[hash].css
-  contents = contents.replace(
-    /style\.css/g,
-    fsUtil.getHashedFile('build', 'style-', 'css'),
-  );
-  fs.writeFileSync('build/preview.html', contents, 'utf8');
+// This task is no longer needed since Vite handles file processing
+gulp.task('fixIndex', function (callback) {
+  // Skip fixIndex since Vite already handles HTML processing with proper hashing
+  callback();
 });
 
 gulp.task('packageExtension', function () {
   childProcess.execSync('cp -R app/ extension');
-  childProcess.execSync('cp src/manifest.json extension');
+  childProcess.execSync('cp static/manifest.json extension');  // manifest.json is in root, not src/
   childProcess.execSync('cp src/extension/options.js extension');
   childProcess.execSync('cp src/extension/options.html extension');
   childProcess.execSync('cp src/extension/eventPage.js extension');
   childProcess.execSync('cp src/extension/script.js extension');
-  childProcess.execSync('cp src/icon-16.png extension');
-  childProcess.execSync('cp src/icon-48.png extension');
-  childProcess.execSync('cp src/icon-128.png extension');
+
+  // Copy icon files from their actual locations
+  if (fs.existsSync('static/icon-16.png')) {
+    childProcess.execSync('cp static/icon-16.png extension');
+  }
+  if (fs.existsSync('static/icon-48.png')) {
+    childProcess.execSync('cp static/icon-48.png extension');
+  }
+  if (fs.existsSync('icon-128.png')) {
+    childProcess.execSync('cp icon-128.png extension');
+  } else if (fs.existsSync('static/icon-128.png')) {
+    childProcess.execSync('cp static/icon-128.png extension');
+  }
 
   childProcess.execSync('rm -rf extension/partials');
   return merge(
-    gulp.src('build/bundle.*.js').pipe(gulp.dest('extension')),
+    // Copy any additional JS files from dist if they exist
+    gulp.src('dist/assets/*.js', { allowEmpty: true }).pipe(gulp.dest('extension/assets')),
     gulp.src('extension/**/*').pipe(zip(`extension.zip`)).pipe(gulp.dest('./')),
   );
 });
@@ -173,6 +164,7 @@ gulp.task('packageExtension', function () {
 gulp.task('cleanup', function () {
   return childProcess.execSync('rm -rf app extension');
 });
+
 gulp.task('cleanup-build', function () {
   return childProcess.execSync('rm -rf build');
 });
