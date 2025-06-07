@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import React from 'react';
 import CodeMirrorBox from './CodeMirrorBox';
 
 export function Console({

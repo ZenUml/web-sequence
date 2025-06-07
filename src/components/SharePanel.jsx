@@ -1,4 +1,4 @@
-import { Component } from 'preact';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
 import { syncDiagram, getShareLink } from '../services/syncService';

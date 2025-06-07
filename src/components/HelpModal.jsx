@@ -1,3 +1,4 @@
+import React from 'react';
 import Modal from './Modal';
 
 const commitHash = __COMMITHASH__; //eslint-disable-line

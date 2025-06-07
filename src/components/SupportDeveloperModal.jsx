@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import React from 'react';
 import Modal from './Modal';
 
 export function SupportDeveloperModal({ show, closeHandler }) {

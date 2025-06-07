@@ -1,3 +1,4 @@
+import React from 'react';
 import { editorThemes } from '../editorThemes';
 import * as Dialog from '@radix-ui/react-dialog';
 import { clsx } from 'clsx';

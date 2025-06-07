@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import React from 'react';
 import { Button } from './common';
 
 function NotificationItem({ type, children }) {

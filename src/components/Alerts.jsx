@@ -1,6 +1,6 @@
-import { h, Component } from 'preact';
+import React from 'react';
 
-export class Alerts extends Component {
+export class Alerts extends React.Component {
   shouldComponentUpdate(nextProps, nextState) {
     return false;
   }

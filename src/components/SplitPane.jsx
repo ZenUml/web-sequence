@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import Split from 'split.js';
 
 export class SplitPane extends Component {

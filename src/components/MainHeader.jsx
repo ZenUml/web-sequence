@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import React, { useCallback, useState } from 'react';
 import { Button } from './common';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
 import featureToggle from '../services/feature_toggle';
