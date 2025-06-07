@@ -1,6 +1,6 @@
 import { editorThemes } from '../editorThemes';
 import * as Dialog from '@radix-ui/react-dialog';
-import { classNames } from '@headlessui/react/dist/utils/class-names';
+import { clsx } from 'clsx';
 import * as Select from '@radix-ui/react-select';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 
@@ -16,7 +16,7 @@ function CheckboxSetting({
     <div className="flex gap-2 items-center">
       <label
         for={name}
-        className={classNames(
+        className={clsx(
           showWhenExtension ? 'show-when-extension' : '',
           'h-5 w-11 relative',
         )}

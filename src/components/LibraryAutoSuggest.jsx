@@ -33,7 +33,6 @@ export class LibraryAutoSuggest extends Component {
     var line = this.currentLineNumber;
     return this.t.value.split('\n')[line - 1];
   }
-  listMouseDownHandler() {}
   closeSuggestions() {
     this.list.classList.remove('is-open');
     this.isShowingSuggestions = false;

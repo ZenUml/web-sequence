@@ -1,4 +1,4 @@
-import React, { Component } from 'preact';
+import { h, Component } from 'preact';
 import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
@@ -287,13 +287,31 @@ export default class ContentWrap extends Component {
 
   showErrors(lang, errors) {
     var editor = this.cm[lang];
+    
+    // Safety checks to prevent CodeMirror errors
+    if (!editor || !editor.getDoc()) {
+      console.warn(`Editor for ${lang} is not properly initialized`);
+      return;
+    }
+    
     errors.forEach(function (e) {
-      editor.operation(function () {
-        var n = document.createElement('div');
-        n.setAttribute('data-title', e.message);
-        n.classList.add('gutter-error-marker');
-        editor.setGutterMarker(e.lineNumber, 'error-gutter', n);
-      });
+      try {
+        editor.operation(function () {
+          // Additional safety check for line number validity
+          const doc = editor.getDoc();
+          const lineCount = doc.lineCount();
+          
+          // Ensure lineNumber is valid (0-based indexing)
+          const lineNumber = Math.max(0, Math.min(e.lineNumber || 0, lineCount - 1));
+          
+          var n = document.createElement('div');
+          n.setAttribute('data-title', e.message);
+          n.classList.add('gutter-error-marker');
+          editor.setGutterMarker(lineNumber, 'error-gutter', n);
+        });
+      } catch (error) {
+        console.warn('Error setting gutter marker:', error);
+      }
     });
   }
 

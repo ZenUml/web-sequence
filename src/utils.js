@@ -3,8 +3,8 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
-import zenuml from '!!file-loader!@zenuml/core/dist/zenuml';
-const esprima = require('esprima');
+import zenumlUrl from '@zenuml/core/dist/zenuml?url';
+import esprima from 'esprima';
 
 // window.Store = Store;
 // window.SeqDiagram = SeqDiagram;
@@ -273,11 +273,11 @@ export function getCompleteHtml(html, css, js, item) {
     '<style id="zenumlstyle">\n' +
     css +
     '\n</style>\n';
-    
+
   // Add Microsoft Clarity tracking code to the iframe content
   // This ensures Clarity can track user interactions inside the iframe
   if (window.clarity) {
-    contents += 
+    contents +=
       '<script type="text/javascript">\n' +
       '(function(c,l,a,r,i,t,y){\n' +
       '  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};\n' +
@@ -286,13 +286,13 @@ export function getCompleteHtml(html, css, js, item) {
       '})(window, document, "clarity", "script", window.CLARITY_PROJECT_ID || "");\n' +
       '</script>\n';
   }
-  
+
   contents += '</head>\n' +
     '<body>\n' +
     html +
     '\n';
 
-  contents += '<script src="' + getUrl(zenuml) + '"></script>';
+  contents += '<script src="' + getUrl(zenumlUrl) + '"></script>';
 
   if (item.jsMode === JsModes.ES6) {
     contents +=
@@ -424,17 +424,17 @@ export function migrateItemToPages(item) {
     css: item.css || "",
     isDefault: true
   };
-  
+
   // Create a copy of the item to avoid mutating the original
   const migratedItem = { ...item };
-  
+
   // Add pages array with default page
   migratedItem.pages = [defaultPage];
   migratedItem.currentPageId = defaultPage.id;
-  
+
   // Keep original js/css for backward compatibility
   // Future updates will modify the pages content
-  
+
   return migratedItem;
 }
 

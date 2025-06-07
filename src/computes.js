@@ -4,7 +4,7 @@ import { addInfiniteLoopProtection } from './utils';
 // import featureToggle from './services/feature_toggle';
 import { CssModes, HtmlModes, JsModes } from './codeModes';
 
-const esprima = require('esprima');
+import esprima from 'esprima';
 /* computeHtml, computeCss & computeJs evaluate the final code according
  to whatever mode is selected and resolve the returned promise with the code.*/
 

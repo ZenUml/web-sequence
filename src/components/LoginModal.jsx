@@ -1,6 +1,6 @@
 import { auth } from '../auth';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useEffect } from 'preact-compat';
+import { useEffect } from 'preact/hooks';
 import mixpanel from '../services/mixpanel';
 
 export default function LoginModal({ open, onClose }) {

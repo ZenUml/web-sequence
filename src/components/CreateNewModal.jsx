@@ -1,4 +1,4 @@
-import React from 'preact';
+import { h } from 'preact';
 import { ItemTile } from './ItemTile';
 import templates from '../templateList';
 import * as Dialog from '@radix-ui/react-dialog';

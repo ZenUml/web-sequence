@@ -1,5 +1,5 @@
 import { deferred } from './deferred';
-import { log } from 'util';
+import { log } from './utils';
 import firebase from 'firebase/app';
 import { generateRandomId } from './utils';
 

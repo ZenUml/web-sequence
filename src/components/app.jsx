@@ -54,10 +54,6 @@ import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
 
-if (module.hot) {
-  require('preact/debug');
-}
-
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
   ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
@@ -763,14 +759,14 @@ BookLibService.Borrow(id) {
     await this.setState({
       isEditorCollapsed: !this.state.isEditorCollapsed,
     });
-    
+
     // Apply CSS class to body to control layout
     if (this.state.isEditorCollapsed) {
       document.body.classList.add('editor-collapsed');
     } else {
       document.body.classList.remove('editor-collapsed');
     }
-    
+
     mixpanel.track({
       event: 'toggleEditorCollapse',
       category: 'ui',
@@ -858,7 +854,17 @@ BookLibService.Borrow(id) {
         this.state.currentItem.shareLink = getShareLink(result);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Sync diagram error:', e);
+
+      // Handle specific authentication errors
+      if (e.message && e.message.includes('authentication')) {
+        console.warn('Diagram sync skipped: User not authenticated');
+        // Don't show error to user for authentication issues during save
+        // The save operation itself still succeeds locally
+      } else {
+        // For other errors, we can log them but don't disrupt the save flow
+        console.warn('Failed to sync diagram to external service:', e.message);
+      }
     }
   }
 
@@ -1549,7 +1555,7 @@ BookLibService.Borrow(id) {
   addNewPage(title) {
     const { currentItem } = this.state;
     if (!currentItem) return null;
-    
+
     // Ensure pages array exists
     if (!currentItem.pages || !Array.isArray(currentItem.pages)) {
       // Migrate the item to the pages format if needed
@@ -1557,7 +1563,7 @@ BookLibService.Borrow(id) {
       this.setState({ currentItem: migratedItem });
       return this.addNewPage(title); // Retry after migration
     }
-    
+
     // If no title is provided, generate one based on the number of pages
     if (!title) {
       const pageCount = currentItem.pages.length + 1;

@@ -1,5 +1,6 @@
 ### OSX ###
 .DS_Store
+.cursor
 
 .vscode
 logs
@@ -17,8 +18,9 @@ node_modules/
 *.map
 
 .sass-cache
-### folders built by preact or gulp
+### folders built by vite, preact or gulp
 /build/
+/dist/
 /extension/
 /app/
 

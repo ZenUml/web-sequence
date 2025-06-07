@@ -1,4 +1,4 @@
-import React, { h } from 'preact';
+import { h } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import { Button } from './common';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
