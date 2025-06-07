@@ -108,7 +108,12 @@
     "braces": "^3.0.3",
     "micromatch": "^4.0.8",
     "minimatch": "^9.0.0",
-    "glob": "^10.0.0"
+    "glob": "^10.0.0",
+    "lodash": "^4.17.21",
+    "lodash.template": "^4.5.0",
+    "ws": "^8.17.1",
+    "follow-redirects": "^1.15.6",
+    "tough-cookie": "^4.1.4"
   },
   "jest": {
     "verbose": true
