@@ -192,23 +192,7 @@ export function MainHeader(props) {
           {/*<iframe src="https://github.com/sponsors/ZenUml/button" title="Sponsor ZenUml" height="35" width="107" style="border: 0;" />*/}
         </button>
 
-        <Button
-          onClick={props.addLibraryBtnHandler}
-          data-event-category="ui"
-          data-event-action="addLibraryButtonClick"
-          className="btn--dark flex-v-center hint--rounded hint--bottom-left"
-          style="display: none"
-          aria-label="Add a JS/CSS library"
-        >
-          Add library{' '}
-          <span
-            id="js-external-lib-count"
-            style={`display:${props.externalLibCount ? 'inline' : 'none'}`}
-            class="count-label"
-          >
-            {props.externalLibCount}
-          </span>
-        </Button>
+
         {!window.user ? (
           <button
             className="h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"

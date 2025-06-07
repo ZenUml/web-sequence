@@ -6,7 +6,7 @@ import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
 import SavedItemPane from './SavedItemPane.jsx';
-import AddLibrary from './AddLibrary.jsx';
+
 import Modal from './Modal.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
 import {
@@ -67,7 +67,7 @@ export default class App extends Component {
     this.AUTO_SAVE_INTERVAL = 15000; // 15 seconds
     this.modalDefaultStates = {
       isModalOpen: false,
-      isAddLibraryModalOpen: false,
+
       isSettingsModalOpen: false,
       isHelpModalOpen: false,
       isPricingModalOpen: false,
@@ -590,9 +590,7 @@ BookLibService.Borrow(id) {
     });
   }
 
-  async openAddLibrary() {
-    await this.setState({ isAddLibraryModalOpen: true });
-  }
+
 
   async closeSavedItemsPane() {
     await this.setState({
@@ -1696,7 +1694,7 @@ BookLibService.Borrow(id) {
               loginBtnHandler={this.loginBtnClickHandler.bind(this)}
               proBtnHandler={this.proBtnClickHandler.bind(this)}
               profileBtnHandler={this.profileBtnClickHandler.bind(this)}
-              addLibraryBtnHandler={this.openAddLibrary.bind(this)}
+    
               runBtnClickHandler={this.runBtnClickHandler.bind(this)}
               isFetchingItems={this.state.isFetchingItems}
               isSaving={this.state.isSaving}
@@ -1798,26 +1796,7 @@ BookLibService.Borrow(id) {
           />
         </form>
 
-        <Modal
-          show={this.state.isAddLibraryModalOpen}
-          closeHandler={async () =>
-            await this.setState({ isAddLibraryModalOpen: false })
-          }
-        >
-          <AddLibrary
-            js={
-              this.state.currentItem.externalLibs
-                ? this.state.currentItem.externalLibs.js
-                : ''
-            }
-            css={
-              this.state.currentItem.externalLibs
-                ? this.state.currentItem.externalLibs.css
-                : ''
-            }
-            onChange={this.onExternalLibChange.bind(this)}
-          />
-        </Modal>
+
         <Modal
           show={this.state.isNotificationsModalOpen}
           closeHandler={async () =>
