@@ -32,7 +32,7 @@ export class PageTabs extends Component {
 
   handleConfirmDelete = () => {
     if (this.state.pageToClose) {
-      this.props.onClosePage(this.state.pageToClose);
+      this.props.onDeletePage(this.state.pageToClose);
     }
     this.setState({ isCloseModalOpen: false, pageToClose: null });
   };
