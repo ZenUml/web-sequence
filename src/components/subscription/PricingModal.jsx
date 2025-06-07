@@ -1,7 +1,6 @@
 import { SubscriptionItem } from './SubscriptionItem';
 import * as Dialog from '@radix-ui/react-dialog';
-import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import React, { useState } from 'react';
 import userService from '../../services/user_service';
 
 export function PricingModal({

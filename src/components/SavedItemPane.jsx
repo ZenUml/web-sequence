@@ -1,9 +1,9 @@
-import { h, Component } from 'preact';
+import React from 'react';
 import { log } from '../utils';
 import { trackEvent } from '../analytics';
 import { ItemTile } from './ItemTile';
 
-export default class SavedItemPane extends Component {
+export default class SavedItemPane extends React.Component {
   constructor(props) {
     super(props);
     this.items = [];

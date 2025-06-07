@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 
 export function PreviewCard({ title, author, description, imageBase64 }) {

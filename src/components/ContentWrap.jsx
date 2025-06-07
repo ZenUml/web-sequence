@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React from 'react';
 import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
@@ -24,7 +24,7 @@ const minCodeWrapSize = 33;
 /* global htmlCodeEl, jsCodeEl, cssCodeEl, logCountEl
  */
 
-export default class ContentWrap extends Component {
+export default class ContentWrap extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

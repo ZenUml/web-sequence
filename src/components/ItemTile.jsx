@@ -1,3 +1,4 @@
+import React from 'react';
 import { getHumanDate } from '../utils';
 import * as Tooltip from '@radix-ui/react-tooltip';
 

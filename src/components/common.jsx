@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import { trackEvent } from '../analytics';
 
 class Clickable extends Component {

@@ -1,9 +1,9 @@
-import { h, Component } from 'preact';
+import React from 'react';
 import CodeMirror from '../CodeMirror';
 
 import 'codemirror/mode/javascript/javascript.js';
 
-export default class CodeMirrorBox extends Component {
+export default class CodeMirrorBox extends React.Component {
   componentDidMount() {
     this.initEditor();
   }

@@ -1,8 +1,8 @@
-import { h, Component } from 'preact';
+import React from 'react';
 import Modal from './Modal';
 import CodeMirrorBox from './CodeMirrorBox';
 
-export default class CssSettingsModal extends Component {
+export default class CssSettingsModal extends React.Component {
   componentDidUpdate() {
     if (this.props.show) {
       setTimeout(() => {
