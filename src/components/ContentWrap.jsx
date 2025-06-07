@@ -1134,7 +1134,7 @@ export default class ContentWrap extends Component {
                 currentPageId={this.props.currentItem.currentPageId}
                 onTabClick={this.props.onPageSwitch}
                 onAddPage={this.props.onAddPage}
-                onClosePage={this.props.onClosePage}
+                onDeletePage={this.props.onDeletePage}
               />
             )}
             <div
