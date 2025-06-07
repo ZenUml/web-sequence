@@ -1732,6 +1732,7 @@ BookLibService.Borrow(id) {
             onProFeature={this.proBtnClickHandler.bind(this)}
             onPageSwitch={this.switchToPage.bind(this)}
             onAddPage={this.addNewPage.bind(this)}
+            onDeletePage={this.deletePage.bind(this)}
             keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
               this,
             )}
