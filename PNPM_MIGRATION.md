@@ -84,6 +84,24 @@ The project uses the `packageManager` field in `package.json` to specify the exa
 
 This ensures all developers and CI/CD environments use the same pnpm version automatically, without needing to specify versions in GitHub Actions or other tools.
 
+## First Run After Migration
+
+After migrating to pnpm, the first GitHub Actions run may need special handling:
+
+1. **Missing pnpm-lock.yaml**: The first run will generate this file
+2. **Caching disabled temporarily**: Re-enable after the lockfile exists
+3. **Commit the generated lockfile**: This ensures consistent installs
+
+### Steps after first successful run:
+```bash
+# The first run will generate pnpm-lock.yaml
+git add pnpm-lock.yaml
+git commit -m "Add pnpm-lock.yaml"
+
+# Then re-enable caching in GitHub Actions
+# Edit .github/workflows/*.yml and uncomment: cache: 'pnpm'
+```
+
 ## Troubleshooting
 
 If you encounter issues:
@@ -91,5 +109,6 @@ If you encounter issues:
 1. **Clear pnpm cache**: `pnpm store prune`
 2. **Reinstall dependencies**: `rm -rf node_modules && pnpm install`
 3. **Check pnpm version**: `pnpm --version` (should be 9.15.0+)
+4. **Missing lockfile error**: Run `pnpm install` locally first to generate pnpm-lock.yaml
 
 For more information about pnpm, visit: https://pnpm.io/
