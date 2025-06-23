@@ -1,7 +1,6 @@
 import { SubscriptionItem } from './SubscriptionItem';
 import * as Dialog from '@radix-ui/react-dialog';
-import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { useState } from 'react';
 import userService from '../../services/user_service';
 
 export function PricingModal({
@@ -23,23 +22,23 @@ export function PricingModal({
         <Dialog.Overlay className="bg-black/50 backdrop-blur data-[state=open]:animate-overlayShow fixed inset-0" />
         <Dialog.Content className="text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[90vh] w-[90vw] overflow-hidden max-w-[940px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
           <div className="w-full">
-            <div class="font-poppins ax-w-7xl mx-auto pt-10 px-4 sm:px-6 lg:px-8 text-gray-200">
-              <div class="sm:flex sm:flex-col sm:align-center">
-                <p class="text-xl leading-27 sm:text-center">
+            <div className="font-poppins ax-w-7xl mx-auto pt-10 px-4 sm:px-6 lg:px-8 text-gray-200">
+              <div className="sm:flex sm:flex-col sm:align-center">
+                <p className="text-xl leading-27 sm:text-center">
                   Chose the plan that right for you and the team
                 </p>
-                <div class="relative mt-5 bg-gray-700 rounded-lg p-0.5 flex self-center sm:mt-5">
+                <div className="relative mt-5 bg-gray-700 rounded-lg p-0.5 flex self-center sm:mt-5">
                   <button
                     type="button"
                     onClick={monthlyBillingClicked}
-                    class={`${isMonthlyType ? 'bg-black' : ''} relative  rounded-md shadow-sm py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none  sm:w-auto sm:px-8`}
+                    className={`${isMonthlyType ? 'bg-black' : ''} relative  rounded-md shadow-sm py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none  sm:w-auto sm:px-8`}
                   >
                     Billed Monthly
                   </button>
                   <button
                     type="button"
                     onClick={yearlyBillingClicked}
-                    class={`${isMonthlyType ? '' : 'bg-black'} ml-0.5 relative border border-transparent rounded-md py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none sm:w-auto sm:px-8`}
+                    className={`${isMonthlyType ? '' : 'bg-black'} ml-0.5 relative border border-transparent rounded-md py-2 w-1/2 text-xs  whitespace-nowrap focus:outline-none sm:w-auto sm:px-8`}
                   >
                     Billed Yearly{' '}
                     <span
@@ -49,11 +48,11 @@ export function PricingModal({
                     </span>
                   </button>
                 </div>
-                <p class="mt-3 text-xs sm:text-center">
+                <p className="mt-3 text-xs sm:text-center">
                   *The price is in $USD, Viewers are always free!
                 </p>
               </div>
-              <div class="mt-5 space-y-4 sm:mt-5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-4">
+              <div className="mt-5 space-y-4 sm:mt-5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-4">
                 <SubscriptionItem
                   planName="Starter"
                   planType="free"

@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useState } from 'react';
 import { Button } from './common';
 import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
 import featureToggle from '../services/feature_toggle';
@@ -121,7 +120,7 @@ export function MainHeader(props) {
                 onClick={props.settingsBtnClickHandler}
                 className="text-primary-100 border-black-700 border-t cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
               >
-                <span class="material-symbols-outlined text-lg font-light text-gray-500">
+                <span className="material-symbols-outlined text-lg font-light text-gray-500">
                   settings
                 </span>
                 Settings

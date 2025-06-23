@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { Button } from './common';
 
 function NotificationItem({ type, children }) {
@@ -28,11 +27,11 @@ function ThanksTo({ name, url }) {
 
 function Notification({ version, isLatest, ...props }) {
   return (
-    <div class="notification">
-      <span class="notification__version">{version}</span>
+    <div className="notification">
+      <span className="notification__version">{version}</span>
       <ul>{props.children}</ul>
       {isLatest ? (
-        <div class="mt-2">
+        <div className="mt-2">
           <p>
             <a
               href="https://github.com/ZenUml/web-sequence/issues"
@@ -50,16 +49,16 @@ function Notification({ version, isLatest, ...props }) {
               href="https://chrome.google.com/webstore/detail/web-sequence/kcpganeflmhffnlofpdmcjklmdpbbmef/reviews"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn"
+              className="btn"
             >
-              Please rate ZenUML <span class="star" />
+              Please rate ZenUML <span className="star" />
             </a>
             &nbsp;
             <a
               href="http://twitter.com/share?url=https://zenuml.com/&text=ZenUML - A real-time sequence diagram generator! via @ZenUML&related=ZenUML&hashtags=web,developer,chrome,extension"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn"
+              className="btn"
             >
               Share it
             </a>
@@ -69,7 +68,7 @@ function Notification({ version, isLatest, ...props }) {
               onClick={props.onSupportBtnClick}
               data-event-action="supportDeveloperChangelogBtnClick"
               data-event-category="ui"
-              class="btn btn-icon"
+              className="btn btn-icon"
             >
               Support the developer
             </Button>

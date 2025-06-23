@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component } from 'react';
 
 export class Alerts extends Component {
   shouldComponentUpdate(nextProps, nextState) {
@@ -6,6 +6,6 @@ export class Alerts extends Component {
   }
 
   render() {
-    return <div class="alerts-container" id="js-alerts-container" />;
+    return <div className="alerts-container" id="js-alerts-container" />;
   }
 }

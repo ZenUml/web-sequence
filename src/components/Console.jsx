@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import CodeMirrorBox from './CodeMirrorBox';
 
 export function Console({
@@ -12,20 +11,20 @@ export function Console({
   return (
     <div
       id="consoleEl"
-      class={`console hide ${isConsoleOpen ? '' : 'is-minimized'}`}
+      className={`console hide ${isConsoleOpen ? '' : 'is-minimized'}`}
     >
-      <div id="consoleLogEl" class="console__log">
+      <div id="consoleLogEl" className="console__log">
         <div
-          class="js-console__header  code-wrap__header"
+          className="js-console__header  code-wrap__header"
           title="Double click to toggle console"
           onDblClick={onConsoleHeaderDblClick}
         >
-          <span class="code-wrap__header-label">
+          <span className="code-wrap__header-label">
             Console (<span id="logCountEl">0</span>)
           </span>
-          <div class="code-wrap__header-right-options">
+          <div className="code-wrap__header-right-options">
             <a
-              class="code-wrap__header-btn"
+              className="code-wrap__header-btn"
               title="Clear console (CTRL + L)"
               onClick={onClearConsoleBtnClick}
             >
@@ -34,7 +33,7 @@ export function Console({
               </svg>
             </a>
             <a
-              class="code-wrap__header-btn  code-wrap__collapse-btn"
+              className="code-wrap__header-btn  code-wrap__collapse-btn"
               title="Toggle console"
               onClick={toggleConsole}
             />
@@ -54,7 +53,7 @@ export function Console({
       </div>
       <div
         id="consolePromptEl"
-        class="console__prompt flex flex-v-center flex-shrink-0"
+        className="console__prompt flex flex-v-center flex-shrink-0"
       >
         <svg width="18" height="18" fill="#346fd2">
           <use xlinkHref="#chevron-icon" />
@@ -62,7 +61,7 @@ export function Console({
         <input
           tabIndex={isConsoleOpen ? 0 : -1}
           onKeyUp={onEvalInputKeyup}
-          class="console-exec-input"
+          className="console-exec-input"
         />
       </div>
     </div>

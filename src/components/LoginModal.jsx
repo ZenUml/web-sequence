@@ -1,6 +1,6 @@
 import { auth } from '../auth';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 import mixpanel from '../services/mixpanel';
 
 export default function LoginModal({ open, onClose }) {
@@ -71,7 +71,7 @@ export default function LoginModal({ open, onClose }) {
               <button
                 type="button"
                 onClick={login}
-                class="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
+                className="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
                 data-auth-provider="facebook"
                 data-hint="You logged in with Facebook last time"
               >
