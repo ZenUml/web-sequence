@@ -21,6 +21,7 @@ This project has been migrated from Yarn to pnpm for better performance and disk
 - **Disk space efficiency**: Packages are hard-linked from a global store
 - **Strict node_modules**: Better dependency resolution
 - **Monorepo support**: Native support for workspaces
+- **Version consistency**: Uses `packageManager` field for automatic version detection
 
 ## Migration Commands
 
@@ -72,6 +73,16 @@ The project includes a `.npmrc` file with optimized pnpm settings:
 - Auto-install peer dependencies
 - Proper ESLint and Prettier hoisting
 - Strict dependency management
+
+### Version Management
+The project uses the `packageManager` field in `package.json` to specify the exact pnpm version:
+```json
+{
+  "packageManager": "pnpm@9.15.0"
+}
+```
+
+This ensures all developers and CI/CD environments use the same pnpm version automatically, without needing to specify versions in GitHub Actions or other tools.
 
 ## Troubleshooting
 
