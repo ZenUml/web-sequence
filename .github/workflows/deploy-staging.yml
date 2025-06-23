@@ -1,13 +1,16 @@
 # This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Deploy to Stage
+name: Deploy to Stage and Create Draft Release
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [main, master]  # Only run on main branch pushes, not PRs
 
 jobs:
-  build:
+  deploy-staging:
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
 
     strategy:
       matrix:
@@ -15,18 +18,65 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for version tagging
+          
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: yarn install && yarn build
-      - run: yarn release
-      - run: cd functions && yarn install && yarn deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
+          
+      - name: Install dependencies and build
+        run: yarn install && yarn build
+        
+      - name: Create release package
+        run: yarn release
+        
+      - name: Deploy functions config to staging
+        run: cd functions && yarn install && yarn deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
+        
       - name: Deploy to staging
-        if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
         run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
-      - name: Upload artifacts # Find artifacts under actions/jobs
+        
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chrome-extension
           path: extension
+
+      - name: Generate version tag
+        id: version
+        run: |
+          VERSION=$(date +%Y%m%d%H%M)
+          echo "tag=release-$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+      - name: Create Draft Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Changes in this release
+            
+            This release was created automatically after successful deployment to staging.
+            
+            **Staging deployment completed at:** $(date)
+            **Commit:** ${{ github.sha }}
+            
+            To deploy to production, publish this draft release.
+          draft: true
+          prerelease: false
+          
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./extension.zip
+          asset_name: chrome-extension.zip
+          asset_content_type: application/zip
