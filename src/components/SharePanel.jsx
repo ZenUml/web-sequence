@@ -1,4 +1,4 @@
-import { Component } from 'preact';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import { PreviewCard } from './PreviewCard';
 import { syncDiagram, getShareLink } from '../services/syncService';
@@ -82,14 +82,14 @@ export class SharePanel extends Component {
           content={
             hasError ? (
               <div className="tooltip">
-                <span class="material-symbols-outlined error">error</span>
+                <span className="material-symbols-outlined error">error</span>
                 <span>
                   Unable to create the share link. Save it and try again later.
                 </span>
               </div>
             ) : (
               <div className="tooltip">
-                <span class="material-symbols-outlined success">
+                <span className="material-symbols-outlined success">
                   check_circle
                 </span>
                 <span>Link copied to clipboard</span>
@@ -104,7 +104,7 @@ export class SharePanel extends Component {
         <>
           <div>
             <p>Paste the link on Confluence and select "Display as a Card"</p>
-            <img style="width: 100%;" src="../assets/tutorial.png" />
+            <img style={{ width: '100%' }} src="../assets/tutorial.png" />
           </div>
           <div>
             <div className="preview">

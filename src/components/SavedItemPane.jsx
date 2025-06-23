@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component } from 'react';
 import { log } from '../utils';
 import { trackEvent } from '../analytics';
 import { ItemTile } from './ItemTile';
@@ -147,24 +147,24 @@ export default class SavedItemPane extends Component {
     return (
       <div
         id="js-saved-items-pane"
-        class={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-400 duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
+        className={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-400 duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
         onKeyDown={this.keyDownHandler.bind(this)}
       >
         <button
           onClick={this.onCloseIntent.bind(this)}
-          class="btn icon-button modal__close-btn w-7 h-7 rounded-md"
+          className="btn icon-button modal__close-btn w-7 h-7 rounded-md"
           id="js-saved-items-pane-close-btn"
         >
-          <span class="material-symbols-outlined text-lg">close</span>
+          <span className="material-symbols-outlined text-lg">close</span>
         </button>
-        <div class="flex items-center justify-between my-10 px-5">
+        <div className="flex items-center justify-between my-10 px-5">
           <h3 className="text-lg text-gray-200">
             My Library <span className="text-sm">({this.items.length})</span>
           </h3>
           <div className="my-library-buttons">
             <button
               onClick={this.props.exportBtnClickHandler}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
+              className="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
               aria-label="Export all your creations into a single importable file."
             >
               <svg className="w-4 h-4 fill-current">
@@ -174,7 +174,7 @@ export default class SavedItemPane extends Component {
             </button>
             <button
               onClick={this.importBtnClickHandler.bind(this)}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
+              className="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
               aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
             >
               <svg className="w-4 h-4 fill-current">
@@ -193,9 +193,9 @@ export default class SavedItemPane extends Component {
           />
         </div>
 
-        <div id="js-saved-items-wrap" class="px-5 overflow-y-auto">
+        <div id="js-saved-items-wrap" className="px-5 overflow-y-auto">
           {!this.filteredItems().length && this.items.length ? (
-            <div class="mt-1">No match found.</div>
+            <div className="mt-1">No match found.</div>
           ) : null}
           {this.filteredItems().map((item) => (
             <ItemTile
@@ -206,7 +206,7 @@ export default class SavedItemPane extends Component {
             />
           ))}
           {!this.items.length ? (
-            <h2 class="opacity--30">Nothing saved here.</h2>
+            <h2 className="opacity--30">Nothing saved here.</h2>
           ) : null}
         </div>
       </div>

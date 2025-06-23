@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component } from 'react';
 import Modal from './Modal';
 import CodeMirrorBox from './CodeMirrorBox';
 
@@ -31,7 +31,7 @@ export default class CssSettingsModal extends Component {
           </a>{' '}
           about available settings.
         </h3>
-        <div style="height: calc(100vh - 350px);">
+        <div style={{ height: 'calc(100vh - 350px)' }}>
           <CodeMirrorBox
             options={{
               mode: 'application/ld+json',
@@ -41,8 +41,8 @@ export default class CssSettingsModal extends Component {
             onBlur={(cm) => this.props.onChange(cm.getValue())}
           />
         </div>
-        <div class="flex flex-h-end">
-          <button class="btn btn--primary" onClick={this.props.closeHandler}>
+        <div className="flex flex-h-end">
+          <button className="btn btn--primary" onClick={this.props.closeHandler}>
             Apply and Close
           </button>
         </div>

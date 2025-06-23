@@ -1,4 +1,4 @@
-import { Component } from 'preact';
+import { Component } from 'react';
 
 class JS13K extends Component {
   constructor(props) {
@@ -18,17 +18,17 @@ class JS13K extends Component {
     return (
       <div
         role="button"
-        class="flex flex-v-center"
+        className="flex flex-v-center"
         tabIndex="0"
         onClick={this.props.onClick}
         onBlur={this.props.onBlur}
       >
         <img src="assets/js13kgames.png" alt="JS13K Games logo" height="24" />{' '}
-        <div class="footer__js13k-days-left">
+        <div className="footer__js13k-days-left">
           {this.state.daysLeft} days to go
         </div>
         <div
-          class="footer__js13k-code-size"
+          className="footer__js13k-code-size"
           style={{
             color: codeSizeInKb > 10 ? 'crimson' : 'limegreen',
           }}
@@ -36,10 +36,12 @@ class JS13K extends Component {
           {codeSizeInKb} KB/ 13KB
         </div>
         <span
-          class="caret"
-          style={`transition:0.3s ease; transform-origin: center 2px; ${
-            this.props.isOpen ? 'transform:rotate(180deg);' : ''
-          }`}
+          className="caret"
+          style={{
+            transition: '0.3s ease',
+            transformOrigin: 'center 2px',
+            transform: this.props.isOpen ? 'rotate(180deg)' : '',
+          }}
         />
       </div>
     );
@@ -70,13 +72,13 @@ export default class Footer extends Component {
     return (
       <div
         id="footer"
-        class="flex w-full items-center justify-between z-10 bg-black py-4 px-6 text-gray-500 text-xs"
+        className="flex w-full items-center justify-between z-10 bg-black py-4 px-6 text-gray-500 text-xs"
       >
         {window.zenumlDesktop ? (
           <div></div>
         ) : (
           //no footer if it in electron
-          <div class="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <a
               href="https://www.ZenUML.com/"
               target="_blank"
@@ -123,7 +125,7 @@ export default class Footer extends Component {
             </a>
           </div>
         )}
-        <div class="flex gap-4">
+        <div className="flex gap-4">
           <a
             className="hover:opacity-80 duration-200"
             href={'End-User-License-Agreement/index.html'}
@@ -140,7 +142,7 @@ export default class Footer extends Component {
           </a>
         </div>
         {this.props.prefs.isJs13kModeOn ? (
-          <div class="flex flex-v-center">
+          <div className="flex flex-v-center">
             <JS13K
               isOpen={this.state.isJs13kDropdownOpen}
               codeSize={this.props.codeSize}
@@ -156,7 +158,7 @@ export default class Footer extends Component {
             {this.state.isJs13kDropdownOpen && (
               <div className="js13k__dropdown">
                 <button
-                  class="btn"
+                  className="btn"
                   style={{
                     width: '200px',
                     display: 'block',
@@ -167,7 +169,7 @@ export default class Footer extends Component {
                   Download game as zip
                 </button>
                 <a
-                  class="btn"
+                  className="btn"
                   rel="noopener"
                   style={{
                     width: '200px',
@@ -180,7 +182,7 @@ export default class Footer extends Component {
                   Upload Image
                 </a>
                 <button
-                  class="btn"
+                  className="btn"
                   style={{ width: '200px', display: 'block' }}
                   onClick={this.props.onJs13KHelpBtnClick}
                 >
@@ -191,12 +193,12 @@ export default class Footer extends Component {
           </div>
         ) : null}
 
-        <div class="footer__right hidden">
+        <div className="footer__right hidden">
           <button
-            style="display: none;"
+            style={{ display: 'none' }}
             onClick={this.props.saveHtmlBtnClickHandler}
             id="saveHtmlBtn"
-            class="mode-btn hint--rounded  hint--top-left hide-on-mobile"
+            className="mode-btn hint--rounded  hint--top-left hide-on-mobile"
             aria-label="Save as HTML file"
           >
             <svg viewBox="0 0 24 24">
@@ -219,8 +221,8 @@ export default class Footer extends Component {
           <button
             onClick={this.props.codepenBtnClickHandler}
             id="codepenBtn"
-            class="mode-btn  hint--rounded  hint--top-left  hide-on-mobile"
-            style="display: none"
+            className="mode-btn  hint--rounded  hint--top-left  hide-on-mobile"
+            style={{ display: 'none' }}
             aria-label="Edit on CodePen"
           >
             <svg fill="currentColor">
@@ -230,8 +232,8 @@ export default class Footer extends Component {
 
           <button
             id="screenshotBtn"
-            class="mode-btn  hint--rounded  hint--top-left show-when-extension"
-            style="display: none"
+            className="mode-btn  hint--rounded  hint--top-left show-when-extension"
+            style={{ display: 'none' }}
             onClick={this.props.screenshotBtnClickHandler}
             aria-label="Take screenshot of preview"
           >
@@ -243,8 +245,8 @@ export default class Footer extends Component {
             </svg>
           </button>
           <button
-            style="display:none;"
-            class="mode-btn hint--top-left hint--rounded hide-on-mobile"
+            style={{ display: 'none' }}
+            className="mode-btn hint--top-left hint--rounded hide-on-mobile"
             aria-label="Detach Preview"
             onClick={this.props.detachedPreviewBtnHandler}
           >
@@ -259,10 +261,10 @@ export default class Footer extends Component {
           <button
             onClick={this.props.notificationsBtnClickHandler}
             id="notificationsBtn"
-            class={`notifications-btn  mode-btn  hint--top-left hint--rounded has-new ${
+            className={`notifications-btn  mode-btn  hint--top-left hint--rounded has-new ${
               this.props.hasUnseenChangelog ? 'has-new' : ''
             }`}
-            style="display: none"
+            style={{ display: 'none' }}
             aria-label="See Changelog"
           >
             <svg viewBox="0 0 24 24">
@@ -271,7 +273,7 @@ export default class Footer extends Component {
                 d="M14,20A2,2 0 0,1 12,22A2,2 0 0,1 10,20H14M12,2A1,1 0 0,1 13,3V4.08C15.84,4.56 18,7.03 18,10V16L21,19H3L6,16V10C6,7.03 8.16,4.56 11,4.08V3A1,1 0 0,1 12,2Z"
               />
             </svg>
-            <span class="notifications-btn__dot" />
+            <span className="notifications-btn__dot" />
           </button>
           {/*<Button*/}
           {/*	onClick={this.props.settingsBtnClickHandler}*/}
