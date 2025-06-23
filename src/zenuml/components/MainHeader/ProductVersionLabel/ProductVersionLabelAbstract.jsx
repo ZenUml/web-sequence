@@ -9,7 +9,7 @@ const ProductVersionLabelAbstract = ({
     ' ' +
     className;
   return (
-    <button className={classNames} aria-label={tooltip} onClick={clickHandler}>
+    <button className={classNames} aria-label={tooltip} onClick={clickHandler} style={style}>
       <img src="assets/icon-pro.svg" width={16} />
       Upgrade plan
     </button>

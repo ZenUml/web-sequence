@@ -1,8 +1,8 @@
-import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract';
+import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract.jsx';
 
 const ProductVersionLabelProfessional = ({ clickHandler }) => {
   const style = {
-    'background-color': '#d3a447',
+    backgroundColor: '#d3a447',
     color: 'white',
   };
 

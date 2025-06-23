@@ -1,5 +1,5 @@
 import userService from '../../../../services/user_service';
-import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
+import { ProductVersionLabelBasic } from './ProductVersionLabelBasic.jsx';
 
 export function ProductVersionLabel(props) {
   const isAnonymous = !props.user;
@@ -12,7 +12,7 @@ export function ProductVersionLabel(props) {
   return (
     <ProductVersionLabelBasic
       tooltip={tooltip}
-      clickHandler={this.props.clickHandler}
+      clickHandler={props.clickHandler}
     />
   );
 }
