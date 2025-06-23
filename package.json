@@ -76,7 +76,7 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "git-revision-webpack-plugin": "^5.0.0",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",
     "gulp-concat": "^2.6.1",
     "gulp-hash-filename": "^3.0.0",
@@ -87,8 +87,7 @@
     "jest": "^24.9.0",
     "postcss": "^8.5.4",
     "postcss-custom-media": "^10.0.4",
-    "prettier": "^3.2.5",
-    "run-sequence": "^2.2.1",
+        "prettier": "^3.2.5",
     "sirv-cli": "1.0.3",
     "tailwindcss": "^3.4.3",
     "terser": "^5.41.0",
@@ -122,7 +121,17 @@
     "vuex": "^4.1.0"
   },
   "overrides": {
-    "graceful-fs": "^4.2.4"
+    "graceful-fs": "^4.2.4",
+    "gulp > graceful-fs": "^4.2.4",
+    "gulp > vinyl-fs > graceful-fs": "^4.2.4",
+    "natives": "^1.1.6",
+    "**/graceful-fs": "^4.2.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "graceful-fs": "^4.2.4",
+      "natives": "^1.1.6"
+    }
   },
   "jest": {
     "verbose": true

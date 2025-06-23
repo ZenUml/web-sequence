@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const gulp = require('gulp');
-const runSequence = require('run-sequence');
 const useref = require('gulp-useref');
 const cleanCSS = require('gulp-clean-css');
 const concat = require('gulp-concat');
@@ -39,23 +38,23 @@ gulp.task('copyFiles', function () {
       .src('End-User-License-Agreement/*')
       .pipe(gulp.dest('app/End-User-License-Agreement')),
 
-    // Copy library files that are still needed
+    // Copy library files from static/lib
     gulp
-      .src('src/lib/codemirror/lib/*')
+      .src('static/lib/codemirror/lib/*', { allowEmpty: true })
       .pipe(gulp.dest('app/lib/codemirror/lib')),
     gulp
-      .src('src/lib/codemirror/theme/*')
+      .src('static/lib/codemirror/theme/*', { allowEmpty: true })
       .pipe(gulp.dest('app/lib/codemirror/theme')),
     gulp
-      .src('src/lib/codemirror/mode/**/*')
+      .src('static/lib/codemirror/mode/**/*', { allowEmpty: true })
       .pipe(gulp.dest('app/lib/codemirror/mode')),
-    gulp.src('src/lib/transpilers/*').pipe(gulp.dest('app/lib/transpilers')),
-    gulp.src('src/lib/prettier-worker.js').pipe(gulp.dest('app/lib/')),
-    gulp.src('src/lib/prettier/*').pipe(gulp.dest('app/lib/prettier')),
-    gulp.src('src/lib/screenlog.js').pipe(gulp.dest('app/lib')),
-    gulp.src('src/lib/paddle.js').pipe(gulp.dest('app/lib')),
-    gulp.src('src/lib/gtm.js').pipe(gulp.dest('app/lib')),
-    gulp.src('src/lib/sequence-ext.css').pipe(gulp.dest('app/lib')),
+    gulp.src('static/lib/transpilers/*', { allowEmpty: true }).pipe(gulp.dest('app/lib/transpilers')),
+    gulp.src('static/lib/prettier-worker.js', { allowEmpty: true }).pipe(gulp.dest('app/lib/')),
+    gulp.src('static/lib/prettier/*', { allowEmpty: true }).pipe(gulp.dest('app/lib/prettier')),
+    gulp.src('static/lib/screenlog.js').pipe(gulp.dest('app/lib')),
+    gulp.src('static/lib/paddle.js').pipe(gulp.dest('app/lib')),
+    gulp.src('static/lib/gtm.js').pipe(gulp.dest('app/lib')),
+    gulp.src('static/lib/sequence-ext.css').pipe(gulp.dest('app/lib')),
     gulp.src('src/assets/*').pipe(gulp.dest('app/assets')),
     gulp.src('src/animation/*').pipe(gulp.dest('app/animation')),
     gulp.src('src/templates/*').pipe(gulp.dest('app/templates')),
@@ -67,11 +66,11 @@ gulp.task('copyFiles', function () {
         'help.html',
         'ZenUML_Sequence_Diagram_addon_help.html',
         'src/detached-window.js',
-        'src/icon-16.png',
-        'src/icon-48.png',
-        'src/icon-128.png',
+        'static/icon-16.png',
+        'static/icon-48.png',
+        'static/icon-128.png',
         'static/manifest.json',
-      ])
+      ], { allowEmpty: true })
       .pipe(gulp.dest('app')),
 
     // Copy Vite build output from dist/ instead of build/
@@ -80,10 +79,10 @@ gulp.task('copyFiles', function () {
     // Copy fonts
     gulp
       .src([
-        'src/FiraCode.ttf',
-        'src/FixedSys.ttf',
-        'src/Inconsolata.ttf',
-        'src/Monoid.ttf',
+        'static/FiraCode.ttf',
+        'static/FixedSys.ttf',
+        'static/Inconsolata.ttf',
+        'static/Monoid.ttf',
       ])
       .pipe(gulp.dest('app')),
   );
@@ -101,7 +100,7 @@ gulp.task('concat', function (callback) {
   callback();
 });
 
-gulp.task('minify', function () {
+gulp.task('minify', function (done) {
   // Only minify specific files that need additional processing
   if (fs.existsSync('app/lib/screenlog.js')) {
     minifyJs('app/lib/screenlog.js');
@@ -109,7 +108,7 @@ gulp.task('minify', function () {
 
   // Minify CSS files if they exist
   if (fs.existsSync('app') && fs.readdirSync('app').some(file => file.endsWith('.css'))) {
-    gulp
+    return gulp
       .src('app/*.css')
       .pipe(
         cleanCSS(
@@ -123,6 +122,8 @@ gulp.task('minify', function () {
         ),
       )
       .pipe(gulp.dest('app'));
+  } else {
+    done();
   }
 });
 
@@ -161,30 +162,26 @@ gulp.task('packageExtension', function () {
   );
 });
 
-gulp.task('cleanup', function () {
-  return childProcess.execSync('rm -rf app extension');
+gulp.task('cleanup', function (done) {
+  childProcess.execSync('rm -rf app extension');
+  done();
 });
 
-gulp.task('cleanup-build', function () {
-  return childProcess.execSync('rm -rf build');
+gulp.task('cleanup-build', function (done) {
+  childProcess.execSync('rm -rf build');
+  done();
 });
 
-gulp.task('release', function (callback) {
-  runSequence(
-    'cleanup',
-    'copyFiles',
-    'fixIndex',
-    'useRef',
-    'concat',
-    'minify',
-    'packageExtension',
-    function (error) {
-      if (error) {
-        console.log(error.message);
-      } else {
-        console.log('RELEASE FINISHED SUCCESSFULLY');
-      }
-      callback(error);
-    },
-  );
-});
+gulp.task('release', gulp.series(
+  'cleanup',
+  'copyFiles',
+  'fixIndex',
+  'useRef',
+  'concat',
+  'minify',
+  'packageExtension',
+  function(done) {
+    console.log('RELEASE FINISHED SUCCESSFULLY');
+    done();
+  }
+));
