@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component } from 'react';
 import CodeMirror from '../CodeMirror';
 
 import 'codemirror/mode/javascript/javascript.js';

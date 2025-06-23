@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component } from 'react';
 import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
@@ -1003,11 +1003,11 @@ export default class ContentWrap extends Component {
   render() {
     return (
       <SplitPane
-        class="content-wrap  flex  flex-grow"
+        className="content-wrap  flex  flex-grow"
         id="content-wrap"
         sizes={this.state.mainSplitSizes}
         minSize={580}
-        style=""
+        style={{}}
         direction={
           this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
         }
@@ -1020,7 +1020,7 @@ export default class ContentWrap extends Component {
             }
             ref={(tabs) => (this.tabsRef = tabs)}
             onChange={this.onTabChanges.bind(this)}
-            style="display:flex;flex-direction: column;"
+            style={{ display: 'flex', flexDirection: 'column' }}
           >
             <div label="ZenUML" lineOfCode={this.state.lineOfCode}>
               <div
@@ -1066,9 +1066,8 @@ export default class ContentWrap extends Component {
               >
                 <div
                   className="js-code-wrap__header  code-wrap__header"
-                  titl
-                  e="Double click to toggle code pane"
-                  ondblclick={this.codeWrapHeaderDblClickHandler.bind(this)}
+                  title="Double click to toggle code pane"
+                  onDoubleClick={this.codeWrapHeaderDblClickHandler.bind(this)}
                 >
                   <span className="caret" />
                   <label className="btn-group" title="Click to change">
@@ -1126,7 +1125,7 @@ export default class ContentWrap extends Component {
             </div>
           </Tabs>
         </div>
-        <div class="demo-side" id="js-demo-side">
+        <div className="demo-side" id="js-demo-side">
           <div className="h-full flex flex-col">
             {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
               <PageTabs
@@ -1139,7 +1138,7 @@ export default class ContentWrap extends Component {
             )}
             <div
               className="flex-grow"
-              style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
+              style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
             >
               <iframe
                 ref={(el) => (this.frame = el)}

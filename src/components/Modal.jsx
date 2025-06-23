@@ -1,4 +1,5 @@
-import { Component, createPortal } from 'preact/compat';
+import { Component } from 'react';
+import { createPortal } from 'react-dom';
 
 export default class Modal extends Component {
   componentDidMount() {
@@ -54,13 +55,13 @@ export default class Modal extends Component {
 
     return createPortal(
       <div
-        class={`${this.props.extraClasses || ''} modal is-modal-visible ${
+        className={`${this.props.extraClasses || ''} modal is-modal-visible ${
           this.props.small ? 'modal--small' : ''
         }`}
         ref={(el) => (this.overlayEl = el)}
         onClick={this.onOverlayClick.bind(this)}
       >
-        <div class="modal__content bg-black-400 backdrop-blur rounded-lg">
+        <div className="modal__content bg-black-400 backdrop-blur rounded-lg">
           <button
             type="button"
             onClick={this.props.closeHandler}
@@ -68,7 +69,7 @@ export default class Modal extends Component {
             title="Close"
             className="js-modal__close-btn modal__close-btn "
           >
-            <span class="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined">close</span>
           </button>
           {this.props.children}
         </div>
