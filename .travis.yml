@@ -7,19 +7,23 @@ env:
 language: node_js
 node_js:
   - '10'
-cache: yarn
+cache: 
+  directories:
+    - ~/.pnpm-store
+before_install:
+  - npm install -g pnpm
 jobs:
   include:
     - stage: test
       script:
-        - yarn run lint
-        - yarn run test
+        - pnpm run lint
+        - pnpm run test
     - stage: deploy
       if: env(PRODUCT_TO_DEPLOY) in (web, all)
       name: 'Deploy web app to Firebase'
       script:
-        - yarn run build
-        - yarn release
+        - pnpm run build
+        - pnpm release
       deploy:
         provider: firebase
         project: $FIREBASE_PROJECT

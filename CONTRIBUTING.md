@@ -5,13 +5,13 @@ ZenUML is written in Preact (JavaScript), CSS & HTML. It uses few open-source 3r
 ### Run ZenUML (web app) locally on your machine
 
 - Clone the repo `git clone git@github.com:chinchang/web-maker.git`.
-- Inside the repo, run `yarn` to install the dependencies.
-- Run `yarn run dev`
+- Inside the repo, run `pnpm install` to install the dependencies.
+- Run `pnpm run dev`
 
 ### Run ZenUML (Chrome extension) locally on your machine
 
 - Follow all steps as listed above to run the web app.
-- Instead of `yarn run dev`, run `yarn run build`. This will take some time.
+- Instead of `pnpm run dev`, run `pnpm run build`. This will take some time.
 - Now go to Chrome extension settings page [chrome://extensions/](chrome://extensions/).
 - Click on **Load unpacked extension** button.
 - Select the `extension/` folder in the repo.
@@ -19,9 +19,9 @@ ZenUML is written in Preact (JavaScript), CSS & HTML. It uses few open-source 3r
 
 ### Code changes
 
-- Before starting any code work, run `yarn` in the repo folder. This is required to install some git hooks which do linting & formatting.
+- Before starting any code work, run `pnpm install` in the repo folder. This is required to install some git hooks which do linting & formatting.
 - Also, create a new branch out of master branch with the name as `fix-{ISSUE_ID}-anything-more-here`. For example, if you are working on issue #23 regarding implementing a mobile mode, your branch could be called `fix-23-mobile-mode`.
-- All source files are inside the `src` folder. Once you run `yarn run dev`, make code changes inside `src/` folder and the changes appear automatically in the browser. Except when changes are done in `style.css`, that requires manual refresh in brower.
+- All source files are inside the `src` folder. Once you run `pnpm run dev`, make code changes inside `src/` folder and the changes appear automatically in the browser. Except when changes are done in `style.css`, that requires manual refresh in brower.
 - Once you are done, open a pull request here by selecting right branch: [https://github.com/chinchang/web-maker/compare](https://github.com/chinchang/web-maker/compare).
 
 ### Project folder structure

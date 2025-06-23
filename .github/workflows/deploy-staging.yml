@@ -19,12 +19,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: yarn install && yarn build
-      - run: yarn release
-      - run: cd functions && yarn install && yarn deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.0
+      - run: pnpm install && pnpm build
+      - run: pnpm release
+      - run: cd functions && pnpm install && pnpm deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
       - name: Deploy to staging
         if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
-        run: yarn deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
+        run: pnpm deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
       - name: Upload artifacts # Find artifacts under actions/jobs
         uses: actions/upload-artifact@v4
         with:

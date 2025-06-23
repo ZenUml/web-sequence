@@ -4,7 +4,7 @@ This guide will help you manually test the Phase 1 implementation of the pages c
 
 ## Setup
 
-1. Make sure the development server is running (`yarn dev`)
+1. Make sure the development server is running (`pnpm dev`)
 2. Open the application in your browser (http://localhost:8080)
 3. Open the browser's developer console (F12 or right-click and select "Inspect")
 

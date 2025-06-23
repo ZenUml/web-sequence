@@ -4,7 +4,8 @@
 
 .vscode
 logs
-yarn-error.log
+pnpm-debug.log
+.pnpm-store/
 
 ### PhPStorm / IntellJ IDEA ###
 .idea/

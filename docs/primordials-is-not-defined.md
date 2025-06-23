@@ -18,6 +18,20 @@ You need to add a `resolutions` section to your `package.json`:
 
 Thanks [@jazd][3] for this way to solve the issue.
 
+## If you are using pnpm
+
+pnpm supports [`overrides`][8] similar to yarn's resolutions.
+You need to add an `overrides` section to your `package.json`:
+
+```json
+{
+  // Your current package.json contents
+  "overrides": {
+    "graceful-fs": "^4.2.4"
+  }
+}
+```
+
 ## If you are using npm
 
 Using [`npm-force-resolutions`][4] as a preinstall script, you can obtain a similar result as with yarn v1. You need to modify your package.json this way:
@@ -56,3 +70,4 @@ Note that this is not a perennial solution but it helps when you don't have the 
 [5]: https://github.com/gulpjs/gulp/blob/v3.9.1/package.json#L47
 [6]: https://nodejs.org/en/about/releases/
 [7]: https://github.com/isaacs/node-graceful-fs#v4
+[8]: https://pnpm.io/package_json#overrides

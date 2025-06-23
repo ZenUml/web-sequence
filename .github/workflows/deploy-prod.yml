@@ -21,10 +21,14 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - run: yarn install && yarn build
-      - run: yarn release
-      - run: cd functions && yarn install && yarn deploy:config:prod --token ${{ secrets.FIREBASE_TOKEN }}
-      - run: yarn deploy:prod --token ${{ secrets.FIREBASE_TOKEN }}
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.0
+      - run: pnpm install && pnpm build
+      - run: pnpm release
+      - run: cd functions && pnpm install && pnpm deploy:config:prod --token ${{ secrets.FIREBASE_TOKEN }}
+      - run: pnpm deploy:prod --token ${{ secrets.FIREBASE_TOKEN }}
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

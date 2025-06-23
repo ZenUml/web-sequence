@@ -4,9 +4,10 @@
   "description": "A real-time tool for generating sequence diagrams",
   "main": "index.html",
   "type": "module",
+  "packageManager": "pnpm@8.15.0",
   "scripts": {
-    "engine": "use yarn instead of npm please",
-    "start": "if-env NODE_ENV=production && yarn serve || yarn dev",
+    "engine": "use pnpm instead of npm or yarn please",
+    "start": "if-env NODE_ENV=production && pnpm serve || pnpm dev",
     "build": "vite build",
     "release": "gulp --gulpfile gulpfile.cjs release",
     "prep:release:git-tag-push": "git tag release-`date +%Y%m%d%H%M` && git push origin release-`date +%Y%m%d%H%M`",
@@ -98,7 +99,7 @@
     "vue": "^3.2.45",
     "vuex": "^4.1.0"
   },
-  "resolutions": {
+  "overrides": {
     "graceful-fs": "^4.2.4"
   },
   "jest": {
@@ -148,6 +149,6 @@
   "homepage": "http://zenuml.com",
   "volta": {
     "node": "20.0.0",
-    "yarn": "1.22.19"
+    "pnpm": "8.15.0"
   }
 }
