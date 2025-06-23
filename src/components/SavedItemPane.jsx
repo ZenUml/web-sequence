@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import { log } from '../utils';
 import { trackEvent } from '../analytics';
 import { ItemTile } from './ItemTile';

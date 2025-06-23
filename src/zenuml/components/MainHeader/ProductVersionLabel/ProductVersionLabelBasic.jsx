@@ -1,4 +1,4 @@
-import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract';
+import { ProductVersionLabelAbstract } from './ProductVersionLabelAbstract.jsx';
 
 const ProductVersionLabelBasic = ({ tooltip, clickHandler }) => {
   const style = {

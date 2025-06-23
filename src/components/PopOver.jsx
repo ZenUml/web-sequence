@@ -1,4 +1,4 @@
-import { Component, createRef } from 'preact';
+import React, { Component, createRef } from 'react';
 import PropTypes from 'prop-types';
 
 export class Popover extends Component {

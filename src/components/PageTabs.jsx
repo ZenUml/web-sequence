@@ -1,4 +1,4 @@
-import { Component } from 'preact';
+import React, { Component } from 'react';
 import DeletePageModal from './DeletePageModal';
 
 /**

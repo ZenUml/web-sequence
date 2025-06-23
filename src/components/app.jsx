@@ -1,7 +1,7 @@
 /* global htmlCodeEl, cssCodeEl, jsCodeEl, runBtn
  */
 
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';

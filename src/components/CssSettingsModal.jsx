@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import Modal from './Modal';
 import CodeMirrorBox from './CodeMirrorBox';
 

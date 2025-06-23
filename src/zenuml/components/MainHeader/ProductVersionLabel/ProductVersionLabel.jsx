@@ -1,5 +1,5 @@
 import userService from '../../../../services/user_service';
-import { ProductVersionLabelBasic } from './ProductVersionLabelBasic';
+import { ProductVersionLabelBasic } from './ProductVersionLabelBasic.jsx';
 
 export function ProductVersionLabel(props) {
   const isAnonymous = !props.user;

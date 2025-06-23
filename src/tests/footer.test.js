@@ -1,13 +1,12 @@
 import Footer from '../components/Footer';
-// Needs to be kept here
-import { h } from 'preact';
-import { configure, mount } from 'enzyme';
-import Adapter from 'enzyme-adapter-preact-pure';
-configure({ adapter: new Adapter() });
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
 describe('Initial Test of the Footer', () => {
   test('Footer renders 1 link with an ID of notificationsBtn', () => {
-    const context = mount(<Footer prefs={{}} />);
-    expect(context.find('#notificationsBtn').exists()).toBeTruthy();
+    render(<Footer prefs={{}} />);
+    const notificationsBtn = screen.getByRole('button', { name: /notifications/i });
+    expect(notificationsBtn).toBeInTheDocument();
   });
 });

@@ -50,12 +50,12 @@ function testPagesImplementation() {
       console.log('Found #app element, checking for instance...');
       
       // Try different ways to access the instance
-      if (appElement.__preactInstance) {
-        app = appElement.__preactInstance;
-        console.log('Found app via __preactInstance');
-      } else if (appElement._reactRootContainer) {
+      if (appElement._reactRootContainer) {
         app = appElement._reactRootContainer._internalRoot.current.child.stateNode;
         console.log('Found app via React root container');
+      } else if (appElement._reactInternalFiber) {
+        app = appElement._reactInternalFiber.return.stateNode;
+        console.log('Found app via React internal fiber');
       } else {
         console.log('Could not find app instance on #app element');
       }

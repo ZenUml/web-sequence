@@ -1,7 +1,6 @@
-import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import React, { useCallback, useState } from 'react';
 import { Button } from './common';
-import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel';
+import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVersionLabel/ProductVersionLabel.jsx';
 import featureToggle from '../services/feature_toggle';
 import { Popover } from './PopOver';
 import { SharePanel } from './SharePanel';

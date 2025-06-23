@@ -1,4 +1,5 @@
-import { Component, createPortal } from 'preact/compat';
+import React, { Component } from 'react';
+import { createPortal } from 'react-dom';
 
 export default class Modal extends Component {
   componentDidMount() {

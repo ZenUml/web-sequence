@@ -1,7 +1,7 @@
 {
-  "title": "Preact template",
+  "title": "React template",
   "externalLibs": {
-    "js": "\nhttps://cdnjs.cloudflare.com/ajax/libs/preact/8.2.9/preact.min.js",
+    "js": "\nhttps://unpkg.com/react@18/umd/react.development.js\nhttps://unpkg.com/react-dom@18/umd/react-dom.development.js",
     "css": ""
   },
   "sizes": ["calc(30% - 3px)", "30px", "calc(70% - 3px)"],
@@ -10,6 +10,6 @@
   "cssMode": "css",
   "jsMode": "es6",
   "layoutMode": 1,
-  "js": "\nconst { h, Component, render, createElement } = window.preact;\nconst React = {createElement}\n\nclass App extends Component {\n  constructor() {\n    super();\n    this.message = 'World';\n  }\n  render() {\n    return (<div>Hello {this.message}</div>)\n  }\n}\nrender(<App/>, window.root)\n\n",
+  "js": "\nconst { useState } = React;\nconst { createRoot } = ReactDOM;\n\nfunction App() {\n  const [message, setMessage] = useState('World');\n  \n  return (\n    <div>\n      <h1>Hello {message}!</h1>\n      <button onClick={() => setMessage('React')}>\n        Click me\n      </button>\n    </div>\n  );\n}\n\nconst container = document.getElementById('root');\nconst root = createRoot(container);\nroot.render(<App />);\n\n",
   "html": "<div id=\"root\"></div>\n"
 }

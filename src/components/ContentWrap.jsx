@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import React, { Component } from 'react';
 import { saveAs } from 'file-saver';
 import UserCodeMirror from './UserCodeMirror.jsx';
 import Toolbox from './Toolbox.jsx';
