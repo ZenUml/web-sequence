@@ -11,6 +11,8 @@ This project has been migrated from Yarn to pnpm for better performance and disk
 ### Configuration Files Updated
 - `package.json` - Updated scripts, volta configuration, and React dependencies
 - `vite.config.js` - Migrated from @preact/preset-vite to @vitejs/plugin-react
+- `src/index.js` → `src/index.jsx` - Updated to React 18 createRoot API
+- `src/index.html` - Updated script reference to index.jsx
 - `.travis.yml` - Updated CI configuration
 - `.github/workflows/` - Updated GitHub Actions
 - `README.md` - Updated development instructions
