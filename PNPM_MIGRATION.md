@@ -9,7 +9,8 @@ This project has been migrated from Yarn to pnpm for better performance and disk
 - **yarn** commands → **pnpm** commands in all scripts and documentation
 
 ### Configuration Files Updated
-- `package.json` - Updated scripts and volta configuration
+- `package.json` - Updated scripts, volta configuration, and React dependencies
+- `vite.config.js` - Migrated from @preact/preset-vite to @vitejs/plugin-react
 - `.travis.yml` - Updated CI configuration
 - `.github/workflows/` - Updated GitHub Actions
 - `README.md` - Updated development instructions

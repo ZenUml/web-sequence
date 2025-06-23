@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import preact from '@preact/preset-vite';
+import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import { execSync } from 'child_process';
 
@@ -13,8 +13,9 @@ function getCommitHash() {
 
 export default defineConfig({
   plugins: [
-    preact({
-      devToolsEnabled: true,
+    react({
+      // Enable React DevTools in development
+      include: "**/*.{jsx,tsx}",
     }),
     legacy({
       targets: ['defaults', 'not IE 11'],
@@ -29,12 +30,6 @@ export default defineConfig({
   },
   define: {
     __COMMITHASH__: JSON.stringify(getCommitHash()),
-  },
-  resolve: {
-    alias: {
-      react: 'preact/compat',
-      'react-dom': 'preact/compat',
-    },
   },
   esbuild: {
     loader: 'jsx',
