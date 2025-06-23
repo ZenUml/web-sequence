@@ -14,18 +14,25 @@ jobs:
         node-version: [20.x]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.0
-      - run: pnpm install && pnpm build
-      - run: pnpm release
-      - run: cd functions && pnpm install && pnpm deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build project
+        run: pnpm build
+      - name: Release
+        run: pnpm release
+      - name: Install functions dependencies and deploy config
+        run: cd functions && pnpm install && pnpm deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
       - name: Deploy to staging
         if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
         run: pnpm deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}

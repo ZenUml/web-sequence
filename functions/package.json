@@ -4,11 +4,12 @@
   "engines": {
     "node": "20"
   },
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "lint": "eslint .",
     "serve": "firebase serve --only functions",
     "shell": "firebase functions:shell",
-    "start": "npm run shell",
+    "start": "pnpm run shell",
     "deploy": "firebase deploy --only functions",
     "deploy:config:staging": "firebase -P staging functions:config:set larasite.host=sequence-diagram-staging.zenuml.com larasite.public_base_url=https://sequence-diagram-staging.zenuml.com",
     "deploy:config:prod": "firebase -P prod functions:config:set larasite.host=sequence-diagram.zenuml.com larasite.public_base_url=https://zenuml.com/sequence-diagram",

@@ -4,7 +4,7 @@
   "description": "A real-time tool for generating sequence diagrams",
   "main": "index.html",
   "type": "module",
-  "packageManager": "pnpm@8.15.0",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "engine": "use pnpm instead of npm or yarn please",
     "start": "if-env NODE_ENV=production && pnpm serve || pnpm dev",
@@ -149,6 +149,6 @@
   "homepage": "http://zenuml.com",
   "volta": {
     "node": "20.0.0",
-    "pnpm": "8.15.0"
+    "pnpm": "9.15.0"
   }
 }

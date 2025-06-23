@@ -27,7 +27,7 @@ This project has been migrated from Yarn to pnpm for better performance and disk
 ### For New Contributors
 ```bash
 # Install pnpm globally (if not already installed)
-npm install -g pnpm@8.15.0
+npm install -g pnpm@9.15.0
 
 # Install dependencies
 pnpm install
@@ -45,7 +45,7 @@ pnpm build
 rm -rf node_modules yarn.lock
 
 # Install pnpm globally
-npm install -g pnpm@8.15.0
+npm install -g pnpm@9.15.0
 
 # Install dependencies with pnpm
 pnpm install
@@ -79,6 +79,6 @@ If you encounter issues:
 
 1. **Clear pnpm cache**: `pnpm store prune`
 2. **Reinstall dependencies**: `rm -rf node_modules && pnpm install`
-3. **Check pnpm version**: `pnpm --version` (should be 8.15.0+)
+3. **Check pnpm version**: `pnpm --version` (should be 9.15.0+)
 
 For more information about pnpm, visit: https://pnpm.io/
