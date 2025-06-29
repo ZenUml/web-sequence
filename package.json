@@ -11,7 +11,7 @@
     "build": "vite build",
     "release": "gulp --gulpfile gulpfile.cjs release",
     "prep:release:git-tag-push": "git tag release-`date +%Y%m%d%H%M` && git push origin release-`date +%Y%m%d%H%M`",
-    "dev": "vite",
+    "dev": "vite --port 4000",
     "preview": "vite preview",
     "lint": "eslint src",
     "test": "jest ./",
