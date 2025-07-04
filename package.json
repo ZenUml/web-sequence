@@ -93,6 +93,7 @@
     "preact-compat": "^3.19.0",
     "preact-render-to-string": "^6.2.2",
     "preact-router": "^4.1.2",
+    "prop-types": "^15.8.1",
     "split.js": "1.6.0",
     "svg-transform-loader": "^2.0.12",
     "vue": "^3.2.45",

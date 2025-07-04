@@ -77,6 +77,9 @@ importers:
       preact-router:
         specifier: ^4.1.2
         version: 4.1.2(preact@10.18.1)
+      prop-types:
+        specifier: ^15.8.1
+        version: 15.8.1
       split.js:
         specifier: 1.6.0
         version: 1.6.0
@@ -9046,7 +9049,9 @@ snapshots:
       source-map: 0.6.1
       string-length: 2.0.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@jest/source-map@24.9.0':
     dependencies:
