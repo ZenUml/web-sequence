@@ -85,6 +85,9 @@ export default class Footer extends Component {
             >
               &copy; ZenUML
             </a>
+            <span class="text-gray-600 text-xs">
+              v2.0.0 ({__COMMITHASH__})
+            </span>
             <a
               aria-label="Tweet about 'ZenUML'"
               href="http://twitter.com/share?url=https://www.zenuml.com/&text=ZenUML - A blazing fast %26 offline UML generator! via @ZenUML&related=ZenUML&hashtags=uml,zenuml,playground,offline"
@@ -138,6 +141,12 @@ export default class Footer extends Component {
           >
             &nbsp;Privacy Policy&nbsp;
           </a>
+          <button
+            className="hover:opacity-80 duration-200 text-gray-500 text-xs"
+            onClick={this.props.helpBtnClickHandler}
+          >
+            &nbsp;Help & Version&nbsp;
+          </button>
         </div>
         {this.props.prefs.isJs13kModeOn ? (
           <div class="flex flex-v-center">
