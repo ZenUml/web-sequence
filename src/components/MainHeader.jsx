@@ -23,13 +23,16 @@ export function MainHeader(props) {
   };
 
   const getPngBlob = async () => {
-    const mountingPoint = document
-      .getElementById('demo-frame')
-      .contentWindow.document.getElementById('diagram');
-    // eslint-disable-next-line
-    return await mountingPoint
-      .getElementsByClassName('frame')[0]
-      .parentElement.__vue__.toBlob();
+    const iframe = document.getElementById('demo-frame');
+    // Use the getPng method exposed by the iframe
+    const pngDataUrl = await iframe.contentWindow.getPng();
+    if (!pngDataUrl) {
+      throw new Error('Failed to get PNG from diagram');
+    }
+    
+    // Convert data URL to Blob
+    const response = await fetch(pngDataUrl);
+    return await response.blob();
   };
 
   const shareClickHandler = async () => {

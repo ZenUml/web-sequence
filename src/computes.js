@@ -170,6 +170,13 @@ export function computeJs(
   let code = `
 	window.addEventListener("load", function(event) {
 		window.app = new window.zenuml.default('#mounting-point')
+		// Expose getPng method to parent window
+		window.getPng = async function() {
+			if (window.app) {
+				return await window.app.getPng();
+			}
+			return null;
+		};
 	});
 	window.addEventListener('message', (e) => {
 		const code = e.data && e.data.code;
