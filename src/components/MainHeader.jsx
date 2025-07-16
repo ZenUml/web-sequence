@@ -8,11 +8,13 @@ import { SharePanel } from './SharePanel';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
+import aiTitleService from '../services/aiTitleService';
 
 export function MainHeader(props) {
   const [isEditing, setEditing] = useState(false);
   const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
   const [imageBase64] = useState();
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   const entryEditing = () => {
     setEditing(true);
@@ -58,6 +60,43 @@ export function MainHeader(props) {
 
   const handleTrack = () => {
     mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
+  };
+
+  const handleGenerateTitle = async () => {
+    if (!props.user) {
+      props.loginBtnHandler();
+      return;
+    }
+
+    if (isGeneratingTitle) return;
+
+    const currentPageContent = props.currentItem?.pages?.find(
+      page => page.id === props.currentItem.currentPageId
+    )?.js;
+
+    if (!currentPageContent) {
+      console.warn('No diagram content found for title generation');
+      return;
+    }
+
+    setIsGeneratingTitle(true);
+
+    try {
+      const generatedTitle = await aiTitleService.generateTitle(currentPageContent);
+      
+      // Update the title using the existing handler
+      const event = {
+        target: { value: generatedTitle }
+      };
+      props.titleInputBlurHandler(event);
+      
+      mixpanel.track({ event: 'ai_title_generated', category: 'ai' });
+    } catch (error) {
+      console.error('Failed to generate title:', error);
+      // You could show a toast notification here
+    } finally {
+      setIsGeneratingTitle(false);
+    }
   };
 
   const isSubscribed = userService.isSubscribed();
@@ -169,18 +208,40 @@ export function MainHeader(props) {
             onBlur={onBlur}
           />
         ) : (
-          <div
-            className="flex items-center gap-2 font-semibold"
-            onClick={() => entryEditing()}
-          >
-            <span>{props.title || 'Untitled'} </span>
-            <svg className="h-5 w-5">
-              <use xlinkHref="#icon-pen" />
-            </svg>
-            {props.currentItem && props.currentItem.pages && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-black-600 text-gray-300">
-                {props.currentItem.pages.length} {props.currentItem.pages.length === 1 ? 'page' : 'pages'}
-              </span>
+          <div className="flex items-center gap-2 font-semibold">
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => entryEditing()}
+            >
+              <span>{props.title || 'Untitled'} </span>
+              <svg className="h-5 w-5">
+                <use xlinkHref="#icon-pen" />
+              </svg>
+            </div>
+            {props.user && (
+              <button
+                onClick={handleGenerateTitle}
+                disabled={isGeneratingTitle}
+                className="ml-2 px-3 py-1 bg-primary hover:opacity-80 disabled:opacity-50 text-white text-sm rounded-md font-medium duration-200 flex items-center gap-2"
+                title="Generate title using AI"
+              >
+                {isGeneratingTitle ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Generate Title
+                  </>
+                )}
+              </button>
             )}
           </div>
         )}
