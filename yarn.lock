@@ -3113,10 +3113,10 @@
   resolved "https://registry.yarnpkg.com/@vue/shared/-/shared-3.3.4.tgz#06e83c5027f464eef861c329be81454bc8b70780"
   integrity sha512-7OjdcV8vQ74eiz1TZLzZP4JwqM5fA94K6yntPS5Z25r9HDuGNzaGdgvwKYq6S+MxwF0TFRwe50fIR/MYnakdkQ==
 
-"@zenuml/core@^3.32.3":
-  version "3.32.3"
-  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.32.3.tgz#8b0be6f790b275d92c8a312bc0e780a57643ec5d"
-  integrity sha512-Mja96LOR4ltww0V0eysSMZ0ihJSBqDraTPaWSgLDEOvRg+R+eCNs3h579Bo3kVl7Ic7xNyoVfku4qiT99Sv8OA==
+"@zenuml/core@^3.34.2":
+  version "3.34.2"
+  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-3.34.2.tgz#60270cdf41aaae60d28558b849b02317a08db8f0"
+  integrity sha512-ewfzVOJ9ZKTP64Pt8DUR02Jx6P9DHUzD9uAXAcLE+3GQK0ugqmN+jc415kKNR+/Is5bzxFUxj+gOeIn1f2ch2g==
   dependencies:
     "@floating-ui/react" "^0.27.8"
     "@headlessui/react" "^2.2.1"
@@ -3131,6 +3131,7 @@
     immer "^10.1.1"
     jotai "^2.12.2"
     marked "^4.3.0"
+    pako "^2.1.0"
     pino "^8.8.0"
     radash "^12.1.0"
     ramda "^0.28.0"
@@ -10420,6 +10421,11 @@ package-json-from-dist@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz#4f1471a010827a86f94cfd9b0727e36d267de505"
   integrity sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==
+
+pako@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/pako/-/pako-2.1.0.tgz#266cc37f98c7d883545d11335c00fbd4062c9a86"
+  integrity sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==
 
 pako@~1.0.2:
   version "1.0.11"
