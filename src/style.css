@@ -1829,7 +1829,7 @@ while the theme CSS file is loading */
 }
 
 .tab-list-item {
-  display: inline;
+  display: flex;
 }
 
 .tab-list-item span.line-of-code {
