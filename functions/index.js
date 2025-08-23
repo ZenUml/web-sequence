@@ -171,9 +171,12 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     if (process.env.FUNCTIONS_EMULATOR === 'true') {
       // Local development - use Vite dev server
       baseUrl = 'http://localhost:3000';
+    } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
+      // Staging environment
+      baseUrl = 'https://staging.zenuml.com';
     } else {
-      // Production - use the request host
-      baseUrl = `https://${req.get('host')}`;
+      // Production environment
+      baseUrl = 'https://app.zenuml.com';
     }
     
     res.json({
