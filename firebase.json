@@ -20,6 +20,12 @@
         }
       },
       {
+        "source": "/get-shared-item",
+        "function": {
+          "functionId": "get_shared_item"
+        }
+      },
+      {
         "source": "/authenticate",
         "function": {
           "functionId": "authenticate"

@@ -1,10 +1,11 @@
 import firebase from 'firebase/app';
 
 async function syncDiagram(currentItem) {
-  if (location.host === 'localhost:8080') {
-    console.log('Skipping sync-diagram call in local environment');
-    return;
-  }
+  // Remove skip for local development to test Firebase emulator
+  // if (location.host === 'localhost:3000') {
+  //   console.log('Skipping sync-diagram call in local environment');
+  //   return;
+  // }
 
   const { id, title, js } = currentItem;
   if (!js || !title) {
@@ -48,7 +49,9 @@ async function syncDiagram(currentItem) {
 }
 
 function getShareLink(syncResult) {
-  return `${syncResult.page_share}?v=${syncResult.md5}`;
+  // Check if URL already has query parameters
+  const separator = syncResult.page_share.includes('?') ? '&' : '?';
+  return `${syncResult.page_share}${separator}v=${syncResult.md5}`;
 }
 
 export { syncDiagram, getShareLink };
