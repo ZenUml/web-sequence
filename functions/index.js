@@ -166,17 +166,19 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
     
     // Return in the same format as the old API
-    // Use correct host for different environments
-    let baseUrl;
-    if (process.env.FUNCTIONS_EMULATOR === 'true') {
-      // Local development - use Vite dev server
-      baseUrl = 'http://localhost:3000';
-    } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
-      // Staging environment
-      baseUrl = 'https://staging.zenuml.com';
-    } else {
-      // Production environment
-      baseUrl = 'https://app.zenuml.com';
+    // Use origin from frontend request, with fallback to environment-specific defaults
+    let baseUrl = req.body.origin;
+    if (!baseUrl) {
+      if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        // Local development fallback
+        baseUrl = 'http://localhost:3000';
+      } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
+        // Staging environment fallback
+        baseUrl = 'https://staging.zenuml.com';
+      } else {
+        // Production environment fallback
+        baseUrl = 'https://app.zenuml.com';
+      }
     }
     
     res.json({

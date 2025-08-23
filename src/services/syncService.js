@@ -31,6 +31,7 @@ async function syncDiagram(currentItem) {
     name: title,
     content: js,
     description: 'Shared diagram from https://app.zenuml.com',
+    origin: window.location.origin, // Pass the frontend origin
   };
   console.log('calling /create-share with data:', data);
   try {
