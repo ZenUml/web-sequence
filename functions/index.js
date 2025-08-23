@@ -1,8 +1,16 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { FieldValue } = require('firebase-admin/firestore');
 const Mixpanel = require('mixpanel');
 
-admin.initializeApp(functions.config().firebase);
+// Initialize with staging project when running in emulator
+if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  admin.initializeApp({
+    projectId: 'staging-zenuml-27954',
+  });
+} else {
+  admin.initializeApp(functions.config().firebase);
+}
 const db = admin.firestore();
 
 //Mixpanel project: Confluence Analytics(new)
@@ -110,6 +118,136 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
 
   request.write(data);
   request.end();
+});
+
+exports.create_share = functions.https.onRequest(async (req, res) => {
+  try {
+    // Skip auth verification for local development if needed
+    let decoded;
+    if (process.env.FUNCTIONS_EMULATOR === 'true' && req.body.token === 'local-dev-token') {
+      // Mock user for local testing
+      decoded = { uid: 'local-test-user' };
+    } else {
+      decoded = await verifyIdToken(req.body.token);
+    }
+    const itemId = req.body.id;
+    
+    if (!itemId) {
+      return res.status(400).json({ error: 'Item ID is required' });
+    }
+
+    // Get the item from Firestore
+    const itemRef = db.collection('items').doc(itemId);
+    const doc = await itemRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const itemData = doc.data();
+    
+    // Verify user owns this item
+    if (itemData.createdBy !== decoded.uid) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+
+    // Generate or reuse share token
+    const crypto = require('crypto');
+    const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
+    
+    // Update item with sharing info
+    await itemRef.update({
+      isShared: true,
+      shareToken: shareToken,
+      sharedAt: FieldValue.serverTimestamp()
+    });
+
+    // Generate content hash for cache busting
+    const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
+    
+    // Return in the same format as the old API
+    // Use origin from frontend request, with fallback to environment-specific defaults
+    let baseUrl = req.body.origin;
+    if (!baseUrl) {
+      if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        // Local development fallback
+        baseUrl = 'http://localhost:3000';
+      } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
+        // Staging environment fallback
+        baseUrl = 'https://staging.zenuml.com';
+      } else {
+        // Production environment fallback
+        baseUrl = 'https://app.zenuml.com';
+      }
+    }
+    
+    res.json({
+      page_share: `${baseUrl}?id=${itemId}&share-token=${shareToken}`,
+      md5: contentHash
+    });
+
+  } catch (error) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: 'Failed to create share' });
+  }
+});
+
+exports.get_shared_item = functions.https.onRequest(async (req, res) => {
+  try {
+    console.log('=== DEBUG: get_shared_item ===');
+    console.log('Full request URL:', req.url);
+    console.log('Query object:', req.query);
+    console.log('All query keys:', Object.keys(req.query));
+    
+    const itemId = req.query.id;
+    const shareToken = req.query.token || req.query['share-token'];
+    
+    console.log('Parsed params:', { itemId, shareToken });
+    console.log('ItemId type:', typeof itemId, 'ShareToken type:', typeof shareToken);
+    
+    if (!itemId || !shareToken) {
+      console.log('Missing required params - itemId exists:', !!itemId, 'shareToken exists:', !!shareToken);
+      return res.status(400).json({ error: 'Item ID and share token are required' });
+    }
+
+    // Get the item from Firestore using Admin SDK (bypasses security rules)
+    const itemRef = db.collection('items').doc(itemId);
+    const doc = await itemRef.get();
+
+    if (!doc.exists) {
+      console.log('DEBUG: Item not found in Firestore');
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const itemData = doc.data();
+    console.log('DEBUG: Item data loaded:', {
+      id: itemData.id,
+      title: itemData.title,
+      isShared: itemData.isShared,
+      hasShareToken: !!itemData.shareToken,
+      shareTokenMatch: itemData.shareToken === shareToken,
+      createdBy: itemData.createdBy,
+      actualToken: itemData.shareToken,
+      requestedToken: shareToken
+    });
+    
+    // Verify item is shared and token matches
+    if (!itemData.isShared || itemData.shareToken !== shareToken) {
+      console.log('DEBUG: Token validation failed');
+      return res.status(403).json({ error: 'Invalid share token or item not shared' });
+    }
+
+    console.log('DEBUG: Token validation passed, returning item');
+    // Return item data with read-only flag
+    res.json({
+      ...itemData,
+      isReadOnly: true
+    });
+
+  } catch (error) {
+    console.error('Error getting shared item:', error);
+    res.status(500).json({ error: 'Failed to get shared item' });
+  }
 });
 
 exports.track = functions.https.onRequest(async (req, res) => {

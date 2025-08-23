@@ -9,14 +9,36 @@ if (window.zenumlDesktop) {
   itemService = window.itemService;
 } else {
   itemService = {
-    async getItem(id) {
-      var remoteDb = await window.db.getDb();
-      return remoteDb
-        .doc(`items/${id}`)
-        .get()
-        .then((doc) => {
-          return doc.data();
-        });
+    async getItem(id, shareToken = null) {
+      if (shareToken) {
+        // Use Cloud Function for shared items
+        const response = await fetch(`/get-shared-item?id=${id}&share-token=${shareToken}`);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to load shared item');
+        }
+        return await response.json();
+      } else {
+        // Direct Firestore access for user's own items
+        var remoteDb = await window.db.getDb();
+        return remoteDb
+          .doc(`items/${id}`)
+          .get()
+          .then((doc) => {
+            if (!doc.exists) {
+              throw new Error('Item not found');
+            }
+            
+            const item = doc.data();
+            
+            // Verify user ownership
+            if (!window.user || item.createdBy !== window.user.uid) {
+              throw new Error('Unauthorized access to item');
+            }
+            
+            return item;
+          });
+      }
     },
     async getUserItemIds() {
       if (window.user) {

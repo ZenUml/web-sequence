@@ -1,10 +1,11 @@
 import firebase from 'firebase/app';
 
 async function syncDiagram(currentItem) {
-  if (location.host === 'localhost:8080') {
-    console.log('Skipping sync-diagram call in local environment');
-    return;
-  }
+  // Remove skip for local development to test Firebase emulator
+  // if (location.host === 'localhost:3000') {
+  //   console.log('Skipping sync-diagram call in local environment');
+  //   return;
+  // }
 
   const { id, title, js } = currentItem;
   if (!js || !title) {
@@ -30,25 +31,28 @@ async function syncDiagram(currentItem) {
     name: title,
     content: js,
     description: 'Shared diagram from https://app.zenuml.com',
+    origin: window.location.origin, // Pass the frontend origin
   };
-  console.log('calling /sync-diagram with data:', data);
+  console.log('calling /create-share with data:', data);
   try {
-    const response = await fetch('/sync-diagram', {
+    const response = await fetch('/create-share', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
     });
     const result = await response.json();
-    console.log('save to php app result: ', result);
+    console.log('Firebase share result: ', result);
     return result;
   } catch (error) {
-    console.warn('Error when calling /sync-diagram', error);
-    throw Error('Error when calling /sync-diagram');
+    console.warn('Error when calling /create-share', error);
+    throw Error('Error when calling /create-share');
   }
 }
 
 function getShareLink(syncResult) {
-  return `${syncResult.page_share}?v=${syncResult.md5}`;
+  // Check if URL already has query parameters
+  const separator = syncResult.page_share.includes('?') ? '&' : '?';
+  return `${syncResult.page_share}${separator}v=${syncResult.md5}`;
 }
 
 export { syncDiagram, getShareLink };

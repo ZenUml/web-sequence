@@ -229,25 +229,32 @@ export default class App extends Component {
       };
 
       //If query parameter 'itemId' presents
-      let itemId = getQueryParameter('itemId');
+      let itemId = getQueryParameter('itemId') || getQueryParameter('id');
+      let shareToken = getQueryParameter('share-token');
+      console.log('Loading item with params:', { itemId, shareToken, user: window.user });
       if (window.zenumlDesktop) {
         itemId = await itemService.getCurrentItemId();
       }
       if (itemId) {
-        itemService.getItem(itemId).then(
+        itemService.getItem(itemId, shareToken).then(
           (item) => {
             if (item) {
-              const resolveCurrentItem = (items) => {
-                if ((items && items[item.id]) || window.zenumlDesktop) {
-                  this.setCurrentItem(item).then(() => this.refreshEditor());
-                } else {
-                  this.forkItem(item);
-                }
-              };
-              if (this.state.user && this.state.user.items) {
-                resolveCurrentItem(user.items);
+              // For shared items (read-only), directly set as current item
+              if (item.isReadOnly) {
+                this.setCurrentItem(item).then(() => this.refreshEditor());
               } else {
-                this.onUserItemsResolved = resolveCurrentItem;
+                const resolveCurrentItem = (items) => {
+                  if ((items && items[item.id]) || window.zenumlDesktop) {
+                    this.setCurrentItem(item).then(() => this.refreshEditor());
+                  } else {
+                    this.forkItem(item);
+                  }
+                };
+                if (this.state.user && this.state.user.items) {
+                  resolveCurrentItem(user.items);
+                } else {
+                  this.onUserItemsResolved = resolveCurrentItem;
+                }
               }
             } else {
               //Invalid itemId
@@ -260,8 +267,12 @@ export default class App extends Component {
           },
           (error) => {
             //Insufficient permission
+            console.error('Failed to load item:', error);
             if (window.zenumlDesktop) {
               this.createNewItem();
+            } else if (shareToken) {
+              // For shared items, show error instead of redirecting
+              alert('Unable to load shared diagram. It may not exist or sharing may be disabled.');
             } else {
               window.location.href = '/';
             }
@@ -868,6 +879,11 @@ BookLibService.Borrow(id) {
 
   // Save current item to storage
   async saveItem() {
+    // Skip save dialog and save operation for read-only shared items
+    if (this.state.currentItem.isReadOnly) {
+      return;
+    }
+    
     if (
       !window.user &&
       !window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN] &&

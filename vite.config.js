@@ -58,5 +58,37 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
+    proxy: {
+      '/create-share': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+        rewrite: (path) => `/staging-zenuml-27954/us-central1/create_share`
+      },
+      '/get-shared-item': {
+        target: 'http://127.0.0.1:5002/staging-zenuml-27954/us-central1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/get-shared-item', '/get_shared_item')
+      },
+      '/sync-diagram': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+        rewrite: (path) => `/staging-zenuml-27954/us-central1/sync_diagram`
+      },
+      '/authenticate': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+        rewrite: (path) => `/staging-zenuml-27954/us-central1/authenticate`
+      },
+      '/track': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+        rewrite: (path) => `/staging-zenuml-27954/us-central1/track`
+      },
+      '/info': {
+        target: 'http://127.0.0.1:5002',
+        changeOrigin: true,
+        rewrite: (path) => `/staging-zenuml-27954/us-central1/info`
+      },
+    }
   },
 }); 
