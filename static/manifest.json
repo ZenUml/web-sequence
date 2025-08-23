@@ -14,7 +14,7 @@
     "default_icon": {
       "16": "icon-16.png",
       "48": "icon-48.png",
-      "128": "icon-128.png"
+      "128": "favicon-128x128.png"
     }
   },
   "background": {
@@ -23,6 +23,6 @@
   "icons": {
     "16": "icon-16.png",
     "48": "icon-48.png",
-    "128": "icon-128.png"
+    "128": "favicon-128x128.png"
   }
 }

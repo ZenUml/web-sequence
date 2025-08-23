@@ -140,17 +140,15 @@ gulp.task('packageExtension', function () {
   childProcess.execSync('cp src/extension/eventPage.js extension');
   childProcess.execSync('cp src/extension/script.js extension');
 
-  // Copy icon files from their actual locations
+  // Copy icon files for Chrome Extension
+  if (fs.existsSync('static/favicon-128x128.png')) {
+    childProcess.execSync('cp static/favicon-128x128.png extension');
+  }
   if (fs.existsSync('static/icon-16.png')) {
     childProcess.execSync('cp static/icon-16.png extension');
   }
   if (fs.existsSync('static/icon-48.png')) {
     childProcess.execSync('cp static/icon-48.png extension');
-  }
-  if (fs.existsSync('icon-128.png')) {
-    childProcess.execSync('cp icon-128.png extension');
-  } else if (fs.existsSync('static/icon-128.png')) {
-    childProcess.execSync('cp static/icon-128.png extension');
   }
 
   childProcess.execSync('rm -rf extension/partials');
