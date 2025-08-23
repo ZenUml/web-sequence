@@ -31,19 +31,19 @@ async function syncDiagram(currentItem) {
     content: js,
     description: 'Shared diagram from https://app.zenuml.com',
   };
-  console.log('calling /sync-diagram with data:', data);
+  console.log('calling /create-share with data:', data);
   try {
-    const response = await fetch('/sync-diagram', {
+    const response = await fetch('/create-share', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
     });
     const result = await response.json();
-    console.log('save to php app result: ', result);
+    console.log('Firebase share result: ', result);
     return result;
   } catch (error) {
-    console.warn('Error when calling /sync-diagram', error);
-    throw Error('Error when calling /sync-diagram');
+    console.warn('Error when calling /create-share', error);
+    throw Error('Error when calling /create-share');
   }
 }
 

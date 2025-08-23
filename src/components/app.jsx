@@ -229,12 +229,13 @@ export default class App extends Component {
       };
 
       //If query parameter 'itemId' presents
-      let itemId = getQueryParameter('itemId');
+      let itemId = getQueryParameter('itemId') || getQueryParameter('id');
+      let shareToken = getQueryParameter('share-token');
       if (window.zenumlDesktop) {
         itemId = await itemService.getCurrentItemId();
       }
       if (itemId) {
-        itemService.getItem(itemId).then(
+        itemService.getItem(itemId, shareToken).then(
           (item) => {
             if (item) {
               const resolveCurrentItem = (items) => {

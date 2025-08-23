@@ -9,13 +9,34 @@ if (window.zenumlDesktop) {
   itemService = window.itemService;
 } else {
   itemService = {
-    async getItem(id) {
+    async getItem(id, shareToken = null) {
       var remoteDb = await window.db.getDb();
       return remoteDb
         .doc(`items/${id}`)
         .get()
         .then((doc) => {
-          return doc.data();
+          if (!doc.exists) {
+            throw new Error('Item not found');
+          }
+          
+          const item = doc.data();
+          
+          // First check: user ownership (highest priority)
+          if (window.user && item.createdBy === window.user.uid) {
+            return item; // Owner has full access
+          }
+          
+          // Second check: shared access with token
+          if (shareToken) {
+            if (!item.isShared || item.shareToken !== shareToken) {
+              throw new Error('Invalid share token or item not shared');
+            }
+            // Return read-only version for shared access
+            return { ...item, isReadOnly: true };
+          }
+          
+          // Third check: no user but no share token (anonymous access not allowed)
+          throw new Error('Unauthorized access to item');
         });
     },
     async getUserItemIds() {

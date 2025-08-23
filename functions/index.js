@@ -112,6 +112,56 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
   request.end();
 });
 
+exports.create_share = functions.https.onRequest(async (req, res) => {
+  try {
+    const decoded = await verifyIdToken(req.body.token);
+    const itemId = req.body.id;
+    
+    if (!itemId) {
+      return res.status(400).json({ error: 'Item ID is required' });
+    }
+
+    // Get the item from Firestore
+    const itemRef = db.collection('items').doc(itemId);
+    const doc = await itemRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const itemData = doc.data();
+    
+    // Verify user owns this item
+    if (itemData.createdBy !== decoded.uid) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+
+    // Generate or reuse share token
+    const crypto = require('crypto');
+    const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
+    
+    // Update item with sharing info
+    await itemRef.update({
+      isShared: true,
+      shareToken: shareToken,
+      sharedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Generate content hash for cache busting
+    const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
+    
+    // Return in the same format as the old API
+    res.json({
+      page_share: `https://${req.get('host')}?id=${itemId}&share-token=${shareToken}`,
+      md5: contentHash
+    });
+
+  } catch (error) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: 'Failed to create share' });
+  }
+});
+
 exports.track = functions.https.onRequest(async (req, res) => {
   if (!req.body.event) {
     console.log('missing req.body.event');
