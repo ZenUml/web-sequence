@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import Modal from './Modal.jsx';
 import { saveSurveyResponse } from '../services/surveyService.js';
 import { trackEvent } from '../analytics.js';
+import mixpanel from '../services/mixpanel.js';
 
 const FEATURES = [
   {
@@ -79,7 +80,24 @@ export function FeaturePrioritySurveyModal({ show, closeHandler, userProfile }) 
         timestamp: Date.now()
       });
       
+      // Track to Google Analytics
       trackEvent('survey', 'completed', 'feature-priority-topbottom');
+      
+      // Track to Mixpanel with detailed data
+      mixpanel.track({
+        event: 'featurePrioritySurveyCompleted',
+        category: 'survey',
+        mostImportant: mostImportant,
+        leastImportant: leastImportant,
+        mostImportantName: getFeatureById(mostImportant).name,
+        leastImportantName: getFeatureById(leastImportant).name,
+        availableFeatures: availableFeatures.join(','),
+        totalFeatures: FEATURES.length,
+        diagramCount: userProfile?.diagramCount || 0,
+        isAuthenticated: userProfile?.isAuthenticated || false,
+        isPowerUser: userProfile?.isPowerUser || false
+      });
+      
       setIsSubmitted(true);
       
       // Auto close after 2 seconds
@@ -100,7 +118,20 @@ export function FeaturePrioritySurveyModal({ show, closeHandler, userProfile }) 
 
   const handleClose = () => {
     if (!isSubmitted) {
+      // Track to Google Analytics
       trackEvent('survey', 'dismissed', 'feature-priority');
+      
+      // Track to Mixpanel
+      mixpanel.track({
+        event: 'featurePrioritySurveyDismissed',
+        category: 'survey',
+        hadMostImportant: !!mostImportant,
+        hadLeastImportant: !!leastImportant,
+        mostImportantIfSelected: mostImportant || null,
+        leastImportantIfSelected: leastImportant || null,
+        diagramCount: userProfile?.diagramCount || 0,
+        isAuthenticated: userProfile?.isAuthenticated || false
+      });
     }
     closeHandler();
   };
