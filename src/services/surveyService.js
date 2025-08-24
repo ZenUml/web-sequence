@@ -86,8 +86,24 @@ export function hasUserSubmittedSurvey() {
  */
 export function getUserProfileForSurvey(savedItems = []) {
   try {
-    const user = firebase.auth().currentUser;
-    const accountCreatedAt = user?.metadata?.creationTime;
+    // Try to get user from Firebase auth, fallback to window.user
+    let user = null;
+    let accountCreatedAt = null;
+    
+    try {
+      user = firebase.auth().currentUser;
+      accountCreatedAt = user?.metadata?.creationTime;
+    } catch (firebaseError) {
+      // Firebase might not be initialized, fallback to window.user
+      user = window.user;
+      accountCreatedAt = user?.createdAt;
+    }
+    
+    // If no Firebase user but window.user exists, use that
+    if (!user && window.user) {
+      user = window.user;
+      accountCreatedAt = user.createdAt;
+    }
     
     let accountAge = null;
     if (accountCreatedAt) {
