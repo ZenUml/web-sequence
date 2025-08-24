@@ -695,7 +695,8 @@ BookLibService.Borrow(id) {
     trackGaSetField('page', '/');
     trackPageView();
 
-    // Note: Feature priority survey will be initialized after items are loaded
+    // Initialize feature priority survey after a longer delay to allow items to load
+    this.initializeFeaturePrioritySurvey(10000); // 10 seconds delay
 
     // Expose app instance for testing
     window._app = this;
@@ -1734,6 +1735,12 @@ BookLibService.Borrow(id) {
 
   async checkAndShowFeaturePrioritySurvey() {
     try {
+      // Ensure items are loaded in global state if not already
+      if (!this.state.savedItems || Object.keys(this.state.savedItems).length === 0) {
+        console.log('Loading items for survey check...');
+        await this.fetchItems(true); // Force loading items globally
+      }
+      
       // Get current saved items to determine user profile
       const items = Object.values(this.state.savedItems || {});
       const userProfile = getUserProfileForSurvey(items);
