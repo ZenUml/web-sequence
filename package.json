@@ -14,6 +14,9 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "test": "jest ./",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
     "deploy:staging": "firebase deploy --project staging",
     "deploy:prod": "firebase deploy --project prod",
     "upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret 5bIK01PSsjRykdAqaV-v4fFZ --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
@@ -42,6 +45,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
     "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "@playwright/test": "^1.55.0",
     "@preact/preset-vite": "^2.10.1",
     "@vitejs/plugin-legacy": "^6.1.1",
     "autoprefixer": "^10.4.21",

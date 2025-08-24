@@ -240,7 +240,7 @@ export function FeaturePrioritySurveyModal({ show, closeHandler, userProfile }) 
                 const isSelected = isMostImportant || isLeastImportant;
 
                 return (
-                  <div key={feature.id} class={`
+                  <div key={feature.id} data-feature-id={feature.id} class={`
                     bg-gray-700 hover:bg-gray-600 transition-colors duration-200 rounded-lg 
                     border border-gray-600 p-4
                     ${isSelected ? 'opacity-50' : ''}
