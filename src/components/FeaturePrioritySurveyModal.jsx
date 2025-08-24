@@ -17,18 +17,6 @@ const FEATURES = [
     icon: 'folder_open'
   },
   {
-    id: 'drag-edit',
-    name: 'Drag & Drop Editing',
-    description: 'Visual diagram editing with drag and drop',
-    icon: 'drag_indicator'
-  },
-  {
-    id: 'enhanced-editor',
-    name: 'Enhanced Code Editor',
-    description: 'Advanced code editing with better autocomplete',
-    icon: 'code'
-  },
-  {
     id: 'ai-assistant',
     name: 'AI Assistance',
     description: 'AI-powered diagram generation and suggestions',
