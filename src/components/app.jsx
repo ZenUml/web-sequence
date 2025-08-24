@@ -562,6 +562,8 @@ BookLibService.Borrow(id) {
         items.forEach((item) => {
           this.state.savedItems[item.id] = item;
         });
+        // Initialize survey check after items are loaded
+        this.initializeFeaturePrioritySurvey();
       }
       d.resolve(items);
       return d.promise;
@@ -569,6 +571,10 @@ BookLibService.Borrow(id) {
     db.local.get('items', (result) => {
       var itemIds = Object.getOwnPropertyNames(result.items || {});
       if (!itemIds.length) {
+        // Initialize survey check even if no items (will likely not show due to criteria)
+        if (shouldSaveGlobally) {
+          this.initializeFeaturePrioritySurvey();
+        }
         d.resolve([]);
       }
 
@@ -582,6 +588,10 @@ BookLibService.Borrow(id) {
           items.push(itemResult[itemIds[i]]);
           // Check if we have all items now.
           if (itemIds.length === items.length) {
+            // Initialize survey check after all local items are loaded
+            if (shouldSaveGlobally) {
+              this.initializeFeaturePrioritySurvey();
+            }
             d.resolve(items);
           }
         });
@@ -685,8 +695,7 @@ BookLibService.Borrow(id) {
     trackGaSetField('page', '/');
     trackPageView();
 
-      // Initialize feature priority survey logic
-    this.initializeFeaturePrioritySurvey();
+    // Note: Feature priority survey will be initialized after items are loaded
 
     // Expose app instance for testing
     window._app = this;
@@ -1698,8 +1707,9 @@ BookLibService.Borrow(id) {
 
   /**
    * Initialize feature priority survey logic
+   * @param {number} delay - Optional delay in milliseconds before checking (default 5000)
    */
-  initializeFeaturePrioritySurvey() {
+  initializeFeaturePrioritySurvey(delay = 5000) {
     // Skip if in embed mode or desktop
     if (this.isEmbed || window.zenumlDesktop) {
       return;
@@ -1711,10 +1721,15 @@ BookLibService.Borrow(id) {
       return;
     }
 
+    // Clear any existing timer
+    if (this.surveyCheckTimer) {
+      clearTimeout(this.surveyCheckTimer);
+    }
+
     // Set up timer to potentially show survey
-    setTimeout(() => {
+    this.surveyCheckTimer = setTimeout(() => {
       this.checkAndShowFeaturePrioritySurvey();
-    }, 5000); // Wait 5 seconds before checking
+    }, delay);
   }
 
   async checkAndShowFeaturePrioritySurvey() {
