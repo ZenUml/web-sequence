@@ -53,6 +53,8 @@ import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
+import { FeaturePrioritySurveyModal } from './FeaturePrioritySurveyModal.jsx';
+import { hasUserSubmittedSurvey, getUserProfileForSurvey } from '../services/surveyService.js';
 
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
@@ -81,6 +83,7 @@ export default class App extends Component {
       isJs13KModalOpen: false,
       isCreateNewModalOpen: false,
       openCheatSheet: false,
+      isFeaturePrioritySurveyModalOpen: false,
     };
     this.state = {
       isSavedItemPaneOpen: false,
@@ -681,6 +684,9 @@ BookLibService.Borrow(id) {
 
     trackGaSetField('page', '/');
     trackPageView();
+
+      // Initialize feature priority survey logic
+    this.initializeFeaturePrioritySurvey();
 
     // Expose app instance for testing
     window._app = this;
@@ -1690,6 +1696,61 @@ BookLibService.Borrow(id) {
     });
   }
 
+  /**
+   * Initialize feature priority survey logic
+   */
+  initializeFeaturePrioritySurvey() {
+    // Skip if in embed mode or desktop
+    if (this.isEmbed || window.zenumlDesktop) {
+      return;
+    }
+
+    // Check if user has already submitted survey
+    if (hasUserSubmittedSurvey()) {
+      console.log('Feature priority survey already submitted, skipping');
+      return;
+    }
+
+    // Set up timer to potentially show survey
+    setTimeout(() => {
+      this.checkAndShowFeaturePrioritySurvey();
+    }, 5000); // Wait 5 seconds before checking
+  }
+
+  async checkAndShowFeaturePrioritySurvey() {
+    try {
+      // Get current saved items to determine user profile
+      const items = Object.values(this.state.savedItems || {});
+      const userProfile = getUserProfileForSurvey(items);
+
+      // Check criteria for showing survey (TEMPORARILY RELAXED FOR TESTING)
+      const shouldShow = (
+        userProfile.diagramCount >= 0 && // Any number of diagrams (was >= 2)
+        (userProfile.isPowerUser || userProfile.accountAge > 0 || true) && // Always true (was > 7)
+        !hasUserSubmittedSurvey() // Haven't submitted yet
+      );
+
+      if (shouldShow) {
+        console.log('Showing feature priority survey', userProfile);
+        await this.setState({ 
+          isFeaturePrioritySurveyModalOpen: true,
+          surveyUserProfile: userProfile 
+        });
+      } else {
+        console.log('Not showing survey - criteria not met', userProfile);
+      }
+    } catch (error) {
+      console.error('Error checking survey criteria:', error);
+    }
+  }
+
+  async handleFeaturePrioritySurveyClose() {
+    await this.setState({ 
+      isFeaturePrioritySurveyModalOpen: false,
+      surveyUserProfile: null 
+    });
+  }
+
   render() {
     // remove field imageBase64 from currentItem and save it to a local variable as a copy
     const { imageBase64, ...currentItem } = this.state.currentItem;
@@ -1900,6 +1961,11 @@ BookLibService.Borrow(id) {
         <CheatSheetModal
           open={this.state.openCheatSheet}
           onClose={() => this.setState({ openCheatSheet: false })}
+        />
+        <FeaturePrioritySurveyModal
+          show={this.state.isFeaturePrioritySurveyModalOpen}
+          closeHandler={this.handleFeaturePrioritySurveyClose.bind(this)}
+          userProfile={this.state.surveyUserProfile}
         />
         <div
           class="modal-overlay bg-black/50 backdrop-blur-sm"
