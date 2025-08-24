@@ -1732,12 +1732,42 @@ BookLibService.Borrow(id) {
 
       if (shouldShow) {
         console.log('Showing feature priority survey', userProfile);
+        
+        // Track survey shown event
+        trackEvent('survey', 'shown', 'feature-priority');
+        mixpanel.track({
+          event: 'featurePrioritySurveyShown',
+          category: 'survey',
+          diagramCount: userProfile.diagramCount,
+          accountAge: userProfile.accountAge,
+          isAuthenticated: userProfile.isAuthenticated,
+          isPowerUser: userProfile.isPowerUser
+        });
+        
         await this.setState({ 
           isFeaturePrioritySurveyModalOpen: true,
           surveyUserProfile: userProfile 
         });
       } else {
         console.log('Not showing survey - criteria not met', userProfile);
+        
+        // Track why survey was not shown
+        const reasons = [];
+        if (userProfile.diagramCount < 2) reasons.push('insufficient_diagrams');
+        if (!userProfile.isPowerUser && userProfile.accountAge <= 7) reasons.push('account_too_new');
+        if (hasUserSubmittedSurvey()) reasons.push('already_submitted');
+        
+        trackEvent('survey', 'criteria_not_met', reasons.join(','));
+        mixpanel.track({
+          event: 'featurePrioritySurveyCriteriaNotMet',
+          category: 'survey',
+          reasons: reasons.join(','),
+          diagramCount: userProfile.diagramCount,
+          accountAge: userProfile.accountAge,
+          isAuthenticated: userProfile.isAuthenticated,
+          isPowerUser: userProfile.isPowerUser,
+          hasSubmitted: hasUserSubmittedSurvey()
+        });
       }
     } catch (error) {
       console.error('Error checking survey criteria:', error);
