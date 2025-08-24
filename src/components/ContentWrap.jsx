@@ -445,12 +445,19 @@ export default class ContentWrap extends Component {
     // Replace correct css file in LINK tags's href
     window.editorThemeLinkTag.href = `lib/codemirror/theme/${prefs.editorTheme}.css`;
     window.fontStyleTag.textContent =
-      window.fontStyleTemplate.textContent.replace(
-        /fontname/g,
-        (prefs.editorFont === 'other'
-          ? prefs.editorCustomFont
-          : prefs.editorFont) || 'FiraCode',
-      );
+      window.fontStyleTemplate.textContent
+        .replace(
+          /fontname/g,
+          (prefs.editorFont === 'other'
+            ? prefs.editorCustomFont
+            : prefs.editorFont) || 'FiraCode',
+        )
+        .replace(
+          /__FONTNAME__/g,
+          '/' + ((prefs.editorFont === 'other'
+            ? prefs.editorCustomFont
+            : prefs.editorFont) || 'FiraCode'),
+        );
     // window.customEditorFontInput.classList[
     // 	prefs.editorFont === 'other' ? 'remove' : 'add'
     // ]('hide');
