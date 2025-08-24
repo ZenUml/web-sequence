@@ -194,7 +194,8 @@ export function computeJs(
 	  }
 
 	  if(app && (cursor !== null || cursor !== undefined)) {
-		  app.store.state.cursor = cursor;
+	    // TODO: Fix this in zenuml core.
+		  // app.store.state.cursor = cursor;
 	  }
 	}, false);`;
 
