@@ -14,7 +14,7 @@ if (process.env.FUNCTIONS_EMULATOR === 'true') {
 const db = admin.firestore();
 
 //Mixpanel project: Confluence Analytics(new)
-const mixpanel = Mixpanel.init('0c62cea9ed2247f4824bf196f6817941');
+const mixpanel = Mixpanel.init('78617e65fdba543d752fb7f6483d55f4');
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
@@ -131,7 +131,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
       decoded = await verifyIdToken(req.body.token);
     }
     const itemId = req.body.id;
-    
+
     if (!itemId) {
       return res.status(400).json({ error: 'Item ID is required' });
     }
@@ -145,7 +145,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     }
 
     const itemData = doc.data();
-    
+
     // Verify user owns this item
     if (itemData.createdBy !== decoded.uid) {
       return res.status(403).json({ error: 'Unauthorized access' });
@@ -154,7 +154,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     // Generate or reuse share token
     const crypto = require('crypto');
     const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
-    
+
     // Update item with sharing info
     await itemRef.update({
       isShared: true,
@@ -164,7 +164,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
 
     // Generate content hash for cache busting
     const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
-    
+
     // Return in the same format as the old API
     // Use origin from frontend request, with fallback to environment-specific defaults
     let baseUrl = req.body.origin;
@@ -180,7 +180,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
         baseUrl = 'https://app.zenuml.com';
       }
     }
-    
+
     res.json({
       page_share: `${baseUrl}?id=${itemId}&share-token=${shareToken}`,
       md5: contentHash
@@ -198,13 +198,13 @@ exports.get_shared_item = functions.https.onRequest(async (req, res) => {
     console.log('Full request URL:', req.url);
     console.log('Query object:', req.query);
     console.log('All query keys:', Object.keys(req.query));
-    
+
     const itemId = req.query.id;
     const shareToken = req.query.token || req.query['share-token'];
-    
+
     console.log('Parsed params:', { itemId, shareToken });
     console.log('ItemId type:', typeof itemId, 'ShareToken type:', typeof shareToken);
-    
+
     if (!itemId || !shareToken) {
       console.log('Missing required params - itemId exists:', !!itemId, 'shareToken exists:', !!shareToken);
       return res.status(400).json({ error: 'Item ID and share token are required' });
@@ -230,7 +230,7 @@ exports.get_shared_item = functions.https.onRequest(async (req, res) => {
       actualToken: itemData.shareToken,
       requestedToken: shareToken
     });
-    
+
     // Verify item is shared and token matches
     if (!itemData.isShared || itemData.shareToken !== shareToken) {
       console.log('DEBUG: Token validation failed');
