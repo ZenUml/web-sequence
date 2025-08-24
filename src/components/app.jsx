@@ -1723,10 +1723,10 @@ BookLibService.Borrow(id) {
       const items = Object.values(this.state.savedItems || {});
       const userProfile = getUserProfileForSurvey(items);
 
-      // Check criteria for showing survey (TEMPORARILY RELAXED FOR TESTING)
+      // Check criteria for showing survey
       const shouldShow = (
-        userProfile.diagramCount >= 0 && // Any number of diagrams (was >= 2)
-        (userProfile.isPowerUser || userProfile.accountAge > 0 || true) && // Always true (was > 7)
+        userProfile.diagramCount >= 2 && // At least 2 diagrams
+        (userProfile.isPowerUser || userProfile.accountAge > 7) && // Power user or account > 7 days
         !hasUserSubmittedSurvey() // Haven't submitted yet
       );
 
