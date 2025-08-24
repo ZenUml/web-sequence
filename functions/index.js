@@ -257,11 +257,13 @@ exports.track = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  mixpanel.track(req.body.event, {
-    distinct_id: req.body.userId,
-    event_category: req.body.category,
-    event_label: req.body.label,
+  // Extract event name and userId, pass through all other properties
+  const { event, userId, ...eventProperties } = req.body;
+  
+  mixpanel.track(event, {
+    distinct_id: userId,
     displayProductName: 'FireWeb',
+    ...eventProperties, // Pass through all additional properties from frontend
   });
 
   // Send a success response to prevent 502 Bad Gateway error
