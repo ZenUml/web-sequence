@@ -26,18 +26,6 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     assetsDir: 'assets',
-    // Set reasonable chunk size limit for this complex application
-    chunkSizeWarningLimit: 1000, // 1MB limit instead of default 500KB
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Separate large vendor libraries
-          codemirror: ['codemirror'],
-          firebase: ['firebase'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-radio-group', '@radix-ui/react-select', '@radix-ui/react-tooltip'],
-        },
-      },
-    },
   },
   define: {
     __COMMITHASH__: JSON.stringify(getCommitHash()),
