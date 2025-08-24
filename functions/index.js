@@ -260,11 +260,21 @@ exports.track = functions.https.onRequest(async (req, res) => {
   // Extract event name and userId, pass through all other properties
   const { event, userId, ...eventProperties } = req.body;
   
-  mixpanel.track(event, {
+  console.log('Track request received:', {
+    event,
+    userId,
+    eventProperties
+  });
+  
+  const mixpanelData = {
     distinct_id: userId,
     displayProductName: 'FireWeb',
     ...eventProperties, // Pass through all additional properties from frontend
-  });
+  };
+  
+  console.log('Sending to Mixpanel:', { event, properties: mixpanelData });
+  
+  mixpanel.track(event, mixpanelData);
 
   // Send a success response to prevent 502 Bad Gateway error
   res.status(200).send('Event tracked successfully');
