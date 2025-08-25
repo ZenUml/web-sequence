@@ -26,10 +26,18 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install && pnpm build
       - run: pnpm release
-      - run: cd functions && pnpm install && pnpm deploy:config:staging --token ${{ secrets.FIREBASE_TOKEN }}
+      - name: Setup Firebase service account
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+      - run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          cd functions && pnpm install && pnpm deploy:config:staging
       - name: Deploy to staging
         if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
-        run: pnpm deploy:staging --token ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          pnpm deploy:staging
       - name: Upload artifacts # Find artifacts under actions/jobs
         uses: actions/upload-artifact@v4
         with:
