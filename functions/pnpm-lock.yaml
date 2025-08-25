@@ -15,8 +15,8 @@ importers:
         specifier: ~11.11.0
         version: 11.11.1(encoding@0.1.13)
       firebase-functions:
-        specifier: ^6.4.0
-        version: 6.4.0(firebase-admin@11.11.1(encoding@0.1.13))
+        specifier: ^4.9.0
+        version: 4.9.0(firebase-admin@11.11.1(encoding@0.1.13))
       mixpanel:
         specifier: ^0.18.0
         version: 0.18.1
@@ -293,6 +293,9 @@ packages:
 
   '@types/express@4.17.23':
     resolution: {integrity: sha512-Crp6WY9aTYP3qPi2wGDo9iUe/rceX01UMhnF1jmwDcKCFM6cx7YhGP/Mpr3y9AASpfHixIG0E6azCcL5OcDHsQ==}
+
+  '@types/express@4.17.3':
+    resolution: {integrity: sha512-I8cGRJj3pyOLs/HndoP+25vOqhqWkAZsWMEmq1qXy/b/M3ppufecUwaK2/TVDVxcV61/iSdhykUjQQ2DLSrTdg==}
 
   '@types/glob@9.0.0':
     resolution: {integrity: sha512-00UxlRaIUvYm4R4W9WYkN8/J+kV8fmOQ7okeH6YFtGWFMt3odD45tpG5yA5wnL7HE6lLgjaTW5n14ju2hl2NNA==}
@@ -1181,12 +1184,12 @@ packages:
     resolution: {integrity: sha512-UyEbq+3u6jWzCYbUntv/HuJiTixwh36G1R9j0v71mSvGAx/YZEWEW7uSGLYxBYE6ckVRQoKMr40PYUEzrm/4dg==}
     engines: {node: '>=14'}
 
-  firebase-functions@6.4.0:
-    resolution: {integrity: sha512-Q/LGhJrmJEhT0dbV60J4hCkVSeOM6/r7xJS/ccmkXzTWMjo+UPAYX9zlQmGlEjotstZ0U9GtQSJSgbB2Z+TJDg==}
+  firebase-functions@4.9.0:
+    resolution: {integrity: sha512-IqxOEsVAWGcRv9KRGzWQR5mOFuNsil3vsfkRPPiaV1U/ATC27/jbahh4z8I4rW8Xqa6cQE5xqnw0ueyMH7i7Ag==}
     engines: {node: '>=14.10.0'}
     hasBin: true
     peerDependencies:
-      firebase-admin: ^11.10.0 || ^12.0.0 || ^13.0.0
+      firebase-admin: ^10.0.0 || ^11.0.0 || ^12.0.0
 
   firebase-tools@13.35.1:
     resolution: {integrity: sha512-QmMy4hnd0Q+V+7GFhZUV80+kG0WC1+UOtuaaQWx+cstt+XepUcpju/KW4cBknnyql521BghfuAhveckQQ1g+HA==}
@@ -3462,6 +3465,12 @@ snapshots:
       '@types/qs': 6.14.0
       '@types/serve-static': 1.15.8
 
+  '@types/express@4.17.3':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 4.19.6
+      '@types/serve-static': 1.15.8
+
   '@types/glob@9.0.0':
     dependencies:
       glob: 11.0.3
@@ -4472,10 +4481,10 @@ snapshots:
       - encoding
       - supports-color
 
-  firebase-functions@6.4.0(firebase-admin@11.11.1(encoding@0.1.13)):
+  firebase-functions@4.9.0(firebase-admin@11.11.1(encoding@0.1.13)):
     dependencies:
       '@types/cors': 2.8.19
-      '@types/express': 4.17.23
+      '@types/express': 4.17.3
       cors: 2.8.5
       express: 4.21.2
       firebase-admin: 11.11.1(encoding@0.1.13)
