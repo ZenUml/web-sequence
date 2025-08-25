@@ -152,7 +152,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     }
 
     // Generate or reuse share token
-    const crypto = require('crypto');
+    const crypto = require('node:crypto');
     const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
 
     // Update item with sharing info
