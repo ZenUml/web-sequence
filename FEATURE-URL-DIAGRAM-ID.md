@@ -1,20 +1,35 @@
-# Diagram ID in URL Feature
+# Diagram ID in URL Feature + Multi-Tab Support
 
 ## Overview
-This feature displays the current diagram ID in the URL, making it easier for users to:
+This feature includes two major improvements:
+
+### 1. Diagram ID in URL
+Displays the current diagram ID in the URL, making it easier for users to:
 - Share direct links to specific diagrams
 - Bookmark specific diagrams
 - See which diagram they are currently viewing
 - Navigate back to specific diagrams using browser history
 
+### 2. Multi-Tab Support
+Removes the previous limitation that prevented opening the app in multiple browser tabs:
+- Users can now work with multiple diagrams simultaneously across different tabs
+- Graceful fallback from Firestore persistence when multiple tabs are detected
+- No more blocking error messages when opening additional tabs
+
 ## Implementation Details
 
-### Core Changes
+### URL Feature Changes
 1. **`updateUrlWithDiagramId(diagramId)` method**: Updates the browser URL with the diagram ID using `window.history.replaceState()`
 2. **Modified `setCurrentItem(item)` method**: Automatically updates URL when a diagram is loaded/switched
 3. **Modified `createNewItem()` method**: Ensures new items get unique IDs before setting them as current
 4. **Modified `forkItem(sourceItem)` method**: Generates new IDs for forked diagrams
 5. **Enhanced lastCode handling**: Ensures restored items from localStorage have IDs
+
+### Multi-Tab Support Changes
+1. **Modified `getDb()` function in `src/db.js`**: Graceful fallback when Firestore persistence fails
+2. **Removed blocking alert**: No more error message preventing multi-tab usage
+3. **Persistence behavior**: First tab gets persistence, additional tabs work without persistence
+4. **Error tracking**: Changed from `multiTabError` to `multiTabFallback` for analytics
 
 ### URL Format
 - **With diagram**: `https://app.zenuml.com/?id=<diagram-id>`
@@ -57,3 +72,4 @@ testUrlFunctionality();
 
 ## Files Modified
 - `src/components/app.jsx`: Core implementation of URL updating logic
+- `src/db.js`: Multi-tab support and graceful Firestore persistence fallback
