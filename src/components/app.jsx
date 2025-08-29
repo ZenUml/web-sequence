@@ -297,6 +297,10 @@ export default class App extends Component {
           });
         } else {
           log('Load last unsaved item', lastCode);
+          // Ensure lastCode has an ID for URL display
+          if (!lastCode.id) {
+            lastCode.id = generateRandomId();
+          }
           this.setCurrentItem(lastCode).then(() => this.refreshEditor());
         }
       } else {
@@ -371,7 +375,7 @@ export default class App extends Component {
       }
     }
     const fork = JSON.parse(JSON.stringify(sourceItem));
-    delete fork.id;
+    fork.id = generateRandomId(); // Generate new ID for forked item
     fork.title = '(Forked) ' + sourceItem.title;
     fork.updatedOn = Date.now();
     this.setCurrentItem(fork).then(() => this.refreshEditor());
@@ -381,7 +385,9 @@ export default class App extends Component {
 
   createNewItem() {
     var d = new Date();
+    const newItemId = generateRandomId(); // Generate ID for new item
     this.setCurrentItem({
+      id: newItemId, // Ensure new item has an ID
       title:
         'Untitled ' +
         d.getDate() +
@@ -448,6 +454,22 @@ BookLibService.Borrow(id) {
     mixpanel.track({ event: 'itemRemoved', category: 'fn' });
   }
 
+  // Update URL to include diagram ID
+  updateUrlWithDiagramId(diagramId) {
+    if (window.zenumlDesktop) return; // Skip URL update for desktop app
+    
+    const url = new URL(window.location);
+    
+    if (diagramId) {
+      url.searchParams.set('id', diagramId);
+    } else {
+      url.searchParams.delete('id');
+    }
+    
+    // Use replaceState to avoid adding to browser history
+    window.history.replaceState(null, '', url.toString());
+  }
+
   async setCurrentItem(item) {
     const d = deferred();
     // TODO: remove later
@@ -463,6 +485,10 @@ BookLibService.Borrow(id) {
     // Reset unsaved count, in UI also.
     await this.setState({ unsavedEditCount: 0 });
     currentBrowserTab.setTitle(item.title);
+    
+    // Update URL with current diagram ID
+    this.updateUrlWithDiagramId(item.id);
+    
     return d.promise;
   }
 
