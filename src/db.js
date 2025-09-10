@@ -65,23 +65,27 @@ import { log } from './utils';
           // 	timestampsInSnapshots: true
           // };
           // db.settings(settings);
-          log('firebase db ready', db);
+          log('firebase db ready with persistence enabled', db);
           resolve(db);
         })
         .catch(function (err) {
-          reject(err.code);
+          // Handle persistence failures gracefully by falling back to non-persistent mode
+          log('Firestore persistence failed, falling back to non-persistent mode:', err.code);
+          
           if (err.code === 'failed-precondition') {
-            // Multiple tabs open, persistence can only be enabled
-            // in one tab at a a time.
-            alert(
-              "Opening ZenUML web app in multiple tabs isn't supported at present and it seems like you already have it opened in another tab. Please use in one tab.",
-            );
-            trackEvent('fn', 'multiTabError');
+            // Multiple tabs open, persistence can only be enabled in one tab at a time.
+            // Instead of blocking, continue without persistence to allow multi-tab usage
+            log('Multiple tabs detected, running without persistence for this tab');
+            trackEvent('fn', 'multiTabFallback'); // Changed from 'multiTabError'
           } else if (err.code === 'unimplemented') {
-            // The current browser does not support all of the
-            // features required to enable persistence
-            // ...
+            // The current browser does not support all of the features required to enable persistence
+            log('Persistence not supported in this browser, running without persistence');
           }
+          
+          // Initialize Firestore without persistence - allows multi-tab usage
+          db = firebase.firestore();
+          log('firebase db ready without persistence', db);
+          resolve(db);
         });
     });
     return dbPromise;
