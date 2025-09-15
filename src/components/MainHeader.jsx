@@ -141,7 +141,7 @@ export function MainHeader(props) {
           <svg className="h-5 w-5">
             <use xlinkHref="#icon-plus" />
           </svg>
-          <span>New</span>
+          <span className="hidden lg:inline">New</span>
         </button>
         <button
           id="openItemsBtn"
@@ -154,7 +154,7 @@ export function MainHeader(props) {
           <svg className="h-5 w-5">
             <use xlinkHref="#icon-gallery" />
           </svg>
-          <span>My library</span>
+          <span className="hidden lg:inline">My library</span>
         </button>
       </div>
       <div>
@@ -193,7 +193,7 @@ export function MainHeader(props) {
 
         {!window.user ? (
           <button
-            className="h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"
+            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"
             aria-label="Share diagram link"
             onClick={props.onLogin.bind(this)}
           >
@@ -208,7 +208,7 @@ export function MainHeader(props) {
             onVisibilityChange={setIsSharePanelVisible}
             trigger={
               <button
-                className="h-10 px-4 bg-primary rounded-lg text-white font-semibold hover:opacity-80 duration-200"
+                className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-white font-semibold hover:opacity-80 duration-200"
                 aria-label="Share diagram link"
                 onClick={shareClickHandler}
               >
@@ -225,10 +225,12 @@ export function MainHeader(props) {
           />
         )}
         {featureToggle.isPaymentEnabled ? (
-          <ProductVersionLabel
-            user={props.user}
-            clickHandler={props.proBtnHandler}
-          />
+          <div className="hidden lg:block">
+            <ProductVersionLabel
+              user={props.user}
+              clickHandler={props.proBtnHandler}
+            />
+          </div>
         ) : null}
 
         {props.user ? (
