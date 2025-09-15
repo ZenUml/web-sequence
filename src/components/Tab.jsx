@@ -20,7 +20,7 @@ class Tab extends Component {
     } = this;
 
     let className =
-      'h-12 flex items-center px-10 tab-list-item bg-black-800 font-semibold';
+      'h-8 flex items-center px-10 tab-list-item bg-black-800 font-semibold';
 
     if (activeTab === label) {
       className += ' border-b border-primary bg-black-500 text-primary-400';

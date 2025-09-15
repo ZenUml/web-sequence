@@ -177,11 +177,6 @@ export function MainHeader(props) {
             <svg className="h-5 w-5">
               <use xlinkHref="#icon-pen" />
             </svg>
-            {props.currentItem && props.currentItem.pages && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-black-600 text-gray-300">
-                {props.currentItem.pages.length} {props.currentItem.pages.length === 1 ? 'page' : 'pages'}
-              </span>
-            )}
           </div>
         )}
       </div>
