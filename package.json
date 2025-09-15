@@ -1,6 +1,6 @@
 {
   "name": "web-sequence",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "A real-time tool for generating sequence diagrams",
   "main": "index.html",
   "type": "module",
