@@ -48,7 +48,7 @@ class Tabs extends Component {
     } = this;
     return (
       <div className="h-full flex flex-col">
-        <div className="h-12 flex justify-between items-center bg-black-500">
+        <div className="h-8 flex justify-between items-center bg-black-500">
           <div className="flex justify-start tab-list">
             {children.map((child) => {
               const { label, lineOfCode } = child.props;
