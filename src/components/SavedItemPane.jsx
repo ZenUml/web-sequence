@@ -33,7 +33,9 @@ export default class SavedItemPane extends Component {
 
   async componentDidUpdate(prevProps) {
     if (this.props.isOpen && !prevProps.isOpen) {
-      window.searchInput.value = '';
+      if (window.searchInput) {
+        window.searchInput.value = '';
+      }
       await this.fetchFolders();
     }
   }
@@ -41,13 +43,7 @@ export default class SavedItemPane extends Component {
   async fetchFolders() {
     try {
       const folders = await folderService.getFolders();
-      // Sort folders by name or update time? Let's sort by name
       folders.sort((a, b) => a.name.localeCompare(b.name));
-      
-      // Initialize expanded state for new folders (default: collapsed)
-      // Or maybe expand all by default? Let's keep collapsed.
-      // If we want to remember expansion state, we can keep it in state.
-      
       this.setState({ folders });
     } catch (error) {
       console.error('Error fetching folders', error);
@@ -62,7 +58,7 @@ export default class SavedItemPane extends Component {
       const folder = await folderService.createFolder(name);
       this.setState({
         folders: [...this.state.folders, folder].sort((a, b) => a.name.localeCompare(b.name)),
-        expandedFolders: { ...this.state.expandedFolders, [folder.id]: true } // Auto-expand new folder
+        expandedFolders: { ...this.state.expandedFolders, [folder.id]: true }
       });
       alertsService.add('Folder created');
       trackEvent('ui', 'folderCreated');
@@ -96,9 +92,6 @@ export default class SavedItemPane extends Component {
         folders: this.state.folders.filter(f => f.id !== folder.id)
       });
       alertsService.add('Folder deleted');
-      // Ideally we should update items that were in this folder to remove folderId locally,
-      // but next time items fetch they might still have it if backend didn't clear.
-      // For now, UI will just show them as Unfiled because folder doesn't exist.
     } catch (error) {
       alertsService.add('Failed to delete folder: ' + error.message);
     }
@@ -115,12 +108,11 @@ export default class SavedItemPane extends Component {
 
   async moveItemToFolder(item) {
     const folderName = prompt('Enter folder name to move to (leave empty to unfile):');
-    if (folderName === null) return; // Cancelled
+    if (folderName === null) return;
 
     let targetFolderId = null;
     
     if (folderName.trim()) {
-      // Find folder by name
       const folder = this.state.folders.find(f => f.name.toLowerCase() === folderName.trim().toLowerCase());
       if (folder) {
         targetFolderId = folder.id;
@@ -143,36 +135,30 @@ export default class SavedItemPane extends Component {
       }
     }
 
-    // Update item
     const updatedItem = { ...item, folderId: targetFolderId, updatedOn: Date.now() };
     
     try {
       await itemService.setItem(item.id, updatedItem);
       
-      // Optimistic local update: update this.items array directly
       const itemIndex = this.items.findIndex(i => i.id === item.id);
       if (itemIndex !== -1) {
         this.items[itemIndex] = updatedItem;
       }
       
-      // Also update in props.items if it exists (for consistency)
       if (this.props.items && this.props.items[item.id]) {
         this.props.items[item.id] = updatedItem;
       }
       
-      // Get folder name for feedback message
       const targetFolderName = targetFolderId 
         ? this.state.folders.find(f => f.id === targetFolderId)?.name || 'folder'
         : 'Unfiled';
       alertsService.add(`Moved to ${targetFolderName}`);
       
-      // Expand the target folder so user can see the moved item, then force re-render
       if (targetFolderId) {
         this.setState({
           expandedFolders: { ...this.state.expandedFolders, [targetFolderId]: true }
         });
       } else {
-        // Force re-render to show the item in new location
         this.forceUpdate();
       }
     } catch (e) {
@@ -238,7 +224,6 @@ export default class SavedItemPane extends Component {
       trackEvent('ui', 'openItemKeyboardShortcut');
     }
 
-    // Fork shortcut inside saved creations panel with Ctrl/⌘ + F
     if (isForkKeyPressed) {
       event.preventDefault();
       const item = this.props.items[selectedItemElement.dataset.itemId];
@@ -281,7 +266,6 @@ export default class SavedItemPane extends Component {
   }
 
   async searchInputHandler(e) {
-    console.log('search input handler');
     const text = e.target.value;
     await this.setState({
       searchText: text,
@@ -305,12 +289,10 @@ export default class SavedItemPane extends Component {
     const { folders, expandedFolders } = this.state;
     const items = this.filteredItems();
     
-    // Group items by folder
     const folderGroups = {};
     const unfiledItems = [];
     
     items.forEach(item => {
-      // Check if item belongs to a valid folder
       if (item.folderId && folders.some(f => f.id === item.folderId)) {
         if (!folderGroups[item.folderId]) folderGroups[item.folderId] = [];
         folderGroups[item.folderId].push(item);
@@ -321,12 +303,13 @@ export default class SavedItemPane extends Component {
 
     return (
       <div>
+        {/* Folders */}
         {folders.map(folder => {
           const folderItems = folderGroups[folder.id] || [];
           const isExpanded = expandedFolders[folder.id];
           
           return (
-            <div key={folder.id}>
+            <div key={folder.id} class="mb-1">
               <FolderRow 
                 folder={folder} 
                 isOpen={isExpanded} 
@@ -336,12 +319,12 @@ export default class SavedItemPane extends Component {
                 onDelete={this.deleteFolder.bind(this)}
               />
               {isExpanded && (
-                <div class="pl-4 border-l border-gray-700 ml-2">
+                <div class="pl-6 space-y-2 mt-2">
                   {folderItems.map(item => (
                     <ItemTile
                       key={item.id}
                       item={item}
-                      inline={true}
+                      compact={true}
                       onClick={this.itemClickHandler.bind(this, item)}
                       onForkBtnClick={this.itemForkBtnClickHandler.bind(this, item)}
                       onRemoveBtnClick={this.itemRemoveBtnClickHandler.bind(this, item)}
@@ -349,7 +332,7 @@ export default class SavedItemPane extends Component {
                     />
                   ))}
                   {folderItems.length === 0 && (
-                    <div class="text-gray-500 text-sm italic pl-2 py-1">Empty folder</div>
+                    <div class="text-gray-500 text-sm italic py-2">Empty folder</div>
                   )}
                 </div>
               )}
@@ -357,20 +340,27 @@ export default class SavedItemPane extends Component {
           );
         })}
         
-        {/* Unfiled Items (or Root items) */}
+        {/* Unfiled Items */}
         {unfiledItems.length > 0 && (
-          <div class="mt-2">
-            {folders.length > 0 && <div class="text-gray-500 text-xs uppercase font-bold tracking-wider mb-2 px-2 mt-4">Unfiled</div>}
-            {unfiledItems.map(item => (
-              <ItemTile
-                key={item.id}
-                item={item}
-                onClick={this.itemClickHandler.bind(this, item)}
-                onForkBtnClick={this.itemForkBtnClickHandler.bind(this, item)}
-                onRemoveBtnClick={this.itemRemoveBtnClickHandler.bind(this, item)}
-                onMoveBtnClick={this.itemMoveBtnClickHandler.bind(this, item)}
-              />
-            ))}
+          <div class="mt-4">
+            {folders.length > 0 && (
+              <div class="text-gray-500 text-xs uppercase font-semibold tracking-wider mb-3">
+                Unfiled
+              </div>
+            )}
+            <div class="space-y-2">
+              {unfiledItems.map(item => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  compact={true}
+                  onClick={this.itemClickHandler.bind(this, item)}
+                  onForkBtnClick={this.itemForkBtnClickHandler.bind(this, item)}
+                  onRemoveBtnClick={this.itemRemoveBtnClickHandler.bind(this, item)}
+                  onMoveBtnClick={this.itemMoveBtnClickHandler.bind(this, item)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -383,85 +373,97 @@ export default class SavedItemPane extends Component {
     return (
       <div
         id="js-saved-items-pane"
-        class={`flex flex-col fixed right-0 top-0 bottom-0 w-[450px] py-5 z-10 bg-black-400 duration-200 ease-in text-gray-500  ${this.props.isOpen ? 'translate-x-0 duration-300' : 'translate-x-full'}`}
+        class={`flex flex-col fixed right-0 top-0 bottom-0 w-[420px] z-10 bg-gray-900 text-gray-200 shadow-2xl duration-300 ease-out ${this.props.isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         onKeyDown={this.keyDownHandler.bind(this)}
       >
-        <button
-          onClick={this.onCloseIntent.bind(this)}
-          class="btn icon-button modal__close-btn w-7 h-7 rounded-md"
-          id="js-saved-items-pane-close-btn"
-        >
-          <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-        <div class="flex items-center justify-between my-10 px-5">
-          <div class="flex items-center gap-2">
-            <h3 className="text-lg text-gray-200">
-              My Library <span className="text-sm">({this.items.length})</span>
-            </h3>
+        {/* Header */}
+        <div class="p-4 flex flex-col">
+          {/* Title Row */}
+          <div class="flex items-center justify-between mb-4">
+            <h1 class="text-xl font-bold text-white">
+              My Library ({this.items.length})
+            </h1>
+            <button 
+              onClick={this.onCloseIntent.bind(this)}
+              class="p-2 rounded-full hover:bg-gray-700 transition-colors"
+              id="js-saved-items-pane-close-btn"
+            >
+              <span class="material-symbols-outlined text-gray-400">close</span>
+            </button>
+          </div>
+
+          {/* Action Buttons Row */}
+          <div class="flex items-center justify-between mb-4">
             <button 
               onClick={this.createFolder.bind(this)}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
-              title="Create New Folder"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
-              <span class="material-symbols-outlined text-sm">create_new_folder</span>
+              <span class="material-symbols-outlined text-base">create_new_folder</span>
+              <span>Add Folder</span>
             </button>
+            <div class="flex items-center gap-2">
+              <button
+                onClick={this.props.exportBtnClickHandler}
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors"
+                aria-label="Export all your creations into a single importable file."
+              >
+                <span class="material-symbols-outlined text-base">file_upload</span>
+                <span>Export</span>
+              </button>
+              <button
+                onClick={this.importBtnClickHandler.bind(this)}
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors"
+                aria-label="Import your creations."
+              >
+                <span class="material-symbols-outlined text-base">file_download</span>
+                <span>Import</span>
+              </button>
+            </div>
           </div>
-          <div className="my-library-buttons">
-            <button
-              onClick={this.props.exportBtnClickHandler}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
-              aria-label="Export all your creations into a single importable file."
-            >
-              <svg className="w-4 h-4 fill-current">
-                <use xlinkHref="#icon-download" />
-              </svg>
-              <span>Export</span>
-            </button>
-            <button
-              onClick={this.importBtnClickHandler.bind(this)}
-              class="text-xs h-7 px-2 text-gray-500 bg-black-600 hover:opacity-80 rounded-lg gap-1.5 flex items-center duration-200"
-              aria-label="Import your creations. Only the file that you export through the 'Export' button can be imported."
-            >
-              <svg className="w-4 h-4 fill-current">
-                <use xlinkHref="#icon-upload" />
-              </svg>
-              <span>Import</span>
-            </button>
+
+          {/* Search Input */}
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              search
+            </span>
+            <input
+              id="searchInput"
+              class="w-full pl-10 pr-4 py-2.5 bg-gray-800 border-transparent rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-100 placeholder-gray-500"
+              onInput={this.searchInputHandler.bind(this)}
+              placeholder="Search your creations..."
+            />
           </div>
-        </div>
-        <div className="px-5">
-          <input
-            id="searchInput"
-            className="appearance-none px-3 py-2 w-full rounded-lg"
-            onInput={this.searchInputHandler.bind(this)}
-            placeholder="Search your creations..."
-          />
         </div>
 
-        <div id="js-saved-items-wrap" class="px-5 overflow-y-auto flex-grow mt-4">
+        {/* Scrollable Content */}
+        <div id="js-saved-items-wrap" class="flex-grow overflow-y-auto px-4 pb-4">
           {!this.filteredItems().length && this.items.length ? (
-            <div class="mt-1">No match found.</div>
+            <div class="text-gray-500 text-center py-8">No match found.</div>
           ) : null}
           
           {isSearching ? (
-            // Flat list when searching
-            this.filteredItems().map((item) => (
-              <ItemTile
-                key={item.id}
-                item={item}
-                onClick={this.itemClickHandler.bind(this, item)}
-                onForkBtnClick={this.itemForkBtnClickHandler.bind(this, item)}
-                onRemoveBtnClick={this.itemRemoveBtnClickHandler.bind(this, item)}
-                onMoveBtnClick={this.itemMoveBtnClickHandler.bind(this, item)}
-              />
-            ))
+            <div class="space-y-2">
+              {this.filteredItems().map((item) => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  compact={true}
+                  onClick={this.itemClickHandler.bind(this, item)}
+                  onForkBtnClick={this.itemForkBtnClickHandler.bind(this, item)}
+                  onRemoveBtnClick={this.itemRemoveBtnClickHandler.bind(this, item)}
+                  onMoveBtnClick={this.itemMoveBtnClickHandler.bind(this, item)}
+                />
+              ))}
+            </div>
           ) : (
-            // Tree view when not searching
             this.renderTree()
           )}
           
           {!this.items.length ? (
-            <h2 class="opacity--30">Nothing saved here.</h2>
+            <div class="text-gray-500 text-center py-12">
+              <span class="material-symbols-outlined text-4xl mb-2 block">folder_off</span>
+              <p>Nothing saved here yet.</p>
+            </div>
           ) : null}
         </div>
       </div>

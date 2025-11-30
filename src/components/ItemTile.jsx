@@ -1,5 +1,4 @@
 import { getHumanDate } from '../utils';
-import * as Tooltip from '@radix-ui/react-tooltip';
 
 export function ItemTile({
   item,
@@ -8,15 +7,70 @@ export function ItemTile({
   onRemoveBtnClick,
   onMoveBtnClick,
   focusable,
-  inline,
+  compact,
 }) {
+  // Compact mode: simplified display matching the mockup
+  if (compact) {
+    return (
+      <div
+        role={focusable ? 'button' : null}
+        tabindex={focusable ? 0 : null}
+        class="js-saved-item-tile bg-gray-700 hover:bg-gray-600 p-3 rounded-lg flex justify-between items-center cursor-pointer transition-colors group"
+        data-item-id={item.id}
+        onClick={onClick}
+      >
+        <h2 class="font-semibold truncate text-white flex-1 min-w-0">
+          {item.title || 'Untitled'}
+        </h2>
+        <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+          {/* Action buttons - show on hover */}
+          <div class="hidden group-hover:flex items-center gap-1">
+            {onMoveBtnClick && (
+              <button
+                class="p-1 hover:bg-gray-500 rounded text-gray-400 hover:text-white transition-colors"
+                aria-label="Move to folder"
+                onClick={(e) => { e.stopPropagation(); onMoveBtnClick(); }}
+                title="Move to Folder"
+              >
+                <span class="material-symbols-outlined text-sm">drive_file_move</span>
+              </button>
+            )}
+            {onForkBtnClick && (
+              <button
+                class="p-1 hover:bg-gray-500 rounded text-gray-400 hover:text-white transition-colors"
+                aria-label="Fork"
+                onClick={(e) => { e.stopPropagation(); onForkBtnClick(e); }}
+                title="Fork"
+              >
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
+            )}
+            {onRemoveBtnClick && (
+              <button
+                class="p-1 hover:bg-gray-500 rounded text-gray-400 hover:text-red-400 transition-colors"
+                aria-label="Remove"
+                onClick={(e) => { e.stopPropagation(); onRemoveBtnClick(e); }}
+                title="Delete"
+              >
+                <span class="material-symbols-outlined text-sm">delete</span>
+              </button>
+            )}
+          </div>
+          {/* Time - hide on hover when buttons show */}
+          <p class="text-xs text-gray-400 group-hover:hidden">
+            {item.updatedOn ? getHumanDate(item.updatedOn) : ''}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Original full mode (for backwards compatibility)
   return (
     <div
       role={focusable ? 'button' : null}
       tabindex={focusable ? 0 : null}
-      className={`js-saved-item-tile saved-item-tile text-gray-200 rounded-lg ${
-        inline ? 'saved-item-tile--inline' : ''
-      }`}
+      className="js-saved-item-tile saved-item-tile text-gray-200 rounded-lg"
       data-item-id={item.id}
       onClick={onClick}
     >
