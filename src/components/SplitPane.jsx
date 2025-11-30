@@ -13,7 +13,21 @@ export class SplitPane extends Component {
   }
   componentWillUpdate() {
     if (this.splitInstance) {
-      this.splitInstance.destroy();
+      try {
+        this.splitInstance.destroy();
+      } catch (e) {
+        // Ignore errors during destruction (e.g. if nodes are already removed)
+        // This happens often with VDOM re-renders conflicting with Split.js DOM manipulation
+      }
+    }
+  }
+  componentWillUnmount() {
+    if (this.splitInstance) {
+      try {
+        this.splitInstance.destroy();
+      } catch (e) {
+        // ignore
+      }
     }
   }
   componentDidUpdate() {

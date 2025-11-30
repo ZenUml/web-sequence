@@ -606,12 +606,21 @@ BookLibService.Borrow(id) {
     await this.setState({
       isFetchingItems: true,
     });
-    this.fetchItems(true).then(async (items) => {
-      await this.setState({
-        isFetchingItems: false,
+    this.fetchItems(true)
+      .then(async (items) => {
+        await this.setState({
+          isFetchingItems: false,
+        });
+        await this.populateItemsInSavedPane(items);
+      })
+      .catch(async (error) => {
+        console.error('Failed to fetch items:', error);
+        await this.setState({
+          isFetchingItems: false,
+        });
+        // Still open the pane even if fetching failed, so user can see local items or error state
+        await this.toggleSavedItemsPane(true);
       });
-      await this.populateItemsInSavedPane(items);
-    });
   }
 
 
@@ -674,6 +683,11 @@ BookLibService.Borrow(id) {
           trackEvent('ui', 'showKeyboardShortcutsShortcut');
         } else if (event.keyCode === 27) {
           await this.closeSavedItemsPane();
+        } else if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+          // Cmd/Ctrl + K
+          event.preventDefault();
+          await this.openSavedItemsPane();
+          trackEvent('ui', 'searchKeyboardShortcut');
         }
       });
     }

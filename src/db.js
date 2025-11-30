@@ -81,11 +81,20 @@ import { log } from './utils';
           if (err.code === 'failed-precondition') {
             // Multiple tabs open, persistence can only be enabled
             // in one tab at a a time.
+            // Also used for SDK version mismatch errors
+            if (err.message && err.message.indexOf('newer version') !== -1) {
+              log('Persistence disabled due to SDK version mismatch', err);
+              resolve(db);
+              return;
+            }
+            
             alert(
               "Opening ZenUML web app in multiple tabs isn't supported at present and it seems like you already have it opened in another tab. Please use in one tab.",
             );
             trackEvent('fn', 'multiTabError');
-            reject(err.code);
+            // Fallback to persistence disabled instead of rejecting, so the app can continue
+            log('Persistence disabled due to multiple tabs', err);
+            resolve(db);
           } else if (err.code === 'unimplemented') {
             // The current browser does not support all of the
             // features required to enable persistence
