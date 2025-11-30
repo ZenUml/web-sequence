@@ -13,7 +13,7 @@ const COLLECTION_NAME = 'feature_surveys';
  */
 export async function saveSurveyResponse(responseData) {
   try {
-    const db = firebase.firestore();
+    const db = await window.db.getDb();
     const user = firebase.auth().currentUser;
     
     const surveyData = {
@@ -142,7 +142,7 @@ export async function syncFallbackSurveys() {
     
     if (fallbackData.length === 0) return;
 
-    const db = firebase.firestore();
+    const db = await window.db.getDb();
     const batch = db.batch();
     
     fallbackData.forEach((surveyData) => {
