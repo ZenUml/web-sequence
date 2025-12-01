@@ -1892,6 +1892,7 @@ BookLibService.Borrow(id) {
               isEditorCollapsed={this.state.isEditorCollapsed}
               onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
               editorInSidebar={this.state.activeLeftPanel === 'editor'}
+              hideEditor={this.state.activeLeftPanel === 'library' && this.state.isLibraryPanelOpen}
             />
           </div>
           {this.isEmbed ? null : (

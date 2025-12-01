@@ -63,9 +63,18 @@ export default class ContentWrap extends Component {
 
   // shouldComponentUpdate(nextProps, nextState) - removed, but not quite sure.
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     // HACK: becuase its a DOM manipulation
     this.updateLogCount();
+
+    // Refresh CodeMirror when editor position changes (sidebar <-> main)
+    if (prevProps.editorInSidebar !== this.props.editorInSidebar || 
+        prevProps.hideEditor !== this.props.hideEditor) {
+      setTimeout(() => {
+        if (this.cm.js) this.cm.js.refresh();
+        if (this.cm.css) this.cm.css.refresh();
+      }, 100);
+    }
 
     // log('🚀', 'didupdate', this.props.currentItem);
     // if (this.isValidItem(this.props.currentItem)) {
@@ -1023,7 +1032,7 @@ export default class ContentWrap extends Component {
         }
         onDragEnd={this.mainSplitDragEndHandler.bind(this)}
       >
-        <div id="js-code-side" className={`${this.props.isEditorCollapsed ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
+        <div id="js-code-side" className={`${this.props.isEditorCollapsed || this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler
