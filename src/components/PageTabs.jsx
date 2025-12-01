@@ -57,7 +57,7 @@ export class PageTabs extends Component {
               return (
                 <div
                   key={page.id}
-                  className={`relative flex items-center group rounded-t-lg group mx-1 px-3 py-1 gap-2 ${page.id === currentPageId ? 'bg-primary' : 'bg-black-600'} ${index === 0 ? '' : 'pr-7'}`}
+                  className={`relative flex items-center group rounded-t-lg group mx-1 px-3 py-1 gap-2 ${page.id === currentPageId ? 'bg-black-500' : 'bg-black-600'} ${index === 0 ? '' : 'pr-7'}`}
                 >
                   <button
                     className={`text-sm font-medium w-full h-full ${page.id === currentPageId

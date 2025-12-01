@@ -441,15 +441,9 @@ export default class ContentWrap extends Component {
     if (!this.cm) {
       return;
     }
-    cssCodeEl.querySelector('.CodeMirror').style.fontSize =
-      jsCodeEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
-        prefs.fontSize,
-        10,
-      )}px`;
-    window.consoleEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
-      prefs.fontSize,
-      10,
-    )}px`;
+    // Set font size via CSS custom property for all CodeMirror instances
+    const fontSize = `${parseInt(prefs.fontSize, 10)}px`;
+    document.documentElement.style.setProperty('--editor-font-size', fontSize);
 
     // Replace correct css file in LINK tags's href
     window.editorThemeLinkTag.href = `lib/codemirror/theme/${prefs.editorTheme}.css`;
@@ -1160,6 +1154,17 @@ export default class ContentWrap extends Component {
   renderPreview() {
     return (
       <div className="h-full flex flex-col">
+        <div
+          className="flex-grow"
+          style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
+        >
+          <iframe
+            ref={(el) => (this.frame = el)}
+            frameBorder="0"
+            id="demo-frame"
+            allowFullScreen
+          />
+        </div>
         {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
           <PageTabs
             pages={this.props.currentItem.pages}
@@ -1172,17 +1177,6 @@ export default class ContentWrap extends Component {
             onCopyImage={this.copyImageClickHandler.bind(this)}
           />
         )}
-        <div
-          className="flex-grow"
-          style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
-        >
-          <iframe
-            ref={(el) => (this.frame = el)}
-            frameBorder="0"
-            id="demo-frame"
-            allowFullScreen
-          />
-        </div>
         <Console
             isConsoleOpen={this.state.isConsoleOpen}
             onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(

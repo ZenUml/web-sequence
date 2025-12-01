@@ -1830,6 +1830,8 @@ BookLibService.Borrow(id) {
                 itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
                 exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
                 mergeImportedItems={this.mergeImportedItems.bind(this)}
+                onSettingsClick={this.handleSettingsBtnClick.bind(this)}
+                onCheatsheetClick={this.openCheatSheet.bind(this)}
               />
             )}
             <ContentWrap

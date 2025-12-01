@@ -5,7 +5,6 @@ import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVers
 import featureToggle from '../services/feature_toggle';
 import { Popover } from './PopOver';
 import { SharePanel } from './SharePanel';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
 
@@ -56,66 +55,16 @@ export function MainHeader(props) {
     props.titleInputBlurHandler(e);
   };
 
-  const handleTrack = () => {
-    mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
-  };
-
   const isSubscribed = userService.isSubscribed();
 
   return (
     <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <div className="flex items-center p-1 hover:bg-gray-700 data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200">
-              <svg className="h-9 w-9">
-                <use xlinkHref="#outline-zenuml" />
-              </svg>
-              <svg className="h-6 w-6">
-                <use xlinkHref="#icon-arrow-down" />
-              </svg>
-            </div>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="w-[200px] bg-black-400 rounded-md overflow-hidden shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200"
-              sideOffset={5}
-              align="start"
-            >
-              <DropdownMenu.Item
-                onClick={() => props.openCheatSheet()}
-                className="cursor-pointer hover:bg-black-600 text-sm leading-none flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
-              >
-                <svg className="h-5 w-5">
-                  <use xlinkHref="#icon-cheatsheet" />
-                </svg>
-                Cheatsheet
-              </DropdownMenu.Item>
-              <DropdownMenu.Item className="cursor-pointer hover:bg-black-600 text-sm leading-none relative select-none outline-none duration-200">
-                <a
-                  onClick={handleTrack}
-                  className="flex items-center h-14 px-6 gap-2 !no-underline"
-                  target="_blank"
-                  href="https://zenuml.com/docs/category/language-guide"
-                >
-                  <svg className="h-5 w-5">
-                    <use xlinkHref="#icon-guide" />
-                  </svg>
-                  Language guide
-                </a>
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onClick={props.settingsBtnClickHandler}
-                className="text-primary-100 border-black-700 border-t cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
-              >
-                <span class="material-symbols-outlined text-lg font-light text-gray-500">
-                  settings
-                </span>
-                Settings
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        <div className="flex items-center p-1">
+          <svg className="h-9 w-9">
+            <use xlinkHref="#outline-zenuml" />
+          </svg>
+        </div>
 
         <button
           className="px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg"
