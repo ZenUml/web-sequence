@@ -5,7 +5,6 @@ import { h, Component } from 'preact';
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
-import SavedItemPane from './SavedItemPane.jsx';
 import LeftSidebar from './LeftSidebar.jsx';
 
 import Modal from './Modal.jsx';
@@ -87,7 +86,6 @@ export default class App extends Component {
       isFeaturePrioritySurveyModalOpen: false,
     };
     this.state = {
-      isSavedItemPaneOpen: false,
       isLibraryPanelOpen: true,
       activeLeftPanel: 'library',
       ...this.modalDefaultStates,
@@ -531,19 +529,12 @@ BookLibService.Borrow(id) {
   }
 
   async toggleSavedItemsPane(shouldOpen) {
+    // Now toggles the left sidebar Library panel instead of the old right pane
+    const newState = shouldOpen === undefined ? !this.state.isLibraryPanelOpen : shouldOpen;
     await this.setState({
-      isSavedItemPaneOpen:
-        shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen,
+      isLibraryPanelOpen: newState,
+      activeLeftPanel: 'library',
     });
-
-    if (this.state.isSavedItemPaneOpen) {
-      window.searchInput.focus();
-    } else {
-      window.searchInput.value = '';
-    }
-    document.body.classList[this.state.isSavedItemPaneOpen ? 'add' : 'remove'](
-      'overlay-visible',
-    );
   }
 
   /**
@@ -629,10 +620,10 @@ BookLibService.Borrow(id) {
 
 
   async closeSavedItemsPane() {
+    // Now closes the left sidebar Library panel
     await this.setState({
-      isSavedItemPaneOpen: false,
+      isLibraryPanelOpen: false,
     });
-    document.body.classList.remove('overlay-visible');
 
     if (this.editorWithFocus) {
       this.editorWithFocus.focus();
@@ -720,7 +711,7 @@ BookLibService.Borrow(id) {
   }
 
   async closeAllOverlays() {
-    if (this.state.isSavedItemPaneOpen) {
+    if (this.state.isLibraryPanelOpen) {
       await this.closeSavedItemsPane();
     }
 
@@ -1931,17 +1922,6 @@ BookLibService.Borrow(id) {
             />
           )}
         </div>
-
-        <SavedItemPane
-          items={this.state.savedItems}
-          isOpen={this.state.isSavedItemPaneOpen}
-          closeHandler={this.closeSavedItemsPane.bind(this)}
-          itemClickHandler={this.itemClickHandler.bind(this)}
-          itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
-          itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
-          exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
-          mergeImportedItems={this.mergeImportedItems.bind(this)}
-        />
 
         <Alerts />
 
