@@ -77,11 +77,6 @@ export default class LeftSidebar extends Component {
             mergeImportedItems={mergeImportedItems}
           />
         )}
-
-        {/* Editor container - the editor from ContentWrap will be moved here via DOM */}
-        {activeLeftPanel === 'editor' && (
-          <div id="editor-sidebar-container" class="w-80 h-full bg-[#111722] border-r border-white/10 flex-shrink-0 overflow-hidden" />
-        )}
       </div>
     );
   }
