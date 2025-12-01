@@ -12,6 +12,7 @@ export default class LeftSidebar extends Component {
       onSwitchPanel,
       onSettingsClick,
       onCheatsheetClick,
+      onShortcutsClick,
       // LibraryPanel props
       items,
       itemClickHandler,
@@ -70,6 +71,13 @@ export default class LeftSidebar extends Component {
             </button>
           </div>
           <div class="flex flex-col items-center gap-2">
+            <button 
+              class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
+              onClick={onShortcutsClick}
+              title="Keyboard Shortcuts"
+            >
+              <span class="material-symbols-outlined">keyboard</span>
+            </button>
             <button 
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
               onClick={onCheatsheetClick}

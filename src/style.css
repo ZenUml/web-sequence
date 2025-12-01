@@ -1900,10 +1900,6 @@ while the theme CSS file is loading */
   -webkit-overflow-scrolling: touch;
 }
 
-.tab-list-item {
-  display: inline;
-}
-
 .tab-list-item span.line-of-code {
   text-overflow: ellipsis;
   white-space: nowrap;

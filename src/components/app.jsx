@@ -1832,6 +1832,7 @@ BookLibService.Borrow(id) {
                 mergeImportedItems={this.mergeImportedItems.bind(this)}
                 onSettingsClick={this.handleSettingsBtnClick.bind(this)}
                 onCheatsheetClick={this.openCheatSheet.bind(this)}
+                onShortcutsClick={this.handleShortcutsModalOpen.bind(this)}
               />
             )}
             <ContentWrap
