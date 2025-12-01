@@ -355,6 +355,38 @@ body:not(.light-version).overlay-visible .main-container {
   height: 100%;
 }
 
+/* Editor Panel in Left Sidebar */
+.editor-panel-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-panel-content .tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-panel-content .tab-content {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.sidebar-code-wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-code-wrap .CodeMirror {
+  flex-grow: 1;
+  height: auto !important;
+}
+
+.sidebar-code-wrap .toolbox {
+  flex-shrink: 0;
+}
+
 .content-wrap {
   /* HACK:  */
   height: 1px;

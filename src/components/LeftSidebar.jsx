@@ -1,5 +1,6 @@
 import { h, Component } from 'preact';
 import LibraryPanel from './LibraryPanel.jsx';
+import EditorPanel from './EditorPanel.jsx';
 
 export default class LeftSidebar extends Component {
   render() {
@@ -15,7 +16,18 @@ export default class LeftSidebar extends Component {
       itemForkBtnClickHandler,
       exportBtnClickHandler,
       mergeImportedItems,
+      // EditorPanel props
+      currentItem,
+      prefs,
+      onCodeChange,
+      onCodeModeChange,
+      onEditorFocus,
+      onToolboxClick,
+      keyboardShortcutsBtnClickHandler,
+      editorPanelRef,
     } = this.props;
+
+    const isPanelOpen = isLibraryPanelOpen || activeLeftPanel === 'editor';
 
     return (
       <div class="flex shrink-0">
@@ -43,14 +55,16 @@ export default class LeftSidebar extends Component {
           </button>
           <button 
             class={`p-2.5 rounded-md transition-colors ${
-              activeLeftPanel === 'editor' 
+              activeLeftPanel === 'editor'
                 ? 'text-white bg-[#232f48]' 
                 : 'text-white/70 hover:text-white hover:bg-[#232f48]'
             }`}
             onClick={() => {
-              onSwitchPanel('editor');
-              if (isLibraryPanelOpen) {
-                onToggleLibraryPanel();
+              if (activeLeftPanel === 'editor') {
+                // Toggle off - switch to library but keep it closed
+                onSwitchPanel('library');
+              } else {
+                onSwitchPanel('editor');
               }
             }}
             title="Code Editor"
@@ -71,8 +85,22 @@ export default class LeftSidebar extends Component {
             mergeImportedItems={mergeImportedItems}
           />
         )}
+
+        {/* Editor Panel */}
+        {activeLeftPanel === 'editor' && (
+          <EditorPanel
+            ref={editorPanelRef}
+            currentItem={currentItem}
+            prefs={prefs}
+            onCodeChange={onCodeChange}
+            onCodeModeChange={onCodeModeChange}
+            onEditorFocus={onEditorFocus}
+            onToolboxClick={onToolboxClick}
+            keyboardShortcutsBtnClickHandler={keyboardShortcutsBtnClickHandler}
+            onClose={() => onSwitchPanel('library')}
+          />
+        )}
       </div>
     );
   }
 }
-
