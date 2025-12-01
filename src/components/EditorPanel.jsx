@@ -15,6 +15,62 @@ export default class EditorPanel extends Component {
       lineOfCode: 0,
     };
     this.cm = {};
+    this.initialCodeSet = false;
+  }
+
+  componentDidUpdate(prevProps) {
+    // Set initial code when editors are ready
+    if (!this.initialCodeSet && this.cm.js && this.cm.css) {
+      this.setInitialCode();
+    }
+    
+    // Update code if currentItem changed (e.g., loading a different item)
+    if (prevProps.currentItem?.id !== this.props.currentItem?.id) {
+      this.initialCodeSet = false;
+      this.setInitialCode();
+    }
+  }
+
+  // Called when CodeMirror instances are created
+  onJsEditorCreation(cm) {
+    this.cm.js = cm;
+    // Try to set initial code once both editors are ready
+    setTimeout(() => this.setInitialCode(), 100);
+  }
+
+  onCssEditorCreation(cm) {
+    this.cm.css = cm;
+    // Try to set initial code once both editors are ready
+    setTimeout(() => this.setInitialCode(), 100);
+  }
+
+  setInitialCode() {
+    const { currentItem } = this.props;
+    if (!currentItem) return;
+    
+    // Get code from current page or item
+    let jsCode = '';
+    let cssCode = '';
+    
+    if (currentItem.pages && currentItem.pages.length > 0) {
+      const currentPage = currentItem.pages.find(p => p.id === currentItem.currentPageId) || currentItem.pages[0];
+      jsCode = currentPage.js || '';
+      cssCode = currentPage.css || '';
+    } else {
+      jsCode = currentItem.js || '';
+      cssCode = currentItem.css || '';
+    }
+    
+    if (this.cm.js && jsCode) {
+      this.cm.js.setValue(jsCode);
+      this.cm.js.refresh();
+    }
+    if (this.cm.css) {
+      this.cm.css.setValue(cssCode);
+      this.cm.css.refresh();
+    }
+    
+    this.initialCodeSet = true;
   }
 
   onJsCodeChange(editor, change) {
@@ -131,7 +187,7 @@ export default class EditorPanel extends Component {
                   autoComplete={prefs.autoComplete}
                   onChange={this.onJsCodeChange.bind(this)}
                   onCursorMove={this.onCursorMove.bind(this)}
-                  onCreation={(el) => (this.cm.js = el)}
+                  onCreation={this.onJsEditorCreation.bind(this)}
                   onFocus={this.editorFocusHandler.bind(this)}
                 />
               </div>
@@ -179,7 +235,7 @@ export default class EditorPanel extends Component {
                   }}
                   prefs={prefs}
                   onChange={this.onCssCodeChange.bind(this)}
-                  onCreation={(el) => (this.cm.css = el)}
+                  onCreation={this.onCssEditorCreation.bind(this)}
                   onFocus={this.editorFocusHandler.bind(this)}
                 />
               </div>
