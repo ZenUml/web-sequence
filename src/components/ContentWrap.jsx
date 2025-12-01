@@ -1167,6 +1167,9 @@ export default class ContentWrap extends Component {
             onTabClick={this.props.onPageSwitch}
             onAddPage={this.props.onAddPage}
             onDeletePage={this.props.onDeletePage}
+            onToggleFullscreen={this.toggleFullscreen.bind(this)}
+            onExportPng={this.exportPngClickHandler.bind(this)}
+            onCopyImage={this.copyImageClickHandler.bind(this)}
           />
         )}
         <div
@@ -1180,43 +1183,6 @@ export default class ContentWrap extends Component {
             allowFullScreen
           />
         </div>
-        {window.zenumlDesktop ? null : (
-          <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-end">
-            <div className="flex items-center gap-3 text-sm font-semibold">
-              <button
-                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                  aria-label="Toggle Fullscreen"
-                  onClick={this.toggleFullscreen.bind(this)}
-                  title="Toggle Fullscreen Presenting Mode"
-              >
-                <svg className="w-5 h-5 fill-current">
-                  <use xlinkHref="#fullscreen-icon"/>
-                </svg>
-                <span>Present</span>
-              </button>
-              <button
-                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                  aria-label="Export as PNG"
-                  onClick={this.exportPngClickHandler.bind(this)}
-              >
-                <svg className="w-5 h-5 fill-current">
-                  <use xlinkHref="#icon-download"/>
-                </svg>
-                <span>PNG</span>
-              </button>
-              <button
-                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                  aria-label="Copy PNG to Clipboard"
-                  onClick={this.copyImageClickHandler.bind(this)}
-              >
-                <svg className="w-5 h-5 fill-current">
-                  <use xlinkHref="#icon-copy"/>
-                </svg>
-                <span>Copy PNG</span>
-              </button>
-            </div>
-          </div>
-        )}
         <Console
             isConsoleOpen={this.state.isConsoleOpen}
             onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
