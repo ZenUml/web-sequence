@@ -67,7 +67,7 @@ export default class ContentWrap extends Component {
     // HACK: becuase its a DOM manipulation
     this.updateLogCount();
 
-    // Refresh CodeMirror when editor position changes (sidebar <-> main)
+    // Refresh CodeMirror when editor position or visibility changes
     if (prevProps.editorInSidebar !== this.props.editorInSidebar || 
         prevProps.hideEditor !== this.props.hideEditor) {
       setTimeout(() => {
@@ -1019,20 +1019,9 @@ export default class ContentWrap extends Component {
     }
   }
 
-  render() {
+  renderEditor() {
     return (
-      <SplitPane
-        class="content-wrap  flex  flex-grow"
-        id="content-wrap"
-        sizes={this.state.mainSplitSizes}
-        minSize={580}
-        style=""
-        direction={
-          this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
-        }
-        onDragEnd={this.mainSplitDragEndHandler.bind(this)}
-      >
-        <div id="js-code-side" className={`${this.props.isEditorCollapsed || this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
+      <div id="js-code-side" className={`${this.props.isEditorCollapsed || this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler
@@ -1145,121 +1134,151 @@ export default class ContentWrap extends Component {
             </div>
           </Tabs>
         </div>
+    );
+  }
+
+  render() {
+    const editorElement = this.renderEditor();
+    
+    // When editor is in sidebar mode, use fixed sizes (editor takes sidebar width, preview takes rest)
+    const splitSizes = this.props.editorInSidebar 
+      ? [25, 75]  // Editor in sidebar: narrower editor, wider preview
+      : this.state.mainSplitSizes;
+
+    return (
+      <SplitPane
+        class="content-wrap  flex  flex-grow"
+        id="content-wrap"
+        sizes={splitSizes}
+        minSize={this.props.editorInSidebar ? 200 : 580}
+        style=""
+        direction={
+          this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
+        }
+        onDragEnd={this.mainSplitDragEndHandler.bind(this)}
+      >
+        {editorElement}
         <div class="demo-side" id="js-demo-side">
-          <div className="h-full flex flex-col">
-            {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
-              <PageTabs
-                pages={this.props.currentItem.pages}
-                currentPageId={this.props.currentItem.currentPageId}
-                onTabClick={this.props.onPageSwitch}
-                onAddPage={this.props.onAddPage}
-                onDeletePage={this.props.onDeletePage}
-              />
-            )}
-            <div
-              className="flex-grow"
-              style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
-            >
-              <iframe
-                ref={(el) => (this.frame = el)}
-                frameBorder="0"
-                id="demo-frame"
-                allowFullScreen
-              />
-            </div>
-            {window.zenumlDesktop ? null : (
-              <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
-                <div className="flex gap-4 items-center text-black-100">
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(1)}
-                    id="layoutBtn1"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 1 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on right"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-1" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(2)}
-                    id="layoutBtn2"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 2 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on bottom"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-2" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(3)}
-                    id="layoutBtn3"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 3 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on left"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-3" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold">
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Toggle Fullscreen"
-                      onClick={this.toggleFullscreen.bind(this)}
-                      title="Toggle Fullscreen Presenting Mode"
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#fullscreen-icon"/>
-                    </svg>
-                    <span>Present</span>
-                  </button>
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Export as PNG"
-                      onClick={this.exportPngClickHandler.bind(this)}
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-download"/>
-                    </svg>
-                    <span>PNG</span>
-                  </button>
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Copy PNG to Clipboard"
-                      onClick={this.copyImageClickHandler.bind(this)}
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-copy"/>
-                    </svg>
-                    <span>Copy PNG</span>
-                  </button>
-                </div>
-              </div>
-            )}
-            <Console
-                isConsoleOpen={this.state.isConsoleOpen}
-                onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
-                    this,
-                )}
-                onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
-                    this,
-                )}
-                toggleConsole={this.toggleConsole.bind(this)}
-                onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-                onReady={(el) => (this.consoleCm = el)}
-            />
-            <CssSettingsModal
-                show={this.state.isCssSettingsModalOpen}
-              closeHandler={async () =>
-                await this.setState({ isCssSettingsModalOpen: false })
-              }
-              onChange={this.cssSettingsChangeHandler.bind(this)}
-              settings={this.props.currentItem.cssSettings}
-              editorTheme={this.props.prefs.editorTheme}
-            />
-          </div>
+          {this.renderPreview()}
         </div>
       </SplitPane>
+    );
+  }
+
+  renderPreview() {
+    return (
+      <div className="h-full flex flex-col">
+        {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
+          <PageTabs
+            pages={this.props.currentItem.pages}
+            currentPageId={this.props.currentItem.currentPageId}
+            onTabClick={this.props.onPageSwitch}
+            onAddPage={this.props.onAddPage}
+            onDeletePage={this.props.onDeletePage}
+          />
+        )}
+        <div
+          className="flex-grow"
+          style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
+        >
+          <iframe
+            ref={(el) => (this.frame = el)}
+            frameBorder="0"
+            id="demo-frame"
+            allowFullScreen
+          />
+        </div>
+        {window.zenumlDesktop ? null : (
+          <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
+            <div className="flex gap-4 items-center text-black-100">
+              <button
+                onClick={() => this.props.layoutBtnClickHandler(1)}
+                id="layoutBtn1"
+                className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 1 ? 'text-gray-800' : ''}`}
+                aria-label="Switch to layout with preview on right"
+              >
+                <svg className="w-5 h-5">
+                  <use xlinkHref="#icon-layout-1" />
+                </svg>
+              </button>
+              <button
+                onClick={() => this.props.layoutBtnClickHandler(2)}
+                id="layoutBtn2"
+                className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 2 ? 'text-gray-800' : ''}`}
+                aria-label="Switch to layout with preview on bottom"
+              >
+                <svg className="w-5 h-5">
+                  <use xlinkHref="#icon-layout-2" />
+                </svg>
+              </button>
+              <button
+                onClick={() => this.props.layoutBtnClickHandler(3)}
+                id="layoutBtn3"
+                className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 3 ? 'text-gray-800' : ''}`}
+                aria-label="Switch to layout with preview on left"
+              >
+                <svg className="w-5 h-5">
+                  <use xlinkHref="#icon-layout-3" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <button
+                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                  aria-label="Toggle Fullscreen"
+                  onClick={this.toggleFullscreen.bind(this)}
+                  title="Toggle Fullscreen Presenting Mode"
+              >
+                <svg className="w-5 h-5 fill-current">
+                  <use xlinkHref="#fullscreen-icon"/>
+                </svg>
+                <span>Present</span>
+              </button>
+              <button
+                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                  aria-label="Export as PNG"
+                  onClick={this.exportPngClickHandler.bind(this)}
+              >
+                <svg className="w-5 h-5 fill-current">
+                  <use xlinkHref="#icon-download"/>
+                </svg>
+                <span>PNG</span>
+              </button>
+              <button
+                  className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
+                  aria-label="Copy PNG to Clipboard"
+                  onClick={this.copyImageClickHandler.bind(this)}
+              >
+                <svg className="w-5 h-5 fill-current">
+                  <use xlinkHref="#icon-copy"/>
+                </svg>
+                <span>Copy PNG</span>
+              </button>
+            </div>
+          </div>
+        )}
+        <Console
+            isConsoleOpen={this.state.isConsoleOpen}
+            onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
+                this,
+            )}
+            onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
+                this,
+            )}
+            toggleConsole={this.toggleConsole.bind(this)}
+            onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
+            onReady={(el) => (this.consoleCm = el)}
+        />
+        <CssSettingsModal
+            show={this.state.isCssSettingsModalOpen}
+          closeHandler={async () =>
+            await this.setState({ isCssSettingsModalOpen: false })
+          }
+          onChange={this.cssSettingsChangeHandler.bind(this)}
+          settings={this.props.currentItem.cssSettings}
+          editorTheme={this.props.prefs.editorTheme}
+        />
+      </div>
     );
   }
 }
