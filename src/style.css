@@ -701,7 +701,6 @@ body > #demo-frame {
 .footer {
   padding: 0.5rem 1rem;
   background-color: rgb(18, 19, 27);
-  color: rgba(255, 255, 255, 0.45);
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
@@ -715,7 +714,6 @@ body > #demo-frame {
 
 .main-header {
   background-color: rgb(18, 19, 27);
-  color: rgba(255, 255, 255, 0.45);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;

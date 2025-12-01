@@ -59,7 +59,7 @@ export function MainHeader(props) {
   const isSubscribed = userService.isSubscribed();
 
   return (
-    <div className="main-header text-gray-400 py-1 px-2 flex justify-between border-b border-black-700 bg-black-500">
+    <div className="main-header text-gray-100 py-1 px-2 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
         <div className="flex items-center p-1">
           <svg className="h-9 w-9">
@@ -68,7 +68,7 @@ export function MainHeader(props) {
         </div>
 
         <button
-          className="px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg"
+          className="px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-normal flex items-center gap-2 rounded-lg"
           aria-label="Start a new creation"
           onClick={props.newBtnHandler}
         >
@@ -85,13 +85,13 @@ export function MainHeader(props) {
             type="text"
             id="titleInput"
             title="Click to edit"
-            className="font-semibold appearance-none w-60 text-center bg-transparent px-3 py-1.5 outline-primary border-none w-auto max-w-60"
+            className="font-normal appearance-none w-60 text-center bg-transparent px-3 py-1.5 outline-primary border-none w-auto max-w-60"
             value={props.title}
             onBlur={onBlur}
           />
         ) : (
           <div
-            className="flex items-center gap-2 font-semibold"
+            className="flex items-center gap-2 font-normal"
             onClick={() => entryEditing()}
           >
             <span>{props.title || 'Untitled'} </span>
@@ -114,7 +114,7 @@ export function MainHeader(props) {
 
         {!window.user ? (
           <button
-            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"
+            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
             aria-label="Share diagram link"
             onClick={props.onLogin.bind(this)}
           >
@@ -129,7 +129,7 @@ export function MainHeader(props) {
             onVisibilityChange={setIsSharePanelVisible}
             trigger={
               <button
-                className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-white font-semibold hover:opacity-80 duration-200"
+                className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-white font-normal hover:opacity-80 duration-200"
                 aria-label="Share diagram link"
                 onClick={shareClickHandler}
               >
