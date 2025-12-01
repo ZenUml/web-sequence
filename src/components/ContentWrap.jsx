@@ -1023,7 +1023,7 @@ export default class ContentWrap extends Component {
         }
         onDragEnd={this.mainSplitDragEndHandler.bind(this)}
       >
-        <div id="js-code-side" className={(this.props.isEditorCollapsed || this.props.hideCodeSide) ? 'hidden' : ''}>
+        <div id="js-code-side" className={`${this.props.isEditorCollapsed ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler

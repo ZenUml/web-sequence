@@ -1,6 +1,5 @@
 import { h, Component } from 'preact';
 import LibraryPanel from './LibraryPanel.jsx';
-import EditorPanel from './EditorPanel.jsx';
 
 export default class LeftSidebar extends Component {
   render() {
@@ -16,18 +15,11 @@ export default class LeftSidebar extends Component {
       itemForkBtnClickHandler,
       exportBtnClickHandler,
       mergeImportedItems,
-      // EditorPanel props
-      currentItem,
-      prefs,
-      onCodeChange,
-      onCodeModeChange,
-      onEditorFocus,
-      onToolboxClick,
-      keyboardShortcutsBtnClickHandler,
-      editorPanelRef,
     } = this.props;
 
-    const isPanelOpen = isLibraryPanelOpen || activeLeftPanel === 'editor';
+    // When editor is active, we show a placeholder - the actual editor 
+    // is repositioned via CSS from ContentWrap
+    const showEditorPlaceholder = activeLeftPanel === 'editor';
 
     return (
       <div class="flex shrink-0">
@@ -73,8 +65,8 @@ export default class LeftSidebar extends Component {
           </button>
         </div>
 
-        {/* Library Panel */}
-        {isLibraryPanelOpen && activeLeftPanel === 'library' && (
+        {/* Library Panel - only show when library is active */}
+        {activeLeftPanel === 'library' && isLibraryPanelOpen && (
           <LibraryPanel
             items={items}
             onClose={onToggleLibraryPanel}
@@ -83,21 +75,6 @@ export default class LeftSidebar extends Component {
             itemForkBtnClickHandler={itemForkBtnClickHandler}
             exportBtnClickHandler={exportBtnClickHandler}
             mergeImportedItems={mergeImportedItems}
-          />
-        )}
-
-        {/* Editor Panel */}
-        {activeLeftPanel === 'editor' && (
-          <EditorPanel
-            ref={editorPanelRef}
-            currentItem={currentItem}
-            prefs={prefs}
-            onCodeChange={onCodeChange}
-            onCodeModeChange={onCodeModeChange}
-            onEditorFocus={onEditorFocus}
-            onToolboxClick={onToolboxClick}
-            keyboardShortcutsBtnClickHandler={keyboardShortcutsBtnClickHandler}
-            onClose={() => onSwitchPanel('library')}
           />
         )}
       </div>

@@ -1868,14 +1868,6 @@ BookLibService.Borrow(id) {
                 itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
                 exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
                 mergeImportedItems={this.mergeImportedItems.bind(this)}
-                currentItem={this.state.currentItem}
-                prefs={this.state.prefs}
-                onCodeChange={this.onCodeChange.bind(this)}
-                onCodeModeChange={this.onCodeModeChange.bind(this)}
-                onEditorFocus={this.editorFocusHandler.bind(this)}
-                onToolboxClick={this.contentWrap?.toolboxUpdateToApp?.bind(this.contentWrap)}
-                keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(this)}
-                editorPanelRef={(panel) => (this.editorPanel = panel)}
               />
             )}
             <ContentWrap
@@ -1899,7 +1891,7 @@ BookLibService.Borrow(id) {
               layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
               isEditorCollapsed={this.state.isEditorCollapsed}
               onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
-              hideCodeSide={true}
+              editorInSidebar={this.state.activeLeftPanel === 'editor'}
             />
           </div>
           {this.isEmbed ? null : (
