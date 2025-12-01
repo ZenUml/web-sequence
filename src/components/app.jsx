@@ -86,8 +86,8 @@ export default class App extends Component {
       isFeaturePrioritySurveyModalOpen: false,
     };
     this.state = {
-      isLibraryPanelOpen: true,
-      activeLeftPanel: 'library',
+      isLibraryPanelOpen: false,
+      activeLeftPanel: 'editor',
       ...this.modalDefaultStates,
       prefs: {},
       currentItem: {

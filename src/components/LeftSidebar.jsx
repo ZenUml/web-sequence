@@ -27,18 +27,18 @@ export default class LeftSidebar extends Component {
         <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10">
           <button 
             class={`p-2.5 rounded-md transition-colors ${
-              activeLeftPanel === 'library' && isLibraryPanelOpen
+              activeLeftPanel === 'library'
                 ? 'text-white bg-[#232f48]' 
                 : 'text-white/70 hover:text-white hover:bg-[#232f48]'
             }`}
             onClick={() => {
-              if (activeLeftPanel === 'library' && isLibraryPanelOpen) {
+              // Do nothing if already active
+              if (activeLeftPanel === 'library') {
+                return;
+              }
+              onSwitchPanel('library');
+              if (!isLibraryPanelOpen) {
                 onToggleLibraryPanel();
-              } else {
-                onSwitchPanel('library');
-                if (!isLibraryPanelOpen) {
-                  onToggleLibraryPanel();
-                }
               }
             }}
             title="My Library"
@@ -52,12 +52,11 @@ export default class LeftSidebar extends Component {
                 : 'text-white/70 hover:text-white hover:bg-[#232f48]'
             }`}
             onClick={() => {
+              // Do nothing if already active
               if (activeLeftPanel === 'editor') {
-                // Toggle off - switch to library but keep it closed
-                onSwitchPanel('library');
-              } else {
-                onSwitchPanel('editor');
+                return;
               }
+              onSwitchPanel('editor');
             }}
             title="Code Editor"
           >
