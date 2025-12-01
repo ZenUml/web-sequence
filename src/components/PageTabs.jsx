@@ -60,7 +60,7 @@ export class PageTabs extends Component {
                   className={`relative flex items-center group rounded-t-lg group mx-1 px-3 py-1 gap-2 ${page.id === currentPageId ? 'bg-black-500' : 'bg-black-600'} ${index === 0 ? '' : 'pr-7'}`}
                 >
                   <button
-                    className={`text-sm font-medium w-full h-full ${page.id === currentPageId
+                    className={`text-sm font-normal w-full h-full ${page.id === currentPageId
                         ? 'text-white'
                         : 'text-gray-400'}`}
                     onClick={() => onTabClick(page.id)}
@@ -92,16 +92,16 @@ export class PageTabs extends Component {
               );
             })}
             <button
-              className="ml-1 px-3 py-1 bg-black-600 text-gray-400 hover:bg-black-700 hover:text-gray-300 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center"
+              className="ml-1 px-3 py-1 bg-black-600 text-gray-400 hover:bg-black-700 hover:text-gray-300 rounded-lg text-sm font-normal transition-colors duration-200 flex items-center"
               onClick={this.handleAddPage}
               title="Add new page"
             >
-              <span className="mr-1 font-bold text-lg leading-none">+</span>
+              <span className="mr-1 font-normal text-lg leading-none">+</span>
               Add Page
             </button>
           </div>
           {!window.zenumlDesktop && (
-            <div className="flex items-center gap-2 text-sm font-semibold ml-4">
+            <div className="flex items-center gap-2 text-sm font-normal ml-4">
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
                 aria-label="Toggle Fullscreen"
