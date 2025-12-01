@@ -685,7 +685,9 @@ li.CodeMirror-hint-active {
   height: calc(100%);
   /*height: calc(100% - 29px); height reserved for console*/
   /*  minus minimized console height */
-  background: white;
+  background-image: radial-gradient(circle, #4b5563 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #1f2937;
 }
 
 /* When demo frame is in detached window */

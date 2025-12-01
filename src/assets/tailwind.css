@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.CodeMirror {
-  @apply !text-[15px];
-}
-
 /*NOTE: try to fix tailwind backdrop-blur style after building*/
 @layer base {
   *,
