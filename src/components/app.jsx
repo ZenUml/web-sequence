@@ -87,6 +87,7 @@ export default class App extends Component {
     };
     this.state = {
       isLibraryPanelOpen: false,
+      isEditorPanelOpen: true,
       activeLeftPanel: 'editor',
       ...this.modalDefaultStates,
       prefs: {},
@@ -1825,9 +1826,11 @@ BookLibService.Borrow(id) {
             {!this.isEmbed && !window.zenumlDesktop && (
               <LeftSidebar
                 isLibraryPanelOpen={this.state.isLibraryPanelOpen}
+                isEditorPanelOpen={this.state.isEditorPanelOpen}
                 activeLeftPanel={this.state.activeLeftPanel}
                 onToggleLibraryPanel={() => this.setState({ isLibraryPanelOpen: !this.state.isLibraryPanelOpen })}
-                onSwitchPanel={(panel) => this.setState({ activeLeftPanel: panel })}
+                onToggleEditorPanel={() => this.setState({ isEditorPanelOpen: !this.state.isEditorPanelOpen })}
+                onSwitchPanel={(panel) => this.setState({ activeLeftPanel: panel, isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen })}
                 items={this.state.savedItems}
                 itemClickHandler={this.itemClickHandler.bind(this)}
                 itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
@@ -1855,8 +1858,8 @@ BookLibService.Borrow(id) {
               )}
               isEditorCollapsed={this.state.isEditorCollapsed}
               onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
-              editorInSidebar={this.state.activeLeftPanel === 'editor'}
-              hideEditor={this.state.activeLeftPanel === 'library' && this.state.isLibraryPanelOpen}
+              editorInSidebar={this.state.activeLeftPanel === 'editor' && this.state.isEditorPanelOpen}
+              hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
             />
           </div>
           {this.isEmbed ? null : (

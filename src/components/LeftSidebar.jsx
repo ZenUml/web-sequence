@@ -4,9 +4,11 @@ import LibraryPanel from './LibraryPanel.jsx';
 export default class LeftSidebar extends Component {
   render() {
     const { 
-      isLibraryPanelOpen, 
+      isLibraryPanelOpen,
+      isEditorPanelOpen,
       activeLeftPanel,
       onToggleLibraryPanel,
+      onToggleEditorPanel,
       onSwitchPanel,
       // LibraryPanel props
       items,
@@ -17,9 +19,9 @@ export default class LeftSidebar extends Component {
       mergeImportedItems,
     } = this.props;
 
-    // When editor is active, we show a placeholder - the actual editor 
-    // is repositioned via CSS from ContentWrap
-    const showEditorPlaceholder = activeLeftPanel === 'editor';
+    // Check if panels are active and open
+    const isLibraryActive = activeLeftPanel === 'library' && isLibraryPanelOpen;
+    const isEditorActive = activeLeftPanel === 'editor' && isEditorPanelOpen;
 
     return (
       <div class="flex shrink-0">
@@ -27,18 +29,17 @@ export default class LeftSidebar extends Component {
         <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10">
           <button 
             class={`p-2.5 rounded-md transition-colors ${
-              activeLeftPanel === 'library'
+              isLibraryActive
                 ? 'text-white bg-[#232f48]' 
                 : 'text-white/70 hover:text-white hover:bg-[#232f48]'
             }`}
             onClick={() => {
-              // Do nothing if already active
               if (activeLeftPanel === 'library') {
-                return;
-              }
-              onSwitchPanel('library');
-              if (!isLibraryPanelOpen) {
+                // Toggle library panel open/close
                 onToggleLibraryPanel();
+              } else {
+                // Switch to library and open it
+                onSwitchPanel('library');
               }
             }}
             title="My Library"
@@ -47,16 +48,18 @@ export default class LeftSidebar extends Component {
           </button>
           <button 
             class={`p-2.5 rounded-md transition-colors ${
-              activeLeftPanel === 'editor'
+              isEditorActive
                 ? 'text-white bg-[#232f48]' 
                 : 'text-white/70 hover:text-white hover:bg-[#232f48]'
             }`}
             onClick={() => {
-              // Do nothing if already active
               if (activeLeftPanel === 'editor') {
-                return;
+                // Toggle editor panel open/close
+                onToggleEditorPanel();
+              } else {
+                // Switch to editor and open it
+                onSwitchPanel('editor');
               }
-              onSwitchPanel('editor');
             }}
             title="Code Editor"
           >
@@ -64,8 +67,8 @@ export default class LeftSidebar extends Component {
           </button>
         </div>
 
-        {/* Library Panel - only show when library is active */}
-        {activeLeftPanel === 'library' && isLibraryPanelOpen && (
+        {/* Library Panel - only show when library is active and open */}
+        {isLibraryActive && (
           <LibraryPanel
             items={items}
             onClose={onToggleLibraryPanel}
