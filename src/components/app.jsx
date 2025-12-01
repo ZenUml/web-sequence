@@ -146,7 +146,7 @@ export default class App extends Component {
         await this.setState({ user });
         window.user = user;
         // Fetch items globally so library panel shows them immediately
-        this.fetchItems(true);
+        await this.fetchItems(true);
         
         // Check if we should show the import dialog for local items
         if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
@@ -524,7 +524,8 @@ BookLibService.Borrow(id) {
       savedItems: { ...this.state.savedItems },
     });
 
-    await this.toggleSavedItemsPane();
+    // Always open the pane when populating items
+    await this.toggleSavedItemsPane(true);
     // HACK: Set overflow after sometime so that the items can animate without getting cropped.
     // setTimeout(() => $('#js-saved-items-wrap').style.overflowY = 'auto', 1000);
   }
@@ -1806,9 +1807,24 @@ BookLibService.Borrow(id) {
                 isLibraryPanelOpen={this.state.isLibraryPanelOpen}
                 isEditorPanelOpen={this.state.isEditorPanelOpen}
                 activeLeftPanel={this.state.activeLeftPanel}
-                onToggleLibraryPanel={() => this.setState({ isLibraryPanelOpen: !this.state.isLibraryPanelOpen })}
+                onToggleLibraryPanel={async () => {
+                  const willOpen = !this.state.isLibraryPanelOpen;
+                  await this.setState({ isLibraryPanelOpen: willOpen });
+                  if (willOpen) {
+                    await this.openSavedItemsPane();
+                  }
+                }}
                 onToggleEditorPanel={() => this.setState({ isEditorPanelOpen: !this.state.isEditorPanelOpen })}
-                onSwitchPanel={(panel) => this.setState({ activeLeftPanel: panel, isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen })}
+                onSwitchPanel={async (panel) => {
+                  await this.setState({ 
+                    activeLeftPanel: panel, 
+                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, 
+                    isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen 
+                  });
+                  if (panel === 'library') {
+                    await this.openSavedItemsPane();
+                  }
+                }}
                 items={this.state.savedItems}
                 itemClickHandler={this.itemClickHandler.bind(this)}
                 itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
