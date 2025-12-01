@@ -201,8 +201,8 @@ export default class App extends Component {
         code: '',
       },
       (result) => {
-        this.toggleLayout(result.layoutMode);
-        this.state.prefs.layoutMode = result.layoutMode;
+        // Layout mode is now fixed to 1 (horizontal with preview on right)
+        this.state.prefs.layoutMode = 1;
         let urlCode;
         try {
           urlCode = JSON.parse(
@@ -354,9 +354,6 @@ export default class App extends Component {
   }
 
   refreshEditor() {
-    this.toggleLayout(
-      this.state.currentItem.layoutMode || this.state.prefs.layoutMode,
-    );
     this.updateExternalLibCount();
     this.contentWrap.refreshEditor();
   }
@@ -413,7 +410,7 @@ BookLibService.Borrow(id) {
   return receipt
 }`,
       externalLibs: { js: '', css: '' },
-      layoutMode: this.state.currentLayoutMode,
+      layoutMode: 1,
     }).then(() => this.refreshEditor());
     alertsService.add('New item created');
   }
@@ -752,42 +749,6 @@ BookLibService.Borrow(id) {
     });
   }
 
-  async toggleLayout(mode) {
-    /* eslint-disable no-param-reassign */
-    mode = window.innerWidth < 600 ? 2 : mode;
-
-    if (this.state.currentLayoutMode === mode) {
-      this.contentWrap.resetSplitting();
-      // mainSplitInstance.setSizes(getMainSplitSizesToApply());
-      // codeSplitInstance.setSizes(currentItem.sizes || [33.33, 33.33, 33.33]);
-      await this.setState({ currentLayoutMode: mode });
-      return;
-    }
-    // Remove all layout classes
-    [1, 2, 3, 4, 5].forEach((layoutNumber) => {
-      window[`layoutBtn${layoutNumber}`] &&
-        window[`layoutBtn${layoutNumber}`].classList.remove('selected');
-      document.body.classList.remove(`layout-${layoutNumber}`);
-    });
-    $('#layoutBtn' + mode) && $('#layoutBtn' + mode).classList.add('selected');
-    document.body.classList.add('layout-' + mode);
-
-    await this.setState({ currentLayoutMode: mode }, () => {
-      this.contentWrap.resetSplitting();
-      this.contentWrap.setPreviewContent(true);
-    });
-  }
-
-  layoutBtnClickHandler(layoutId) {
-    this.saveSetting('layoutMode', layoutId);
-    mixpanel.track({
-      event: 'toggleLayoutClick',
-      category: 'ui',
-      label: layoutId,
-    });
-    this.toggleLayout(layoutId);
-  }
-
   async toggleEditorCollapse() {
     await this.setState({
       isEditorCollapsed: !this.state.isEditorCollapsed,
@@ -810,9 +771,8 @@ BookLibService.Borrow(id) {
   // Calculates the sizes of html, css & js code panes.
   getCodePaneSizes() {
     var sizes;
-    const currentLayoutMode = this.state.currentLayoutMode;
-    var dimensionProperty =
-      currentLayoutMode === 2 || currentLayoutMode === 5 ? 'width' : 'height';
+    // Layout is always horizontal, so we use 'height' for code panes
+    var dimensionProperty = 'height';
     try {
       sizes = [
         htmlCodeEl.style[dimensionProperty],
@@ -832,8 +792,8 @@ BookLibService.Borrow(id) {
   // Calculates the current sizes of code & preview panes.
   getMainPaneSizes() {
     var sizes;
-    const currentLayoutMode = this.state.currentLayoutMode;
-    var dimensionProperty = currentLayoutMode === 2 ? 'height' : 'width';
+    // Layout is always horizontal, so we use 'width' for main panes
+    var dimensionProperty = 'width';
     try {
       sizes = [
         +$('#js-code-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
@@ -859,7 +819,7 @@ BookLibService.Borrow(id) {
 
   async saveCode(key) {
     this.state.currentItem.updatedOn = Date.now();
-    this.state.currentItem.layoutMode = this.state.currentLayoutMode;
+    this.state.currentItem.layoutMode = 1;
 
     this.state.currentItem.sizes = this.getCodePaneSizes();
     this.state.currentItem.mainSizes = this.getMainPaneSizes();
@@ -1822,7 +1782,6 @@ BookLibService.Borrow(id) {
               openCheatSheet={this.openCheatSheet.bind(this)}
               onUpdateImage={this.onUpdateImage.bind(this)}
               currentItem={this.state.currentItem}
-              currentLayoutMode={this.state.currentLayoutMode}
               onLogin={this.loginBtnClickHandler.bind(this)}
               externalLibCount={this.state.externalLibCount}
               openBtnHandler={this.openBtnClickHandler.bind(this)}
@@ -1871,7 +1830,6 @@ BookLibService.Borrow(id) {
               />
             )}
             <ContentWrap
-              currentLayoutMode={this.state.currentLayoutMode}
               onCodeChange={this.onCodeChange.bind(this)}
               currentItem={this.state.currentItem}
               onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
@@ -1888,7 +1846,6 @@ BookLibService.Borrow(id) {
               keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}
-              layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
               isEditorCollapsed={this.state.isEditorCollapsed}
               onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
               editorInSidebar={this.state.activeLeftPanel === 'editor'}

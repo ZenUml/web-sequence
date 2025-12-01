@@ -71,13 +71,8 @@ export function MainHeader(props) {
           title={props.isEditorCollapsed ? "Expand editor pane" : "Collapse editor pane"}
           onClick={props.onToggleEditorCollapse}
         >
-          <svg 
-            className={`h-8 w-8 transition-transform duration-200 ${
-              props.currentLayoutMode === 2 ? 'rotate-90' : 
-              props.currentLayoutMode === 3 ? 'rotate-180' : 
-              'rotate-0'
-            }`}
-          >
+          <svg className="h-8 w-8">
+          
             <use xlinkHref={props.isEditorCollapsed ? "#icon-expand" : "#icon-collapse"} />
           </svg>
         </button>

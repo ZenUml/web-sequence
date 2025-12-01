@@ -494,9 +494,8 @@ export default class ContentWrap extends Component {
     // This is debounced!
     clearTimeout(this.updateCodeWrapCollapseStates.timeout);
     this.updateCodeWrapCollapseStates.timeout = setTimeout(() => {
-      const { currentLayoutMode } = this.props;
-      const prop =
-        currentLayoutMode === 2 || currentLayoutMode === 5 ? 'width' : 'height';
+      // Layout is always horizontal, so we use 'height' for code panes
+      const prop = 'height';
       [htmlCodeEl, cssCodeEl, jsCodeEl].forEach(function (el) {
         const bounds = el.getBoundingClientRect();
         const size = bounds[prop];
@@ -635,16 +634,11 @@ export default class ContentWrap extends Component {
   // Returns the sizes of main code & preview panes.
   getMainSplitSizesToApply() {
     var mainSplitSizes;
-    const { currentItem, currentLayoutMode } = this.props;
+    const { currentItem } = this.props;
     if (currentItem && currentItem.mainSizes) {
-      // For layout mode 3, main panes are reversed using flex-direction.
-      // So we need to apply the saved sizes in reverse order.
-      mainSplitSizes =
-        currentLayoutMode === 3
-          ? [currentItem.mainSizes[1], currentItem.mainSizes[0]]
-          : currentItem.mainSizes;
+      mainSplitSizes = currentItem.mainSizes;
     } else {
-      mainSplitSizes = currentLayoutMode === 5 ? [75, 25] : [30, 70];
+      mainSplitSizes = [30, 70];
     }
     return mainSplitSizes;
   }
@@ -1152,9 +1146,7 @@ export default class ContentWrap extends Component {
         sizes={splitSizes}
         minSize={this.props.editorInSidebar ? 200 : 580}
         style=""
-        direction={
-          this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
-        }
+        direction="horizontal"
         onDragEnd={this.mainSplitDragEndHandler.bind(this)}
       >
         {editorElement}
