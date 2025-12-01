@@ -9,19 +9,19 @@ export function ItemTile({
   focusable,
   compact,
 }) {
-  // Compact mode: exact match to mockup HTML
+  // Compact mode: dark theme by default
   if (compact) {
     return (
       <div
         role={focusable ? 'button' : null}
         tabindex={focusable ? 0 : null}
-        class="js-saved-item-tile bg-gray-100 dark:bg-gray-800 p-2.5 rounded-lg flex items-center justify-between cursor-pointer group"
+        class="js-saved-item-tile bg-gray-700 p-2.5 rounded-lg flex items-center justify-between cursor-pointer group"
         data-item-id={item.id}
         onClick={onClick}
       >
         <div class="flex items-center space-x-2.5 flex-1 min-w-0">
-          <span class="material-symbols-outlined text-lg text-gray-500 dark:text-gray-400">description</span>
-          <span class="font-medium truncate text-sm text-gray-900 dark:text-white">
+          <span class="material-symbols-outlined text-lg text-gray-400">description</span>
+          <span class="font-medium truncate text-sm text-white">
             {item.title || 'Untitled'}
           </span>
         </div>
@@ -30,7 +30,7 @@ export function ItemTile({
           <div class="hidden group-hover:flex items-center space-x-1">
             {onMoveBtnClick && (
               <button
-                class="text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors"
+                class="text-gray-500 hover:text-white transition-colors"
                 aria-label="Move to folder"
                 onClick={(e) => { e.stopPropagation(); onMoveBtnClick(); }}
                 title="Move to Folder"
@@ -40,7 +40,7 @@ export function ItemTile({
             )}
             {onForkBtnClick && (
               <button
-                class="text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors"
+                class="text-gray-500 hover:text-white transition-colors"
                 aria-label="Fork"
                 onClick={(e) => { e.stopPropagation(); onForkBtnClick(e); }}
                 title="Fork"
@@ -60,7 +60,7 @@ export function ItemTile({
             )}
           </div>
           {/* Time - hide on hover when buttons show */}
-          <span class="text-xs text-gray-500 dark:text-gray-400 group-hover:hidden">
+          <span class="text-xs text-gray-400 group-hover:hidden">
             {item.updatedOn ? getHumanDate(item.updatedOn) : ''}
           </span>
         </div>
