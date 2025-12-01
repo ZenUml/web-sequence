@@ -4,7 +4,6 @@
 import { h, Component } from 'preact';
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
-import Footer from './Footer.jsx';
 import LeftSidebar from './LeftSidebar.jsx';
 
 import Modal from './Modal.jsx';
@@ -1854,34 +1853,6 @@ BookLibService.Borrow(id) {
               hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
             />
           </div>
-          {this.isEmbed ? null : (
-            <Footer
-              prefs={this.state.prefs}
-              helpBtnClickHandler={async () =>
-                await this.setState({ isHelpModalOpen: true })
-              }
-              notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
-                this,
-              )}
-              supportDeveloperBtnClickHandler={this.supportDeveloperBtnClickHandler.bind(
-                this,
-              )}
-              detachedPreviewBtnHandler={this.detachedPreviewBtnHandler.bind(
-                this,
-              )}
-              codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
-              saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
-              screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
-                this,
-              )}
-              onJs13KHelpBtnClick={this.js13KHelpBtnClickHandler.bind(this)}
-              onJs13KDownloadBtnClick={this.js13KDownloadBtnClickHandler.bind(
-                this,
-              )}
-              hasUnseenChangelog={this.state.hasUnseenChangelog}
-              codeSize={this.state.codeSize}
-            />
-          )}
         </div>
 
         <Alerts />
