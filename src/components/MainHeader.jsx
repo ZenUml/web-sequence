@@ -127,19 +127,6 @@ export function MainHeader(props) {
           </svg>
           <span className="hidden lg:inline">New</span>
         </button>
-        <button
-          id="openItemsBtn"
-          className={`px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg ${
-            props.isFetchingItems ? 'is-loading' : ''
-          }`}
-          aria-label="Open a saved creation (Ctrl/⌘ + O)"
-          onClick={props.openBtnHandler}
-        >
-          <svg className="h-5 w-5">
-            <use xlinkHref="#icon-gallery" />
-          </svg>
-          <span className="hidden lg:inline">My library</span>
-        </button>
       </div>
       <div>
         {isEditing ? (
