@@ -1015,7 +1015,7 @@ export default class ContentWrap extends Component {
 
   renderEditor() {
     return (
-      <div id="js-code-side" className={`${this.props.isEditorCollapsed || this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
+      <div id="js-code-side" className={`${this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler

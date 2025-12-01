@@ -95,7 +95,6 @@ export default class App extends Component {
         title: '',
         externalLibs: { js: '', css: '' },
       },
-      isEditorCollapsed: false,
     };
     this.defaultSettings = {
       preserveLastCode: true,
@@ -754,25 +753,6 @@ BookLibService.Borrow(id) {
     // 	.filter(lib => !!lib).length;
     await this.setState({
       externalLibCount: noOfExternalLibs,
-    });
-  }
-
-  async toggleEditorCollapse() {
-    await this.setState({
-      isEditorCollapsed: !this.state.isEditorCollapsed,
-    });
-
-    // Apply CSS class to body to control layout
-    if (this.state.isEditorCollapsed) {
-      document.body.classList.add('editor-collapsed');
-    } else {
-      document.body.classList.remove('editor-collapsed');
-    }
-
-    mixpanel.track({
-      event: 'toggleEditorCollapse',
-      category: 'ui',
-      label: this.state.isEditorCollapsed ? 'collapsed' : 'expanded',
     });
   }
 
@@ -1808,8 +1788,6 @@ BookLibService.Borrow(id) {
               user={this.state.user}
               settingsBtnClickHandler={this.handleSettingsBtnClick.bind(this)}
               unsavedEditCount={this.state.unsavedEditCount}
-              isEditorCollapsed={this.state.isEditorCollapsed}
-              onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
             />
           )}
           {this.isEmbed && (
@@ -1856,8 +1834,6 @@ BookLibService.Borrow(id) {
               keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}
-              isEditorCollapsed={this.state.isEditorCollapsed}
-              onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
               editorInSidebar={this.state.activeLeftPanel === 'editor' && this.state.isEditorPanelOpen}
               hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
             />
