@@ -2,31 +2,31 @@ import { h } from 'preact';
 
 export const FolderRow = ({ folder, isOpen, onToggle, onRename, onDelete, itemCount }) => {
   return (
-    <div class="flex items-center justify-between py-1.5 text-gray-400">
-      <div class="flex items-center space-x-1.5 flex-grow overflow-hidden cursor-pointer" onClick={onToggle}>
-        <span class="material-symbols-outlined text-lg">
+    <div class="flex items-center justify-between p-2 rounded-md hover:bg-white/10 text-white/80 group cursor-pointer">
+      <div class="flex items-center gap-2 flex-grow overflow-hidden" onClick={onToggle}>
+        <span class="material-symbols-outlined text-base">
           {isOpen ? 'expand_more' : 'chevron_right'}
         </span>
-        <span class="material-symbols-outlined text-lg text-yellow-500">
+        <span class="material-symbols-outlined text-base text-yellow-500">
           {isOpen ? 'folder_open' : 'folder'}
         </span>
-        <span class="font-medium text-gray-200 truncate">{folder.name}</span>
-        <span class="text-sm">({itemCount})</span>
+        <span class="truncate">{folder.name}</span>
+        <span class="text-white/50 text-xs">({itemCount})</span>
       </div>
-      <div class="flex items-center space-x-1">
+      <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button 
           onClick={(e) => { e.stopPropagation(); onRename(folder); }} 
-          class="hover:text-gray-200 transition-colors"
+          class="p-0.5 hover:bg-white/10 rounded text-white/50 hover:text-white transition-colors"
           title="Rename Folder"
         >
-          <span class="material-symbols-outlined text-lg">edit</span>
+          <span class="material-symbols-outlined text-base">edit</span>
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(folder); }} 
-          class="hover:text-red-500 transition-colors"
+          class="p-0.5 hover:bg-white/10 rounded text-white/50 hover:text-red-400 transition-colors"
           title="Delete Folder"
         >
-          <span class="material-symbols-outlined text-lg">delete</span>
+          <span class="material-symbols-outlined text-base">delete</span>
         </button>
       </div>
     </div>

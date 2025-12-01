@@ -342,6 +342,19 @@ body:not(.light-version).overlay-visible .main-container {
   filter: blur(3px);
 }
 
+.main-content-area {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.main-content-area .content-wrap {
+  /* Override the max-height when inside main-content-area */
+  max-height: 100%;
+  height: 100%;
+}
+
 .content-wrap {
   /* HACK:  */
   height: 1px;

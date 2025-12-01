@@ -9,62 +9,58 @@ export function ItemTile({
   focusable,
   compact,
 }) {
-  // Compact mode: dark theme by default
+  // Compact mode for left sidebar - matches mockup style
   if (compact) {
     return (
-      <div
+      <a
         role={focusable ? 'button' : null}
         tabindex={focusable ? 0 : null}
-        class="js-saved-item-tile bg-gray-700 p-2.5 rounded-lg flex items-center justify-between cursor-pointer group"
+        class="js-saved-item-tile flex items-center gap-2 p-2 rounded-md hover:bg-white/10 cursor-pointer group text-white/80"
         data-item-id={item.id}
         onClick={onClick}
       >
-        <div class="flex items-center space-x-2.5 flex-1 min-w-0">
-          <span class="material-symbols-outlined text-lg text-gray-400">description</span>
-          <span class="font-medium truncate text-sm text-white">
-            {item.title || 'Untitled'}
-          </span>
+        <svg class="w-4 h-4 shrink-0 text-white/60" fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.66699 2.6665H7.33366V7.33317H13.3337V13.3332H2.66699V2.6665Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></path>
+        </svg>
+        <span class="truncate flex-1 text-sm">{item.title || 'Untitled'}</span>
+        {/* Action buttons - show on hover */}
+        <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
+          {onMoveBtnClick && (
+            <button
+              class="p-0.5 hover:bg-white/10 rounded text-white/50 hover:text-white transition-colors"
+              aria-label="Move to folder"
+              onClick={(e) => { e.stopPropagation(); onMoveBtnClick(); }}
+              title="Move"
+            >
+              <span class="material-symbols-outlined text-sm">drive_file_move</span>
+            </button>
+          )}
+          {onForkBtnClick && (
+            <button
+              class="p-0.5 hover:bg-white/10 rounded text-white/50 hover:text-white transition-colors"
+              aria-label="Fork"
+              onClick={(e) => { e.stopPropagation(); onForkBtnClick(e); }}
+              title="Fork"
+            >
+              <span class="material-symbols-outlined text-sm">content_copy</span>
+            </button>
+          )}
+          {onRemoveBtnClick && (
+            <button
+              class="p-0.5 hover:bg-white/10 rounded text-white/50 hover:text-red-400 transition-colors"
+              aria-label="Remove"
+              onClick={(e) => { e.stopPropagation(); onRemoveBtnClick(e); }}
+              title="Delete"
+            >
+              <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+          )}
         </div>
-        <div class="flex items-center ml-2 shrink-0">
-          {/* Action buttons - show on hover */}
-          <div class="hidden group-hover:flex items-center space-x-1">
-            {onMoveBtnClick && (
-              <button
-                class="text-gray-500 hover:text-white transition-colors"
-                aria-label="Move to folder"
-                onClick={(e) => { e.stopPropagation(); onMoveBtnClick(); }}
-                title="Move to Folder"
-              >
-                <span class="material-symbols-outlined text-lg">drive_file_move</span>
-              </button>
-            )}
-            {onForkBtnClick && (
-              <button
-                class="text-gray-500 hover:text-white transition-colors"
-                aria-label="Fork"
-                onClick={(e) => { e.stopPropagation(); onForkBtnClick(e); }}
-                title="Fork"
-              >
-                <span class="material-symbols-outlined text-lg">content_copy</span>
-              </button>
-            )}
-            {onRemoveBtnClick && (
-              <button
-                class="text-gray-500 hover:text-red-500 transition-colors"
-                aria-label="Remove"
-                onClick={(e) => { e.stopPropagation(); onRemoveBtnClick(e); }}
-                title="Delete"
-              >
-                <span class="material-symbols-outlined text-lg">delete</span>
-              </button>
-            )}
-          </div>
-          {/* Time - hide on hover when buttons show */}
-          <span class="text-xs text-gray-400 group-hover:hidden">
-            {item.updatedOn ? getHumanDate(item.updatedOn) : ''}
-          </span>
-        </div>
-      </div>
+        {/* Time - hide on hover */}
+        <span class="text-xs text-white/40 group-hover:hidden shrink-0">
+          {item.updatedOn ? getHumanDate(item.updatedOn) : ''}
+        </span>
+      </a>
     );
   }
 

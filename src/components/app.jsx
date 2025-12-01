@@ -6,6 +6,7 @@ import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
 import Footer from './Footer.jsx';
 import SavedItemPane from './SavedItemPane.jsx';
+import LeftSidebar from './LeftSidebar.jsx';
 
 import Modal from './Modal.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
@@ -87,6 +88,8 @@ export default class App extends Component {
     };
     this.state = {
       isSavedItemPaneOpen: false,
+      isLibraryPanelOpen: true,
+      activeLeftPanel: 'library',
       ...this.modalDefaultStates,
       prefs: {},
       currentItem: {
@@ -1861,28 +1864,44 @@ BookLibService.Borrow(id) {
               }
             />
           )}
-          <ContentWrap
-            currentLayoutMode={this.state.currentLayoutMode}
-            onCodeChange={this.onCodeChange.bind(this)}
-            currentItem={this.state.currentItem}
-            onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
-            onCodeModeChange={this.onCodeModeChange.bind(this)}
-            onLogin={this.loginBtnClickHandler.bind(this)}
-            onRef={(comp) => (this.contentWrap = comp)}
-            prefs={this.state.prefs}
-            onEditorFocus={this.editorFocusHandler.bind(this)}
-            onSplitUpdate={this.splitUpdateHandler.bind(this)}
-            onProFeature={this.proBtnClickHandler.bind(this)}
-            onPageSwitch={this.switchToPage.bind(this)}
-            onAddPage={this.addNewPage.bind(this)}
-            onDeletePage={this.deletePage.bind(this)}
-            keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
-              this,
+          <div class="main-content-area">
+            {!this.isEmbed && !window.zenumlDesktop && (
+              <LeftSidebar
+                isLibraryPanelOpen={this.state.isLibraryPanelOpen}
+                activeLeftPanel={this.state.activeLeftPanel}
+                onToggleLibraryPanel={() => this.setState({ isLibraryPanelOpen: !this.state.isLibraryPanelOpen })}
+                onSwitchPanel={(panel) => this.setState({ activeLeftPanel: panel })}
+                items={this.state.savedItems}
+                itemClickHandler={this.itemClickHandler.bind(this)}
+                itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
+                itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
+                exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
+                mergeImportedItems={this.mergeImportedItems.bind(this)}
+              />
             )}
-            layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
-            isEditorCollapsed={this.state.isEditorCollapsed}
-            onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
-          />
+            <ContentWrap
+              currentLayoutMode={this.state.currentLayoutMode}
+              onCodeChange={this.onCodeChange.bind(this)}
+              currentItem={this.state.currentItem}
+              onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
+              onCodeModeChange={this.onCodeModeChange.bind(this)}
+              onLogin={this.loginBtnClickHandler.bind(this)}
+              onRef={(comp) => (this.contentWrap = comp)}
+              prefs={this.state.prefs}
+              onEditorFocus={this.editorFocusHandler.bind(this)}
+              onSplitUpdate={this.splitUpdateHandler.bind(this)}
+              onProFeature={this.proBtnClickHandler.bind(this)}
+              onPageSwitch={this.switchToPage.bind(this)}
+              onAddPage={this.addNewPage.bind(this)}
+              onDeletePage={this.deletePage.bind(this)}
+              keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
+                this,
+              )}
+              layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
+              isEditorCollapsed={this.state.isEditorCollapsed}
+              onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
+            />
+          </div>
           {this.isEmbed ? null : (
             <Footer
               prefs={this.state.prefs}
