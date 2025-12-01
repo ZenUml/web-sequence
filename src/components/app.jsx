@@ -145,6 +145,10 @@ export default class App extends Component {
         alertsService.add('You are now logged in!');
         await this.setState({ user });
         window.user = user;
+        // Fetch items globally so library panel shows them immediately
+        this.fetchItems(true);
+        
+        // Check if we should show the import dialog for local items
         if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
           this.fetchItems(false, true).then(async (items) => {
             if (!items.length) {
@@ -550,9 +554,12 @@ BookLibService.Borrow(id) {
       items = await itemService.getAllItems();
       log('got items');
       if (shouldSaveGlobally) {
+        const savedItems = {};
         items.forEach((item) => {
-          this.state.savedItems[item.id] = item;
+          savedItems[item.id] = item;
         });
+        // Use setState to trigger re-render
+        await this.setState({ savedItems });
         // Initialize survey check after items are loaded
         this.initializeFeaturePrioritySurvey();
       }
