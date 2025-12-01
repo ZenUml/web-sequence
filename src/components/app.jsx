@@ -1899,7 +1899,7 @@ BookLibService.Borrow(id) {
               layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
               isEditorCollapsed={this.state.isEditorCollapsed}
               onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
-              hideCodeSide={this.state.activeLeftPanel === 'editor'}
+              hideCodeSide={true}
             />
           </div>
           {this.isEmbed ? null : (
