@@ -5,6 +5,7 @@ import { ProductVersionLabel } from '../zenuml/components/MainHeader/ProductVers
 import featureToggle from '../services/feature_toggle';
 import { Popover } from './PopOver';
 import { SharePanel } from './SharePanel';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
 
@@ -58,7 +59,7 @@ export function MainHeader(props) {
   const isSubscribed = userService.isSubscribed();
 
   return (
-    <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">
+    <div className="main-header text-gray-400 py-1 px-2 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
         <div className="flex items-center p-1">
           <svg className="h-9 w-9">
