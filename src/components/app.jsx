@@ -1833,6 +1833,7 @@ BookLibService.Borrow(id) {
                 onSettingsClick={this.handleSettingsBtnClick.bind(this)}
                 onCheatsheetClick={this.openCheatSheet.bind(this)}
                 onShortcutsClick={this.handleShortcutsModalOpen.bind(this)}
+                onReloadLibrary={() => this.fetchItems(true)}
               />
             )}
             <ContentWrap

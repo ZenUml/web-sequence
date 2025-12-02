@@ -20,6 +20,7 @@ export default class LeftSidebar extends Component {
       itemForkBtnClickHandler,
       exportBtnClickHandler,
       mergeImportedItems,
+      onReloadLibrary,
     } = this.props;
 
     // Check if panels are active and open
@@ -113,6 +114,7 @@ export default class LeftSidebar extends Component {
             itemForkBtnClickHandler={itemForkBtnClickHandler}
             exportBtnClickHandler={exportBtnClickHandler}
             mergeImportedItems={mergeImportedItems}
+            onReload={onReloadLibrary}
           />
         )}
       </div>

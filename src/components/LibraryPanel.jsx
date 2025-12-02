@@ -405,6 +405,13 @@ export default class LibraryPanel extends Component {
             </button>
             <div class="flex items-center gap-1">
               <button
+                onClick={this.props.onReload}
+                class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                title="Reload library"
+              >
+                <span class="material-symbols-outlined text-base">refresh</span>
+              </button>
+              <button
                 onClick={this.props.exportBtnClickHandler}
                 class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                 title="Export"
