@@ -4,8 +4,7 @@
 import { h, Component } from 'preact';
 import { MainHeader } from './MainHeader.jsx';
 import ContentWrap from './ContentWrap.jsx';
-import Footer from './Footer.jsx';
-import SavedItemPane from './SavedItemPane.jsx';
+import LeftSidebar from './LeftSidebar.jsx';
 
 import Modal from './Modal.jsx';
 import { computeHtml, computeCss, computeJs } from '../computes';
@@ -86,14 +85,15 @@ export default class App extends Component {
       isFeaturePrioritySurveyModalOpen: false,
     };
     this.state = {
-      isSavedItemPaneOpen: false,
+      isLibraryPanelOpen: false,
+      isEditorPanelOpen: true,
+      activeLeftPanel: 'editor',
       ...this.modalDefaultStates,
       prefs: {},
       currentItem: {
         title: '',
         externalLibs: { js: '', css: '' },
       },
-      isEditorCollapsed: false,
     };
     this.defaultSettings = {
       preserveLastCode: true,
@@ -144,6 +144,10 @@ export default class App extends Component {
         alertsService.add('You are now logged in!');
         await this.setState({ user });
         window.user = user;
+        // Fetch items globally so library panel shows them immediately
+        await this.fetchItems(true);
+        
+        // Check if we should show the import dialog for local items
         if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
           this.fetchItems(false, true).then(async (items) => {
             if (!items.length) {
@@ -200,8 +204,8 @@ export default class App extends Component {
         code: '',
       },
       (result) => {
-        this.toggleLayout(result.layoutMode);
-        this.state.prefs.layoutMode = result.layoutMode;
+        // Layout mode is now fixed to 1 (horizontal with preview on right)
+        this.state.prefs.layoutMode = 1;
         let urlCode;
         try {
           urlCode = JSON.parse(
@@ -353,9 +357,6 @@ export default class App extends Component {
   }
 
   refreshEditor() {
-    this.toggleLayout(
-      this.state.currentItem.layoutMode || this.state.prefs.layoutMode,
-    );
     this.updateExternalLibCount();
     this.contentWrap.refreshEditor();
   }
@@ -412,7 +413,7 @@ BookLibService.Borrow(id) {
   return receipt
 }`,
       externalLibs: { js: '', css: '' },
-      layoutMode: this.state.currentLayoutMode,
+      layoutMode: 1,
     }).then(() => this.refreshEditor());
     alertsService.add('New item created');
   }
@@ -522,25 +523,19 @@ BookLibService.Borrow(id) {
       savedItems: { ...this.state.savedItems },
     });
 
-    await this.toggleSavedItemsPane();
+    // Always open the pane when populating items
+    await this.toggleSavedItemsPane(true);
     // HACK: Set overflow after sometime so that the items can animate without getting cropped.
     // setTimeout(() => $('#js-saved-items-wrap').style.overflowY = 'auto', 1000);
   }
 
   async toggleSavedItemsPane(shouldOpen) {
+    // Now toggles the left sidebar Library panel instead of the old right pane
+    const newState = shouldOpen === undefined ? !this.state.isLibraryPanelOpen : shouldOpen;
     await this.setState({
-      isSavedItemPaneOpen:
-        shouldOpen === undefined ? !this.state.isSavedItemPaneOpen : shouldOpen,
+      isLibraryPanelOpen: newState,
+      activeLeftPanel: 'library',
     });
-
-    if (this.state.isSavedItemPaneOpen) {
-      window.searchInput.focus();
-    } else {
-      window.searchInput.value = '';
-    }
-    document.body.classList[this.state.isSavedItemPaneOpen ? 'add' : 'remove'](
-      'overlay-visible',
-    );
   }
 
   /**
@@ -559,9 +554,12 @@ BookLibService.Borrow(id) {
       items = await itemService.getAllItems();
       log('got items');
       if (shouldSaveGlobally) {
+        const savedItems = {};
         items.forEach((item) => {
-          this.state.savedItems[item.id] = item;
+          savedItems[item.id] = item;
         });
+        // Use setState to trigger re-render
+        await this.setState({ savedItems });
         // Initialize survey check after items are loaded
         this.initializeFeaturePrioritySurvey();
       }
@@ -606,21 +604,30 @@ BookLibService.Borrow(id) {
     await this.setState({
       isFetchingItems: true,
     });
-    this.fetchItems(true).then(async (items) => {
-      await this.setState({
-        isFetchingItems: false,
+    this.fetchItems(true)
+      .then(async (items) => {
+        await this.setState({
+          isFetchingItems: false,
+        });
+        await this.populateItemsInSavedPane(items);
+      })
+      .catch(async (error) => {
+        console.error('Failed to fetch items:', error);
+        await this.setState({
+          isFetchingItems: false,
+        });
+        // Still open the pane even if fetching failed, so user can see local items or error state
+        await this.toggleSavedItemsPane(true);
       });
-      await this.populateItemsInSavedPane(items);
-    });
   }
 
 
 
   async closeSavedItemsPane() {
+    // Now closes the left sidebar Library panel
     await this.setState({
-      isSavedItemPaneOpen: false,
+      isLibraryPanelOpen: false,
     });
-    document.body.classList.remove('overlay-visible');
 
     if (this.editorWithFocus) {
       this.editorWithFocus.focus();
@@ -674,6 +681,11 @@ BookLibService.Borrow(id) {
           trackEvent('ui', 'showKeyboardShortcutsShortcut');
         } else if (event.keyCode === 27) {
           await this.closeSavedItemsPane();
+        } else if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+          // Cmd/Ctrl + K
+          event.preventDefault();
+          await this.openSavedItemsPane();
+          trackEvent('ui', 'searchKeyboardShortcut');
         }
       });
     }
@@ -703,7 +715,7 @@ BookLibService.Borrow(id) {
   }
 
   async closeAllOverlays() {
-    if (this.state.isSavedItemPaneOpen) {
+    if (this.state.isLibraryPanelOpen) {
       await this.closeSavedItemsPane();
     }
 
@@ -744,67 +756,11 @@ BookLibService.Borrow(id) {
     });
   }
 
-  async toggleLayout(mode) {
-    /* eslint-disable no-param-reassign */
-    mode = window.innerWidth < 600 ? 2 : mode;
-
-    if (this.state.currentLayoutMode === mode) {
-      this.contentWrap.resetSplitting();
-      // mainSplitInstance.setSizes(getMainSplitSizesToApply());
-      // codeSplitInstance.setSizes(currentItem.sizes || [33.33, 33.33, 33.33]);
-      await this.setState({ currentLayoutMode: mode });
-      return;
-    }
-    // Remove all layout classes
-    [1, 2, 3, 4, 5].forEach((layoutNumber) => {
-      window[`layoutBtn${layoutNumber}`] &&
-        window[`layoutBtn${layoutNumber}`].classList.remove('selected');
-      document.body.classList.remove(`layout-${layoutNumber}`);
-    });
-    $('#layoutBtn' + mode) && $('#layoutBtn' + mode).classList.add('selected');
-    document.body.classList.add('layout-' + mode);
-
-    await this.setState({ currentLayoutMode: mode }, () => {
-      this.contentWrap.resetSplitting();
-      this.contentWrap.setPreviewContent(true);
-    });
-  }
-
-  layoutBtnClickHandler(layoutId) {
-    this.saveSetting('layoutMode', layoutId);
-    mixpanel.track({
-      event: 'toggleLayoutClick',
-      category: 'ui',
-      label: layoutId,
-    });
-    this.toggleLayout(layoutId);
-  }
-
-  async toggleEditorCollapse() {
-    await this.setState({
-      isEditorCollapsed: !this.state.isEditorCollapsed,
-    });
-
-    // Apply CSS class to body to control layout
-    if (this.state.isEditorCollapsed) {
-      document.body.classList.add('editor-collapsed');
-    } else {
-      document.body.classList.remove('editor-collapsed');
-    }
-
-    mixpanel.track({
-      event: 'toggleEditorCollapse',
-      category: 'ui',
-      label: this.state.isEditorCollapsed ? 'collapsed' : 'expanded',
-    });
-  }
-
   // Calculates the sizes of html, css & js code panes.
   getCodePaneSizes() {
     var sizes;
-    const currentLayoutMode = this.state.currentLayoutMode;
-    var dimensionProperty =
-      currentLayoutMode === 2 || currentLayoutMode === 5 ? 'width' : 'height';
+    // Layout is always horizontal, so we use 'height' for code panes
+    var dimensionProperty = 'height';
     try {
       sizes = [
         htmlCodeEl.style[dimensionProperty],
@@ -824,8 +780,8 @@ BookLibService.Borrow(id) {
   // Calculates the current sizes of code & preview panes.
   getMainPaneSizes() {
     var sizes;
-    const currentLayoutMode = this.state.currentLayoutMode;
-    var dimensionProperty = currentLayoutMode === 2 ? 'height' : 'width';
+    // Layout is always horizontal, so we use 'width' for main panes
+    var dimensionProperty = 'width';
     try {
       sizes = [
         +$('#js-code-side').style[dimensionProperty].match(/([\d.]+)%/)[1],
@@ -851,7 +807,7 @@ BookLibService.Borrow(id) {
 
   async saveCode(key) {
     this.state.currentItem.updatedOn = Date.now();
-    this.state.currentItem.layoutMode = this.state.currentLayoutMode;
+    this.state.currentItem.layoutMode = 1;
 
     this.state.currentItem.sizes = this.getCodePaneSizes();
     this.state.currentItem.mainSizes = this.getMainPaneSizes();
@@ -1814,7 +1770,6 @@ BookLibService.Borrow(id) {
               openCheatSheet={this.openCheatSheet.bind(this)}
               onUpdateImage={this.onUpdateImage.bind(this)}
               currentItem={this.state.currentItem}
-              currentLayoutMode={this.state.currentLayoutMode}
               onLogin={this.loginBtnClickHandler.bind(this)}
               externalLibCount={this.state.externalLibCount}
               openBtnHandler={this.openBtnClickHandler.bind(this)}
@@ -1833,8 +1788,6 @@ BookLibService.Borrow(id) {
               user={this.state.user}
               settingsBtnClickHandler={this.handleSettingsBtnClick.bind(this)}
               unsavedEditCount={this.state.unsavedEditCount}
-              isEditorCollapsed={this.state.isEditorCollapsed}
-              onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
             />
           )}
           {this.isEmbed && (
@@ -1847,68 +1800,64 @@ BookLibService.Borrow(id) {
               }
             />
           )}
-          <ContentWrap
-            currentLayoutMode={this.state.currentLayoutMode}
-            onCodeChange={this.onCodeChange.bind(this)}
-            currentItem={this.state.currentItem}
-            onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
-            onCodeModeChange={this.onCodeModeChange.bind(this)}
-            onLogin={this.loginBtnClickHandler.bind(this)}
-            onRef={(comp) => (this.contentWrap = comp)}
-            prefs={this.state.prefs}
-            onEditorFocus={this.editorFocusHandler.bind(this)}
-            onSplitUpdate={this.splitUpdateHandler.bind(this)}
-            onProFeature={this.proBtnClickHandler.bind(this)}
-            onPageSwitch={this.switchToPage.bind(this)}
-            onAddPage={this.addNewPage.bind(this)}
-            onDeletePage={this.deletePage.bind(this)}
-            keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
-              this,
+          <div class="main-content-area">
+            {!this.isEmbed && !window.zenumlDesktop && (
+              <LeftSidebar
+                isLibraryPanelOpen={this.state.isLibraryPanelOpen}
+                isEditorPanelOpen={this.state.isEditorPanelOpen}
+                activeLeftPanel={this.state.activeLeftPanel}
+                onToggleLibraryPanel={async () => {
+                  const willOpen = !this.state.isLibraryPanelOpen;
+                  await this.setState({ isLibraryPanelOpen: willOpen });
+                  if (willOpen) {
+                    await this.openSavedItemsPane();
+                  }
+                }}
+                onToggleEditorPanel={() => this.setState({ isEditorPanelOpen: !this.state.isEditorPanelOpen })}
+                onSwitchPanel={async (panel) => {
+                  await this.setState({ 
+                    activeLeftPanel: panel, 
+                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, 
+                    isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen 
+                  });
+                  if (panel === 'library') {
+                    await this.openSavedItemsPane();
+                  }
+                }}
+                items={this.state.savedItems}
+                itemClickHandler={this.itemClickHandler.bind(this)}
+                itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
+                itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
+                exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
+                mergeImportedItems={this.mergeImportedItems.bind(this)}
+                onSettingsClick={this.handleSettingsBtnClick.bind(this)}
+                onCheatsheetClick={this.openCheatSheet.bind(this)}
+                onShortcutsClick={this.handleShortcutsModalOpen.bind(this)}
+                onReloadLibrary={() => this.fetchItems(true)}
+              />
             )}
-            layoutBtnClickHandler={this.layoutBtnClickHandler.bind(this)}
-            isEditorCollapsed={this.state.isEditorCollapsed}
-            onToggleEditorCollapse={this.toggleEditorCollapse.bind(this)}
-          />
-          {this.isEmbed ? null : (
-            <Footer
+            <ContentWrap
+              onCodeChange={this.onCodeChange.bind(this)}
+              currentItem={this.state.currentItem}
+              onCodeSettingsChange={this.onCodeSettingsChange.bind(this)}
+              onCodeModeChange={this.onCodeModeChange.bind(this)}
+              onLogin={this.loginBtnClickHandler.bind(this)}
+              onRef={(comp) => (this.contentWrap = comp)}
               prefs={this.state.prefs}
-              helpBtnClickHandler={async () =>
-                await this.setState({ isHelpModalOpen: true })
-              }
-              notificationsBtnClickHandler={this.notificationsBtnClickHandler.bind(
+              onEditorFocus={this.editorFocusHandler.bind(this)}
+              onSplitUpdate={this.splitUpdateHandler.bind(this)}
+              onProFeature={this.proBtnClickHandler.bind(this)}
+              onPageSwitch={this.switchToPage.bind(this)}
+              onAddPage={this.addNewPage.bind(this)}
+              onDeletePage={this.deletePage.bind(this)}
+              keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}
-              supportDeveloperBtnClickHandler={this.supportDeveloperBtnClickHandler.bind(
-                this,
-              )}
-              detachedPreviewBtnHandler={this.detachedPreviewBtnHandler.bind(
-                this,
-              )}
-              codepenBtnClickHandler={this.codepenBtnClickHandler.bind(this)}
-              saveHtmlBtnClickHandler={this.saveHtmlBtnClickHandler.bind(this)}
-              screenshotBtnClickHandler={this.screenshotBtnClickHandler.bind(
-                this,
-              )}
-              onJs13KHelpBtnClick={this.js13KHelpBtnClickHandler.bind(this)}
-              onJs13KDownloadBtnClick={this.js13KDownloadBtnClickHandler.bind(
-                this,
-              )}
-              hasUnseenChangelog={this.state.hasUnseenChangelog}
-              codeSize={this.state.codeSize}
+              editorInSidebar={this.state.activeLeftPanel === 'editor' && this.state.isEditorPanelOpen}
+              hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
             />
-          )}
+          </div>
         </div>
-
-        <SavedItemPane
-          items={this.state.savedItems}
-          isOpen={this.state.isSavedItemPaneOpen}
-          closeHandler={this.closeSavedItemsPane.bind(this)}
-          itemClickHandler={this.itemClickHandler.bind(this)}
-          itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
-          itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
-          exportBtnClickHandler={this.exportBtnClickHandler.bind(this)}
-          mergeImportedItems={this.mergeImportedItems.bind(this)}
-        />
 
         <Alerts />
 

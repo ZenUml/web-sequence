@@ -56,85 +56,19 @@ export function MainHeader(props) {
     props.titleInputBlurHandler(e);
   };
 
-  const handleTrack = () => {
-    mixpanel.track({ event: 'toLanguageGuide', category: 'ui' });
-  };
-
   const isSubscribed = userService.isSubscribed();
 
   return (
-    <div className="main-header text-gray-400 py-2 px-8 flex justify-between border-b border-black-700 bg-black-500">
+    <div className="main-header text-gray-100 py-1 px-2 flex justify-between border-b border-black-700 bg-black-500">
       <div className="flex items-center gap-4">
-         <button
-          className="py-1.5 duration-200 font-semibold flex items-center gap-2 rounded-lg"
-          aria-label="Toggle editor pane"
-          title={props.isEditorCollapsed ? "Expand editor pane" : "Collapse editor pane"}
-          onClick={props.onToggleEditorCollapse}
-        >
-          <svg 
-            className={`h-8 w-8 transition-transform duration-200 ${
-              props.currentLayoutMode === 2 ? 'rotate-90' : 
-              props.currentLayoutMode === 3 ? 'rotate-180' : 
-              'rotate-0'
-            }`}
-          >
-            <use xlinkHref={props.isEditorCollapsed ? "#icon-expand" : "#icon-collapse"} />
+        <div className="flex items-center p-1">
+          <svg className="h-9 w-9">
+            <use xlinkHref="#outline-zenuml" />
           </svg>
-        </button>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <div className="flex items-center p-1 hover:bg-gray-700 data-[state=open]:bg-[#454856] rounded-lg cursor-pointer duration-200">
-              <svg className="h-9 w-9">
-                <use xlinkHref="#outline-zenuml" />
-              </svg>
-              <svg className="h-6 w-6">
-                <use xlinkHref="#icon-arrow-down" />
-              </svg>
-            </div>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="w-[200px] bg-black-400 rounded-md overflow-hidden shadow-[0px_10px_38px_-10px_rgba(0,_0,_0,_0.6),_0px_10px_20px_-15px_rgba(0,_0,_0,_0.5)] will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade duration-200"
-              sideOffset={5}
-              align="start"
-            >
-              <DropdownMenu.Item
-                onClick={() => props.openCheatSheet()}
-                className="cursor-pointer hover:bg-black-600 text-sm leading-none flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
-              >
-                <svg className="h-5 w-5">
-                  <use xlinkHref="#icon-cheatsheet" />
-                </svg>
-                Cheatsheet
-              </DropdownMenu.Item>
-              <DropdownMenu.Item className="cursor-pointer hover:bg-black-600 text-sm leading-none relative select-none outline-none duration-200">
-                <a
-                  onClick={handleTrack}
-                  className="flex items-center h-14 px-6 gap-2 !no-underline"
-                  target="_blank"
-                  href="https://zenuml.com/docs/category/language-guide"
-                >
-                  <svg className="h-5 w-5">
-                    <use xlinkHref="#icon-guide" />
-                  </svg>
-                  Language guide
-                </a>
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onClick={props.settingsBtnClickHandler}
-                className="text-primary-100 border-black-700 border-t cursor-pointer hover:bg-black-600 text-sm leading-none text-gray-200 flex items-center h-14 px-6 relative select-none outline-none gap-2 duration-200"
-              >
-                <span class="material-symbols-outlined text-lg font-light text-gray-500">
-                  settings
-                </span>
-                Settings
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        </div>
 
         <button
-          className="px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg"
+          className="px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-normal flex items-center gap-2 rounded-lg"
           aria-label="Start a new creation"
           onClick={props.newBtnHandler}
         >
@@ -142,19 +76,6 @@ export function MainHeader(props) {
             <use xlinkHref="#icon-plus" />
           </svg>
           <span className="hidden lg:inline">New</span>
-        </button>
-        <button
-          id="openItemsBtn"
-          className={`px-4 py-1.5 bg-black-600 hover:opacity-80 duration-200 font-semibold flex items-center gap-2 rounded-lg ${
-            props.isFetchingItems ? 'is-loading' : ''
-          }`}
-          aria-label="Open a saved creation (Ctrl/⌘ + O)"
-          onClick={props.openBtnHandler}
-        >
-          <svg className="h-5 w-5">
-            <use xlinkHref="#icon-gallery" />
-          </svg>
-          <span className="hidden lg:inline">My library</span>
         </button>
       </div>
       <div>
@@ -164,13 +85,13 @@ export function MainHeader(props) {
             type="text"
             id="titleInput"
             title="Click to edit"
-            className="font-semibold appearance-none w-60 text-center bg-transparent px-3 py-1.5 outline-primary border-none w-auto max-w-60"
+            className="font-normal appearance-none w-60 text-center bg-transparent px-3 py-1.5 outline-primary border-none w-auto max-w-60"
             value={props.title}
             onBlur={onBlur}
           />
         ) : (
           <div
-            className="flex items-center gap-2 font-semibold"
+            className="flex items-center gap-2 font-normal"
             onClick={() => entryEditing()}
           >
             <span>{props.title || 'Untitled'} </span>
@@ -193,7 +114,7 @@ export function MainHeader(props) {
 
         {!window.user ? (
           <button
-            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-semibold hover:opacity-80 duration-200"
+            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
             aria-label="Share diagram link"
             onClick={props.onLogin.bind(this)}
           >
@@ -208,7 +129,7 @@ export function MainHeader(props) {
             onVisibilityChange={setIsSharePanelVisible}
             trigger={
               <button
-                className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-white font-semibold hover:opacity-80 duration-200"
+                className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-white font-normal hover:opacity-80 duration-200"
                 aria-label="Share diagram link"
                 onClick={shareClickHandler}
               >

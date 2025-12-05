@@ -15,13 +15,26 @@ import { log } from './utils';
     get: (obj, cb) => {
       const retVal = {};
       if (typeof obj === 'string') {
-        retVal[obj] = JSON.parse(window.localStorage.getItem(obj));
+        try {
+          retVal[obj] = JSON.parse(window.localStorage.getItem(obj));
+        } catch (e) {
+          // Handle non-JSON values (legacy data stored as plain strings)
+          retVal[obj] = window.localStorage.getItem(obj);
+        }
         setTimeout(() => cb(retVal), FAUX_DELAY);
       } else {
         Object.keys(obj).forEach((key) => {
           const val = window.localStorage.getItem(key);
-          retVal[key] =
-            val === undefined || val === null ? obj[key] : JSON.parse(val);
+          if (val === undefined || val === null) {
+            retVal[key] = obj[key];
+          } else {
+            try {
+              retVal[key] = JSON.parse(val);
+            } catch (e) {
+              // Handle non-JSON values (legacy data stored as plain strings)
+              retVal[key] = val;
+            }
+          }
         });
         setTimeout(() => cb(retVal), FAUX_DELAY);
       }
@@ -55,32 +68,43 @@ import { log } from './utils';
       if (db) {
         return resolve(db);
       }
-      const store = firebase.firestore();
-      return store
-        .enablePersistence({ synchronizeTabs: true })
+      // Initialize Cloud Firestore through firebase
+      db = firebase.firestore();
+      
+      // Try to enable persistence, but don't fail if it's already been called
+      db.enablePersistence({ synchronizeTabs: true })
         .then(function () {
-          // Initialize Cloud Firestore through firebase
-          db = firebase.firestore();
-          // const settings = {
-          // 	timestampsInSnapshots: true
-          // };
-          // db.settings(settings);
-          log('firebase db ready', db);
+          log('firebase db ready with persistence', db);
           resolve(db);
         })
         .catch(function (err) {
-          reject(err.code);
           if (err.code === 'failed-precondition') {
             // Multiple tabs open, persistence can only be enabled
             // in one tab at a a time.
+            // Also used for SDK version mismatch errors
+            if (err.message && err.message.indexOf('newer version') !== -1) {
+              log('Persistence disabled due to SDK version mismatch', err);
+              resolve(db);
+              return;
+            }
+            
             alert(
               "Opening ZenUML web app in multiple tabs isn't supported at present and it seems like you already have it opened in another tab. Please use in one tab.",
             );
             trackEvent('fn', 'multiTabError');
+            // Fallback to persistence disabled instead of rejecting, so the app can continue
+            log('Persistence disabled due to multiple tabs', err);
+            resolve(db);
           } else if (err.code === 'unimplemented') {
             // The current browser does not support all of the
             // features required to enable persistence
-            // ...
+            log('Persistence not supported, continuing without it');
+            resolve(db);
+          } else {
+            // If persistence was already enabled (e.g., by another call),
+            // just continue without it
+            log('Could not enable persistence, continuing without it:', err.message);
+            resolve(db);
           }
         });
     });

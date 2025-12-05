@@ -7,7 +7,7 @@ import { FolderRow } from './FolderRow';
 import { alertsService } from '../notifications';
 import { itemService } from '../itemService';
 
-export default class SavedItemPane extends Component {
+export default class LibraryPanel extends Component {
   constructor(props) {
     super(props);
     this.items = [];
@@ -20,7 +20,7 @@ export default class SavedItemPane extends Component {
 
   componentWillUpdate(nextProps) {
     if (this.props.items !== nextProps.items) {
-      this.items = Object.values(nextProps.items);
+      this.items = Object.values(nextProps.items || {});
       this.items.sort(function (a, b) {
         return b.updatedOn - a.updatedOn;
       });
@@ -28,16 +28,14 @@ export default class SavedItemPane extends Component {
   }
 
   async componentDidMount() {
-    await this.fetchFolders();
-  }
-
-  async componentDidUpdate(prevProps) {
-    if (this.props.isOpen && !prevProps.isOpen) {
-      if (window.searchInput) {
-        window.searchInput.value = '';
-      }
-      await this.fetchFolders();
+    // Initialize items from props
+    if (this.props.items) {
+      this.items = Object.values(this.props.items);
+      this.items.sort(function (a, b) {
+        return b.updatedOn - a.updatedOn;
+      });
     }
+    await this.fetchFolders();
   }
 
   async fetchFolders() {
@@ -167,10 +165,6 @@ export default class SavedItemPane extends Component {
     }
   }
 
-  onCloseIntent() {
-    this.props.closeHandler();
-  }
-
   itemClickHandler(item) {
     this.props.itemClickHandler(item);
   }
@@ -190,10 +184,6 @@ export default class SavedItemPane extends Component {
   }
 
   keyDownHandler(event) {
-    if (!this.props.isOpen) {
-      return;
-    }
-
     const isCtrlOrMetaPressed = event.ctrlKey || event.metaKey;
     const isForkKeyPressed = isCtrlOrMetaPressed && event.keyCode === 70;
     const isDownKeyPressed = event.keyCode === 40;
@@ -302,7 +292,7 @@ export default class SavedItemPane extends Component {
     });
 
     return (
-      <div class="space-y-3">
+      <div class="flex flex-col gap-1 text-sm text-white/80">
         {/* Folders */}
         {folders.map(folder => {
           const folderItems = folderGroups[folder.id] || [];
@@ -319,7 +309,7 @@ export default class SavedItemPane extends Component {
                 onDelete={this.deleteFolder.bind(this)}
               />
               {isExpanded && (
-                <div class="pl-5 space-y-1.5">
+                <div class="flex flex-col pl-6">
                   {folderItems.map(item => (
                     <ItemTile
                       key={item.id}
@@ -332,7 +322,7 @@ export default class SavedItemPane extends Component {
                     />
                   ))}
                   {folderItems.length === 0 && (
-                    <div class="text-gray-500 text-sm italic py-1.5">Empty folder</div>
+                    <div class="text-white/50 text-sm italic p-2">Empty folder</div>
                   )}
                 </div>
               )}
@@ -343,14 +333,12 @@ export default class SavedItemPane extends Component {
         {/* Unfiled Items */}
         {unfiledItems.length > 0 && (
           <div>
-            <div class="flex items-center justify-between py-1.5 text-gray-400">
-              <div class="flex items-center space-x-1.5">
-                <span class="material-symbols-outlined text-lg">expand_more</span>
-                <span class="font-medium text-gray-200">UNFILED</span>
-                <span class="text-sm">({unfiledItems.length})</span>
-              </div>
+            <div class="flex items-center gap-2 p-2 rounded-md hover:bg-white/10">
+              <span class="material-symbols-outlined text-base">folder</span>
+              <span class="font-medium">Unfiled</span>
+              <span class="text-white/50 text-xs">({unfiledItems.length})</span>
             </div>
-            <div class="space-y-1.5">
+            <div class="flex flex-col pl-6">
               {unfiledItems.map(item => (
                 <ItemTile
                   key={item.id}
@@ -373,78 +361,81 @@ export default class SavedItemPane extends Component {
     const isSearching = !!this.state.searchText;
 
     return (
-      <div
-        id="js-saved-items-pane"
-        class={`h-screen w-full flex flex-col fixed right-0 top-0 bottom-0 w-[420px] z-10 bg-gray-800 text-gray-200 shadow-2xl duration-300 ease-out ${this.props.isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      <aside 
+        class="flex flex-col bg-[#111722] p-4 border-r border-white/10 w-64"
         onKeyDown={this.keyDownHandler.bind(this)}
       >
-        <div class="p-3 flex flex-col h-full">
-          {/* Title Row */}
-          <div class="flex items-center justify-between mb-3">
-            <h1 class="text-xl font-bold text-white">
-              My Library ({this.items.length})
-            </h1>
+        <div class="flex flex-col gap-4 h-full">
+          {/* Header */}
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[#135bec] text-2xl">folder_open</span>
+              <p class="text-white text-base font-medium leading-normal">My Library</p>
+            </div>
             <button 
-              onClick={this.onCloseIntent.bind(this)}
-              class="p-1.5 rounded-full hover:bg-gray-700"
-              id="js-saved-items-pane-close-btn"
+              class="p-1 text-white/60 hover:text-white"
+              onClick={this.props.onClose}
+              title="Collapse panel"
             >
-              <span class="material-symbols-outlined text-gray-400">close</span>
+              <span class="material-symbols-outlined">chevron_left</span>
             </button>
           </div>
 
           {/* Search Input */}
-          <div class="mb-3">
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                search
-              </span>
-              <input
-                id="searchInput"
-                class="w-full pl-10 pr-4 py-2 bg-gray-700 border-transparent rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-100 placeholder-gray-400 text-sm"
-                onInput={this.searchInputHandler.bind(this)}
-                placeholder="Search your creations..."
-              />
-            </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-white/50 text-base">
+              search
+            </span>
+            <input
+              id="librarySearchInput"
+              class="w-full pl-8 pr-3 py-1.5 bg-[#232f48] border-transparent rounded-md focus:ring-[#135bec] focus:border-[#135bec] text-white placeholder-white/50 text-sm"
+              onInput={this.searchInputHandler.bind(this)}
+              placeholder="Search..."
+            />
           </div>
 
-          {/* Action Buttons Row */}
-          <div class="flex items-center justify-between mb-3">
+          {/* Action Buttons */}
+          <div class="flex items-center justify-between">
             <button 
               onClick={this.createFolder.bind(this)}
-              class="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              class="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded bg-[#135bec]/20 text-white hover:bg-[#135bec]/30 transition-colors"
             >
-              <span class="material-symbols-outlined text-base">create_new_folder</span>
-              <span>Add Folder</span>
+              <span class="material-symbols-outlined text-sm">create_new_folder</span>
+              <span>New Folder</span>
             </button>
-            <div class="flex items-center space-x-1">
+            <div class="flex items-center gap-1">
+              <button
+                onClick={this.props.onReload}
+                class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                title="Reload library"
+              >
+                <span class="material-symbols-outlined text-base">refresh</span>
+              </button>
               <button
                 onClick={this.props.exportBtnClickHandler}
-                class="p-1.5 rounded-full hover:bg-gray-700"
-                aria-label="Export all your creations"
+                class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                 title="Export"
               >
-                <span class="material-symbols-outlined text-gray-400">file_upload</span>
+                <span class="material-symbols-outlined text-base">file_upload</span>
               </button>
               <button
                 onClick={this.importBtnClickHandler.bind(this)}
-                class="p-1.5 rounded-full hover:bg-gray-700"
-                aria-label="Import your creations"
+                class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                 title="Import"
               >
-                <span class="material-symbols-outlined text-gray-400">file_download</span>
+                <span class="material-symbols-outlined text-base">file_download</span>
               </button>
             </div>
           </div>
 
           {/* Scrollable Content */}
-          <div id="js-saved-items-wrap" class="flex-grow overflow-y-auto space-y-3">
+          <div class="flex-grow overflow-y-auto">
             {!this.filteredItems().length && this.items.length ? (
-              <div class="text-gray-500 text-center py-8">No match found.</div>
+              <div class="text-white/50 text-center py-4 text-sm">No match found.</div>
             ) : null}
             
             {isSearching ? (
-              <div class="space-y-1.5">
+              <div class="flex flex-col gap-1">
                 {this.filteredItems().map((item) => (
                   <ItemTile
                     key={item.id}
@@ -462,14 +453,15 @@ export default class SavedItemPane extends Component {
             )}
             
             {!this.items.length ? (
-              <div class="text-gray-500 text-center py-12">
-                <span class="material-symbols-outlined text-4xl mb-2 block">folder_off</span>
-                <p>Nothing saved here yet.</p>
+              <div class="text-white/50 text-center py-8">
+                <span class="material-symbols-outlined text-3xl mb-2 block">folder_off</span>
+                <p class="text-sm">Nothing saved yet.</p>
               </div>
             ) : null}
           </div>
         </div>
-      </div>
+      </aside>
     );
   }
 }
+

@@ -33,8 +33,8 @@ importers:
         specifier: ^1.0.7
         version: 1.2.8(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@zenuml/core':
-        specifier: ^3.43.0
-        version: 3.43.0(@babel/core@7.28.3)(@babel/template@7.27.2)
+        specifier: ^3.43.2
+        version: 3.43.2(@babel/core@7.28.3)(@babel/template@7.27.2)
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -2053,8 +2053,8 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
-  '@zenuml/core@3.43.0':
-    resolution: {integrity: sha512-fVVVRcHMZa8QlPU2xcKuy4LcmcuvaQd0ffP59GbRs7va2LjpwddbAua940nhx12WaLyCI21xBc58TAZT9w1jQw==}
+  '@zenuml/core@3.43.2':
+    resolution: {integrity: sha512-p08Wu7wlTb2sHNjE7NrUhlEA9c/TLhi9T13lysHhEwxa1VFsdkwJr5x4wK622VtH2Lq3t7TDNXELvcjWp2kp0Q==}
     engines: {node: '>=20'}
 
   abab@2.0.6:
@@ -9152,7 +9152,9 @@ snapshots:
       source-map: 0.6.1
       string-length: 2.0.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@jest/source-map@24.9.0':
     dependencies:
@@ -9985,7 +9987,7 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
-  '@zenuml/core@3.43.0(@babel/core@7.28.3)(@babel/template@7.27.2)':
+  '@zenuml/core@3.43.2(@babel/core@7.28.3)(@babel/template@7.27.2)':
     dependencies:
       '@floating-ui/react': 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@headlessui/react': 2.2.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -13388,7 +13390,9 @@ snapshots:
       pretty-format: 24.9.0
       throat: 4.1.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   jest-leak-detector@24.9.0:
     dependencies:

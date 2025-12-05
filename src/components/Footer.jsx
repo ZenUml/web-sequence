@@ -55,10 +55,6 @@ export default class Footer extends Component {
     };
   }
 
-  layoutBtnClickhandler(layoutId) {
-    this.props.layoutBtnClickHandler(layoutId);
-  }
-
   async js13kClickHandler() {
     // console.log(999);
     await this.setState({

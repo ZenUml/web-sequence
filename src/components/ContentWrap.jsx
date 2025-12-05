@@ -63,9 +63,18 @@ export default class ContentWrap extends Component {
 
   // shouldComponentUpdate(nextProps, nextState) - removed, but not quite sure.
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     // HACK: becuase its a DOM manipulation
     this.updateLogCount();
+
+    // Refresh CodeMirror when editor position or visibility changes
+    if (prevProps.editorInSidebar !== this.props.editorInSidebar || 
+        prevProps.hideEditor !== this.props.hideEditor) {
+      setTimeout(() => {
+        if (this.cm.js) this.cm.js.refresh();
+        if (this.cm.css) this.cm.css.refresh();
+      }, 100);
+    }
 
     // log('🚀', 'didupdate', this.props.currentItem);
     // if (this.isValidItem(this.props.currentItem)) {
@@ -432,15 +441,9 @@ export default class ContentWrap extends Component {
     if (!this.cm) {
       return;
     }
-    cssCodeEl.querySelector('.CodeMirror').style.fontSize =
-      jsCodeEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
-        prefs.fontSize,
-        10,
-      )}px`;
-    window.consoleEl.querySelector('.CodeMirror').style.fontSize = `${parseInt(
-      prefs.fontSize,
-      10,
-    )}px`;
+    // Set font size via CSS custom property for all CodeMirror instances
+    const fontSize = `${parseInt(prefs.fontSize, 10)}px`;
+    document.documentElement.style.setProperty('--editor-font-size', fontSize);
 
     // Replace correct css file in LINK tags's href
     window.editorThemeLinkTag.href = `lib/codemirror/theme/${prefs.editorTheme}.css`;
@@ -485,9 +488,8 @@ export default class ContentWrap extends Component {
     // This is debounced!
     clearTimeout(this.updateCodeWrapCollapseStates.timeout);
     this.updateCodeWrapCollapseStates.timeout = setTimeout(() => {
-      const { currentLayoutMode } = this.props;
-      const prop =
-        currentLayoutMode === 2 || currentLayoutMode === 5 ? 'width' : 'height';
+      // Layout is always horizontal, so we use 'height' for code panes
+      const prop = 'height';
       [htmlCodeEl, cssCodeEl, jsCodeEl].forEach(function (el) {
         const bounds = el.getBoundingClientRect();
         const size = bounds[prop];
@@ -626,16 +628,11 @@ export default class ContentWrap extends Component {
   // Returns the sizes of main code & preview panes.
   getMainSplitSizesToApply() {
     var mainSplitSizes;
-    const { currentItem, currentLayoutMode } = this.props;
+    const { currentItem } = this.props;
     if (currentItem && currentItem.mainSizes) {
-      // For layout mode 3, main panes are reversed using flex-direction.
-      // So we need to apply the saved sizes in reverse order.
-      mainSplitSizes =
-        currentLayoutMode === 3
-          ? [currentItem.mainSizes[1], currentItem.mainSizes[0]]
-          : currentItem.mainSizes;
+      mainSplitSizes = currentItem.mainSizes;
     } else {
-      mainSplitSizes = currentLayoutMode === 5 ? [75, 25] : [30, 70];
+      mainSplitSizes = [30, 70];
     }
     return mainSplitSizes;
   }
@@ -1010,20 +1007,9 @@ export default class ContentWrap extends Component {
     }
   }
 
-  render() {
+  renderEditor() {
     return (
-      <SplitPane
-        class="content-wrap  flex  flex-grow"
-        id="content-wrap"
-        sizes={this.state.mainSplitSizes}
-        minSize={580}
-        style=""
-        direction={
-          this.props.currentLayoutMode === 2 ? 'vertical' : 'horizontal'
-        }
-        onDragEnd={this.mainSplitDragEndHandler.bind(this)}
-      >
-        <div id="js-code-side" className={this.props.isEditorCollapsed ? 'hidden' : ''}>
+      <div id="js-code-side" className={`${this.props.hideEditor ? 'hidden' : ''} ${this.props.editorInSidebar ? 'editor-in-sidebar' : ''}`}>
           <Tabs
             keyboardShortcutsBtnClickHandler={
               this.props.keyboardShortcutsBtnClickHandler
@@ -1136,121 +1122,83 @@ export default class ContentWrap extends Component {
             </div>
           </Tabs>
         </div>
+    );
+  }
+
+  render() {
+    const editorElement = this.renderEditor();
+    
+    // When editor is in sidebar mode, use fixed sizes (editor takes sidebar width, preview takes rest)
+    const splitSizes = this.props.editorInSidebar 
+      ? [25, 75]  // Editor in sidebar: narrower editor, wider preview
+      : this.state.mainSplitSizes;
+
+    return (
+      <SplitPane
+        class="content-wrap  flex  flex-grow"
+        id="content-wrap"
+        sizes={splitSizes}
+        minSize={this.props.editorInSidebar ? 200 : 580}
+        style=""
+        direction="horizontal"
+        onDragEnd={this.mainSplitDragEndHandler.bind(this)}
+      >
+        {editorElement}
         <div class="demo-side" id="js-demo-side">
-          <div className="h-full flex flex-col">
-            {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
-              <PageTabs
-                pages={this.props.currentItem.pages}
-                currentPageId={this.props.currentItem.currentPageId}
-                onTabClick={this.props.onPageSwitch}
-                onAddPage={this.props.onAddPage}
-                onDeletePage={this.props.onDeletePage}
-              />
-            )}
-            <div
-              className="flex-grow"
-              style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
-            >
-              <iframe
-                ref={(el) => (this.frame = el)}
-                frameBorder="0"
-                id="demo-frame"
-                allowFullScreen
-              />
-            </div>
-            {window.zenumlDesktop ? null : (
-              <div className="shrink-0 relative z-10 bg-gray-200 py-2 px-6 flex justify-between">
-                <div className="flex gap-4 items-center text-black-100">
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(1)}
-                    id="layoutBtn1"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 1 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on right"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-1" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(2)}
-                    id="layoutBtn2"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 2 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on bottom"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-2" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => this.props.layoutBtnClickHandler(3)}
-                    id="layoutBtn3"
-                    className={`w-7 h-7 hover:text-gray-800 flex items-center justify-center rounded-lg duration-200 ${this.props.currentLayoutMode === 3 ? 'text-gray-800' : ''}`}
-                    aria-label="Switch to layout with preview on left"
-                  >
-                    <svg className="w-5 h-5">
-                      <use xlinkHref="#icon-layout-3" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold">
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Toggle Fullscreen"
-                      onClick={this.toggleFullscreen.bind(this)}
-                      title="Toggle Fullscreen Presenting Mode"
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#fullscreen-icon"/>
-                    </svg>
-                    <span>Present</span>
-                  </button>
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Export as PNG"
-                      onClick={this.exportPngClickHandler.bind(this)}
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-download"/>
-                    </svg>
-                    <span>PNG</span>
-                  </button>
-                  <button
-                      className="px-3 py-1 bg-gray-300 text-gray-600 flex items-center gap-1.5 rounded-lg hover:bg-gray-400 duration-200"
-                      aria-label="Copy PNG to Clipboard"
-                      onClick={this.copyImageClickHandler.bind(this)}
-                  >
-                    <svg className="w-5 h-5 fill-current">
-                      <use xlinkHref="#icon-copy"/>
-                    </svg>
-                    <span>Copy PNG</span>
-                  </button>
-                </div>
-              </div>
-            )}
-            <Console
-                isConsoleOpen={this.state.isConsoleOpen}
-                onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
-                    this,
-                )}
-                onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
-                    this,
-                )}
-                toggleConsole={this.toggleConsole.bind(this)}
-                onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
-                onReady={(el) => (this.consoleCm = el)}
-            />
-            <CssSettingsModal
-                show={this.state.isCssSettingsModalOpen}
-              closeHandler={async () =>
-                await this.setState({ isCssSettingsModalOpen: false })
-              }
-              onChange={this.cssSettingsChangeHandler.bind(this)}
-              settings={this.props.currentItem.cssSettings}
-              editorTheme={this.props.prefs.editorTheme}
-            />
-          </div>
+          {this.renderPreview()}
         </div>
       </SplitPane>
+    );
+  }
+
+  renderPreview() {
+    return (
+      <div className="h-full flex flex-col">
+        <div
+          className="flex-grow"
+          style="overflow-y: auto; -webkit-overflow-scrolling: touch; "
+        >
+          <iframe
+            ref={(el) => (this.frame = el)}
+            frameBorder="0"
+            id="demo-frame"
+            allowFullScreen
+          />
+        </div>
+        {this.props.currentItem && this.props.currentItem.pages && this.props.currentItem.pages.length > 0 && (
+          <PageTabs
+            pages={this.props.currentItem.pages}
+            currentPageId={this.props.currentItem.currentPageId}
+            onTabClick={this.props.onPageSwitch}
+            onAddPage={this.props.onAddPage}
+            onDeletePage={this.props.onDeletePage}
+            onToggleFullscreen={this.toggleFullscreen.bind(this)}
+            onExportPng={this.exportPngClickHandler.bind(this)}
+            onCopyImage={this.copyImageClickHandler.bind(this)}
+          />
+        )}
+        <Console
+            isConsoleOpen={this.state.isConsoleOpen}
+            onConsoleHeaderDblClick={this.consoleHeaderDblClickHandler.bind(
+                this,
+            )}
+            onClearConsoleBtnClick={this.clearConsoleBtnClickHandler.bind(
+                this,
+            )}
+            toggleConsole={this.toggleConsole.bind(this)}
+            onEvalInputKeyup={this.evalConsoleExpr.bind(this)}
+            onReady={(el) => (this.consoleCm = el)}
+        />
+        <CssSettingsModal
+            show={this.state.isCssSettingsModalOpen}
+          closeHandler={async () =>
+            await this.setState({ isCssSettingsModalOpen: false })
+          }
+          onChange={this.cssSettingsChangeHandler.bind(this)}
+          settings={this.props.currentItem.cssSettings}
+          editorTheme={this.props.prefs.editorTheme}
+        />
+      </div>
     );
   }
 }

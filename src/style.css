@@ -342,6 +342,78 @@ body:not(.light-version).overlay-visible .main-container {
   filter: blur(3px);
 }
 
+.main-content-area {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.main-content-area .content-wrap {
+  /* Override the max-height when inside main-content-area */
+  max-height: 100%;
+  height: 100%;
+}
+
+/* Editor in sidebar container */
+#editor-sidebar-container #js-code-side,
+#js-code-side.editor-in-sidebar {
+  width: 100%;
+  height: 100%;
+  background: #111722;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-sidebar-container #js-code-side .tabs,
+#js-code-side.editor-in-sidebar .tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-sidebar-container #js-code-side .tabs__labels,
+#js-code-side.editor-in-sidebar .tabs__labels {
+  background: #111722;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#editor-sidebar-container #js-code-side .tabs__labels li,
+#js-code-side.editor-in-sidebar .tabs__labels li {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#editor-sidebar-container #js-code-side .tabs__labels li.is-active,
+#js-code-side.editor-in-sidebar .tabs__labels li.is-active {
+  color: white;
+  border-bottom-color: #3b82f6;
+}
+
+#editor-sidebar-container #js-code-side .code-wrap,
+#js-code-side.editor-in-sidebar .code-wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-sidebar-container #js-code-side .CodeMirror,
+#js-code-side.editor-in-sidebar .CodeMirror {
+  flex-grow: 1;
+  height: auto !important;
+}
+
+#editor-sidebar-container #js-code-side .toolbox,
+#js-code-side.editor-in-sidebar .toolbox {
+  flex-shrink: 0;
+  background: #1a2332;
+}
+
+/* Hide the editor sidebar placeholder when editor is not in sidebar mode */
+#editor-sidebar-container:empty {
+  display: none;
+}
+
 .content-wrap {
   /* HACK:  */
   height: 1px;
@@ -551,7 +623,7 @@ body:not(.light-version).overlay-visible .main-container {
 .CodeMirror {
   width: 100%;
   height: 100%;
-  font-size: var(--code-font-size);
+  font-size: var(--editor-font-size, 16px);
 }
 
 /* TODO: Check why? */
@@ -592,7 +664,7 @@ body:not(.light-version).overlay-visible .main-container {
 }
 
 .CodeMirror-hints {
-  font-size: var(--code-font-size);
+  font-size: var(--editor-font-size, 16px);
   border: 0;
   background: #1e1e2c;
 }
@@ -613,7 +685,9 @@ li.CodeMirror-hint-active {
   height: calc(100%);
   /*height: calc(100% - 29px); height reserved for console*/
   /*  minus minimized console height */
-  background: white;
+  background-image: radial-gradient(circle, #4b5563 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #1f2937;
 }
 
 /* When demo frame is in detached window */
@@ -627,7 +701,6 @@ body > #demo-frame {
 .footer {
   padding: 0.5rem 1rem;
   background-color: rgb(18, 19, 27);
-  color: rgba(255, 255, 255, 0.45);
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
@@ -641,7 +714,6 @@ body > #demo-frame {
 
 .main-header {
   background-color: rgb(18, 19, 27);
-  color: rgba(255, 255, 255, 0.45);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -1826,10 +1898,6 @@ while the theme CSS file is loading */
   height: calc(100% - 45px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-}
-
-.tab-list-item {
-  display: inline;
 }
 
 .tab-list-item span.line-of-code {
