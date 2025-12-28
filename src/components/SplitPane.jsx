@@ -2,7 +2,7 @@ import { h, Component } from 'preact';
 import Split from 'split.js';
 
 export class SplitPane extends Component {
-  // shouldComponentUpdate(nextProps, nextState) {
+	// shouldComponentUpdate(nextProps, nextState) {
   // 	return (
   // 		nextProps.direction !== this.props.direction ||
   // 		nextProps.sizes.join('') !== this.props.sizes.join('')
@@ -11,14 +11,17 @@ export class SplitPane extends Component {
   componentDidMount() {
     this.updateSplit();
   }
-  componentWillUpdate() {
-    if (this.splitInstance) {
-      try {
-        this.splitInstance.destroy();
-      } catch (e) {
+  componentDidUpdate(prevProps) {
+    if (prevProps.direction !== this.props.direction) {
+      if (this.splitInstance) {
+        try {
+          this.splitInstance.destroy();
+        } catch (e) {
         // Ignore errors during destruction (e.g. if nodes are already removed)
         // This happens often with VDOM re-renders conflicting with Split.js DOM manipulation
+        }
       }
+      this.updateSplit();
     }
   }
   componentWillUnmount() {
@@ -29,9 +32,6 @@ export class SplitPane extends Component {
         // ignore
       }
     }
-  }
-  componentDidUpdate() {
-    this.updateSplit();
   }
   updateSplit() {
     const options = {
