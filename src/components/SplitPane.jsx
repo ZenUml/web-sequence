@@ -21,6 +21,9 @@ export class SplitPane extends Component {
       }
     }
   }
+  componentDidUpdate() {
+    this.updateSplit();
+  }
   componentWillUnmount() {
     if (this.splitInstance) {
       try {
