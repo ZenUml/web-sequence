@@ -52,8 +52,6 @@ import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
-import { FeaturePrioritySurveyModal } from './FeaturePrioritySurveyModal.jsx';
-import { hasUserSubmittedSurvey, getUserProfileForSurvey } from '../services/surveyService.js';
 
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
@@ -82,7 +80,6 @@ export default class App extends Component {
       isJs13KModalOpen: false,
       isCreateNewModalOpen: false,
       openCheatSheet: false,
-      isFeaturePrioritySurveyModalOpen: false,
     };
     this.state = {
       isLibraryPanelOpen: false,
@@ -560,8 +557,6 @@ BookLibService.Borrow(id) {
         });
         // Use setState to trigger re-render
         await this.setState({ savedItems });
-        // Initialize survey check after items are loaded
-        this.initializeFeaturePrioritySurvey();
       }
       d.resolve(items);
       return d.promise;
@@ -569,10 +564,6 @@ BookLibService.Borrow(id) {
     db.local.get('items', (result) => {
       var itemIds = Object.getOwnPropertyNames(result.items || {});
       if (!itemIds.length) {
-        // Initialize survey check even if no items (will likely not show due to criteria)
-        if (shouldSaveGlobally) {
-          this.initializeFeaturePrioritySurvey();
-        }
         d.resolve([]);
       }
 
@@ -586,10 +577,6 @@ BookLibService.Borrow(id) {
           items.push(itemResult[itemIds[i]]);
           // Check if we have all items now.
           if (itemIds.length === items.length) {
-            // Initialize survey check after all local items are loaded
-            if (shouldSaveGlobally) {
-              this.initializeFeaturePrioritySurvey();
-            }
             d.resolve(items);
           }
         });
@@ -706,9 +693,6 @@ BookLibService.Borrow(id) {
 
     trackGaSetField('page', '/');
     trackPageView();
-
-    // Initialize feature priority survey after a longer delay to allow items to load
-    this.initializeFeaturePrioritySurvey(10000); // 10 seconds delay
 
     // Expose app instance for testing
     window._app = this;
@@ -1662,103 +1646,6 @@ BookLibService.Borrow(id) {
     });
   }
 
-  /**
-   * Initialize feature priority survey logic
-   * @param {number} delay - Optional delay in milliseconds before checking (default 5000)
-   */
-  initializeFeaturePrioritySurvey(delay = 5000) {
-    // Skip if in embed mode or desktop
-    if (this.isEmbed || window.zenumlDesktop) {
-      return;
-    }
-
-    // Check if user has already submitted survey
-    if (hasUserSubmittedSurvey()) {
-      console.log('Feature priority survey already submitted, skipping');
-      return;
-    }
-
-    // Clear any existing timer
-    if (this.surveyCheckTimer) {
-      clearTimeout(this.surveyCheckTimer);
-    }
-
-    // Set up timer to potentially show survey
-    this.surveyCheckTimer = setTimeout(() => {
-      this.checkAndShowFeaturePrioritySurvey();
-    }, delay);
-  }
-
-  async checkAndShowFeaturePrioritySurvey() {
-    try {
-      // Ensure items are loaded in global state if not already
-      if (!this.state.savedItems || Object.keys(this.state.savedItems).length === 0) {
-        console.log('Loading items for survey check...');
-        await this.fetchItems(true); // Force loading items globally
-      }
-      
-      // Get current saved items to determine user profile
-      const items = Object.values(this.state.savedItems || {});
-      const userProfile = getUserProfileForSurvey(items);
-
-      // Check criteria for showing survey
-      const shouldShow = (
-        userProfile.diagramCount >= 2 && // At least 2 diagrams
-        (userProfile.isPowerUser || userProfile.accountAge > 7) && // Power user or account > 7 days
-        !hasUserSubmittedSurvey() // Haven't submitted yet
-      );
-
-      if (shouldShow) {
-        console.log('Showing feature priority survey', userProfile);
-        
-        // Track survey shown event
-        trackEvent('survey', 'shown', 'feature-priority');
-        mixpanel.track({
-          event: 'featurePrioritySurveyShown',
-          category: 'survey',
-          diagramCount: userProfile.diagramCount,
-          accountAge: userProfile.accountAge,
-          isAuthenticated: userProfile.isAuthenticated,
-          isPowerUser: userProfile.isPowerUser
-        });
-        
-        await this.setState({ 
-          isFeaturePrioritySurveyModalOpen: true,
-          surveyUserProfile: userProfile 
-        });
-      } else {
-        console.log('Not showing survey - criteria not met', userProfile);
-        
-        // Track why survey was not shown
-        const reasons = [];
-        if (userProfile.diagramCount < 2) reasons.push('insufficient_diagrams');
-        if (!userProfile.isPowerUser && userProfile.accountAge <= 7) reasons.push('account_too_new');
-        if (hasUserSubmittedSurvey()) reasons.push('already_submitted');
-        
-        trackEvent('survey', 'criteria_not_met', reasons.join(','));
-        mixpanel.track({
-          event: 'featurePrioritySurveyCriteriaNotMet',
-          category: 'survey',
-          reasons: reasons.join(','),
-          diagramCount: userProfile.diagramCount,
-          accountAge: userProfile.accountAge,
-          isAuthenticated: userProfile.isAuthenticated,
-          isPowerUser: userProfile.isPowerUser,
-          hasSubmitted: hasUserSubmittedSurvey()
-        });
-      }
-    } catch (error) {
-      console.error('Error checking survey criteria:', error);
-    }
-  }
-
-  async handleFeaturePrioritySurveyClose() {
-    await this.setState({ 
-      isFeaturePrioritySurveyModalOpen: false,
-      surveyUserProfile: null 
-    });
-  }
-
   render() {
     // remove field imageBase64 from currentItem and save it to a local variable as a copy
     const { imageBase64, ...currentItem } = this.state.currentItem;
@@ -1962,11 +1849,6 @@ BookLibService.Borrow(id) {
         <CheatSheetModal
           open={this.state.openCheatSheet}
           onClose={() => this.setState({ openCheatSheet: false })}
-        />
-        <FeaturePrioritySurveyModal
-          show={this.state.isFeaturePrioritySurveyModalOpen}
-          closeHandler={this.handleFeaturePrioritySurveyClose.bind(this)}
-          userProfile={this.state.surveyUserProfile}
         />
         <div
           class="modal-overlay bg-black/50 backdrop-blur-sm"

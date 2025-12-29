@@ -21,13 +21,5 @@ service cloud.firestore {
       allow read, update, delete: if 'user-' + request.auth.uid == userSubscriptionId;
     }
     
-    // Feature priority survey responses
-    match /feature_surveys/{surveyId} {
-      // Allow anyone to create survey responses (authenticated or anonymous)
-      allow create: if true;
-      // Only allow admins to read survey data for analysis
-      allow read: if false; // Restrict reading - only backend should access
-    }
-    
   }
 }

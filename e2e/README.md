@@ -17,26 +17,9 @@ This directory contains end-to-end tests using Playwright.
    # Run tests in headed mode (see browser)
    pnpm test:e2e:headed
    
-   # Run specific test file
-   npx playwright test feature-survey.spec.js
-   
    # Run with UI mode
    npx playwright test --ui
    ```
-
-## Test Structure
-
-### Feature Survey Tests (`feature-survey.spec.js`)
-
-Tests the complete feature priority survey functionality:
-
-- **Survey Appearance**: Verifies survey shows on first visit
-- **Feature Selection**: Tests most/least important selection logic
-- **Submission**: Validates survey submission and localStorage persistence
-- **Prevention**: Ensures survey doesn't reappear after submission
-- **Mixpanel Tracking**: Verifies analytics events are fired
-- **Dismissal**: Tests survey dismissal behavior
-- **Edge Cases**: 30-day expiry, partial selections, conflict resolution
 
 ## Configuration
 

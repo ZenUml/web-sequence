@@ -2,7 +2,7 @@ import { h, Component } from 'preact';
 import Split from 'split.js';
 
 export class SplitPane extends Component {
-  // shouldComponentUpdate(nextProps, nextState) {
+	// shouldComponentUpdate(nextProps, nextState) {
   // 	return (
   // 		nextProps.direction !== this.props.direction ||
   // 		nextProps.sizes.join('') !== this.props.sizes.join('')
@@ -21,6 +21,9 @@ export class SplitPane extends Component {
       }
     }
   }
+  componentDidUpdate() {
+    this.updateSplit();
+  }
   componentWillUnmount() {
     if (this.splitInstance) {
       try {
@@ -29,9 +32,6 @@ export class SplitPane extends Component {
         // ignore
       }
     }
-  }
-  componentDidUpdate() {
-    this.updateSplit();
   }
   updateSplit() {
     const options = {
