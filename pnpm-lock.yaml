@@ -33,8 +33,8 @@ importers:
         specifier: ^1.0.7
         version: 1.2.8(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@zenuml/core':
-        specifier: ^3.45.3
-        version: 3.45.3(@babel/core@7.28.3)(@babel/template@7.27.2)(yaml@2.8.1)
+        specifier: ^3.45.4
+        version: 3.45.4(@babel/core@7.28.3)(@babel/template@7.27.2)(yaml@2.8.1)
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -2062,8 +2062,8 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
-  '@zenuml/core@3.45.3':
-    resolution: {integrity: sha512-n0xhj/dEGnxWL2pyK1nrg+jyj4AOxeyh4bfdNIYFH+0p4tKfhGCK91oi0vkFtYFDKjMaoQZlvRJL55s1Osp+FA==}
+  '@zenuml/core@3.45.4':
+    resolution: {integrity: sha512-y2s6F0urvcnzB/Rx5oPVLUn9zlq+cnwTMXAlEH46tdItQtqU8fTRYqrGGOuJVIKZcbZwgtpFzpSzzcC0YtjLqQ==}
     engines: {node: '>=20'}
 
   abab@2.0.6:
@@ -10047,7 +10047,7 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
-  '@zenuml/core@3.45.3(@babel/core@7.28.3)(@babel/template@7.27.2)(yaml@2.8.1)':
+  '@zenuml/core@3.45.4(@babel/core@7.28.3)(@babel/template@7.27.2)(yaml@2.8.1)':
     dependencies:
       '@floating-ui/react': 0.27.16(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@headlessui/react': 2.2.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
