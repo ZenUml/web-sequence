@@ -3,7 +3,7 @@ import { trackEvent } from './analytics';
 import { computeHtml, computeCss, computeJs } from './computes';
 import { JsModes } from './codeModes';
 import { deferred } from './deferred';
-import zenumlUrl from '@zenuml/core/dist/zenuml?url';
+import zenumlUrl from '../node_modules/@zenuml/core/dist/zenuml.js?url';
 import esprima from 'esprima';
 
 // window.Store = Store;
