@@ -477,3 +477,171 @@ test('default item title at startup is "Untitled"', async ({ page }) => {
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
   await expect(page.getByText('Untitled').first()).toBeVisible();
 });
+
+test('saved item survives a page reload with its content intact', async ({ page }) => {
+  // The biggest persistence guarantee: type → save → reload → content is back.
+  // beforeEach's addInitScript fires on every navigation, so the
+  // loginAndsaveMessageSeen flag is re-set for the post-reload load.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue('Foo->Bar: reload-survives');
+  });
+  await page.locator('.CodeMirror').first().click();
+  await page.keyboard.press(SAVE_KEY);
+
+  // Wait for the save to land in localStorage before reloading.
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const itemKey = Object.keys(window.localStorage).find((k) =>
+          k.startsWith('item-'),
+        );
+        if (!itemKey) return null;
+        try {
+          const item = JSON.parse(window.localStorage.getItem(itemKey));
+          return item?.pages?.[0]?.js || '';
+        } catch {
+          return null;
+        }
+      }),
+    { timeout: 10_000 },
+  ).toContain('reload-survives');
+
+  await page.reload();
+
+  // After reload the localStorage entry must still be there with the same content.
+  // We don't assert on the post-reload editor view because the app's bootstrap
+  // creates a fresh "Untitled" item by default (it doesn't auto-load the most
+  // recent save without auth) — what we're guarding here is the storage layer,
+  // not the unsigned-in restore behaviour.
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const itemKey = Object.keys(window.localStorage).find((k) =>
+          k.startsWith('item-'),
+        );
+        if (!itemKey) return null;
+        try {
+          const item = JSON.parse(window.localStorage.getItem(itemKey));
+          return item?.pages?.[0]?.js || '';
+        } catch {
+          return null;
+        }
+      }),
+    { timeout: 10_000 },
+  ).toContain('reload-survives');
+});
+
+test('multi-page item persists per-page content into the pages array', async ({ page }) => {
+  // The multi-page schema's contract: each page owns its own `js` field and
+  // saving must capture them independently. Trying to assert on the editor
+  // DOM after tab-switching is brittle (sidebar EditorPanel + ContentWrap
+  // both render .CodeMirror, sync isn't always synchronous). Asserting on
+  // the saved localStorage payload is the truer test of isolation.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  // Add a second page (switches to Page 2), type unique content, save.
+  await page.getByTitle('Add new page').click();
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue('Alice->Bob: page-two-only');
+  });
+  await page.locator('.CodeMirror').first().click();
+  await page.keyboard.press(SAVE_KEY);
+
+  // Wait for the save to land with both pages in the array.
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const itemKey = Object.keys(window.localStorage).find((k) =>
+          k.startsWith('item-'),
+        );
+        if (!itemKey) return null;
+        try {
+          const item = JSON.parse(window.localStorage.getItem(itemKey));
+          return item?.pages?.length || 0;
+        } catch {
+          return 0;
+        }
+      }),
+    { timeout: 10_000 },
+  ).toBe(2);
+
+  const saved = await page.evaluate(() => {
+    const itemKey = Object.keys(window.localStorage).find((k) =>
+      k.startsWith('item-'),
+    );
+    return JSON.parse(window.localStorage.getItem(itemKey));
+  });
+
+  // Page 2 (the active one when we typed) must hold our content; Page 1 must
+  // not. Which index is which can vary, so check by content rather than index.
+  const pageWithTyped = saved.pages.find((p) => (p.js || '').includes('page-two-only'));
+  const pageWithoutTyped = saved.pages.find((p) => !(p.js || '').includes('page-two-only'));
+  expect(pageWithTyped).toBeTruthy();
+  expect(pageWithoutTyped).toBeTruthy();
+  // The other page must not have leaked our typed content.
+  expect(pageWithoutTyped.js || '').not.toContain('page-two-only');
+});
+
+test('if/else fragment renders both branch labels', async ({ page }) => {
+  // ZenUML uses JS-like syntax for fragments (see CheatSheetModal). The if/else
+  // path exercises the parser's alt-fragment handling and the renderer's
+  // multi-branch layout.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue(
+      'if (cond) {\n  A.branchOne()\n} else {\n  A.branchTwo()\n}',
+    );
+  });
+
+  await expect.poll(
+    async () => {
+      const t = await previewText();
+      return t.includes('branchOne') && t.includes('branchTwo');
+    },
+    { timeout: 15_000 },
+  ).toBe(true);
+});
+
+test('while loop fragment renders the loop body label', async ({ page }) => {
+  // Loop fragment: parser recognises `while (...) { ... }` and the renderer
+  // wraps the body. Asserting on the inner call label catches both layers.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue(
+      'while (running) {\n  Worker.tickOnce()\n}',
+    );
+  });
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('tickOnce');
+});
