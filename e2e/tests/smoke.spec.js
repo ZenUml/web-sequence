@@ -227,6 +227,64 @@ test('renaming the diagram title via the input persists in the header', async ({
   await expect(page.getByText('Smoke Renamed')).toBeVisible();
 });
 
+test('saved item in localStorage has the new pages-array shape', async ({ page }) => {
+  // Cmd+S writes the item via itemService.setItem; new items must conform
+  // to the multi-page schema (pages: [{id, title, js, ...}]).
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.locator('.CodeMirror').first().click();
+  await page.keyboard.press(SAVE_KEY);
+
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const itemKey = Object.keys(window.localStorage).find((k) => k.startsWith('item-'));
+        if (!itemKey) return null;
+        try {
+          return JSON.parse(window.localStorage.getItem(itemKey));
+        } catch {
+          return null;
+        }
+      }),
+    { timeout: 10_000 },
+  ).not.toBeNull();
+
+  const saved = await page.evaluate(() => {
+    const itemKey = Object.keys(window.localStorage).find((k) => k.startsWith('item-'));
+    return JSON.parse(window.localStorage.getItem(itemKey));
+  });
+  expect(saved).toHaveProperty('id');
+  expect(saved).toHaveProperty('pages');
+  expect(Array.isArray(saved.pages)).toBe(true);
+  expect(saved.pages.length).toBeGreaterThanOrEqual(1);
+  expect(typeof saved.pages[0].id).toBe('string');
+});
+
+test('main app container mounts under #app', async ({ page }) => {
+  // Sanity guard: index.html ships an empty `<div id="app"></div>` and the
+  // Preact app mounts into it. The wrapper itself is layout-only (Playwright
+  // calls it `hidden` because it has no visible box of its own), so we assert
+  // on its children count rather than visibility.
+  await expect(page.locator('#app')).toBeAttached();
+  await expect.poll(
+    async () =>
+      page.evaluate(() => document.getElementById('app')?.children.length || 0),
+    { timeout: 10_000 },
+  ).toBeGreaterThan(0);
+});
+
+test('preview iframe successfully loads the @zenuml/core UMD bundle', async ({ page }) => {
+  // Regression for the Vite shim plugin in vite.config.js. If the shim breaks,
+  // the iframe's <script src> would 404 and `window.zenuml` would never appear.
+  await expect.poll(
+    async () =>
+      page.evaluate(
+        () =>
+          typeof document.getElementById('demo-frame')?.contentWindow?.zenuml,
+      ),
+    { timeout: 15_000 },
+  ).not.toBe('undefined');
+});
+
 test('default item title at startup is "Untitled"', async ({ page }) => {
   // No saved item, no auth → MainHeader falls back to "Untitled".
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
