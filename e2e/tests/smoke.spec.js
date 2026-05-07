@@ -427,6 +427,51 @@ test('Library panel search input accepts text', async ({ page }) => {
   await expect(search).toHaveValue('search-smoke');
 });
 
+test('editor renders the CodeMirror line-number gutter', async ({ page }) => {
+  // EditorPanel and ContentWrap configure 'CodeMirror-linenumbers' in
+  // gutters. The gutter element should always be in the DOM under the
+  // visible editor.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await expect(page.locator('.CodeMirror-linenumbers').first()).toBeAttached();
+});
+
+test('self-message diagram renders without dropping the label', async ({ page }) => {
+  // A self-call (A->A) is a parser edge case worth guarding.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue('Alice->Alice: introspect');
+  });
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('introspect');
+});
+
+test('comment lines do not break diagram rendering', async ({ page }) => {
+  // ZenUML supports // single-line comments. A comment plus a real message
+  // must still render the message (no crash, no missing label).
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue(
+      '// this is a smoke comment\nClient->Server: ping',
+    );
+  });
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('ping');
+});
+
 test('default item title at startup is "Untitled"', async ({ page }) => {
   // No saved item, no auth → MainHeader falls back to "Untitled".
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
