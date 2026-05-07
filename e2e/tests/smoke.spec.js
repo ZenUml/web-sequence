@@ -359,6 +359,74 @@ test('Add Page → Delete returns to a single Page 1 tab', async ({ page }) => {
   ).toBe(1);
 });
 
+test('saved item captures the user-typed editor content', async ({ page }) => {
+  // Wait for bootstrap so createNewItem doesn't clobber our typed content,
+  // then setValue, save, and assert pages[0].js contains what we typed.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await expect.poll(
+    async () =>
+      page.evaluate(
+        () =>
+          document.getElementById('demo-frame')?.contentDocument?.body
+            ?.textContent || '',
+      ),
+    { timeout: 15_000 },
+  ).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    document.querySelector('.CodeMirror').CodeMirror.setValue('Foo->Bar: smoke-content');
+  });
+  await page.locator('.CodeMirror').first().click();
+  await page.keyboard.press(SAVE_KEY);
+
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const itemKey = Object.keys(window.localStorage).find((k) =>
+          k.startsWith('item-'),
+        );
+        if (!itemKey) return null;
+        try {
+          const item = JSON.parse(window.localStorage.getItem(itemKey));
+          return item?.pages?.[0]?.js || item?.js || '';
+        } catch {
+          return null;
+        }
+      }),
+    { timeout: 10_000 },
+  ).toContain('smoke-content');
+});
+
+test('Code Editor sidebar button hides the editor when toggled off', async ({ page }) => {
+  // Default state: activeLeftPanel === 'editor', isEditorPanelOpen === true.
+  // Clicking "Code Editor" calls onToggleEditorPanel, flipping isEditorPanelOpen.
+  // The CodeMirror in the editor area becomes detached/hidden as a result.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Code Editor').click();
+
+  // After toggle-off the visible CodeMirror should drop to zero (the
+  // ContentWrap editor is hidden via the hideEditor prop).
+  await expect.poll(
+    async () =>
+      page.evaluate(
+        () =>
+          Array.from(document.querySelectorAll('.CodeMirror'))
+            .filter((el) => el.offsetParent !== null).length,
+      ),
+    { timeout: 5_000 },
+  ).toBe(0);
+});
+
+test('Library panel search input accepts text', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('My Library').click();
+
+  const search = page.locator('#librarySearchInput');
+  await expect(search).toBeVisible();
+  await search.fill('search-smoke');
+  await expect(search).toHaveValue('search-smoke');
+});
+
 test('default item title at startup is "Untitled"', async ({ page }) => {
   // No saved item, no auth → MainHeader falls back to "Untitled".
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
