@@ -110,6 +110,30 @@ test('Keyboard Shortcuts sidebar button opens the shortcuts modal', async ({ pag
   await expect(page.getByRole('dialog').filter({ hasText: 'Keyboard Shortcuts' })).toBeVisible();
 });
 
+test('Settings sidebar button opens the settings modal', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Settings').click();
+  // SettingsModal is a Radix dialog. Match it by its unique "Line wrap"
+  // toggle label so this test never overlaps with other open dialogs.
+  await expect(page.getByRole('dialog').filter({ hasText: 'Line wrap' })).toBeVisible();
+});
+
+test('clicking the diagram title opens the inline title editor', async ({ page }) => {
+  // MainHeader renders the title as a clickable <span> until clicked, then
+  // swaps in an <input id="titleInput">. The CSS tab would have made a poor
+  // smoke test here: clicking it triggers a login prompt for unsigned-in
+  // users (CSS is a premium feature, see ContentWrap.onCSSActiviation).
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByText('Untitled').first().click();
+  await expect(page.locator('#titleInput')).toBeVisible();
+});
+
+test('My Library sidebar button reveals the library panel', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('My Library').click();
+  await expect(page.locator('#librarySearchInput')).toBeVisible();
+});
+
 test('Add Page button creates a second page tab', async ({ page }) => {
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
   const addPage = page.getByTitle('Add new page');
