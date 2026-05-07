@@ -152,7 +152,7 @@
   },
   "homepage": "http://zenuml.com",
   "volta": {
-    "node": "20.0.0",
+    "node": "20.19.0",
     "yarn": "1.22.19"
   }
 }

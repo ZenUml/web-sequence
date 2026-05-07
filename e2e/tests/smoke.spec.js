@@ -96,3 +96,36 @@ test('Cmd/Ctrl+S persists an item to localStorage', async ({ page }) => {
     )
     .not.toBeNull();
 });
+
+test('Cheatsheet sidebar button opens the cheatsheet modal', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Cheatsheet').click();
+  // CheatSheetModal renders via Radix UI Dialog with title "Cheat sheet".
+  await expect(page.getByRole('dialog').filter({ hasText: 'Cheat sheet' })).toBeVisible();
+});
+
+test('Keyboard Shortcuts sidebar button opens the shortcuts modal', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Keyboard Shortcuts').click();
+  await expect(page.getByRole('dialog').filter({ hasText: 'Keyboard Shortcuts' })).toBeVisible();
+});
+
+test('Add Page button creates a second page tab', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const addPage = page.getByTitle('Add new page');
+  await expect(addPage).toBeVisible();
+  await addPage.click();
+
+  // The first run shows "Page 1"; after Add Page there should be at least
+  // two page tabs. Tabs render as buttons containing the page title text.
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const labels = Array.from(document.querySelectorAll('button, [role="tab"]'))
+          .map((el) => el.textContent || '')
+          .filter((t) => /^Page \d+$/.test(t.trim()));
+        return labels.length;
+      }),
+    { timeout: 5_000 },
+  ).toBeGreaterThanOrEqual(2);
+});
