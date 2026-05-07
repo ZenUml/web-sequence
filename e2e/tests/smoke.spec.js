@@ -193,3 +193,42 @@ test('Add Page button creates a second page tab', async ({ page }) => {
     { timeout: 5_000 },
   ).toBeGreaterThanOrEqual(2);
 });
+
+test('two consecutive Add Page clicks create three total page tabs', async ({ page }) => {
+  // Multiple Add Page invocations should each append a new tab and renumber
+  // ("Page 1", "Page 2", "Page 3"). This guards the page-counter logic in
+  // app.addNewPage without relying on intricate per-editor content swap
+  // semantics (which differs between the sidebar editor and ContentWrap).
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Add new page').click();
+  await page.getByTitle('Add new page').click();
+
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const labels = Array.from(document.querySelectorAll('button'))
+          .map((el) => (el.textContent || '').trim())
+          .filter((t) => /^Page \d+$/.test(t));
+        return new Set(labels).size;
+      }),
+    { timeout: 5_000 },
+  ).toBeGreaterThanOrEqual(3);
+});
+
+test('renaming the diagram title via the input persists in the header', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByText('Untitled').first().click();
+  const input = page.locator('#titleInput');
+  await expect(input).toBeVisible();
+  await input.fill('Smoke Renamed');
+  // titleInputBlurHandler fires on blur.
+  await input.blur();
+  // Header re-renders to a span with the new title.
+  await expect(page.getByText('Smoke Renamed')).toBeVisible();
+});
+
+test('default item title at startup is "Untitled"', async ({ page }) => {
+  // No saved item, no auth → MainHeader falls back to "Untitled".
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await expect(page.getByText('Untitled').first()).toBeVisible();
+});
