@@ -28,3 +28,7 @@ extension-*.zip
 .firebase
 size-plugin.json
 extension.zip
+
+### Playwright artifacts
+/test-results/
+/playwright-report/
