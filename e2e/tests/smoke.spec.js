@@ -285,6 +285,80 @@ test('preview iframe successfully loads the @zenuml/core UMD bundle', async ({ p
   ).not.toBe('undefined');
 });
 
+test('Cmd/Ctrl+S twice does not create a duplicate localStorage item', async ({ page }) => {
+  // saveItem assigns an id once and reuses it on subsequent saves. Two
+  // consecutive saves must leave exactly one `item-...` key behind.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.locator('.CodeMirror').first().click();
+  await page.keyboard.press(SAVE_KEY);
+
+  const countItemKeys = () =>
+    page.evaluate(
+      () =>
+        Object.keys(window.localStorage).filter((k) => k.startsWith('item-')).length,
+    );
+
+  await expect.poll(countItemKeys, { timeout: 10_000 }).toBe(1);
+
+  await page.keyboard.press(SAVE_KEY);
+  // Give it a moment in case a duplicate were to be written, then reassert.
+  await page.waitForTimeout(500);
+  expect(await countItemKeys()).toBe(1);
+});
+
+test('multi-message diagram renders every interaction label', async ({ page }) => {
+  // Drive the editor with a 3-message ZenUML source and verify each label
+  // appears in the rendered iframe. Guards both the parser and renderer.
+  // Wait for bootstrap to complete (default diagram visible) before setValue,
+  // otherwise the app's `createNewItem` can race-write the default and
+  // clobber our value.
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  const previewText = () =>
+    page.evaluate(
+      () =>
+        document.getElementById('demo-frame')?.contentDocument?.body
+          ?.textContent || '',
+    );
+  await expect.poll(previewText, { timeout: 15_000 }).toContain('BookLibService');
+
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('.CodeMirror');
+    wrapper.CodeMirror.setValue('Alice->Bob: hi\nBob->Charlie: yo\nCharlie->Alice: ack');
+  });
+
+  // Single poll for all three labels at once — avoids racing on partial renders.
+  await expect.poll(
+    async () => {
+      const t = await previewText();
+      return t.includes('hi') && t.includes('yo') && t.includes('ack');
+    },
+    { timeout: 15_000 },
+  ).toBe(true);
+});
+
+test('Add Page → Delete returns to a single Page 1 tab', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Add new page').click();
+
+  // The delete button is opacity-0 unless hovered; force the click.
+  await page.getByTitle('Delete page').first().click({ force: true });
+  // DeletePageModal is a Radix dialog with title "Confirm to Delete".
+  const confirmModal = page.getByRole('dialog').filter({ hasText: 'Confirm to Delete' });
+  await expect(confirmModal).toBeVisible();
+  await confirmModal.getByRole('button', { name: /^Delete$/ }).click();
+
+  await expect.poll(
+    async () =>
+      page.evaluate(() => {
+        const labels = Array.from(document.querySelectorAll('button'))
+          .map((el) => (el.textContent || '').trim())
+          .filter((t) => /^Page \d+$/.test(t));
+        return new Set(labels).size;
+      }),
+    { timeout: 5_000 },
+  ).toBe(1);
+});
+
 test('default item title at startup is "Untitled"', async ({ page }) => {
   // No saved item, no auth → MainHeader falls back to "Untitled".
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
