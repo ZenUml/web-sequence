@@ -134,6 +134,46 @@ test('My Library sidebar button reveals the library panel', async ({ page }) => 
   await expect(page.locator('#librarySearchInput')).toBeVisible();
 });
 
+test('Escape key closes the cheatsheet modal', async ({ page }) => {
+  await expect(page.locator('.CodeMirror').first()).toBeVisible();
+  await page.getByTitle('Cheatsheet').click();
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Cheat sheet' });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+});
+
+test('default diagram includes the BookLibService example participants', async ({ page }) => {
+  // The shipped default diagram renders a RESTful book endpoint scenario
+  // with several named participants. Asserting on the rendered iframe text
+  // catches regressions in either the parser or the default snippet.
+  await expect.poll(
+    async () =>
+      page.evaluate(
+        () =>
+          document.getElementById('demo-frame')?.contentDocument?.body
+            ?.textContent || '',
+      ),
+    { timeout: 15_000 },
+  ).toContain('BookLibService');
+});
+
+test('alertsService surfaces a startup "New item created" toast', async ({ page }) => {
+  // Visit /, then assert #js-alerts-container picks up the toast that
+  // `createNewItem` fires on first-load. The toast's `is-active` class is
+  // removed after 2s; firefox can boot slowly enough that by the time the
+  // poll starts the class is already gone, so we assert on textContent
+  // directly which persists.
+  await expect.poll(
+    async () =>
+      page.evaluate(
+        () =>
+          document.getElementById('js-alerts-container')?.textContent || '',
+      ),
+    { timeout: 8_000 },
+  ).toContain('New item created');
+});
+
 test('Add Page button creates a second page tab', async ({ page }) => {
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
   const addPage = page.getByTitle('Add new page');
