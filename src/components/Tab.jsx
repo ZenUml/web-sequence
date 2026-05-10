@@ -20,10 +20,10 @@ class Tab extends Component {
     } = this;
 
     let className =
-      'h-8 flex items-center justify-center px-6 gap-1.5 tab-list-item bg-black-800 font-semibold';
+      'h-8 flex items-center justify-center px-6 gap-1.5 tab-list-item bg-black-800 font-semibold transition-colors text-gray-400 hover:text-gray-200 hover:bg-black-700 cursor-pointer';
 
     if (activeTab === label) {
-      className += ' border-b border-primary bg-black-500 text-primary-400';
+      className += ' border-b-2 border-primary bg-black-500 text-primary-400 font-bold';
     }
     let loc;
     if (lineOfCode > 0) {
