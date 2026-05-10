@@ -7,7 +7,8 @@ class Toolbox extends Component {
 
   render() {
     return (
-      <div className="hidden md:flex gap-6 px-10 py-2 bg-black-400 flex-shrink-0 overflow-hidden">
+      <div className="hidden md:flex items-center gap-1 px-4 py-2 bg-black-400 flex-shrink-0 overflow-hidden">
+        {/* Group: Participants */}
         <button id="newParticipantBtn" title="New participant — inserts: NewParticipant" aria-label="New participant" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addNewParticipantButton"
@@ -42,6 +43,9 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
+        {/* Separator */}
+        <div className="w-px h-5 bg-white/20 mx-2 flex-shrink-0" aria-hidden="true" />
+        {/* Group: Messages */}
         <button id="asyncMessageBtn" title="Async message — inserts: A->B:message" aria-label="Async message" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addAsyncMessageButton"
@@ -393,6 +397,9 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
+        {/* Separator */}
+        <div className="w-px h-5 bg-white/20 mx-2 flex-shrink-0" aria-hidden="true" />
+        {/* Group: Blocks */}
         <button title="Conditional block — inserts: if(condition) { A.method() }" aria-label="Conditional block" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addConditionalButton"
