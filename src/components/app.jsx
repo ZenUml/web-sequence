@@ -392,8 +392,8 @@ export default class App extends Component {
       html: '',
       css: '/* Prefix your CSS rules with `#diagram` */',
       js: `// An example for a RESTful endpoint<br>
-// Go to the "Cheat sheet" tab or https://docs.zenuml.com
-// to find all syntax<br>
+// Click the book icon (left sidebar) or visit https://docs.zenuml.com
+// for full syntax reference<br>
 // \`POST /v1/book/{id}/borrow\`
 BookLibService.Borrow(id) {
   User = Session.GetUser()
