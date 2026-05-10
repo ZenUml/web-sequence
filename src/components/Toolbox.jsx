@@ -8,7 +8,7 @@ class Toolbox extends Component {
   render() {
     return (
       <div className="hidden md:flex gap-6 px-10 py-2 bg-black-400 flex-shrink-0 overflow-hidden">
-        <button id="newParticipantBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="newParticipantBtn" title="New participant — inserts: NewParticipant" aria-label="New participant" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addNewParticipantButton"
             width="100%"
@@ -42,7 +42,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button id="asyncMessageBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="asyncMessageBtn" title="Async message — inserts: A->B:message" aria-label="Async message" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addAsyncMessageButton"
             width="100%"
@@ -106,7 +106,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button id="syncMessageBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="syncMessageBtn" title="Sync message — inserts: A.message { }" aria-label="Sync message" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addSyncMessageButton"
             width="100%"
@@ -159,7 +159,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button id="returnValueBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="returnValueBtn" title="Return value — inserts: result = A.message { }" aria-label="Return value" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addReturnValueButton"
             width="100%"
@@ -272,7 +272,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button id="selfMessageBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="selfMessageBtn" title="Self message — inserts: A.message() { selfMessage() }" aria-label="Self message" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addSelfMessageButton"
             width="100%"
@@ -334,7 +334,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button id="newInstanceBtn" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button id="newInstanceBtn" title="New instance — inserts: a = new A()" aria-label="New instance" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addNewInstanceButton"
             width="100%"
@@ -393,7 +393,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button title="Conditional block — inserts: if(condition) { A.method() }" aria-label="Conditional block" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addConditionalButton"
             width="100%"
@@ -450,7 +450,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button title="Loop block — inserts: while(condition) { A.method() }" aria-label="Loop block" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             id="addLoopButton"
             width="100%"
@@ -507,7 +507,7 @@ class Toolbox extends Component {
             </g>
           </svg>
         </button>
-        <button className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
+        <button title="Note comment — inserts: //Note" aria-label="Note comment" className="hover:bg-black-600 p-1 h-7 w-7 rounded-lg flex items-center justify-between flex-shrink-0">
           <svg
             width="100%"
             height="16"
