@@ -103,6 +103,14 @@ export default class ContentWrap extends Component {
       this.cm.js.setValue(code);
       this.cm.js.refresh();
     }
+    // Handle parse errors from @zenuml/core iframe to populate error gutter
+    if (e.data && e.data.type === 'zenuml-parse-error' && e.data.errors) {
+      this.cleanupErrors('js');
+      this.showErrors('js', e.data.errors);
+    }
+    if (e.data && e.data.type === 'zenuml-parse-ok') {
+      this.cleanupErrors('js');
+    }
   }
 
   onHtmlCodeChange(editor, change) {
