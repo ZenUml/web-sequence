@@ -44,6 +44,12 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                     </span>
                   </p>
                   <p>
+                    <span className="kbd-shortcut__keys">Alt + P</span>
+                    <span className="kbd-shortcut__details">
+                      Add a new diagram page
+                    </span>
+                  </p>
+                  <p>
                     <span className="kbd-shortcut__keys">Ctrl/⌘ + O</span>
                     <span className="kbd-shortcut__details">
                       Open list of saved creations

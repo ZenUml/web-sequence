@@ -643,6 +643,11 @@ BookLibService.Borrow(id) {
             editorEl.CodeMirror.focus();
           }
         }
+        // Alt+P — add a new page
+        if (event.altKey && event.key === 'p') {
+          event.preventDefault();
+          this.addNewPage();
+        }
         // Ctrl/⌘ + Shift + 5
         if (
           (event.ctrlKey || event.metaKey) &&
