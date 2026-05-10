@@ -2,7 +2,6 @@ import { editorThemes } from '../editorThemes';
 import * as Dialog from '@radix-ui/react-dialog';
 import { clsx } from 'clsx';
 import * as Select from '@radix-ui/react-select';
-import * as RadioGroup from '@radix-ui/react-radio-group';
 import { useState } from 'preact/hooks';
 
 function CheckboxSetting({
@@ -40,10 +39,6 @@ function CheckboxSetting({
 
 export default function SettingsModal(props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const updateSetting = (e) => {
-    console.log(e)(e);
-  };
 
   return (
     <Dialog.Root open={props.open} onOpenChange={props.onClose}>
