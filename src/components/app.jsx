@@ -634,6 +634,14 @@ BookLibService.Borrow(id) {
           this.saveItem();
           trackEvent('ui', 'saveItemKeyboardShortcut');
         }
+        // Alt+E — jump focus directly to the code editor
+        if (event.altKey && event.key === 'e') {
+          event.preventDefault();
+          const editorEl = document.querySelector('#editor .CodeMirror');
+          if (editorEl) {
+            editorEl.CodeMirror.focus();
+          }
+        }
         // Ctrl/⌘ + Shift + 5
         if (
           (event.ctrlKey || event.metaKey) &&

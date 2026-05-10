@@ -38,6 +38,12 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                     </span>
                   </p>
                   <p>
+                    <span className="kbd-shortcut__keys">Alt + E</span>
+                    <span className="kbd-shortcut__details">
+                      Focus the code editor
+                    </span>
+                  </p>
+                  <p>
                     <span className="kbd-shortcut__keys">Ctrl/⌘ + O</span>
                     <span className="kbd-shortcut__details">
                       Open list of saved creations
