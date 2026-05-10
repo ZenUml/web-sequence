@@ -2,7 +2,7 @@ import firebase from 'firebase/app';
 
 async function syncDiagram(currentItem) {
   // Remove skip for local development to test Firebase emulator
-  // if (location.host === 'localhost:3000') {
+  // if (location.host === 'localhost:23000') {
   //   console.log('Skipping sync-diagram call in local environment');
   //   return;
   // }

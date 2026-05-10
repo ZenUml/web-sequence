@@ -87,7 +87,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 3000,
+    port: 23000,
     proxy: {
       '/create-share': {
         target: 'http://127.0.0.1:5002',

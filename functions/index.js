@@ -171,7 +171,7 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
     if (!baseUrl) {
       if (process.env.FUNCTIONS_EMULATOR === 'true') {
         // Local development fallback
-        baseUrl = 'http://localhost:3000';
+        baseUrl = 'http://localhost:23000';
       } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
         // Staging environment fallback
         baseUrl = 'https://staging.zenuml.com';
