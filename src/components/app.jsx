@@ -379,16 +379,9 @@ export default class App extends Component {
 
   createNewItem() {
     var d = new Date();
+    var counter = Object.keys(this.state.savedItems || {}).length + 1;
     this.setCurrentItem({
-      title:
-        'Untitled ' +
-        d.getDate() +
-        '-' +
-        (d.getMonth() + 1) +
-        '-' +
-        d.getHours() +
-        ':' +
-        d.getMinutes(),
+      title: counter > 1 ? `Untitled ${counter}` : 'Untitled diagram',
       html: '',
       css: '/* Prefix your CSS rules with `#diagram` */',
       js: `// An example for a RESTful endpoint<br>
