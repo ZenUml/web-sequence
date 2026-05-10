@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* WCAG 2.4.11: Improved focus rings for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
 /*NOTE: try to fix tailwind backdrop-blur style after building*/
 @layer base {
   *,
