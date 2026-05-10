@@ -1487,8 +1487,17 @@ BookLibService.Borrow(id) {
   }
 
   async blankTemplateSelectHandler() {
-    this.createNewItem();
-    await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
+    // Create a truly blank diagram — not the example-filled createNewItem()
+    var counter = Object.keys(this.state.savedItems || {}).length + 1;
+    await this.setCurrentItem({
+      title: counter > 1 ? `Untitled ${counter}` : 'Untitled diagram',
+      html: '',
+      css: '/* Prefix your CSS rules with `#diagram` */',
+      js: '',
+    });
+    this.refreshEditor();
+    alertsService.add('New item created');
+    await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML', unsavedEditCount: 0 });
     this.contentWrap.resetTabs();
   }
 
