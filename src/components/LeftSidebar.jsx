@@ -30,8 +30,8 @@ export default class LeftSidebar extends Component {
     return (
       <div class="flex shrink-0">
         {/* Icon Bar */}
-        <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10 justify-between h-full">
-          <div class="flex flex-col items-center gap-2">
+        <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10 h-full">
+          <div class="flex flex-col items-center gap-2 flex-1">
             <button
               class={`p-2.5 rounded-md transition-colors ${
                 isLibraryActive
@@ -73,6 +73,8 @@ export default class LeftSidebar extends Component {
               <span class="material-symbols-outlined" aria-hidden="true">code_blocks</span>
             </button>
           </div>
+          {/* Divider between panels and utility icons */}
+          <div class="w-6 border-t border-white/10 my-1" aria-hidden="true" />
           <div class="flex flex-col items-center gap-2">
             <button
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
