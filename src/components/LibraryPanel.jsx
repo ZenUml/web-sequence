@@ -407,21 +407,24 @@ export default class LibraryPanel extends Component {
               <button
                 onClick={this.props.onReload}
                 class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                title="Reload library"
+                title="Refresh library"
+                aria-label="Refresh library"
               >
                 <span class="material-symbols-outlined text-base">refresh</span>
               </button>
               <button
                 onClick={this.props.exportBtnClickHandler}
                 class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                title="Export"
+                title="Export library to file"
+                aria-label="Export library to file"
               >
                 <span class="material-symbols-outlined text-base">file_upload</span>
               </button>
               <button
                 onClick={this.importBtnClickHandler.bind(this)}
                 class="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                title="Import"
+                title="Import library from file"
+                aria-label="Import library from file"
               >
                 <span class="material-symbols-outlined text-base">file_download</span>
               </button>
@@ -453,9 +456,10 @@ export default class LibraryPanel extends Component {
             )}
             
             {!this.items.length ? (
-              <div class="text-white/50 text-center py-8">
+              <div class="text-white/50 text-center py-8 px-4">
                 <span class="material-symbols-outlined text-3xl mb-2 block">folder_off</span>
-                <p class="text-sm">Nothing saved yet.</p>
+                <p class="text-sm mb-2">Nothing saved yet.</p>
+                <p class="text-xs text-white/40">Press <kbd class="bg-white/10 px-1 py-0.5 rounded text-white/60">⌘S</kbd> to save your current diagram here.</p>
               </div>
             ) : null}
           </div>

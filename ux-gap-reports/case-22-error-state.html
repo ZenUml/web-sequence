@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 22 — Error State &amp; Syntax Validation UX · ZenUML UX Gaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; font-size: 0.9rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary-bar { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.25rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; }
+    .stat .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gif-wrap { margin-bottom: 2.5rem; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+    .gif-wrap img { width: 100%; display: block; }
+    .gif-caption { background: #1e293b; padding: 0.75rem 1rem; font-size: 0.8rem; color: #64748b; }
+    .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1rem; }
+    .gaps { display: grid; gap: 1.25rem; }
+    .gap-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; border-left: 4px solid #334155; }
+    .gap-card.high   { border-left-color: #ef4444; }
+    .gap-card.medium { border-left-color: #f59e0b; }
+    .gap-card.low    { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.7rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .sev { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high   { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low    { background: #0f2042; color: #60a5fa; }
+    .gap-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; flex: 1; }
+    .gap-body p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .gap-body p:last-child { margin-bottom: 0; }
+    .gap-body strong { color: #e2e8f0; }
+    .principle { display: inline-block; font-size: 0.65rem; font-weight: 600; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 0.1rem 0.4rem; margin-right: 0.25rem; color: #94a3b8; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.78rem; color: #7dd3fc; border: 1px solid #1e3a5f; }
+    .fix { background: #0a1f0a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; color: #86efac; border: 1px solid #14532d; }
+    .fix::before { content: "Suggested fix: "; font-weight: 700; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">← All Cases</a></div>
+  <h1>Case 22 — Error State &amp; Syntax Validation UX</h1>
+  <p>Silent parse failure · uncaught TypeError on keystrokes · error-gutter never populated · editor/canvas desync on undo</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="gif-wrap">
+    <img src="ux-case-22-error-state.gif" alt="Error state UX walkthrough — typing invalid syntax, observing silent failure, testing undo">
+    <div class="gif-caption">Invalid syntax typed (line 1: <code>!!!INVALID@@@SYNTAX###</code>) — canvas silently replaces diagram with an empty <code>_STARTER_</code> participant. No error message, no inline squiggle, no banner. Cmd+Z ×10 reveals editor/canvas desync: editor empties but canvas shows a different prior diagram.</div>
+  </div>
+
+  <div class="section-title">Gaps Found</div>
+  <div class="gaps">
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-22-001</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">Invalid syntax silently renders a blank canvas — no error message, no inline squiggle, no notification</span>
+      </div>
+      <div class="gap-body">
+        <p>When a user types completely invalid ZenUML (e.g., <code>!!!INVALID@@@SYNTAX###</code>), the canvas silently collapses to a near-empty diagram showing only an unlabeled internal <code>_STARTER_</code> participant (a stickman box). There is:</p>
+        <p>• <strong>No error banner</strong> above or below the diagram<br>
+        • <strong>No inline red squiggles</strong> in the editor (no CodeMirror lint markers; <code>errorGutterChildCount: 0</code>)<br>
+        • <strong>No toast or notification</strong> (toasts: 0)<br>
+        • <strong>No DOM error element visible</strong> (errorBanners: [])<br>
+        • The canvas iframe has <code>errorElements: []</code> — nothing conveys the error state to the user</p>
+        <p>Competing tools handle this dramatically better: Mermaid Live Editor shows a red "Parse error" banner with the specific line and token that failed. Kroki and PlantUML editors display the exception message inline. ZenUML's completely silent failure leaves users with no idea what went wrong — they must delete code manually to diagnose.</p>
+        <div class="evidence">
+// JS DOM audit with input: "!!!INVALID@@@SYNTAX###\nthis is not valid zenuml at all\n{{{ broken"
+// Main page:
+errorBanners: []          // no visible error elements
+editorErrorMarks: 1       // only the empty error-gutter container div itself
+gutterMarkers: 0          // no error markers placed in gutter
+toasts: 0                 // no toast notifications
+// Canvas iframe:
+errorElements: []         // zero error nodes in iframe
+errorMsgCount: 0          // no parse-error class elements
+participantCount: 1       // only the internal _STARTER_ fallback
+allVisibleText: ["Click to add title", "_STARTER_"]  // internal placeholder leaked
+        </div>
+        <div class="fix">Show a parse error banner below the editor toolbar (or as a red stripe at the bottom of the canvas) with the ANTLR error message and the offending line number. Minimum viable: wrap the diagram renderer in an error boundary that catches parser exceptions and renders a styled <code>&lt;div class="parse-error"&gt;Syntax error on line N: [message]&lt;/div&gt;</code> above the canvas footer. For inline editor feedback, add CodeMirror lint integration via <code>cm.setOption("lint", true)</code> with a custom linter that runs the ZenUML parser.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #9 Error Messages</span>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+      </div>
+    </div>
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-22-002</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">Uncaught TypeError on every N-th keystroke — <code>window.saveBtn</code> is undefined, silently killing the unsaved-changes warning animation</span>
+      </div>
+      <div class="gap-body">
+        <p>Every <code>UNSAVED_WARNING_COUNT</code> keystrokes, <code>onCodeChange</code> in <code>app.jsx:914</code> attempts to access <code>window.saveBtn.classList.add('animated')</code>. Since <code>window.saveBtn</code> is <code>undefined</code> in the current app build, this throws a <code>TypeError: Cannot read properties of undefined (reading 'classList')</code> — confirmed by 10+ identical console EXCEPTION entries during a single typing session.</p>
+        <p>The consequences are doubled:</p>
+        <p>• <strong>The save animation never fires</strong> — users are never visually warned they have N unsaved changes. The "wobble" animation on the save button (which is the intended UX) is completely dead code in production.<br>
+        • <strong>The exception is silently swallowed</strong> — the user sees nothing. There is no error boundary, no fallback, no degraded behavior — the app just quietly fails internally.</p>
+        <div class="evidence">
+// Console output during typing session (10+ occurrences at 08:28:54):
+[EXCEPTION] (app.jsx:729:21)
+TypeError: Cannot read properties of undefined (reading 'classList')
+    at App.onCodeChange (app.jsx:730:22)
+
+// Source code at app.jsx:914:
+if (isUserChange && this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0
+    && this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT) {
+  window.saveBtn.classList.add('animated');  // ← TypeError: window.saveBtn is undefined
+  window.saveBtn.classList.add('wobble');
+}
+        </div>
+        <div class="fix">Guard with a null check: <code>if (window.saveBtn) { window.saveBtn.classList.add('animated'); }</code>. Better: replace the global <code>window.saveBtn</code> reference with a React ref (<code>this.saveBtnRef = createRef()</code> on the button element) — the global pattern is fragile and breaks if the button is conditionally rendered. This fix also restores the intended unsaved-changes animation.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #5 Error Prevention</span>
+        <span class="principle">Nielsen #9 Error Messages</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-22-003</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">CodeMirror <code>error-gutter</code> is configured but never populated — inline error markers are dead infrastructure</span>
+      </div>
+      <div class="gap-body">
+        <p>The CodeMirror instance has a custom gutter registered as <code>"error-gutter"</code> — confirmed by the presence of a <code>&lt;div class="CodeMirror-gutter error-gutter"&gt;</code> in the DOM. This gutter was clearly designed to show per-line error indicators (like a red ✕ or warning triangle next to the offending line number).</p>
+        <p>However, <code>gutterMarkers: 0</code> — no markers are ever placed in this gutter, even with 3 lines of completely invalid syntax. The gutter exists as a visible empty column next to the line numbers, occupying space without serving any purpose. The infrastructure for inline error indicators was planned but never completed.</p>
+        <div class="evidence">
+// DOM audit:
+document.querySelector('.error-gutter')
+// → &lt;div class="CodeMirror-gutter error-gutter"&gt;&lt;/div&gt;  (empty)
+
+// Expected CodeMirror API to populate it:
+cm.setGutterMarker(lineNumber, "error-gutter", markerElement);
+// This call is never made anywhere in the codebase for parse errors.
+
+// Result: error-gutter exists (takes up space) but is permanently empty
+        </div>
+        <div class="fix">Complete the error-gutter integration: when the ZenUML parser throws, extract the line number from the ANTLR error, create a styled marker element (e.g., a red circle with an ✕ icon), and call <code>cm.setGutterMarker(errorLine - 1, "error-gutter", marker)</code>. Clear markers on valid parse. This provides exactly the kind of inline feedback VS Code and other editors show.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #9 Error Messages</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-22-004</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Editor and canvas desync after undo past initial load — canvas shows stale content while editor is empty</span>
+      </div>
+      <div class="gap-body">
+        <p>After typing invalid syntax and pressing Cmd+Z ten times, the editor empties completely (line 1 blank) while the canvas continues to show a fully rendered diagram (the previously saved "Auth Flow" diagram). The editor state and the rendered canvas state are out of sync.</p>
+        <p>This represents a violation of the "what you see is what you get" contract: the canvas is showing a diagram that is no longer represented by any editor content. A user in this state would:</p>
+        <p>• Think they still have a valid diagram when the editor shows nothing<br>
+        • Be unable to determine what code produced the current canvas<br>
+        • Be confused if they save — which version gets saved, the empty editor or the visible canvas?</p>
+        <div class="evidence">
+// Observed state after 10× Cmd+Z:
+editor.getValue() → ""  (empty)
+canvas iframe shows: A→B: Login, B→C: Validate, 3. token, 4. Welcome!
+// The two panels disagree on the diagram content
+// Undo history exhausted past the initial load state
+// No visual indicator that editor/canvas are out of sync
+        </div>
+        <div class="fix">When the editor is emptied (content length drops to 0), either: (a) render an empty-state placeholder in the canvas rather than the last diagram, or (b) set a minimum editor content of the default sample diagram (preventing undo past initial load). Track the "floor" undo state — when undo reaches the initial content, stop further undos. CodeMirror supports this via <code>cm.clearHistory()</code> at load time to set the baseline.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #3 User Control</span>
+        <span class="principle">Nielsen #4 Consistency</span>
+      </div>
+    </div>
+
+    <div class="gap-card low">
+      <div class="gap-header">
+        <span class="gap-id">GAP-22-005</span>
+        <span class="sev sev-low">Low</span>
+        <span class="gap-title">Internal <code>_STARTER_</code> participant name leaks into the visible canvas on parse failure</span>
+      </div>
+      <div class="gap-body">
+        <p>When ZenUML fails to parse the input, it renders a fallback participant named <code>_STARTER_</code> — an internal implementation detail. This participant is visible in the canvas iframe as a stickman box with no label. While the participant label itself is hidden (the stickman icon is the only rendering), the text <code>_STARTER_</code> is present in the DOM (confirmed via <code>allVisibleText: ["Click to add title", "_STARTER_"]</code>) and could be visible in exported PNGs or in certain zoom/render states.</p>
+        <p>Users who export the diagram in an error state (not knowing the parse failed silently) may receive a PNG with a single unlabeled stickman — and have no idea why their diagram is "empty."</p>
+        <div class="evidence">
+// Iframe DOM audit during invalid syntax state:
+doc.querySelectorAll('[class*="participant"]').length → 1
+allVisibleText: ["Click to add title", "_STARTER_"]
+// lifeline class: "lifeline absolute flex flex-col h-full starter"
+// The "starter" CSS class and "_STARTER_" text are internal implementation names
+// exposed to the DOM when parsing fails
+        </div>
+        <div class="fix">Replace the <code>_STARTER_</code> fallback rendering with an explicit empty state component that shows a message like "Your diagram will appear here" or "Fix the syntax error to see the diagram." This separates the intentional empty state from the error state, and prevents internal implementation names from leaking into the visible DOM or exported artifacts.</div>
+        <span class="principle">Nielsen #9 Error Messages</span>
+        <span class="principle">Nielsen #2 Match Real World</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Case 22 of the ZenUML UX Gap Analysis Loop &nbsp;·&nbsp; Generated 2026-05-10
+</footer>
+
+</body>
+</html>

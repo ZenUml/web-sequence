@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 07: Editor Toolbar Insert Buttons</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; }
+    .toolbar-map { background: #0f172a; border-radius: 8px; padding: 1rem; margin: 0.75rem 0; font-size: 0.8rem; }
+    .toolbar-map table { width: 100%; border-collapse: collapse; }
+    .toolbar-map th { color: #64748b; font-weight: 600; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #334155; font-size: 0.7rem; text-transform: uppercase; }
+    .toolbar-map td { padding: 0.3rem 0.5rem; color: #94a3b8; border-bottom: 1px solid #1e293b; }
+    .toolbar-map td:first-child { color: #f1f5f9; font-family: monospace; }
+    .yes { color: #4ade80; } .no { color: #ef4444; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 07</span>
+    <span class="badge badge-gaps">4 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Editor Toolbar Insert Buttons</strong> — discoverability, silent failures, unlabeled icons &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html" style="border-color:#60a5fa;color:#60a5fa">Case 07: Toolbar</a>
+    <a href="case-08-settings.html">Case 08</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">1</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">4</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Zero accessible labels on 6 of 8 toolbar buttons</h3>
+    <p>JavaScript inspection confirms: all 8 toolbar insert buttons have <strong>no <code>title</code>, no <code>aria-label</code>, and no visible text label</strong>. The last two buttons ("Alt", "Loop") have text embedded in their SVG icons, making them partially discoverable. The first 6 — which represent the most-used actions (participant, message types, self-message, return) — are completely undiscoverable via hover, screen reader, or visual inspection.</p>
+  </div>
+
+  <div class="toolbar-map">
+    <table>
+      <tr><th>Icon shape</th><th>What it inserts</th><th>Has tooltip</th><th>Has aria-label</th></tr>
+      <tr><td>T-shape (participant)</td><td>Participant declaration</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>→ (sync message)</td><td>Synchronous message</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>→| (message + return)</td><td>Message with return value</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>↔ (self)</td><td>Self-referential message</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>→↩ (async?)</td><td>Context-dependent (silent)</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>⊢→ (create)</td><td>Note comment (//Note)</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>Alt (text in icon)</td><td>if/else block</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>Loop (text in icon)</td><td>while loop block</td><td class="no">✗</td><td class="no">✗</td></tr>
+    </table>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — hover all toolbar buttons (no tooltips) → click each to observe inserts</h2>
+      <img src="ux-case-07-toolbar.gif" alt="Editor toolbar buttons UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-07-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>All 8 toolbar buttons have zero accessible labels — hover shows nothing</h3>
+        <p>The editor toolbar contains 8 insert buttons. JavaScript DOM inspection confirms every single one has <code>title=""</code>, no <code>aria-label</code>, and no visible text. Hovering shows no tooltip. Screen reader users get no announcement. Sighted users must guess icon meaning from small abstract SVGs, then click to discover what gets inserted — there is no "safe" way to learn what a button does before committing the action.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · WCAG 4.1.2 — Name, Role, Value</div>
+        <div class="fix">Add <code>title</code> and <code>aria-label</code> to every button. Show hover tooltips with: (1) the button name, (2) the syntax it inserts. Example: tooltip on the message button → "Insert synchronous message — <code>A.method()</code>". This is how VS Code, GitHub's markdown toolbar, and Mermaid Live Editor handle it.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-07-002</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Several toolbar buttons silently do nothing when editor focus is not set correctly</h3>
+        <p>Clicking toolbar buttons transfers focus from the editor to the button itself, which can break the insert action — the button never receives the editor's cursor context. During testing, buttons 1, 2, 5, and 6 produced no visible change even when clicked repeatedly. There is no error message, no disabled state, no indication that a precondition was unmet. Users click, nothing happens, and they assume the button is broken.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status · Nielsen #9 — Help users recognize errors</div>
+        <div class="fix">Buttons should either: (a) always insert at end-of-file as a safe fallback regardless of cursor position, or (b) show a clear disabled/unavailable state with tooltip explaining the precondition. "Click in the editor first, then use toolbar buttons" is an invisible precondition users cannot be expected to know.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-07-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>No visual grouping — 8 buttons in a single undifferentiated row</h3>
+        <p>All 8 toolbar buttons appear as an unbroken row with equal spacing. There is no separator, no group label, no visual distinction between "add participant", "message types" (sync/async/self/return), and "control structures" (Alt/Loop). Users who know what an "alt block" is must scan all 8 icons to find it. Users who don't know the terminology have no group context to guide discovery.</p>
+        <div class="principle">Gestalt — proximity and grouping · Nielsen #4 — Consistency and standards</div>
+        <div class="fix">Add a thin 1px separator between groups: [Participant] | [→ → ← ↩ ↔] | [Alt Loop]. Add optional group labels ("Participants", "Messages", "Blocks") above each section, collapsible on small screens. This is standard in markdown editors, code editors, and diagram tools like draw.io.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-07-004</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Toolbar inserts placeholder names ("message", "selfMessage") that users must manually replace</h3>
+        <p>When toolbar buttons insert code snippets, they use generic placeholders: <code>result = A.message { }</code>, <code>selfMessage()</code>, <code>//Note</code>. These are valid ZenUML syntax but use non-descriptive generic names that break real diagrams unless edited. Better tools select the placeholder text after insertion, ready for the user to immediately type the real name — no double-click-to-select needed.</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use</div>
+        <div class="fix">After inserting a snippet, auto-select the first meaningful placeholder token (e.g. "message" in <code>A.message()</code>) so the user can immediately type the real name. VS Code snippet tab-stops (${1:placeholder}) implement this pattern well — the cursor moves through editable fields with Tab.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

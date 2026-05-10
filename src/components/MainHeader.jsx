@@ -10,6 +10,7 @@ import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
 
 export function MainHeader(props) {
+  const hasUnsavedChanges = (props.unsavedEditCount || 0) > 0;
   const [isEditing, setEditing] = useState(false);
   const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
   const [imageBase64] = useState();
@@ -47,12 +48,16 @@ export function MainHeader(props) {
     if (props.user) {
       props.profileBtnHandler();
     } else {
-      props.loginBtnHandler();
+      props.loginBtnHandler('Sign in to save your diagrams, access them from any device, and unlock export features.');
     }
   }, [props.user]);
 
   const onBlur = (e) => {
     exitEditing();
+    // If the title was cleared, restore to 'Untitled diagram' before blur handler
+    if (!e.target.value.trim()) {
+      e.target.value = 'Untitled diagram';
+    }
     props.titleInputBlurHandler(e);
   };
 
@@ -78,7 +83,7 @@ export function MainHeader(props) {
           <span className="hidden lg:inline">New</span>
         </button>
       </div>
-      <div>
+      <div className="flex items-center gap-2">
         {isEditing ? (
           <input
             autoFocus
@@ -91,14 +96,26 @@ export function MainHeader(props) {
           />
         ) : (
           <div
-            className="flex items-center gap-2 font-normal"
+            className="flex items-center gap-1.5 font-normal cursor-text hover:bg-black-600/40 rounded px-2 py-1 max-w-xs transition-colors"
             onClick={() => entryEditing()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') entryEditing(); }}
+            aria-label={`Diagram title: ${props.title || 'Untitled'} — click to rename`}
+            title="Click to rename diagram"
           >
-            <span>{props.title || 'Untitled'} </span>
-            <svg className="h-5 w-5">
+            <span className="truncate max-w-[200px]">{props.title || 'Untitled'}</span>
+            <svg className="h-4 w-4 flex-shrink-0 opacity-50" aria-hidden="true">
               <use xlinkHref="#icon-pen" />
             </svg>
           </div>
+        )}
+        {hasUnsavedChanges && (
+          <span
+            className="inline-block w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
+            title="Unsaved changes — press Cmd+S to save"
+            aria-label="Unsaved changes"
+          />
         )}
       </div>
       <div className="flex gap-4 items-center">
@@ -116,7 +133,7 @@ export function MainHeader(props) {
           <button
             className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
             aria-label="Share diagram link"
-            onClick={props.onLogin.bind(this)}
+            onClick={() => props.onLogin('Sign in to generate a persistent share link for this diagram.')}
           >
             <span>Share Link</span>
           </button>

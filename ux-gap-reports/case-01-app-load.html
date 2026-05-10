@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 01: App Load & First Impressions</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat { text-align: center; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; }
+    .num-yellow { color: #f59e0b; }
+    .num-blue { color: #60a5fa; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 01</span>
+    <span class="badge badge-gaps">7 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>App Load &amp; First Impressions</strong> &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">3</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">3</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">7</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — app load → typing → settings</h2>
+      <img src="ux-case-01-app-load.gif" alt="UX session recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-01-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No onboarding or empty-state guidance</h3>
+        <p>New users land on a mostly-black screen with a single letter "A" in the editor and a tiny diagram. There is no welcome message, tutorial prompt, or "get started" example.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Show a rich default example (3-4 participants, arrows, return values) with an inline comment block explaining the syntax.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-01-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Sidebar icons have no tooltips or labels</h3>
+        <p>The 6 sidebar icons (folder, code editor, keyboard, document, library, settings) have no hover tooltip and no visible label. Users must click each one to discover what it does.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Add tooltip on hover (100ms delay) and optionally a collapsible label rail. Modern tools (Figma, Linear, Notion) all label their nav icons.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-01-003</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Preview canvas wastes ~75% of available width</h3>
+        <p>The diagram renders in a small floating frame (≈260px wide) pinned to the top-left of a large dark canvas. The remaining right-side space is completely unused.</p>
+        <div class="principle">Fitts's Law — targets should be large and proximate</div>
+        <div class="fix">Make the preview fill the available pane width and auto-fit the diagram to the viewport (like Mermaid Live Editor, draw.io). Add a "fit to screen" button.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-01-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Settings modal mislabeled as "Editor"</h3>
+        <p>The gear icon in the sidebar opens a dialog titled "Editor", not "Settings". Users looking for app settings will be confused; "Editor" implies code editor preferences only.</p>
+        <div class="principle">Nielsen #4 — Consistency &amp; standards</div>
+        <div class="fix">Rename the modal to "Settings" or split into "Editor Preferences" and "App Settings". The icon should match the modal title.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-01-005</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Editor toolbar icons are unlabeled</h3>
+        <p>8+ icon buttons appear above the code editor (participant, arrow types, loops, alt/else blocks) with no labels, no hover tooltips, and no visual grouping. The syntax they insert is non-obvious from the icon alone.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Add tooltips showing the inserted syntax snippet. Group related icons with a divider. Consider a label on hover like "Insert if/else block (Alt)".</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-01-006</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>"Preserve console logs" exposed in user settings</h3>
+        <p>A debug/developer option sits alongside user-facing preferences (Theme, Font, Line wrap). This is noise for the vast majority of users and reduces trust.</p>
+        <div class="principle">Progressive disclosure — hide complexity from non-technical users</div>
+        <div class="fix">Move debug options behind an "Advanced" expandable section or remove from the UI entirely unless explicitly requested.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-01-007</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Title edit affordance is easy to miss</h3>
+        <p>The diagram title "Data Processing Flow" has a small pencil icon to the right that only appears at a glance. There's no hover state or underline hint that the title is editable in-place.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status</div>
+        <div class="fix">Show a hover underline on the title text itself (not just the icon) so users know it's clickable. Industry standard: clicking the title text should open the inline editor.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09
+</footer>
+
+</body>
+</html>

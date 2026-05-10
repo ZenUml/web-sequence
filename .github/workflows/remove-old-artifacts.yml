@@ -16,9 +16,14 @@ jobs:
 
     steps:
       - name: Remove old artifacts
-        uses: c-hive/gha-remove-artifacts@v1
-        with:
-          age: '1 month' # '<number> <unit>', e.g. 5 days, 2 years, 90 seconds, parsed by Moment.js
-          # Optional inputs
-          # skip-tags: true
-          # skip-recent: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          cutoff="$(date -u -d '1 month ago' +%Y-%m-%dT%H:%M:%SZ)"
+
+          gh api --paginate "repos/$REPO/actions/artifacts" \
+            --jq ".artifacts[] | select(.created_at < \"$cutoff\") | .id" |
+          while read -r artifact_id; do
+            gh api --method DELETE "repos/$REPO/actions/artifacts/$artifact_id"
+          done

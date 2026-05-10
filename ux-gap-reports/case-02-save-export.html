@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 02: Save & Export Flow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat { text-align: center; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; }
+    .num-yellow { color: #f59e0b; }
+    .num-blue { color: #60a5fa; }
+    .finding-highlight { background: #1a1000; border: 1px solid #f59e0b44; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .finding-highlight h3 { font-size: 0.85rem; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .finding-highlight p { font-size: 0.875rem; color: #cbd5e1; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    .nav a:hover { border-color: #60a5fa; color: #60a5fa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 02</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Save (Cmd+S) &amp; Export Flow</strong> &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01: App Load</a>
+    <a href="case-02-save-export.html" style="border-color:#60a5fa;color:#60a5fa">Case 02: Save &amp; Export</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">3</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">1</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="finding-highlight">
+    <h3>Key finding this case</h3>
+    <p>Three critical interactions — saving, error handling, and export — all provide zero user feedback. Users have no way to know if their work was saved, whether their syntax is valid, or why export requires an account.</p>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — edit → Cmd+S → syntax error → PNG export</h2>
+      <img src="ux-case-02-save-export.gif" alt="UX session recording — save and export flow">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-02-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Cmd+S has zero visual feedback</h3>
+        <p>After pressing Cmd+S to save, the UI is pixel-identical before and after. No toast, no status indicator, no title asterisk, no brief flash — nothing confirms the save happened. Users must guess whether their work is safe.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status</div>
+        <div class="fix">Show a brief "Saved" toast (bottom-right, 2s auto-dismiss). Add an unsaved-changes indicator (e.g. "●" dot before the title or asterisk in browser tab title) to make the dirty/clean state explicit.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-02-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No unsaved-changes indicator</h3>
+        <p>After typing new content but before saving, there is no visual signal that the document has unsaved changes. If the tab is closed or the page refreshes, users lose work with no warning.</p>
+        <div class="principle">Nielsen #5 — Error prevention</div>
+        <div class="fix">Show a subtle "unsaved" dot/asterisk in the header title while there are uncommitted changes. Intercept the beforeunload event with a browser "leave page?" dialog when there are unsaved edits.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-02-003</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Export (PNG) surprises users with a login wall</h3>
+        <p>Clicking "PNG" immediately triggers a "Welcome to ZenUML.com" login modal with no prior indication that export requires an account. The export button has no lock icon, tooltip, or disabled state to signal it's auth-gated.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Progressive disclosure</div>
+        <div class="fix">Show a lock icon on the PNG button with a tooltip "Sign in to export". Alternatively, allow anonymous SVG/PNG export for basic diagrams and gate cloud sync/history behind auth. The surprise paywall is the worst UX pattern for conversion.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-02-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Login modal doesn't explain WHY auth is needed</h3>
+        <p>The login modal says "Welcome to ZenUML.com" and offers GitHub / Google / Facebook sign-in, but gives no context for why it appeared. Users who clicked "PNG" don't know if they're signing in to export, to save to cloud, or for something else entirely.</p>
+        <div class="principle">Nielsen #2 — Match between system and real world</div>
+        <div class="fix">Add a one-sentence context line above the login options: "Sign in to download your diagram as PNG and access cloud save." This dramatically reduces confusion and improves conversion.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-02-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Invalid syntax renders silently as participant boxes</h3>
+        <p>When the user types invalid syntax (e.g. <code>B--&gt; INVALID SYNTAX ???</code>), the parser treats "INVALID", "SYNTAX", and "???" as participant names and renders a diagram with nonsensical boxes — with no error highlight, no inline warning, and no status indicator.</p>
+        <div class="principle">Nielsen #9 — Help users recognize, diagnose, recover from errors</div>
+        <div class="fix">Highlight the erroneous line in the editor with a red underline (like VS Code). Show a small error badge in the preview frame ("⚠ Syntax error on line 2"). Keep the last valid diagram visible rather than rendering the broken one.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 16 – Mobile &amp; Responsive Layout · ZenUML UX Gap Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary .stat { text-align: center; }
+    .summary .num { font-size: 2.2rem; font-weight: 800; }
+    .summary .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .gap { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; border-left: 4px solid #334155; }
+    .gap.high { border-left-color: #ef4444; }
+    .gap.medium { border-left-color: #f59e0b; }
+    .gap.low { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.75rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .severity { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    .gap h3 { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+    .gap p { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; }
+    .gap ul { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; padding-left: 1.5rem; }
+    .gap ul li { margin-bottom: 0.25rem; }
+    .principles { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .principle { font-size: 0.7rem; background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 1rem; margin-top: 0.75rem; border: 1px solid #1e293b; }
+    .evidence-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: 600; }
+    code { font-family: 'SF Mono', Fira Code, monospace; font-size: 0.82rem; color: #7dd3fc; background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; border: 1px solid #334155; }
+    .recording img { width: 100%; border-radius: 8px; margin-top: 1rem; }
+    .screenshots { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
+    .screenshot-box { background: #0f172a; border-radius: 8px; padding: 0.75rem; border: 1px solid #1e293b; }
+    .screenshot-box .caption { font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.82rem; }
+    th { text-align: left; padding: 0.5rem 0.75rem; background: #0f172a; color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .ok { color: #22c55e; }
+    .bad { color: #ef4444; }
+    .warn { color: #f59e0b; }
+    .nav-links { display: flex; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; flex-wrap: wrap; }
+    .nav-links a { color: #60a5fa; text-decoration: none; font-size: 0.875rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">UX Gap Reports</a> › Case 16</div>
+  <h1>Case 16 – Mobile &amp; Responsive Layout</h1>
+  <p>At 390px (iPhone 14), the entire bottom toolbar disappears, the diagram shrinks to a 55px sliver, and the header title wraps to 3 lines</p>
+</header>
+
+<div class="container">
+
+  <div class="summary">
+    <div class="stat"><div class="num" style="color:#ef4444">3</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">6</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">390px</div><div class="label">Test width</div></div>
+  </div>
+
+  <div class="recording">
+    <div class="section-title">Session Recording</div>
+    <p style="color:#64748b; font-size:0.875rem;">Simulated iPhone 14 width (390px CSS) — desktop layout forced into mobile width reveals critical breakage.</p>
+    <img src="ux-case-16-mobile-responsive.gif" alt="Mobile responsive layout recording">
+  </div>
+
+  <!-- Breakage matrix -->
+  <div style="margin-bottom:2rem;">
+    <div class="section-title">UI Component Status at 390px</div>
+    <div class="evidence">
+      <table>
+        <tr>
+          <th>Component</th><th>Desktop</th><th>Mobile (390px)</th><th>Impact</th>
+        </tr>
+        <tr>
+          <td>Header title</td>
+          <td class="ok">Single line, centered</td>
+          <td class="bad">Wraps to 3 lines ("My Auth / Flow / Diagram")</td>
+          <td>~45px height lost to title wrapping</td>
+        </tr>
+        <tr>
+          <td>Diagram canvas</td>
+          <td class="ok">~800px wide, full diagram visible</td>
+          <td class="bad">~55px sliver — only leftmost participant visible</td>
+          <td>Diagram completely unusable</td>
+        </tr>
+        <tr>
+          <td>Insert toolbar</td>
+          <td class="ok">8+ icons visible</td>
+          <td class="bad">4 icons visible, rest clipped</td>
+          <td>50%+ of tools inaccessible</td>
+        </tr>
+        <tr>
+          <td>Bottom action bar</td>
+          <td class="ok">Present / PNG / Copy PNG visible</td>
+          <td class="bad">All 3 export buttons cut off</td>
+          <td>Export completely unreachable</td>
+        </tr>
+        <tr>
+          <td>Page tabs</td>
+          <td class="ok">"Page 1 / + Add Page" visible</td>
+          <td class="warn">"Page 1" visible, "+ Add Page" cut off</td>
+          <td>Can't add pages on mobile</td>
+        </tr>
+        <tr>
+          <td>Left sidebar icons</td>
+          <td class="ok">6 icons, accessible</td>
+          <td class="warn">Still visible but take 50px from already-narrow space</td>
+          <td>Worsens all other clipping</td>
+        </tr>
+        <tr>
+          <td>Code editor</td>
+          <td class="ok">~380px wide, usable</td>
+          <td class="warn">~200px wide, cramped but functional</td>
+          <td>Typing possible but uncomfortable</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">Identified Gaps</div>
+
+  <!-- GAP-16-001 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-001</span>
+      <span class="severity sev-high">High</span>
+      <h3>No responsive layout — desktop split-pane renders at full width on 390px mobile</h3>
+    </div>
+    <p>The entire application renders as a desktop layout with no breakpoint adaptations for mobile screen widths. The split-pane editor+canvas design assumes a wide viewport and fails catastrophically on narrow screens:</p>
+    <ul>
+      <li>CSS audit reveals only 3 meaningful mobile rules under <code>max-width: 600px/768px</code>: <code>body { font-size: 70% }</code>, <code>.main-header { overflow-x: auto }</code>, and <code>.hide-on-mobile { display: none }</code></li>
+      <li>The new Tailwind-based UI (sidebar, editor pane, canvas pane) has zero mobile-specific CSS — it was built desktop-first with no mobile adaptation</li>
+      <li>No hamburger menu, no bottom navigation sheet, no drawer/off-canvas pattern</li>
+      <li>No viewport-aware layout switching (e.g., editor-only mode on narrow screens)</li>
+      <li>The <code>width=device-width, initial-scale=1</code> viewport meta tag signals mobile intent — the CSS doesn't follow through</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Mobile-first design</span>
+      <span class="principle">Responsive design fundamentals</span>
+      <span class="principle">WCAG 1.4.10: Reflow (320px width requirement)</span>
+    </div>
+  </div>
+
+  <!-- GAP-16-002 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-002</span>
+      <span class="severity sev-high">High</span>
+      <h3>Diagram canvas reduced to 55px sliver — completely unusable on mobile</h3>
+    </div>
+    <p>At 390px width, the layout allocates: ~50px sidebar + ~200px editor pane + ~55px canvas sliver + ~85px overflow. The canvas is visible as a 55px strip showing only the leftmost edge of the first participant box:</p>
+    <ul>
+      <li>Only the letter "A" (first participant) is partially visible — the full diagram is cut off</li>
+      <li>No horizontal scroll on the canvas container — the rest of the diagram is unreachable</li>
+      <li>Canvas footer controls (zoom in/out, info button) are visible but the zoom percentage and "ZenUML.com" watermark are clipped</li>
+      <li>No touch-to-pan or pinch-to-zoom gesture on the canvas for mobile users</li>
+      <li>The core product value (viewing sequence diagrams) is completely destroyed on mobile</li>
+    </ul>
+    <div class="evidence">
+      <div class="evidence-label">Space allocation at 390px</div>
+      <code>50px sidebar + 240px editor + 55px canvas sliver = 345px used (45px overflow)</code><br>
+      Canvas available width: ~55px out of 390px total (14% of viewport)
+    </div>
+    <div class="principles">
+      <span class="principle">WCAG 1.4.10: Reflow</span>
+      <span class="principle">Core product functionality</span>
+      <span class="principle">Mobile touch interactions</span>
+    </div>
+  </div>
+
+  <!-- GAP-16-003 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-003</span>
+      <span class="severity sev-high">High</span>
+      <h3>All export buttons (Present, PNG, Copy PNG) disappear completely on mobile</h3>
+    </div>
+    <p>The bottom action bar contains "Present | ↓ PNG | ⎘ Copy PNG" buttons on the right side of the screen. At 390px, these buttons overflow beyond the viewport and are completely inaccessible:</p>
+    <ul>
+      <li>The bottom bar has no horizontal scroll</li>
+      <li>Only the Settings gear (far left) and "Page 1" tab (partially) are visible</li>
+      <li>No touch-swipe to reveal hidden buttons</li>
+      <li>No overflow indicator (no "..." or arrow suggesting more content)</li>
+      <li>The "+ Add Page" button is also cut off — users cannot create new pages on mobile</li>
+      <li>Even if export weren't login-gated (see Case 15), mobile users couldn't access it anyway</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">WCAG 1.4.10: Reflow</span>
+      <span class="principle">Nielsen #3: User Control &amp; Freedom</span>
+      <span class="principle">Mobile layout overflow</span>
+    </div>
+  </div>
+
+  <!-- GAP-16-004 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-004</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>Diagram title wraps to 3 lines in header — wastes vertical space and looks broken</h3>
+    </div>
+    <p>The header title element contains "My Auth Flow Diagram" (from the previous session). At 390px, this wraps into three lines: "My Auth / Flow / Diagram". The header height inflates significantly:</p>
+    <ul>
+      <li>A centered header title that wraps is unexpected — most apps truncate with ellipsis</li>
+      <li>No <code>text-overflow: ellipsis</code> or <code>max-width</code> constraint on the title element</li>
+      <li>The inflated header further reduces the already-limited vertical space for the editor</li>
+      <li>Short diagram names (e.g., "Diagram") wouldn't wrap, making behavior unpredictable and name-length-dependent</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Nielsen #4: Consistency &amp; Standards</span>
+      <span class="principle">Text overflow handling</span>
+      <span class="principle">Vertical space budget</span>
+    </div>
+  </div>
+
+  <!-- GAP-16-005 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-005</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>Insert toolbar clips to 4 icons — 50%+ of editing shortcuts unreachable on mobile</h3>
+    </div>
+    <p>The insert toolbar above the editor shows 8+ icon buttons (New participant, Async, Sync, Return value, Self message, New instance, Conditional, Loop, and more). At 390px, only the first 4 fit:</p>
+    <ul>
+      <li>No overflow scrolling on the toolbar row</li>
+      <li>No "more" button or expandable overflow menu</li>
+      <li>Hidden icons include Conditional (Alt/Else), Loop, Group — complex constructs that benefit most from toolbar help</li>
+      <li>The toolbar has no <code>overflow-x: auto</code> — clipped content is simply invisible</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Fitts's Law: reachability</span>
+      <span class="principle">Mobile touch target accessibility</span>
+      <span class="principle">Progressive disclosure</span>
+    </div>
+  </div>
+
+  <!-- GAP-16-006 -->
+  <div class="gap low">
+    <div class="gap-header">
+      <span class="gap-id">GAP-16-006</span>
+      <span class="severity sev-low">Low</span>
+      <h3>No touch-optimized interactions on diagram canvas — pinch-zoom and swipe-pan absent</h3>
+    </div>
+    <p>Even at desktop sizes, the diagram canvas lacks scroll-to-zoom and drag-to-pan (documented in Case 09). On mobile these gaps are worse because touch users have no mouse wheel alternative:</p>
+    <ul>
+      <li>No pinch-to-zoom gesture on the canvas</li>
+      <li>No swipe-to-pan to navigate large diagrams</li>
+      <li>The only zoom controls are two small ⊕/⊖ buttons in the canvas footer — too small for touch (sub-24px targets)</li>
+      <li>Touch users cannot explore diagrams that extend beyond the visible canvas</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Mobile touch patterns</span>
+      <span class="principle">Fitts's Law: touch target size (min 44×44px)</span>
+      <span class="principle">iOS/Android HIG touch conventions</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">← All Cases</a>
+    <a href="case-15-export-clipboard.html">← Case 15: Export &amp; Clipboard</a>
+    <a href="case-17-loading-performance.html">→ Case 17 (next)</a>
+  </div>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+
+</body>
+</html>

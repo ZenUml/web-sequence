@@ -19,7 +19,7 @@ What's missing is test files plus one config bug fix.
 
 ## Pre-existing config bug to fix
 
-`playwright.config.js` has `baseURL: 'http://localhost:3001'` and `webServer.url: 'http://localhost:3001'`, but `vite.config.js` runs the dev server on port `3000`. As shipped, the suite cannot reach the app. Change both to `http://localhost:3000`. No other config changes.
+`playwright.config.js` has `baseURL: 'http://localhost:23000'` and `webServer.url: 'http://localhost:23000'`, matching the Vite dev server on port `23000`.
 
 ## Test file
 

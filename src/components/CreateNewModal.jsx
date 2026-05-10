@@ -20,7 +20,7 @@ export default function CreateNewModal({
                 className="text-primary border border-primary px-3 py-2 rounded-lg hover:bg-primary hover:text-gray-100 duration-200"
                 onClick={onBlankTemplateSelect}
               >
-                Start a blank creation
+                Start from scratch (blank)
               </button>
             </div>
             <div className="text-center my-3">Or choose from a template:</div>
@@ -33,10 +33,6 @@ export default function CreateNewModal({
                   onClick={onTemplateSelect.bind(null, template)}
                 />
               ))}
-            </div>
-            <div className="text-center">
-              The development team needs your help. If you are actively using
-              ZenUML, please tweet about ZenUML at least once a month!
             </div>
           </div>
         </Dialog.Content>

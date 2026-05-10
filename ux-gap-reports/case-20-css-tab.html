@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 20 — CSS Tab &amp; Custom Styling UX · ZenUML UX Gaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; font-size: 0.9rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary-bar { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.25rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; }
+    .stat .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gif-wrap { margin-bottom: 2.5rem; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+    .gif-wrap img { width: 100%; display: block; }
+    .gif-caption { background: #1e293b; padding: 0.75rem 1rem; font-size: 0.8rem; color: #64748b; }
+    .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1rem; }
+    .gaps { display: grid; gap: 1.25rem; }
+    .gap-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; border-left: 4px solid #334155; }
+    .gap-card.high   { border-left-color: #ef4444; }
+    .gap-card.medium { border-left-color: #f59e0b; }
+    .gap-card.low    { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.7rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .sev { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high   { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low    { background: #0f2042; color: #60a5fa; }
+    .gap-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; flex: 1; }
+    .gap-body p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .gap-body p:last-child { margin-bottom: 0; }
+    .gap-body strong { color: #e2e8f0; }
+    .principle { display: inline-block; font-size: 0.65rem; font-weight: 600; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 0.1rem 0.4rem; margin-right: 0.25rem; color: #94a3b8; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.78rem; color: #7dd3fc; border: 1px solid #1e3a5f; }
+    .fix { background: #0a1f0a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; color: #86efac; border: 1px solid #14532d; }
+    .fix::before { content: "Suggested fix: "; font-weight: 700; }
+    .tab-demo { display: flex; gap: 0; margin-top: 0.75rem; border-radius: 6px; overflow: hidden; border: 1px solid #334155; font-size: 0.85rem; }
+    .tab-item { padding: 0.4rem 1.5rem; font-weight: 600; background: #202020; color: #e2e8f0; }
+    .tab-active { background: #1a1a1a; color: #8ab2ff; border-bottom: 2px solid #8ab2ff; }
+    .tab-gated { background: #202020; color: rgba(255,255,255,0.5); }
+    .tab-gated-badge { background: #202020; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 0.3rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">← All Cases</a></div>
+  <h1>Case 20 — CSS Tab &amp; Custom Styling UX</h1>
+  <p>Auth gate discoverability · no preview · tab active state · feature lock transparency</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="gif-wrap">
+    <img src="ux-case-20-css-tab.gif" alt="CSS tab UX walkthrough — clicking CSS triggers the 5th generic auth modal">
+    <div class="gif-caption">CSS tab click → 5th instance of generic "Welcome to ZenUML.com" auth modal, zero context about the feature, CSS editor absent from DOM.</div>
+  </div>
+
+  <div class="section-title">Gaps Found</div>
+  <div class="gaps">
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-20-001</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">CSS tab has zero visual indicator it is auth-gated — no lock, no badge, looks identical to free ZenUML tab</span>
+      </div>
+      <div class="gap-body">
+        <p>Both the ZenUML tab and the CSS tab use identical visual styling: <code>bg-black-800 font-semibold</code>. The CSS tab carries no lock icon, no "Pro" or "Sign in" badge, no greyed-out state, no tooltip warning. A user has no pre-click information that the CSS tab requires authentication.</p>
+        <p>This violates the principle of <strong>transparent feature gating</strong> — when a feature requires upgrade or authentication, that requirement should be visible at the entry point, not revealed only after the user clicks. Showing the gate only at click-time is a dark pattern known as "bait and switch."</p>
+        <div class="tab-demo">
+          <div class="tab-item tab-active">ZenUML</div>
+          <div class="tab-item tab-gated">CSS</div>
+          <span style="flex:1;background:#202020;display:flex;align-items:center;padding-left:0.5rem;color:#475569;font-size:0.75rem;">← current: no visual difference from free tab</span>
+        </div>
+        <div class="tab-demo" style="margin-top:0.5rem">
+          <div class="tab-item tab-active">ZenUML</div>
+          <div class="tab-item tab-gated-badge">🔒 CSS <span style="font-size:0.6rem;background:#3a2208;color:#f59e0b;border-radius:3px;padding:0 3px;margin-left:4px;">PRO</span></div>
+          <span style="flex:1;background:#202020;display:flex;align-items:center;padding-left:0.5rem;color:#4ade80;font-size:0.75rem;">← suggested: lock + badge communicates gate upfront</span>
+        </div>
+        <div class="fix">Add a lock icon (🔒) and a "Pro" or "Sign in" badge to the CSS tab. On hover, show a tooltip: <code>"CSS customization — sign in to unlock"</code>. Alternatively, allow unauthenticated users to view a read-only CSS editor prefilled with a default template, with a banner prompting sign-in to save.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #10 Help & Docs</span>
+        <span class="principle">Dark patterns: Bait & Switch</span>
+      </div>
+    </div>
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-20-002</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">5th generic "Welcome to ZenUML.com" auth modal — zero context about the CSS feature</span>
+      </div>
+      <div class="gap-body">
+        <p>Clicking the CSS tab shows the same generic modal as Share Link, Export PNG, Copy PNG, and Present mode — all 5 show identical text: "Welcome to ZenUML.com / Login with Github / Login with Google / Login with Facebook / Join a community of 50,000+ Developers." The modal contains:</p>
+        <p>• <strong>No mention of CSS customization</strong> — what does it unlock?<br>
+        • <strong>No preview or screenshot</strong> of what CSS styling looks like<br>
+        • <strong>No indication of tier</strong> — is it free with login, or paid?<br>
+        • <strong>No "Learn more" link</strong> for users who want to understand before committing</p>
+        <p>The 5-feature pattern of identical auth gates means that by the 3rd or 4th encounter, users disengage completely — they no longer read the modal and simply dismiss it. The modal provides no conversion value for the CSS feature specifically.</p>
+        <div class="evidence">
+// All 5 features trigger the SAME modal:
+// 1. Share Link (Case 4)
+// 2. Present Mode (Case 6)
+// 3. Export PNG / Copy PNG (Case 15)
+// 4. CSS Tab (this case — #5)
+// Modal text: "Welcome to ZenUML.com" — no feature context
+        </div>
+        <div class="fix">Replace the generic modal with a feature-specific upsell: show the CSS editor UI as a teaser (blurred or read-only), a 1-2 sentence description ("Write custom CSS to brand your diagrams with company colors and fonts"), and a clear CTA. Each feature's auth gate should contextualize WHY sign-in is needed.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #2 Match Real World</span>
+        <span class="principle">Conversion UX</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-20-003</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">CSS editor is absent from DOM entirely — no preview, no placeholder, no teaser for unauthenticated users</span>
+      </div>
+      <div class="gap-body">
+        <p>When unauthenticated, the CSS tab's editor container is completely absent from the DOM — confirmed via <code>document.querySelector('[class*="css-editor"]')</code> returning null and zero CSS-related divs rendered. There is no placeholder, empty state, or teaser of what the editor would contain.</p>
+        <p>In contrast, tools like Mermaid Live Editor, draw.io, and CodePen show the full editor interface to all users but restrict saving/sharing behind auth. This "try before you sign up" approach drives significantly higher conversion because users can experience the value before being asked to commit.</p>
+        <div class="evidence">
+// JS audit:
+document.querySelector('[class*="css-editor"]') // → null
+document.querySelectorAll('[class*="css"]')       // → 0 elements
+// The CSS editor panel is never rendered for anon users
+// No placeholder, no empty state, no sample CSS shown
+        </div>
+        <div class="fix">Render the CSS editor for unauthenticated users with a sample CSS snippet (e.g., <code>.participant { background: #e8f4fd; }</code>). Allow free editing but block saving with an inline "Sign in to save your changes" banner. This lets users experience the feature's value before signing up.</div>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+        <span class="principle">Conversion UX</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-20-004</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Active tab state relies on a single 2px blue underline — low visual salience, no background differentiation</span>
+      </div>
+      <div class="gap-body">
+        <p>The active tab (ZenUML) is differentiated from the inactive tab (CSS) by only: a <code>border-b border-primary</code> (2px bottom border in blue) and a minor background shift from <code>bg-black-800</code> to <code>bg-black-500</code>. At normal viewing distance, the active state is not immediately obvious — the text color change to <code>text-primary-400</code> (blue-ish) is subtle against the dark background.</p>
+        <p>Modern tab implementations (Chrome DevTools, VS Code, Figma panels) use a clear background color contrast, not just a border underline, to communicate active state. The current implementation passes a quick glance test only because there are two tabs — with 3+ tabs the active tab would be much harder to spot.</p>
+        <div class="evidence">
+// Active tab class audit:
+// ZenUML (active): "... border-b border-primary bg-black-500 text-primary-400"
+// CSS (inactive):  "... bg-black-800 font-semibold"
+// Difference: border-b + 1 Tailwind shade lighter bg + blue text
+// bg-black-500 vs bg-black-800: very close luminance values in dark palette
+        </div>
+        <div class="fix">Increase active tab visual contrast: use a distinctly lighter background (e.g., <code>bg-zinc-700</code>) with a rounded top-corners treatment, or switch to a pill/chip active-tab style with a full background fill. The <code>border-b</code> alone is the weakest form of tab indicator in dark UIs.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #4 Consistency</span>
+      </div>
+    </div>
+
+    <div class="gap-card low">
+      <div class="gap-header">
+        <span class="gap-id">GAP-20-005</span>
+        <span class="sev sev-low">Low</span>
+        <span class="gap-title">No documentation or CSS selector reference anywhere in the app</span>
+      </div>
+      <div class="gap-body">
+        <p>Even if a user successfully authenticates to access the CSS editor, there is no in-app documentation about:</p>
+        <p>• What CSS selectors target which diagram elements (e.g., <code>.participant</code>, <code>.message-label</code>)<br>
+        • Which CSS properties are supported (SVG CSS vs HTML CSS)<br>
+        • Example CSS snippets for common customizations (brand colors, font changes)<br>
+        • A link to external documentation or a "CSS Reference" panel</p>
+        <p>The Language Guide sidebar panel exists for ZenUML syntax, but there is no equivalent guide for the CSS editor. A power user discovering CSS customization must reverse-engineer the SVG structure by hand.</p>
+        <div class="fix">Add a collapsible "CSS Reference" panel within the CSS editor (similar to the Language Guide for ZenUML). Include the top 10 most-used selectors with examples: <code>.participant { }</code>, <code>.message { }</code>, <code>.divider { }</code>, etc. A single-page CSS cookbook linked from the editor would dramatically improve discoverability.</div>
+        <span class="principle">Nielsen #10 Help & Docs</span>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Case 20 of the ZenUML UX Gap Analysis Loop &nbsp;·&nbsp; Generated 2026-05-10
+</footer>
+
+</body>
+</html>

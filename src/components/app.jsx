@@ -52,6 +52,7 @@ import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
+import { OnboardingModal } from './OnboardingModal';
 
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
@@ -72,6 +73,7 @@ export default class App extends Component {
       isPricingModalOpen: false,
       isNotificationsModalOpen: false,
       isLoginModalOpen: false,
+      loginReason: null,
       isProfileModalOpen: false,
       isSupportDeveloperModalOpen: false,
       isKeyboardShortcutsModalOpen: false,
@@ -103,7 +105,7 @@ export default class App extends Component {
       indentSize: 2,
       editorTheme: 'monokai',
       keymap: 'sublime',
-      fontSize: 16,
+      fontSize: 14,
       refreshOnResize: false,
       autoPreview: true,
       editorFont: 'FiraCode',
@@ -370,30 +372,23 @@ export default class App extends Component {
     }
     const fork = JSON.parse(JSON.stringify(sourceItem));
     delete fork.id;
-    fork.title = '(Forked) ' + sourceItem.title;
+    fork.title = sourceItem.title + ' (copy)';
     fork.updatedOn = Date.now();
     this.setCurrentItem(fork).then(() => this.refreshEditor());
-    alertsService.add(`"${sourceItem.title}" was forked`);
+    alertsService.add(`New diagram created from "${sourceItem.title}" template`);
     mixpanel.track({ event: 'itemForked', category: 'fn' });
   }
 
   createNewItem() {
     var d = new Date();
+    var counter = Object.keys(this.state.savedItems || {}).length + 1;
     this.setCurrentItem({
-      title:
-        'Untitled ' +
-        d.getDate() +
-        '-' +
-        (d.getMonth() + 1) +
-        '-' +
-        d.getHours() +
-        ':' +
-        d.getMinutes(),
+      title: counter > 1 ? `Untitled ${counter}` : 'Untitled diagram',
       html: '',
       css: '/* Prefix your CSS rules with `#diagram` */',
       js: `// An example for a RESTful endpoint<br>
-// Go to the "Cheat sheet" tab or https://docs.zenuml.com
-// to find all syntax<br>
+// Click the book icon (left sidebar) or visit https://docs.zenuml.com
+// for full syntax reference<br>
 // \`POST /v1/book/{id}/borrow\`
 BookLibService.Borrow(id) {
   User = Session.GetUser()
@@ -510,7 +505,7 @@ BookLibService.Borrow(id) {
         label: 'no_of_files_' + numOfItems,
       });
     } else {
-      this.loginBtnClickHandler();
+      this.loginBtnClickHandler('Sign in to save your diagram to your account and access it from any device.');
     }
   }
 
@@ -639,6 +634,19 @@ BookLibService.Borrow(id) {
           event.preventDefault();
           this.saveItem();
           trackEvent('ui', 'saveItemKeyboardShortcut');
+        }
+        // Alt+E — jump focus directly to the code editor
+        if (event.altKey && event.key === 'e') {
+          event.preventDefault();
+          const editorEl = document.querySelector('#editor .CodeMirror');
+          if (editorEl) {
+            editorEl.CodeMirror.focus();
+          }
+        }
+        // Alt+P — add a new page
+        if (event.altKey && event.key === 'p') {
+          event.preventDefault();
+          this.addNewPage();
         }
         // Ctrl/⌘ + Shift + 5
         if (
@@ -867,7 +875,8 @@ BookLibService.Borrow(id) {
       await this.setState({
         isSaving: false,
       });
-      // TODO: May be setState with currentItem
+      // Show visual feedback so user knows Cmd+S worked
+      alertsService.add('Diagram saved.');
 
       // If this is the first save, and auto-saving settings is enabled,
       // then start auto-saving from now on.
@@ -909,13 +918,16 @@ BookLibService.Borrow(id) {
     if (
       isUserChange &&
       this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
-      this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
+      this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT &&
+      window.saveBtn
     ) {
       window.saveBtn.classList.add('animated');
       window.saveBtn.classList.add('wobble');
       window.saveBtn.addEventListener('animationend', () => {
-        window.saveBtn.classList.remove('animated');
-        window.saveBtn.classList.remove('wobble');
+        if (window.saveBtn) {
+          window.saveBtn.classList.remove('animated');
+          window.saveBtn.classList.remove('wobble');
+        }
       });
     }
 
@@ -1017,8 +1029,26 @@ BookLibService.Borrow(id) {
     }
   }
 
-  loginBtnClickHandler() {
-    this.setState({ isLoginModalOpen: true });
+  async resetSettingsToDefaults() {
+    const defaultPrefs = {
+      editorTheme: 'monokai',
+      editorFont: 'FiraCode',
+      fontSize: 14,
+      lineWrap: true,
+      autoPreview: true,
+      preserveLastCode: true,
+      preserveConsoleLogs: false,
+    };
+    const prefs = { ...this.state.prefs, ...defaultPrefs };
+    await this.setState({ prefs });
+    db.sync.set(defaultPrefs, () => {
+      alertsService.add('Settings reset to defaults');
+    });
+    this.contentWrap.applyCodemirrorSettings(prefs);
+  }
+
+  loginBtnClickHandler(reason) {
+    this.setState({ isLoginModalOpen: true, loginReason: reason || null });
   }
 
   async proBtnClickHandler() {
@@ -1118,7 +1148,7 @@ BookLibService.Borrow(id) {
 
   async openBtnClickHandler() {
     if (!window.user) {
-      this.loginBtnClickHandler();
+      this.loginBtnClickHandler('Sign in to open your saved diagrams from My Library.');
       return;
     }
     mixpanel.track({ event: 'openMyLibrary', category: 'ui' });
@@ -1493,8 +1523,17 @@ BookLibService.Borrow(id) {
   }
 
   async blankTemplateSelectHandler() {
-    this.createNewItem();
-    await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML' });
+    // Create a truly blank diagram — not the example-filled createNewItem()
+    var counter = Object.keys(this.state.savedItems || {}).length + 1;
+    await this.setCurrentItem({
+      title: counter > 1 ? `Untitled ${counter}` : 'Untitled diagram',
+      html: '',
+      css: '/* Prefix your CSS rules with `#diagram` */',
+      js: '',
+    });
+    this.refreshEditor();
+    alertsService.add('New item created');
+    await this.setState({ isCreateNewModalOpen: false, activeTab: 'ZenUML', unsavedEditCount: 0 });
     this.contentWrap.resetTabs();
   }
 
@@ -1646,6 +1685,15 @@ BookLibService.Borrow(id) {
     });
   }
 
+  renamePage(pageId, newTitle) {
+    const { currentItem } = this.state;
+    if (!currentItem || !currentItem.pages) return;
+    const updatedPages = currentItem.pages.map(page =>
+      page.id === pageId ? { ...page, title: newTitle } : page
+    );
+    this.setState({ currentItem: { ...currentItem, pages: updatedPages } });
+  }
+
   render() {
     // remove field imageBase64 from currentItem and save it to a local variable as a copy
     const { imageBase64, ...currentItem } = this.state.currentItem;
@@ -1702,10 +1750,11 @@ BookLibService.Borrow(id) {
                 }}
                 onToggleEditorPanel={() => this.setState({ isEditorPanelOpen: !this.state.isEditorPanelOpen })}
                 onSwitchPanel={async (panel) => {
-                  await this.setState({ 
-                    activeLeftPanel: panel, 
-                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, 
-                    isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen 
+                  await this.setState({
+                    activeLeftPanel: panel,
+                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen,
+                    // Close library when switching to editor; open it when switching to library
+                    isLibraryPanelOpen: panel === 'library' ? true : false
                   });
                   if (panel === 'library') {
                     await this.openSavedItemsPane();
@@ -1737,11 +1786,12 @@ BookLibService.Borrow(id) {
               onPageSwitch={this.switchToPage.bind(this)}
               onAddPage={this.addNewPage.bind(this)}
               onDeletePage={this.deletePage.bind(this)}
+              onRenamePage={this.renamePage.bind(this)}
               keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}
-              editorInSidebar={this.state.activeLeftPanel === 'editor' && this.state.isEditorPanelOpen}
-              hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
+              editorInSidebar={this.state.isEditorPanelOpen}
+              hideEditor={!this.state.isEditorPanelOpen}
             />
           </div>
         </div>
@@ -1777,13 +1827,15 @@ BookLibService.Borrow(id) {
           open={this.state.isSettingsModalOpen}
           prefs={this.state.prefs}
           onChange={this.updateSetting.bind(this)}
+          onResetDefaults={this.resetSettingsToDefaults.bind(this)}
           onClose={async () =>
             await this.setState({ isSettingsModalOpen: false })
           }
         />
         <LoginModal
           open={this.state.isLoginModalOpen}
-          onClose={async () => await this.setState({ isLoginModalOpen: false })}
+          reason={this.state.loginReason}
+          onClose={async () => await this.setState({ isLoginModalOpen: false, loginReason: null })}
         />
 
         <HelpModal
@@ -1849,6 +1901,10 @@ BookLibService.Borrow(id) {
         <CheatSheetModal
           open={this.state.openCheatSheet}
           onClose={() => this.setState({ openCheatSheet: false })}
+        />
+        <OnboardingModal
+          show={this.state.isOnboardModalOpen}
+          closeHandler={async () => await this.setState({ isOnboardModalOpen: false })}
         />
         <div
           class="modal-overlay bg-black/50 backdrop-blur-sm"

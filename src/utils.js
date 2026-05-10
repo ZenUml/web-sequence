@@ -263,6 +263,169 @@ function getUrl(relativeUrl) {
   return relativeUrl;
 }
 
+function getZenUmlPortalStyles() {
+  return `
+<style id="zenuml-portal-style-fix">
+#style-panel,
+[data-testid="participant-style-panel"] {
+  color: #111827;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#style-panel > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+#style-panel > div > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#style-panel > div > div.relative {
+  position: relative;
+}
+
+#style-panel button {
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 6px 8px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#style-panel > div > div:first-child button {
+  width: 24px;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 13px;
+  text-transform: none;
+}
+
+#style-panel button:hover,
+#style-panel button[aria-pressed="true"],
+#style-panel button[aria-expanded="true"] {
+  background: #f3f4f6;
+}
+
+#style-panel .w-px {
+  width: 1px;
+  align-self: stretch;
+  background: #e5e7eb;
+}
+
+#style-panel .absolute {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 50;
+  display: flex;
+  min-width: 90px;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+#style-panel .absolute button {
+  width: 100%;
+  text-align: left;
+}
+
+[data-testid="participant-style-panel"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+[data-testid="participant-style-panel"] > div:nth-child(1),
+[data-testid="participant-style-panel"] > div:nth-child(4) {
+  padding: 0 4px;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+[data-testid="participant-style-panel"] > div:nth-child(2),
+[data-testid="participant-style-panel"] > div:nth-child(5) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+[data-testid="participant-style-panel"] > div:nth-child(3) {
+  width: 100%;
+  height: 1px;
+  background: #f3f4f6;
+}
+
+[data-testid="participant-style-panel"] button {
+  appearance: none;
+  display: flex;
+  min-width: 36px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+[data-testid="participant-style-panel"] button:hover {
+  background: #f3f4f6;
+}
+
+[data-testid="participant-style-panel"] button[aria-pressed="true"] {
+  border-color: #38bdf8;
+  background: #eff6ff;
+  color: #0369a1;
+}
+
+[data-testid="participant-style-panel"] [aria-label^="Set color"],
+[data-testid="participant-style-panel"] [aria-label="Remove color"] {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 9px;
+}
+</style>
+`;
+}
+
 /* eslint-disable max-params */
 export function getCompleteHtml(html, css, js, item) {
   /* eslint-enable max-params */
@@ -277,7 +440,8 @@ export function getCompleteHtml(html, css, js, item) {
     '<meta charset="UTF-8" />\n' +
     '<style id="zenumlstyle">\n' +
     css +
-    '\n</style>\n';
+    '\n</style>\n' +
+    getZenUmlPortalStyles();
 
   // Add Microsoft Clarity tracking code to the iframe content
   // This ensures Clarity can track user interactions inside the iframe

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 21 — Split Pane Resize &amp; Layout Control · ZenUML UX Gaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; font-size: 0.9rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary-bar { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.25rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; }
+    .stat .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gif-wrap { margin-bottom: 2.5rem; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+    .gif-wrap img { width: 100%; display: block; }
+    .gif-caption { background: #1e293b; padding: 0.75rem 1rem; font-size: 0.8rem; color: #64748b; }
+    .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1rem; }
+    .gaps { display: grid; gap: 1.25rem; }
+    .gap-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; border-left: 4px solid #334155; }
+    .gap-card.high   { border-left-color: #ef4444; }
+    .gap-card.medium { border-left-color: #f59e0b; }
+    .gap-card.low    { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.7rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .sev { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high   { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low    { background: #0f2042; color: #60a5fa; }
+    .gap-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; flex: 1; }
+    .gap-body p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .gap-body p:last-child { margin-bottom: 0; }
+    .gap-body strong { color: #e2e8f0; }
+    .principle { display: inline-block; font-size: 0.65rem; font-weight: 600; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 0.1rem 0.4rem; margin-right: 0.25rem; color: #94a3b8; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.78rem; color: #7dd3fc; border: 1px solid #1e3a5f; }
+    .fix { background: #0a1f0a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; color: #86efac; border: 1px solid #14532d; }
+    .fix::before { content: "Suggested fix: "; font-weight: 700; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">← All Cases</a></div>
+  <h1>Case 21 — Split Pane Resize &amp; Layout Control</h1>
+  <p>Invisible 6px gutter · no collapse buttons · 30/70 default disadvantages editor · no reset gesture</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="gif-wrap">
+    <img src="ux-case-21-split-pane.gif" alt="Split pane resize walkthrough — invisible gutter dragged to resize editor and canvas panels">
+    <div class="gif-caption">The 6px gutter is functionally resizable (paneforge library, persisted via localStorage) but completely invisible — no hover highlight, no grip dots. Double-click does not reset to default.</div>
+  </div>
+
+  <div class="section-title">Gaps Found</div>
+  <div class="gaps">
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-21-001</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">Split pane gutter is completely invisible — 6px, near-transparent background, no hover affordance</span>
+      </div>
+      <div class="gap-body">
+        <p>The divider between the editor and canvas panels is a 6px-wide <code>.gutter.gutter-horizontal</code> element with <code>background: rgba(255,255,255,0.05)</code> — effectively invisible against the dark UI. There is no CSS hover rule that highlights it, no grip dots, no color change. The cursor does switch to <code>ew-resize</code> when hovering the gutter, but discovering that 6px strip by accident is the only signal the feature exists.</p>
+        <p><strong>Impact:</strong> The vast majority of users will never discover they can resize the split. In 20 UX test cases, the gutter was never stumbled upon organically — it was only found through DOM inspection. This is a hidden power-user feature that could serve everyone.</p>
+        <div class="evidence">
+// Gutter DOM audit:
+class: "gutter gutter-horizontal"
+width: 6px
+background: rgba(255, 255, 255, 0.05)  // 5% opacity white — invisible
+cursor: ew-resize  // only signal, requires hitting the 6px strip
+No CSS :hover rule defined for .gutter selector
+No grip icon, no handle, no visual affordance
+        </div>
+        <div class="fix">Add a visible grip affordance: center 3 horizontal dots or a subtle bar on the gutter. On hover, brighten background to <code>rgba(255,255,255,0.15)</code> and show the dots more clearly. A 2px visible stripe on the left edge of the canvas pane (like VS Code's activity bar separator) would be enough. Minimum: add a CSS hover rule <code>.gutter:hover { background: rgba(255,255,255,0.12); }</code>.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Affordance (Gibson/Norman)</span>
+      </div>
+    </div>
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-21-002</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">Neither pane can be collapsed — minSize:15% on both sides prevents focus mode</span>
+      </div>
+      <div class="gap-body">
+        <p>The paneforge configuration enforces <code>minSize: 15</code> (15% of total width) on both the editor and canvas panes. This means:</p>
+        <p>• Users cannot collapse the canvas to get a full-width editor for writing long ZenUML scripts<br>
+        • Users cannot collapse the editor to get a distraction-free, full-width diagram view<br>
+        • Maximum editor width is 85%, maximum canvas width is 85%</p>
+        <p>Developer tools universally offer panel collapse: VS Code collapses any panel to 0, JetBrains has explicit collapse buttons, Mermaid Live Editor has a "hide editor" toggle. Power users regularly want to maximize one pane.</p>
+        <div class="evidence">
+// localStorage['paneforge:liveEditor']:
+// {"defaultSize":30,"minSize":15},{"minSize":15}
+// layout: [30, 70]  (30% editor, 70% canvas default)
+// minSize: 15% on both = neither can collapse below 15%
+// At 1920px viewport: editor min = 288px, canvas min = 288px
+        </div>
+        <div class="fix">Add explicit collapse/expand buttons to both panels (a chevron icon at the panel boundary), and set <code>collapsible: true</code> in paneforge config with <code>collapsedSize: 0</code>. Add keyboard shortcuts: <code>Cmd+\</code> to toggle the split, <code>Cmd+B</code> to collapse/expand the editor (following VS Code conventions).</div>
+        <span class="principle">Nielsen #3 User Control</span>
+        <span class="principle">Nielsen #7 Flexibility</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-21-003</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Default 30/70 split gives only 30% to the editor — primary work surface is undersized by default</span>
+      </div>
+      <div class="gap-body">
+        <p>The paneforge default configuration allocates <code>defaultSize: 30</code> (30%) to the editor and 70% to the canvas. At a 1920px viewport, this gives the editor ~576px — barely enough for a 7-line ZenUML script. A typical sequence diagram with 8-10 participants and 15-20 messages will overflow the editor height, requiring scrolling while writing.</p>
+        <p>The diagram canvas by contrast has 1344px of width, most of which is empty dark space. The actual rendered diagram sits centered in a fraction of that area. The default split optimizes for the output, not the input — backwards for an editor-first tool.</p>
+        <div class="evidence">
+// Default paneforge layout: [30, 70]
+// At 1920px viewport:
+//   Editor: 30% = 576px (after sidebar)
+//   Canvas: 70% = 1344px
+// Typical diagram canvas renders in ~400px SVG width
+// → 944px of canvas is empty dark space at default split
+        </div>
+        <div class="fix">Change the default split to 40/60 or 50/50. Run an A/B test — for a code editor tool, giving the editor equal or majority space tends to improve session length and diagram complexity. The 30% default feels like a viewer app, not an editor app.</div>
+        <span class="principle">Nielsen #4 Consistency</span>
+        <span class="principle">Nielsen #7 Flexibility</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-21-004</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">No double-click to reset split — persisted custom ratio has no escape hatch</span>
+      </div>
+      <div class="gap-body">
+        <p>The split ratio is persisted to <code>localStorage['paneforge:liveEditor']</code> and survives page reloads. Once a user drags the gutter to an undesirable position (e.g., accidentally making the editor very narrow), there is no way to reset it except dragging back manually — with the invisible gutter. Double-clicking the gutter was tested and confirmed to have no reset behavior.</p>
+        <p>VS Code, IntelliJ, and most modern split-pane implementations support double-click to reset to the default ratio. This is a discoverable escape hatch that doesn't require the user to find the Settings or clear localStorage.</p>
+        <div class="evidence">
+// Double-click test result:
+// Before: editorWidth = 795px (42.9%)
+// After double-click: editorWidth = 795px (unchanged)
+// paneforge does not implement double-click-to-reset
+// Only way to reset: drag back manually or clear localStorage
+        </div>
+        <div class="fix">Add double-click handler on the gutter element that calls paneforge's <code>reset()</code> or sets the split back to <code>[30, 70]</code>. Also add a "Reset layout" option in the Settings modal for users who want to recover from a bad split position.</div>
+        <span class="principle">Nielsen #3 User Control</span>
+        <span class="principle">Nielsen #5 Error Prevention</span>
+      </div>
+    </div>
+
+    <div class="gap-card low">
+      <div class="gap-header">
+        <span class="gap-id">GAP-21-005</span>
+        <span class="sev sev-low">Low</span>
+        <span class="gap-title">6px gutter is too narrow for reliable hit-testing, especially on high-DPI displays</span>
+      </div>
+      <div class="gap-body">
+        <p>The gutter's 6 CSS pixel width at 2× DPR renders as a 12 physical pixel strip. Fitts's Law quantifies this: the time to acquire a 6px target at 500px distance is approximately 3× longer than acquiring a 12px target at the same distance. This is compounded by the invisible background — users cannot see where the target is.</p>
+        <p>VS Code uses a 5px gutter with an 8px transparent hover area on each side (effective target: 21px). IntelliJ uses a visible 6px border with highlight. Both are significantly more discoverable than ZenUML's invisible 6px strip.</p>
+        <div class="fix">Keep the visual strip at 4-6px but expand the interactive hit area to 20px via transparent padding or a wider wrapper element with <code>pointer-events: all</code>. The visual grip stays narrow; the click target becomes comfortable.</div>
+        <span class="principle">Fitts's Law</span>
+        <span class="principle">Nielsen #1 Visibility</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Case 21 of the ZenUML UX Gap Analysis Loop &nbsp;·&nbsp; Generated 2026-05-10
+</footer>
+
+</body>
+</html>

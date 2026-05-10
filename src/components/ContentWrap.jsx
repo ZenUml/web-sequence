@@ -85,6 +85,8 @@ export default class ContentWrap extends Component {
   componentDidMount() {
     this.props.onRef(this);
     window.addEventListener('message', this.handleMessageCodeUpdate.bind(this));
+    // Double-click gutter to reset split to default 45/55
+    document.addEventListener('dblclick', this.handleGutterDblClick.bind(this));
   }
 
   componentWillUnmount() {
@@ -92,6 +94,7 @@ export default class ContentWrap extends Component {
       'message',
       this.handleMessageCodeUpdate.bind(this),
     );
+    document.removeEventListener('dblclick', this.handleGutterDblClick.bind(this));
   }
 
   handleMessageCodeUpdate(e) {
@@ -99,6 +102,14 @@ export default class ContentWrap extends Component {
     if (code) {
       this.cm.js.setValue(code);
       this.cm.js.refresh();
+    }
+    // Handle parse errors from @zenuml/core iframe to populate error gutter
+    if (e.data && e.data.type === 'zenuml-parse-error' && e.data.errors) {
+      this.cleanupErrors('js');
+      this.showErrors('js', e.data.errors);
+    }
+    if (e.data && e.data.type === 'zenuml-parse-ok') {
+      this.cleanupErrors('js');
     }
   }
 
@@ -548,7 +559,7 @@ export default class ContentWrap extends Component {
 
   async exportPngClickHandler(e) {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to export your diagram as a PNG image.');
       return;
     }
       const png = await this.getPngBlob();
@@ -570,7 +581,7 @@ export default class ContentWrap extends Component {
 
   async copyImageClickHandler(e) {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to copy your diagram as a PNG image to the clipboard.');
       return;
     }
     if (!navigator.clipboard || !navigator.clipboard.write) {
@@ -632,7 +643,7 @@ export default class ContentWrap extends Component {
     if (currentItem && currentItem.mainSizes) {
       mainSplitSizes = currentItem.mainSizes;
     } else {
-      mainSplitSizes = [30, 70];
+      mainSplitSizes = [45, 55]; // More balanced default: editor gets 45%
     }
     return mainSplitSizes;
   }
@@ -642,6 +653,13 @@ export default class ContentWrap extends Component {
       return this.props.currentItem.sizes;
     }
     return [85, 4, 11];
+  }
+
+  handleGutterDblClick(e) {
+    if (e.target && e.target.classList.contains('gutter-horizontal')) {
+      // Reset to default 45/55 split
+      this.setState({ mainSplitSizes: [45, 55] });
+    }
   }
 
   mainSplitDragEndHandler() {
@@ -952,7 +970,7 @@ export default class ContentWrap extends Component {
 
   onCSSActiviation() {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to access the CSS tab and apply custom styles to your diagram.');
     } else if (userService.isPlusOrAdvanced()) {
       return true;
     } else {
@@ -962,8 +980,11 @@ export default class ContentWrap extends Component {
 
   toolboxUpdateToApp(param) {
     trackEvent('ui', 'code', 'toolbox');
-    const code = this.cm.js.getValue();
-    this.cm.js.setValue(codeService.addCode(code, param));
+    const editor = this.cm.js;
+    const code = editor.getValue();
+    editor.setValue(codeService.addCode(code, param));
+    // Ensure editor receives focus after toolbar insert so user can continue typing
+    editor.focus();
   }
 
   async toggleFullscreen() {
@@ -1051,6 +1072,7 @@ export default class ContentWrap extends Component {
             </div>
             <div
               label="CSS"
+              locked={!window.user}
               onBeforeActiviation={this.onCSSActiviation.bind(this)}
             >
               <div
@@ -1172,6 +1194,7 @@ export default class ContentWrap extends Component {
             onTabClick={this.props.onPageSwitch}
             onAddPage={this.props.onAddPage}
             onDeletePage={this.props.onDeletePage}
+            onRenamePage={this.props.onRenamePage}
             onToggleFullscreen={this.toggleFullscreen.bind(this)}
             onExportPng={this.exportPngClickHandler.bind(this)}
             onCopyImage={this.copyImageClickHandler.bind(this)}

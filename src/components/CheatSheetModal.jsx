@@ -6,7 +6,7 @@ const CheatSheetModal = ({ open, onClose }) => {
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow fixed inset-0" />
-        <Dialog.Content className="text-gray-400 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[550px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
+        <Dialog.Content className="text-gray-400 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-y-auto max-w-[550px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
           <Dialog.Title className="font-medium text-lg text-gray-100">
             Cheat sheet
           </Dialog.Title>
@@ -44,7 +44,7 @@ const CheatSheetModal = ({ open, onClose }) => {
                 </td>
               </tr>
               <tr className="">
-                <td className="px-3 py-2">Asyc message</td>
+                <td className="px-3 py-2">Async message</td>
                 <td className="px-3 py-2">
                   <pre className="bg-black-600/30 p-2 rounded-lg">
                     <code className="font-mono">
@@ -105,6 +105,16 @@ const CheatSheetModal = ({ open, onClose }) => {
                 </td>
               </tr>
             </table>
+            <div className="mt-4 pt-3 border-t border-white/10 text-center">
+              <a
+                href="https://docs.zenuml.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-400 hover:text-blue-300 underline"
+              >
+                Full syntax reference at docs.zenuml.com →
+              </a>
+            </div>
           </div>
           <Dialog.Close asChild>
             <button

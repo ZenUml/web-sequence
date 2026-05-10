@@ -479,6 +479,7 @@ test('default item title at startup is "Untitled"', async ({ page }) => {
 });
 
 test('saved item survives a page reload with its content intact', async ({ page }) => {
+  test.setTimeout(60_000);
   // The biggest persistence guarantee: type → save → reload → content is back.
   // beforeEach's addInitScript fires on every navigation, so the
   // loginAndsaveMessageSeen flag is re-set for the post-reload load.

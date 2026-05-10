@@ -38,6 +38,18 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                     </span>
                   </p>
                   <p>
+                    <span className="kbd-shortcut__keys">Alt + E</span>
+                    <span className="kbd-shortcut__details">
+                      Focus the code editor
+                    </span>
+                  </p>
+                  <p>
+                    <span className="kbd-shortcut__keys">Alt + P</span>
+                    <span className="kbd-shortcut__details">
+                      Add a new diagram page
+                    </span>
+                  </p>
+                  <p>
                     <span className="kbd-shortcut__keys">Ctrl/⌘ + O</span>
                     <span className="kbd-shortcut__details">
                       Open list of saved creations
@@ -60,6 +72,14 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
               <div className="ml-6">
                 <h3 className="text-lg mb-4">Editor</h3>
                 <div className="flex flex-col gap-3">
+                  <p>
+                    <span className="kbd-shortcut__keys">Ctrl/⌘ + Z</span>
+                    <span className="kbd-shortcut__details">Undo</span>
+                  </p>
+                  <p>
+                    <span className="kbd-shortcut__keys">Ctrl/⌘ + Shift + Z</span>
+                    <span className="kbd-shortcut__details">Redo</span>
+                  </p>
                   <p>
                     <span className="kbd-shortcut__keys">Ctrl/⌘ + F</span>
                     <span className="kbd-shortcut__details">Find</span>
@@ -105,14 +125,7 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                   <p>
                     <span className="kbd-shortcut__keys">Tab</span>
                     <span className="kbd-shortcut__details">
-                      Emmet code completion{' '}
-                      <a
-                        href="https://emmet.io/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Read more
-                      </a>
+                      Auto-complete syntax snippets
                     </span>
                   </p>
                   <p>

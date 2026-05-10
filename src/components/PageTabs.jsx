@@ -2,12 +2,15 @@ import { Component } from 'preact';
 import DeletePageModal from './DeletePageModal';
 
 /**
- * PageTabs component displays tabs for each page and handles tab switching
+ * PageTabs component displays tabs for each page and handles tab switching.
+ * Double-click a tab title to rename the page inline.
  */
 export class PageTabs extends Component {
   state = {
     isCloseModalOpen: false,
     pageToClose: null,
+    renamingPageId: null,
+    renameValue: '',
   };
 
   /**
@@ -41,9 +44,44 @@ export class PageTabs extends Component {
     this.setState({ isCloseModalOpen: false, pageToClose: null });
   };
 
+  handleDoubleClick = (e, page) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.setState({ renamingPageId: page.id, renameValue: page.title || '' });
+  };
+
+  handleRenameChange = (e) => {
+    this.setState({ renameValue: e.target.value });
+  };
+
+  handleRenameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      this.commitRename();
+    } else if (e.key === 'Escape') {
+      this.cancelRename();
+    }
+  };
+
+  handleRenameBlur = () => {
+    this.commitRename();
+  };
+
+  commitRename = () => {
+    const { renamingPageId, renameValue } = this.state;
+    if (renamingPageId && typeof this.props.onRenamePage === 'function') {
+      const trimmed = renameValue.trim();
+      this.props.onRenamePage(renamingPageId, trimmed || 'Untitled');
+    }
+    this.setState({ renamingPageId: null, renameValue: '' });
+  };
+
+  cancelRename = () => {
+    this.setState({ renamingPageId: null, renameValue: '' });
+  };
+
   render() {
     const { pages, currentPageId, onTabClick, onToggleFullscreen, onExportPng, onCopyImage } = this.props;
-    const { isCloseModalOpen } = this.state;
+    const { isCloseModalOpen, renamingPageId, renameValue } = this.state;
 
     if (!pages || pages.length === 0) {
       return null;
@@ -54,20 +92,36 @@ export class PageTabs extends Component {
         <div className="page-tabs bg-black-500 border-b border-black-700 px-2 py-1 flex overflow-x-auto items-center justify-between">
           <div className="flex items-center">
             {pages.map((page, index) => {
+              const isRenaming = renamingPageId === page.id;
               return (
                 <div
                   key={page.id}
                   className={`relative flex items-center group rounded-t-lg group mx-1 px-3 py-1 gap-2 ${page.id === currentPageId ? 'bg-black-500' : 'bg-black-600'} ${index === 0 ? '' : 'pr-7'}`}
                 >
-                  <button
-                    className={`text-sm font-normal w-full h-full ${page.id === currentPageId
-                        ? 'text-white'
-                        : 'text-gray-400'}`}
-                    onClick={() => onTabClick(page.id)}
-                  >
-                    {page.title || 'Untitled'}
-                  </button>
-                  {index !== 0 && <button
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={renameValue}
+                      className="text-sm font-normal bg-transparent border-b border-blue-400 outline-none text-white w-24 min-w-0"
+                      onChange={this.handleRenameChange}
+                      onKeyDown={this.handleRenameKeyDown}
+                      onBlur={this.handleRenameBlur}
+                      aria-label="Rename page"
+                    />
+                  ) : (
+                    <button
+                      className={`text-sm font-normal w-full h-full ${page.id === currentPageId
+                          ? 'text-white'
+                          : 'text-gray-400'}`}
+                      onClick={() => onTabClick(page.id)}
+                      onDblClick={(e) => this.handleDoubleClick(e, page)}
+                      title={`${page.title || 'Untitled'} — double-click to rename`}
+                    >
+                      {page.title || 'Untitled'}
+                    </button>
+                  )}
+                  {index !== 0 && !isRenaming && <button
                     onClick={(e) => this.handleDeleteClick(e, page.id)}
                     className={`p-1 rounded-full opacity-0 group-hover:opacity-100  absolute right-1 top-1/2 -translate-y-1/2 ${page.id === currentPageId
                         ? 'text-white'
@@ -104,9 +158,9 @@ export class PageTabs extends Component {
             <div className="flex items-center gap-2 text-sm font-normal ml-4">
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Toggle Fullscreen"
+                aria-label="Present — enter fullscreen mode"
                 onClick={onToggleFullscreen}
-                title="Toggle Fullscreen Presenting Mode"
+                title="Present — enter fullscreen mode (Esc to exit)"
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#fullscreen-icon"/>
@@ -115,23 +169,31 @@ export class PageTabs extends Component {
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Export as PNG"
+                aria-label={window.user ? 'Export diagram as PNG' : 'Export as PNG — sign in required'}
+                title={window.user ? 'Export as PNG' : 'Sign in to export as PNG'}
                 onClick={onExportPng}
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#icon-download"/>
                 </svg>
                 <span>PNG</span>
+                {!window.user && (
+                  <span className="material-symbols-outlined text-sm leading-none opacity-60" aria-hidden="true">lock</span>
+                )}
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Copy PNG to Clipboard"
+                aria-label={window.user ? 'Copy diagram as PNG to clipboard' : 'Copy PNG — sign in required'}
+                title={window.user ? 'Copy PNG to clipboard' : 'Sign in to copy as PNG'}
                 onClick={onCopyImage}
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#icon-copy"/>
                 </svg>
                 <span>Copy PNG</span>
+                {!window.user && (
+                  <span className="material-symbols-outlined text-sm leading-none opacity-60" aria-hidden="true">lock</span>
+                )}
               </button>
             </div>
           )}

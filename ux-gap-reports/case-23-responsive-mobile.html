@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 23 — Responsive &amp; Mobile Layout UX · ZenUML UX Gaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; font-size: 0.9rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary-bar { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.25rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; }
+    .stat .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gif-wrap { margin-bottom: 2.5rem; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+    .gif-wrap img { width: 100%; display: block; }
+    .gif-caption { background: #1e293b; padding: 0.75rem 1rem; font-size: 0.8rem; color: #64748b; }
+    .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1rem; }
+    .gaps { display: grid; gap: 1.25rem; }
+    .gap-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; border-left: 4px solid #334155; }
+    .gap-card.high   { border-left-color: #ef4444; }
+    .gap-card.medium { border-left-color: #f59e0b; }
+    .gap-card.low    { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.7rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .sev { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high   { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low    { background: #0f2042; color: #60a5fa; }
+    .gap-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; flex: 1; }
+    .gap-body p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .gap-body p:last-child { margin-bottom: 0; }
+    .gap-body strong { color: #e2e8f0; }
+    .principle { display: inline-block; font-size: 0.65rem; font-weight: 600; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 0.1rem 0.4rem; margin-right: 0.25rem; color: #94a3b8; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.78rem; color: #7dd3fc; border: 1px solid #1e3a5f; }
+    .fix { background: #0a1f0a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; color: #86efac; border: 1px solid #14532d; }
+    .fix::before { content: "Suggested fix: "; font-weight: 700; }
+    .target-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
+    .target-item { background: #0f172a; border-radius: 6px; padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+    .target-item .name { color: #e2e8f0; font-weight: 600; }
+    .target-item .size { color: #ef4444; font-family: monospace; font-size: 0.7rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">← All Cases</a></div>
+  <h1>Case 23 — Responsive &amp; Mobile Layout UX</h1>
+  <p>Desktop-only split pane · 24/25 touch targets fail WCAG 2.5.5 · 0 Tailwind sm: classes · no hamburger menu · no touch events</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">25</div><div class="label">Elements audited</div></div>
+  </div>
+
+  <div class="gif-wrap">
+    <img src="ux-case-23-responsive-mobile.gif" alt="Responsive layout audit — desktop layout, scale simulation to 375px viewport showing layout crush">
+    <div class="gif-caption">At simulated 375px viewport (iPhone SE), the entire app crushes into a ~10px-tall header strip with 9×10px touch targets. The split-pane layout never stacks vertically. Frame 2 shows scale simulation of how the app renders on mobile.</div>
+  </div>
+
+  <div class="section-title">Gaps Found</div>
+  <div class="gaps">
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-23-001</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">Split-pane layout never stacks vertically — both panels become unusably narrow on mobile</span>
+      </div>
+      <div class="gap-body">
+        <p>The <code>.main-content-area</code> is always <code>display: flex; flex-direction: row</code> with no responsive breakpoint that switches to <code>flex-direction: column</code>. At a 375px iPhone SE viewport, the default 30/70 split gives:</p>
+        <p>• <strong>Editor: ~113px wide</strong> — a 113px code editor is entirely unusable. A typical variable name exceeds the visible width.<br>
+        • <strong>Canvas: ~263px wide</strong> — a 3-participant sequence diagram would be horizontally clipped at this width<br>
+        • <strong>No toggle to switch to single-pane view</strong> — unlike Mermaid Live Editor or StackBlitz which offer "preview only" mode on mobile</p>
+        <p>The app has a <code>viewport</code> meta tag set to <code>width=device-width, initial-scale=1</code>, meaning mobile browsers will render the layout at actual screen width rather than shrinking to a "desktop" view — making the broken layout fully visible to mobile users.</p>
+        <div class="evidence">
+// CSS audit: .main-content-area has NO responsive flex-direction rules
+.main-content-area { display: flex; flex-direction: row; /* ← permanent, no breakpoint */ }
+
+// At 375px viewport (iPhone SE, scaling from 1920px base):
+// Scale factor: 375 / 1920 = 0.195
+editorWidth = (1920 × 0.30) × 0.195 = ~113px   // unusable
+canvasWidth = (1920 × 0.70) × 0.195 = ~263px   // severely clipped
+
+// No responsive stacking found in any stylesheet:
+// Tailwind sm: classes in entire app: 0
+// Tailwind md: classes in entire app: 1 (md:flex — on one element)
+// Tailwind lg: classes in entire app: 2 (lg:inline, lg:block)
+        </div>
+        <div class="fix">Add a responsive stacking breakpoint: at <code>max-width: 768px</code>, set <code>.main-content-area { flex-direction: column; }</code>. Stack the canvas above the editor (diagram-first, as users on mobile are more likely to view than edit). Add a tab-style toggle ("Edit / Preview") to switch between the two panes on mobile. This follows the pattern used by CodePen, JSFiddle, and StackBlitz.</div>
+        <span class="principle">Nielsen #4 Consistency</span>
+        <span class="principle">Mobile-first design</span>
+        <span class="principle">WCAG 1.3.4 Orientation</span>
+      </div>
+    </div>
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-23-002</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">24 of 25 interactive elements fail WCAG 2.5.5 touch target minimum (44×44px) at mobile viewport</span>
+      </div>
+      <div class="gap-body">
+        <p>At a 375px viewport, all interactive elements scale proportionally (0.195×). The resulting touch targets are far below the WCAG 2.5.5 minimum of 44×44px and the WCAG 2.5.8 minimum of 24×24px:</p>
+        <div class="target-grid">
+          <div class="target-item"><div class="name">New button</div><div class="size">18×6px on mobile ❌</div></div>
+          <div class="target-item"><div class="name">Share Link</div><div class="size">20×8px on mobile ❌</div></div>
+          <div class="target-item"><div class="name">Profile avatar</div><div class="size">8×8px on mobile ❌</div></div>
+          <div class="target-item"><div class="name">Sidebar icons</div><div class="size">9×10px on mobile ❌</div></div>
+          <div class="target-item"><div class="name">Toolbar inserts</div><div class="size">8×5px on mobile ❌</div></div>
+          <div class="target-item"><div class="name">CSS tab</div><div class="size">15×5px on mobile ❌</div></div>
+        </div>
+        <p style="margin-top: 0.75rem">Only 1 of 25 elements passes the touch target test. Even the sidebar icon buttons — which at 44×50px look appropriately sized on desktop — collapse to 9×10px physical pixels on mobile. The entire interactive surface of the app becomes untappable.</p>
+        <div class="evidence">
+// JS audit at 375px viewport (scale = 375/1920 = 0.195):
+totalInteractive: 25
+failingTouchTargets: 24   // 96% failure rate
+passingTouchTargets: 1    // only 1 element passes
+
+// Worst offenders:
+New button:     desktop 90×33px → mobile 18×6px   (needs 44×44px)
+Share Link:     desktop 102×40px → mobile 20×8px
+Profile button: desktop 40×40px → mobile 8×8px
+Sidebar icons:  desktop 44×50px → mobile 9×10px
+        </div>
+        <div class="fix">For mobile-specific touch target sizing: add <code>@media (max-width: 768px) { button, a { min-height: 44px; min-width: 44px; } }</code> as a baseline. Better: redesign the mobile layout to use a bottom tab bar (replacing the sidebar icon column) with full-width touch-friendly items. The existing desktop design is appropriate for pointer devices — the issue is there is no separate mobile layout.</div>
+        <span class="principle">WCAG 2.5.5 AA</span>
+        <span class="principle">WCAG 2.5.8 AA</span>
+        <span class="principle">Fitts's Law</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-23-003</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">No mobile navigation pattern — the full icon sidebar and header persist at all viewport sizes</span>
+      </div>
+      <div class="gap-body">
+        <p>The left sidebar (5 icon buttons: My Diagrams, Editor, Keyboard, Language Guide, Settings) and the full header (New, diagram title, Share Link, avatar) remain unchanged at all viewport widths. There is no hamburger menu, no bottom tab bar, no collapsible sidebar — the mobile navigation is simply the desktop navigation crushed to unusability.</p>
+        <p>Modern responsive apps follow one of: (a) hamburger menu that slides in a full sidebar, (b) bottom navigation bar for primary destinations, (c) progressive disclosure where secondary nav items hide behind a "More" button. ZenUML uses none of these — the sidebar icon column at mobile becomes a 9px-wide strip occupying screen real estate while being untappable.</p>
+        <div class="evidence">
+// Confirmed via DOM audit:
+hamburgerMenu: "no"           // no hamburger/menu-toggle element
+sidebarToggle: "none"         // no toggle button found
+touchEventElements: 0         // no ontouchstart/ontouchmove handlers
+pointerMediaQueries: []       // no @media (pointer: coarse) adaptations
+// Tailwind responsive class inventory (entire app):
+sm: classes: 0    // zero adaptations at 640px
+md: classes: 1    // one element uses md:flex
+lg: classes: 2    // two elements use lg:inline / lg:block
+xl: classes: 0    // zero adaptations above 1280px
+        </div>
+        <div class="fix">Add a mobile navigation pattern: at <code>max-width: 768px</code>, hide the vertical sidebar icon column and replace with a horizontal bottom bar showing the 3-4 most critical actions (My Diagrams, Language Guide, Settings, + a "..." overflow). Alternatively, convert the sidebar to a slide-in drawer triggered by a hamburger button in the header. This is the standard pattern for responsive tool apps (Figma, Notion mobile, Linear mobile).</div>
+        <span class="principle">Nielsen #4 Consistency</span>
+        <span class="principle">Nielsen #7 Flexibility</span>
+        <span class="principle">Mobile UX patterns</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-23-004</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Header becomes horizontally scrollable at 600px — diagram title and title bar clip silently</span>
+      </div>
+      <div class="gap-body">
+        <p>At <code>max-width: 600px</code>, the CSS rule <code>.main-header { overflow-x: auto }</code> kicks in, making the header horizontally scrollable. This means at narrow viewports, users must horizontally scroll to access the "Share Link" button, the diagram title, and the avatar — but there is no visual indicator (no scroll shadow, no chevron) that horizontal scrolling is available.</p>
+        <p>The "New" button and the "Share Link" button are on opposite ends of the header. At 400px, a user may only see one of them without scrolling. The diagram title — centrally positioned — may be hidden off-screen. This violates the principle of keeping primary actions within the visible viewport.</p>
+        <div class="evidence">
+// CSS at max-width: 600px:
+.main-header { overflow-x: auto; }           // header becomes scrollable
+.main-header__btn-wrap { flex-shrink: 0; }   // button group stays at full width
+
+// At 375px:
+//   Header height: ~10px (53px × 0.195 scale)
+//   Share Link button (rightmost): off-screen without scrolling
+//   Diagram title (center): clipped
+//   No scroll indicator shown (no -webkit-overflow-scrolling visual)
+        </div>
+        <div class="fix">Redesign the header for mobile: at <code>max-width: 768px</code>, remove the diagram title from the header center (it's secondary information on mobile), show only "New" on the left and a "⋯" overflow menu on the right containing Share Link and other actions. This keeps all primary actions reachable without horizontal scrolling.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #3 User Control</span>
+      </div>
+    </div>
+
+    <div class="gap-card low">
+      <div class="gap-header">
+        <span class="gap-id">GAP-23-005</span>
+        <span class="sev sev-low">Low</span>
+        <span class="gap-title">No touch/pointer event adaptations — swipe gestures and touch-specific diagram interactions absent</span>
+      </div>
+      <div class="gap-body">
+        <p>The app has zero <code>ontouchstart</code>, <code>ontouchmove</code>, or <code>touch*</code> event handlers anywhere in the DOM (confirmed: <code>touchEventElements: 0</code>). It also has no <code>@media (pointer: coarse)</code> CSS adaptations for touch-screen devices. This means:</p>
+        <p>• <strong>No pinch-to-zoom on the canvas</strong> — users cannot use native touch gestures to zoom the diagram on a tablet or phone<br>
+        • <strong>No swipe-to-switch panels</strong> — on mobile, swiping left/right could naturally switch between editor and canvas views<br>
+        • <strong>No touch-friendly scrolling</strong> in the editor (CodeMirror's touch support is limited without explicit configuration)<br>
+        • <strong>Hover-dependent tooltips</strong> never trigger on touch devices — all the tooltip information (case 19) is inaccessible on mobile</p>
+        <div class="evidence">
+// DOM audit:
+touchEventElements: 0              // no touch event handlers anywhere
+pointerMediaQueries: []            // no @media (pointer: coarse) rules
+// CodeMirror touch support requires:
+// cm.setOption("lineWrapping", true) — not set by default
+// Hammer.js or similar for pinch/swipe on canvas — not installed
+// canvas iframe also has no touch event listeners
+        </div>
+        <div class="fix">Add <code>@media (pointer: coarse)</code> CSS rules to increase spacing and target sizes for touch users (even before a full mobile layout redesign). For the canvas, add <code>touch-action: none</code> on the diagram iframe and implement pinch-zoom via the Pointer Events API. For the editor, enable CodeMirror's touch-friendly mode with <code>lineWrapping: true</code>.</div>
+        <span class="principle">WCAG 2.5.5</span>
+        <span class="principle">Mobile UX patterns</span>
+        <span class="principle">Fitts's Law</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Case 23 of the ZenUML UX Gap Analysis Loop &nbsp;·&nbsp; Generated 2026-05-10
+</footer>
+
+</body>
+</html>

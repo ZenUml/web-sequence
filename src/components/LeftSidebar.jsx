@@ -30,12 +30,12 @@ export default class LeftSidebar extends Component {
     return (
       <div class="flex shrink-0">
         {/* Icon Bar */}
-        <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10 justify-between h-full">
-          <div class="flex flex-col items-center gap-2">
-            <button 
+        <div class="flex flex-col items-center gap-2 bg-[#111722] p-2 border-r border-white/10 h-full">
+          <div class="flex flex-col items-center gap-2 flex-1">
+            <button
               class={`p-2.5 rounded-md transition-colors ${
                 isLibraryActive
-                  ? 'text-white bg-[#232f48]' 
+                  ? 'text-white bg-[#232f48]'
                   : 'text-white/70 hover:text-white hover:bg-[#232f48]'
               }`}
               onClick={() => {
@@ -48,13 +48,14 @@ export default class LeftSidebar extends Component {
                 }
               }}
               title="My Library"
+              aria-label="My Library"
             >
-              <span class="material-symbols-outlined">folder_open</span>
+              <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
             </button>
-            <button 
+            <button
               class={`p-2.5 rounded-md transition-colors ${
                 isEditorActive
-                  ? 'text-white bg-[#232f48]' 
+                  ? 'text-white bg-[#232f48]'
                   : 'text-white/70 hover:text-white hover:bg-[#232f48]'
               }`}
               onClick={() => {
@@ -67,39 +68,47 @@ export default class LeftSidebar extends Component {
                 }
               }}
               title="Code Editor"
+              aria-label="Code Editor"
             >
-              <span class="material-symbols-outlined">code_blocks</span>
+              <span class="material-symbols-outlined" aria-hidden="true">code_blocks</span>
             </button>
           </div>
+          {/* Divider between panels and utility icons */}
+          <div class="w-6 border-t border-white/10 my-1" aria-hidden="true" />
           <div class="flex flex-col items-center gap-2">
-            <button 
+            <button
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
               onClick={onShortcutsClick}
               title="Keyboard Shortcuts"
+              aria-label="Keyboard Shortcuts"
             >
-              <span class="material-symbols-outlined">keyboard</span>
+              <span class="material-symbols-outlined" aria-hidden="true">keyboard</span>
             </button>
-            <button 
+            <button
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
               onClick={onCheatsheetClick}
-              title="Cheatsheet"
+              title="Syntax Cheat Sheet"
+              aria-label="Syntax Cheat Sheet"
             >
-              <span class="material-symbols-outlined">quick_reference</span>
+              <span class="material-symbols-outlined" aria-hidden="true">quick_reference</span>
             </button>
-            <a 
+            <a
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
               href="https://zenuml.com/docs/category/language-guide"
               target="_blank"
-              title="Language Guide"
+              rel="noopener noreferrer"
+              title="Language Guide (opens in new tab)"
+              aria-label="Language Guide (opens in new tab)"
             >
-              <span class="material-symbols-outlined">menu_book</span>
+              <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
             </a>
-            <button 
+            <button
               class="p-2.5 rounded-md transition-colors text-white/70 hover:text-white hover:bg-[#232f48]"
               onClick={onSettingsClick}
               title="Settings"
+              aria-label="Settings"
             >
-              <span class="material-symbols-outlined">settings</span>
+              <span class="material-symbols-outlined" aria-hidden="true">settings</span>
             </button>
           </div>
         </div>

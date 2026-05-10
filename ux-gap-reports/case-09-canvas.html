@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 09: Diagram Canvas & Zoom Controls</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .canvas-map { background: #0f172a; border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; font-size: 0.8rem; }
+    .canvas-map table { width: 100%; border-collapse: collapse; }
+    .canvas-map th { color: #64748b; font-weight: 600; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #334155; font-size: 0.7rem; text-transform: uppercase; }
+    .canvas-map td { padding: 0.3rem 0.5rem; color: #94a3b8; border-bottom: 1px solid #1e293b; }
+    .canvas-map td:first-child { color: #f1f5f9; font-family: monospace; }
+    .yes { color: #4ade80; } .no { color: #ef4444; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 09</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Diagram Canvas &amp; Zoom Controls</strong> — scroll-to-zoom, panning, footer controls, help overlay, sequence toggle &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html">Case 08</a>
+    <a href="case-09-canvas.html" style="border-color:#60a5fa;color:#60a5fa">Case 09: Canvas</a>
+    <a href="case-10-new-diagram.html">Case 10</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">2</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>The canvas is a passive viewport — no scroll-to-zoom, no drag-to-pan</h3>
+    <p>Testing confirmed: <strong>scrolling on the diagram canvas scrolls the page vertically</strong>, not zooms the diagram. <strong>Dragging the canvas does not pan the diagram.</strong> The only way to zoom is via two small icon buttons (⊕/⊖) inside the canvas footer bar. There is no Ctrl+scroll zoom, no pinch-to-zoom indication, no "fit to screen" shortcut, and no right-click context menu. Figma, draw.io, Mermaid Live Editor, and Lucidchart all treat scroll-to-zoom as the primary zoom interaction — it is the genre expectation for any web-based diagram tool.</p>
+    <p>The canvas is rendered inside a same-origin iframe. The viewport is 1920×835 CSS pixels at DPR=2. The footer controls sit at CSS y≈512, outside the visible 682px screenshot crop, meaning users with smaller displays may not see the zoom controls at all without scrolling the outer page.</p>
+  </div>
+
+  <div class="canvas-map">
+    <table>
+      <tr><th>Control</th><th>Label / Tooltip</th><th>Action</th><th>Works via keyboard</th></tr>
+      <tr><td>(i) icon</td><td class="no">None</td><td>Opens full-screen syntax overlay</td><td class="no">✗</td></tr>
+      <tr><td>☑ 1.2.3 checkbox</td><td class="no">None</td><td>Toggles sequence number visibility</td><td class="no">✗</td></tr>
+      <tr><td>⊕ zoom in</td><td class="no">None</td><td>Increases zoom level</td><td class="no">✗</td></tr>
+      <tr><td>100% label</td><td class="no">None</td><td>Resets zoom to 100%</td><td class="no">✗</td></tr>
+      <tr><td>⊖ zoom out</td><td class="no">None</td><td>Decreases zoom level</td><td class="no">✗</td></tr>
+      <tr><td>ZenUML.com text</td><td class="no">None</td><td>Unknown (branding watermark?)</td><td class="no">✗</td></tr>
+      <tr><td>Scroll on canvas</td><td>—</td><td>Scrolls page vertically (NOT zoom)</td><td>—</td></tr>
+      <tr><td>Drag on canvas</td><td>—</td><td>No effect (NOT pan)</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — (i) tips overlay → scroll test → drag test → 1.2.3 toggle → right-click test</h2>
+      <img src="ux-case-09-canvas.gif" alt="Diagram canvas and zoom controls UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-09-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Scroll on canvas scrolls the page — not zoom — violating the diagram tool genre convention</h3>
+        <p>Scrolling the mouse wheel on the diagram canvas moves the page up/down. It does <strong>not</strong> zoom the diagram. This is the single most-violated interaction expectation in diagram tools: every major web-based diagram application (Figma, draw.io, Mermaid Live, Lucidchart, Excalidraw) uses scroll-to-zoom as the primary zoom gesture. Users who expect this behavior will scroll, see the page shift, and conclude either the diagram is broken or zooming is impossible — before ever discovering the tiny ⊕/⊖ icon buttons in the footer bar.</p>
+        <div class="principle">Jakob's Law — users transfer expectations from familiar tools · Nielsen #4 — Consistency with standards</div>
+        <div class="fix">Intercept scroll events on the diagram canvas and use them to zoom the diagram (same as Figma, draw.io). Use <code>event.preventDefault()</code> on the iframe's wheel event, then apply the zoom delta. Add Ctrl+scroll as an explicit zoom modifier for users on systems where unmodified scroll is reserved for page navigation. Show a brief "Scroll to zoom" tooltip on first canvas hover to set expectations.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-09-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No drag-to-pan — diagram cannot be repositioned after zooming or on small viewports</h3>
+        <p>Dragging the mouse on the diagram canvas has no effect — it does not pan the diagram. Once a user zooms in (via the footer ⊕ button), there is no way to scroll/pan to different parts of the diagram. The diagram is effectively locked in its rendered position. On displays smaller than ~900px height, the bottom of longer diagrams is clipped and inaccessible without scrolling the outer page (which moves away from the toolbar, not the diagram). Panning is the expected complement to zoom in every diagram and image tool.</p>
+        <div class="principle">Fitts's Law — the primary interaction should be the easiest · Direct manipulation principle</div>
+        <div class="fix">Implement drag-to-pan: on mousedown in the canvas, switch cursor to <code>grabbing</code>, track mouse delta, and translate the diagram SVG. Release on mouseup. Space+drag (as in Figma) is an acceptable alternative if direct drag conflicts with future element selection. Add a "Fit diagram" button (the ⊡ icon used by draw.io, Mermaid, Excalidraw) next to the zoom controls to instantly reset position and scale to show the full diagram.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-09-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>(i) info icon opens a full-screen syntax overlay — the 3rd separate help surface, covering the diagram entirely</h3>
+        <p>The <code>(i)</code> icon in the canvas footer opens a "ZenUML Tips" panel that renders as a full-width, full-height overlay on top of the diagram canvas. This is the <strong>third distinct help surface</strong> in the app (alongside the keyboard-shortcut icon in the sidebar and the "quick reference" cheat-sheet icon). The Tips panel covers the entire diagram — users cannot read a syntax example and see its rendered result simultaneously. Additionally, the icon has no hover tooltip explaining what it opens, so users cannot know what action they are triggering before clicking.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Information architecture — progressive disclosure</div>
+        <div class="fix">Replace the full-screen overlay with a slide-in side panel or a resizable drawer that appears alongside (not over) the diagram. This allows users to read syntax examples while seeing their diagram update in real time — the key learning loop for new users. Consolidate all three help surfaces into one unified "Help" panel (see GAP-05-001). Add a tooltip to the (i) icon: "Syntax tips &amp; reference".</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-09-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Canvas footer controls have zero tooltips or labels — "1.2.3" checkbox function is completely opaque</h3>
+        <p>The canvas footer contains 6 controls: (i), checkbox labeled "1.2.3", ⊕, 100%, ⊖, and "ZenUML.com". None have hover tooltips, <code>title</code> attributes, or <code>aria-label</code>s. The most opaque is the <strong>"1.2.3" checkbox</strong>: its label literally shows the sequence number format — not what checking/unchecking does. Testing confirmed it toggles sequence number visibility on the diagram, but users must experiment to discover this. The "ZenUML.com" text in the footer is equally unclear — it appears to be a branding watermark but looks like a dead link.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · WCAG 4.1.2 — Name, Role, Value</div>
+        <div class="fix">Add <code>title</code> and <code>aria-label</code> to every footer control: (i) → "Syntax tips", 1.2.3 checkbox → "Show sequence numbers", ⊕ → "Zoom in", 100% → "Reset zoom to 100%", ⊖ → "Zoom out", ZenUML.com → "Powered by ZenUML" (or remove if it adds no value). Show these as hover tooltips. Rename the checkbox label from "1.2.3" to "Numbers" or add a "Show numbers" tooltip.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-09-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>No "Fit to screen" button — no way to reset diagram position after zooming or viewport changes</h3>
+        <p>After zooming in via the ⊕ button, there is no "fit diagram" or "reset view" shortcut to quickly return to a state where the full diagram is visible. The 100% label resets zoom to 100% but doesn't re-center the diagram. On smaller viewports, the diagram may be partially scrolled out of view and there is no keyboard shortcut or button to snap back to "show full diagram". Figma (Shift+1), draw.io (Ctrl+Shift+H), Mermaid Live, and Excalidraw all have a "fit" control.</p>
+        <div class="principle">Nielsen #3 — User control and freedom · Nielsen #7 — Flexibility and efficiency of use</div>
+        <div class="fix">Add a "Fit diagram" button (⊡ icon, standard in diagram tools) next to the zoom controls. Clicking it should set zoom to show the complete diagram with a small margin, and center it in the viewport. Also add a keyboard shortcut: Ctrl+Shift+F or F (when canvas is focused) as the "fit" binding, consistent with Figma (Shift+1) and Excalidraw (Shift+1).</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

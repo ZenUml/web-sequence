@@ -24,7 +24,7 @@ export default function DeletePageModal({ open, onClose, onConfirm }) {
             Confirm to Delete
           </Dialog.Title>
           <Dialog.Description className="text-gray-400 mt-[10px] mb-5 text-[15px] leading-normal">
-            Are you sure you want to delete this page? The data on this page will be lost forever.
+            This will remove the page and its diagram content. You can undo this with Cmd+Z right after deleting.
           </Dialog.Description>
           <div className="flex justify-end gap-[25px]">
             <button

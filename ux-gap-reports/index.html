@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenUML UX Gap Reports</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.8rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .totals { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .totals .stat { text-align: center; }
+    .totals .num { font-size: 2.5rem; font-weight: 800; }
+    .totals .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .cases { display: grid; gap: 1.25rem; }
+    .case-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; display: flex; align-items: center; gap: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.15s; }
+    .case-card:hover { border-color: #60a5fa; }
+    .case-num { font-size: 2rem; font-weight: 800; color: #334155; min-width: 3rem; text-align: center; }
+    .case-info { flex: 1; }
+    .case-info h2 { font-size: 1.1rem; font-weight: 600; color: #f1f5f9; margin-bottom: 0.25rem; }
+    .case-info p { font-size: 0.875rem; color: #64748b; }
+    .case-badges { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .cbadge { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .cb-red { background: #3f1010; color: #ef4444; }
+    .cb-yellow { background: #3a2208; color: #f59e0b; }
+    .cb-blue { background: #0f2042; color: #60a5fa; }
+    .arrow { color: #334155; font-size: 1.25rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ZenUML UX Gap Reports</h1>
+  <p>Live UX analysis — each case documents gaps against modern design principles &nbsp;·&nbsp; auto-updated every 5 min</p>
+</header>
+
+<div class="container">
+
+  <div class="totals">
+    <div class="stat"><div class="num" style="color:#ef4444">45</div><div class="label">High severity</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">51</div><div class="label">Medium severity</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">23</div><div class="label">Low severity</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">119</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">23</div><div class="label">Cases run</div></div>
+  </div>
+
+  <div class="cases">
+
+    <a class="case-card" href="case-01-app-load.html">
+      <div class="case-num">01</div>
+      <div class="case-info">
+        <h2>App Load &amp; First Impressions</h2>
+        <p>Cold start experience — layout, discoverability, onboarding</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">3 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-02-save-export.html">
+      <div class="case-num">02</div>
+      <div class="case-info">
+        <h2>Save &amp; Export Flow</h2>
+        <p>Cmd+S feedback, unsaved state, PNG export paywall, syntax errors</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">3 high</span>
+          <span class="cbadge cb-yellow">1 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-03-multipage.html">
+      <div class="case-num">03</div>
+      <div class="case-info">
+        <h2>Multi-Page Flow</h2>
+        <p>Add page, tab switching, rename, delete — accidental delete bug reproduced</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-04-share-library.html">
+      <div class="case-num">04</div>
+      <div class="case-info">
+        <h2>Share Link &amp; My Library</h2>
+        <p>Share gated behind login, generic auth modal, bad auto-title, empty library</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-05-shortcuts.html">
+      <div class="case-num">05</div>
+      <div class="case-info">
+        <h2>Keyboard Shortcuts &amp; Cheat Sheet</h2>
+        <p>Discoverability, split help panels, Emmet jargon, incomplete cheat sheet</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">1 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-06-present-css.html">
+      <div class="case-num">06</div>
+      <div class="case-info">
+        <h2>Present Mode, CSS Tab &amp; Privacy Badge</h2>
+        <p>4th generic auth gate, focus-trap failure, silent Present button, buried privacy badge</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-07-toolbar.html">
+      <div class="case-num">07</div>
+      <div class="case-info">
+        <h2>Editor Toolbar Insert Buttons</h2>
+        <p>Zero accessible labels, silent insert failures, no grouping, no placeholder selection</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">1 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-08-settings.html">
+      <div class="case-num">08</div>
+      <div class="case-info">
+        <h2>Settings Modal &amp; Editor Preferences</h2>
+        <p>49 themes with no preview, "Editor" misnaming, debug toggle exposed, no reset path</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">1 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-09-canvas.html">
+      <div class="case-num">09</div>
+      <div class="case-info">
+        <h2>Diagram Canvas &amp; Zoom Controls</h2>
+        <p>No scroll-to-zoom, no drag-to-pan, full-screen tips overlay, zero-tooltip footer controls</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-10-new-diagram.html">
+      <div class="case-num">10</div>
+      <div class="case-info">
+        <h2>New Diagram Creation Flow</h2>
+        <p>"Blank" loads 18-line example, no template preview, silent data loss, "forked" jargon</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">3 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-11-undo-redo.html">
+      <div class="case-num">11</div>
+      <div class="case-info">
+        <h2>Undo/Redo &amp; Editor History</h2>
+        <p>Global undo stack crosses pages, silent content erasure, toolbar non-atomic, 2s render lag</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-12-syntax-errors.html">
+      <div class="case-num">12</div>
+      <div class="case-info">
+        <h2>Syntax Error Feedback</h2>
+        <p>Zero error UI — invalid syntax shows silent partial diagram, no gutter icons, WCAG 1.4.1 violation</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-13-rename.html">
+      <div class="case-num">13</div>
+      <div class="case-info">
+        <h2>Diagram &amp; Page Rename UX</h2>
+        <p>Page tabs can't be renamed, hidden pencil icon, tail truncation, blank title accepted</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-14-sidebar-nav.html">
+      <div class="case-num">14</div>
+      <div class="case-info">
+        <h2>Left Sidebar Navigation</h2>
+        <p>Zero aria-labels, panel trap (no close path), 540px dead zone, 3 hidden interaction patterns</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-15-export-clipboard.html">
+      <div class="case-num">15</div>
+      <div class="case-info">
+        <h2>Export &amp; Clipboard UX</h2>
+        <p>Both export buttons gated with generic auth modal, zero anonymous export path, no SVG option</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-16-mobile-responsive.html">
+      <div class="case-num">16</div>
+      <div class="case-info">
+        <h2>Mobile &amp; Responsive Layout</h2>
+        <p>No responsive CSS, diagram collapses to 55px sliver, all export buttons disappear at 390px</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">3 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-23-responsive-mobile.html">
+      <div class="case-num">23</div>
+      <div class="case-info">
+        <h2>Responsive &amp; Mobile Layout UX</h2>
+        <p>Desktop-only split pane, 24/25 touch targets fail WCAG 2.5.5 at mobile, 0 Tailwind sm: classes, no hamburger menu</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-22-error-state.html">
+      <div class="case-num">22</div>
+      <div class="case-info">
+        <h2>Error State &amp; Syntax Validation UX</h2>
+        <p>Silent parse failure, uncaught TypeError on keystrokes, error-gutter never populated, editor/canvas desync on undo</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-21-split-pane.html">
+      <div class="case-num">21</div>
+      <div class="case-info">
+        <h2>Split Pane Resize &amp; Layout Control</h2>
+        <p>Invisible 6px gutter, no collapse buttons, 30/70 default disadvantages editor, no reset gesture</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-20-css-tab.html">
+      <div class="case-num">20</div>
+      <div class="case-info">
+        <h2>CSS Tab &amp; Custom Styling UX</h2>
+        <p>No lock icon on gated tab, 5th generic auth modal, CSS editor absent from DOM, weak active state</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-19-tooltip-help.html">
+      <div class="case-num">19</div>
+      <div class="case-info">
+        <h2>Tooltip &amp; Contextual Help UX</h2>
+        <p>7 toolbar buttons zero tooltip, 3 tooltip mechanisms inconsistent, cryptic "1.2.3" canvas control</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">1 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-18-color-contrast.html">
+      <div class="case-num">18</div>
+      <div class="case-info">
+        <h2>Color Contrast &amp; Visual Accessibility</h2>
+        <p>Share Link CTA 3.04:1, line numbers 3.83:1, SVG icons 2.46:1, color-only syntax tokens</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">1 high</span>
+          <span class="cbadge cb-yellow">3 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="case-card" href="case-17-keyboard-nav.html">
+      <div class="case-num">17</div>
+      <div class="case-info">
+        <h2>Keyboard Navigation &amp; Focus Management</h2>
+        <p>1px focus rings fail WCAG 2.4.11, editor unreachable in 20+ Tab stops, no skip link</p>
+        <div class="case-badges">
+          <span class="cbadge cb-red">2 high</span>
+          <span class="cbadge cb-yellow">2 medium</span>
+          <span class="cbadge cb-blue">1 low</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+  </div>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+
+</body>
+</html>

@@ -23,7 +23,7 @@ This directory contains end-to-end tests using Playwright.
 
 ## Configuration
 
-- **Base URL**: `http://localhost:3001` (development server)
+- **Base URL**: `http://localhost:23000` (development server)
 - **Browsers**: Chrome, Firefox, Safari
 - **Retries**: 2 in CI, 0 locally
 - **Screenshots**: Only on failure
@@ -32,7 +32,7 @@ This directory contains end-to-end tests using Playwright.
 
 ## Development Server
 
-Tests automatically start the development server (`pnpm dev`) if it's not already running. The server starts on port 3001 and tests wait for it to be ready.
+Tests automatically start the development server (`pnpm dev`) if it's not already running. The server starts on port 23000 and tests wait for it to be ready.
 
 ## CI Integration
 

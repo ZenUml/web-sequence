@@ -1,6 +1,7 @@
 // Most of the code from this file comes from:
 // https://github.com/codemirror/CodeMirror/blob/master/addon/mode/loadmode.js
 import CodeMirror from 'codemirror';
+import 'codemirror/addon/display/placeholder';
 
 // Make CodeMirror available globally so the modes' can register themselves.
 window.CodeMirror = CodeMirror;

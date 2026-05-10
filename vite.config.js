@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import legacy from '@vitejs/plugin-legacy';
 import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
@@ -18,31 +19,46 @@ function getCommitHash() {
 // @zenuml/core's package.json `exports` only exposes the root entry, so
 // `import '@zenuml/core/dist/zenuml?url'` in src/utils.js is rejected by both
 // node-style resolution and Vite's alias + dep-optimizer pipeline. This plugin
-// intercepts that one specifier and returns the file's @fs URL directly.
-const zenumlAssetUrlShim = {
-  name: 'zenuml-core-asset-url-shim',
-  enforce: 'pre',
-  resolveId(source) {
-    if (source === '@zenuml/core/dist/zenuml?url') {
-      return '\0zenuml-core-asset-url';
-    }
-    return null;
-  },
-  load(id) {
-    if (id === '\0zenuml-core-asset-url') {
-      const filePath = resolve(
-        __dirname,
-        'node_modules/@zenuml/core/dist/zenuml.js',
-      );
-      return `export default ${JSON.stringify('/@fs' + filePath)};`;
-    }
-    return null;
-  },
-};
+// intercepts that one specifier. Dev mode can use Vite's /@fs path, but builds
+// must emit a deployable asset URL.
+function zenumlAssetUrlShim() {
+  let command = 'serve';
+  const filePath = resolve(__dirname, 'node_modules/@zenuml/core/dist/zenuml.js');
+
+  return {
+    name: 'zenuml-core-asset-url-shim',
+    enforce: 'pre',
+    configResolved(config) {
+      command = config.command;
+    },
+    resolveId(source) {
+      if (source === '@zenuml/core/dist/zenuml?url') {
+        return '\0zenuml-core-asset-url';
+      }
+      return null;
+    },
+    load(id) {
+      if (id !== '\0zenuml-core-asset-url') {
+        return null;
+      }
+
+      if (command === 'serve') {
+        return `export default ${JSON.stringify('/@fs' + filePath)};`;
+      }
+
+      const referenceId = this.emitFile({
+        type: 'asset',
+        name: 'zenuml.js',
+        source: readFileSync(filePath),
+      });
+      return `export default import.meta.ROLLUP_FILE_URL_${referenceId};`;
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
-    zenumlAssetUrlShim,
+    zenumlAssetUrlShim(),
     preact({
       devToolsEnabled: true,
     }),
@@ -87,7 +103,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 3000,
+    port: 23000,
     proxy: {
       '/create-share': {
         target: 'http://127.0.0.1:5002',

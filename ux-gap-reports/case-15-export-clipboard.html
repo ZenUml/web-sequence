@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 15 – Export &amp; Clipboard UX · ZenUML UX Gap Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary .stat { text-align: center; }
+    .summary .num { font-size: 2.2rem; font-weight: 800; }
+    .summary .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .gap { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; border-left: 4px solid #334155; }
+    .gap.high { border-left-color: #ef4444; }
+    .gap.medium { border-left-color: #f59e0b; }
+    .gap.low { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.75rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .severity { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    .gap h3 { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+    .gap p { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; }
+    .gap ul { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; padding-left: 1.5rem; }
+    .gap ul li { margin-bottom: 0.25rem; }
+    .principles { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .principle { font-size: 0.7rem; background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 1rem; margin-top: 0.75rem; border: 1px solid #1e293b; }
+    .evidence-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: 600; }
+    code { font-family: 'SF Mono', Fira Code, monospace; font-size: 0.82rem; color: #7dd3fc; background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; border: 1px solid #334155; }
+    .recording img { width: 100%; border-radius: 8px; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.82rem; }
+    th { text-align: left; padding: 0.5rem 0.75rem; background: #0f172a; color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .ok { color: #22c55e; }
+    .bad { color: #ef4444; }
+    .warn { color: #f59e0b; }
+    .nav-links { display: flex; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; flex-wrap: wrap; }
+    .nav-links a { color: #60a5fa; text-decoration: none; font-size: 0.875rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">UX Gap Reports</a> › Case 15</div>
+  <h1>Case 15 – Export &amp; Clipboard UX</h1>
+  <p>Both export buttons gated behind login with no explanation — and zero anonymous export path exists</p>
+</header>
+
+<div class="container">
+
+  <div class="summary">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">3</div><div class="label">Actions tested</div></div>
+  </div>
+
+  <div class="recording">
+    <div class="section-title">Session Recording</div>
+    <p style="color:#64748b; font-size:0.875rem;">Testing PNG export, Copy PNG clipboard, right-click canvas, Cmd+S, and SVG availability as anonymous user.</p>
+    <img src="ux-case-15-export-clipboard.gif" alt="Export and clipboard UX recording">
+  </div>
+
+  <!-- Export action matrix -->
+  <div style="margin-bottom:2rem;">
+    <div class="section-title">Export Action Matrix (Anonymous User)</div>
+    <div class="evidence">
+      <table>
+        <tr>
+          <th>Action</th><th>UI Location</th><th>Result</th><th>Feedback shown</th>
+        </tr>
+        <tr>
+          <td>Click "PNG" button</td>
+          <td>Bottom-right bar</td>
+          <td class="bad">Auth modal (generic login)</td>
+          <td class="bad">No export context, no pricing info</td>
+        </tr>
+        <tr>
+          <td>Click "Copy PNG" button</td>
+          <td>Bottom-right bar</td>
+          <td class="bad">Auth modal (same generic login)</td>
+          <td class="bad">Identical modal, no differentiation</td>
+        </tr>
+        <tr>
+          <td>Right-click diagram canvas</td>
+          <td>Canvas area</td>
+          <td class="warn">Browser native context menu</td>
+          <td class="bad">No app context menu, no export options</td>
+        </tr>
+        <tr>
+          <td>Cmd+S (keyboard shortcut)</td>
+          <td>Editor focused</td>
+          <td class="bad">Silent — no response</td>
+          <td class="bad">No toast, no modal, no feedback</td>
+        </tr>
+        <tr>
+          <td>Export as SVG</td>
+          <td>—</td>
+          <td class="bad">Option does not exist</td>
+          <td class="bad">Not available anywhere in the app</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">Identified Gaps</div>
+
+  <!-- GAP-15-001 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-15-001</span>
+      <span class="severity sev-high">High</span>
+      <h3>Export buttons show generic auth modal with no context — user doesn't know why or what they'll get</h3>
+    </div>
+    <p>Clicking "Export as PNG" or "Copy PNG to Clipboard" (both visible in the bottom bar) immediately shows the "Welcome to ZenUML.com" login modal. The modal provides zero context:</p>
+    <ul>
+      <li>No mention of <em>why</em> login is required ("Export requires an account" is never stated)</li>
+      <li>No pricing indication — is this free with account, or paid? The user cannot tell</li>
+      <li>Modal copy: "Join a community of 50,000+ Developers" — a marketing tagline, not a feature explanation</li>
+      <li>No lock icon, tooltip, or badge on the buttons before clicking to signal they are gated</li>
+      <li>Both buttons show identical modals — Copy PNG (free clipboard copy) should behave differently from PNG download (potentially paid)</li>
+      <li>The app offers no preview of what happens after login — no "Sign in to download your diagram" messaging</li>
+    </ul>
+    <div class="evidence">
+      <div class="evidence-label">Auth modal observed after clicking either export button</div>
+      Modal title: "Welcome to ZenUML.com"<br>
+      Options: Login with Github / Google / Facebook<br>
+      Subtext: "Join a community of 50,000+ Developers"<br>
+      Missing: Any mention of export, pricing, or what feature is being unlocked
+    </div>
+    <div class="principles">
+      <span class="principle">Nielsen #1: Visibility of System Status</span>
+      <span class="principle">Nielsen #6: Recognition over Recall</span>
+      <span class="principle">Growth: Explain the value before the gate</span>
+    </div>
+  </div>
+
+  <!-- GAP-15-002 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-15-002</span>
+      <span class="severity sev-high">High</span>
+      <h3>Zero anonymous export path — user who built a diagram cannot get it out without creating an account</h3>
+    </div>
+    <p>A new user can open the app, build a complete sequence diagram, and have no way to export or share it without creating an account. There is no free export tier whatsoever:</p>
+    <ul>
+      <li>PNG download → requires login</li>
+      <li>Copy PNG → requires login</li>
+      <li>SVG export → does not exist</li>
+      <li>Right-click diagram → no "Save image as" (canvas renders as HTML/CSS, not an &lt;img&gt;)</li>
+      <li>Cmd+S → silent (no local save, no download)</li>
+      <li>Only escape: manually copy the ZenUML source text from the editor — not discoverable</li>
+    </ul>
+    <p>This creates a high-friction drop-off point for the most natural first action after building a diagram. Industry standard is at least one free export format (Mermaid Live → SVG free, PlantUML → PNG free, Excalidraw → PNG/SVG free).</p>
+    <div class="evidence">
+      <div class="evidence-label">Competitor comparison — anonymous export availability</div>
+      <table>
+        <tr><th>Tool</th><th>Free anonymous export</th></tr>
+        <tr><td>ZenUML web-sequence</td><td class="bad">None — all gated behind login</td></tr>
+        <tr><td>Mermaid Live Editor</td><td class="ok">SVG, PNG free, no account needed</td></tr>
+        <tr><td>PlantUML online</td><td class="ok">PNG, SVG, ASCII free, no account</td></tr>
+        <tr><td>Excalidraw</td><td class="ok">PNG, SVG free, no account needed</td></tr>
+        <tr><td>diagrams.net (draw.io)</td><td class="ok">PNG, SVG, PDF free, no account</td></tr>
+      </table>
+    </div>
+    <div class="principles">
+      <span class="principle">Nielsen #3: User Control &amp; Freedom</span>
+      <span class="principle">Freemium: Value before the gate</span>
+      <span class="principle">Conversion funnel: Export is the aha-moment</span>
+    </div>
+  </div>
+
+  <!-- GAP-15-003 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-15-003</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>No SVG export option — only PNG, and PNG is locked</h3>
+    </div>
+    <p>The app offers only two export actions (PNG download, Copy PNG), both locked. SVG export is completely absent:</p>
+    <ul>
+      <li>SVG is the standard vector format for diagrams — infinitely scalable, editable in Illustrator/Inkscape, ideal for documentation</li>
+      <li>The diagram renders as inline SVG in the browser — the format is already there; it just isn't exposed</li>
+      <li>No "Copy SVG" option, no "Download SVG" option, no way to access the raw SVG source</li>
+      <li>PNG-only export degrades for large displays, HiDPI screens, and print use cases</li>
+      <li>All major diagram tools offer SVG as a first-class free export option</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Feature completeness</span>
+      <span class="principle">Print/documentation use cases</span>
+      <span class="principle">Competitive parity</span>
+    </div>
+  </div>
+
+  <!-- GAP-15-004 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-15-004</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>Cmd+S is completely silent for anonymous users — no save, no feedback, no auth prompt</h3>
+    </div>
+    <p>The keyboard shortcuts panel lists <code>Ctrl/⌘ + S</code> as "Save current creations". For an anonymous user, pressing Cmd+S with editor focused produces absolutely no response:</p>
+    <ul>
+      <li>No toast notification</li>
+      <li>No auth modal (unlike the export buttons which at least explain you need to log in)</li>
+      <li>No local storage save</li>
+      <li>No visual state change anywhere on screen</li>
+      <li>The shortcut appears in the keyboard help as a valid action — the discrepancy with actual behavior (silent no-op) is a direct Nielsen #1 violation</li>
+    </ul>
+    <p>The export buttons at least respond with a modal. Cmd+S is worse — it silently does nothing, leaving users to wonder if it worked, failed, or simply isn't implemented.</p>
+    <div class="principles">
+      <span class="principle">Nielsen #1: Visibility of System Status</span>
+      <span class="principle">Nielsen #5: Error Prevention</span>
+      <span class="principle">Keyboard shortcut contract</span>
+    </div>
+  </div>
+
+  <!-- GAP-15-005 -->
+  <div class="gap low">
+    <div class="gap-header">
+      <span class="gap-id">GAP-15-005</span>
+      <span class="severity sev-low">Low</span>
+      <h3>No right-click context menu on diagram canvas — missed export shortcut</h3>
+    </div>
+    <p>Right-clicking the rendered diagram canvas shows only the browser's native context menu (with options like "Inspect", "Save page as", etc.). No app-level context menu appears:</p>
+    <ul>
+      <li>Expected options: "Copy image", "Save image as PNG", "Zoom in/out", "Fit to screen"</li>
+      <li>The canvas renders as HTML+CSS (not a standard <code>&lt;img&gt;</code>), so browser "Save image" doesn't capture it correctly</li>
+      <li>A custom right-click menu is a common pattern in diagramming tools (Mermaid, Excalidraw, draw.io all implement this)</li>
+      <li>This is a discoverability issue — power users expect context menus as a shortcut surface</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Nielsen #6: Recognition over Recall</span>
+      <span class="principle">Discoverability</span>
+      <span class="principle">Power-user affordances</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">← All Cases</a>
+    <a href="case-14-sidebar-nav.html">← Case 14: Sidebar Navigation</a>
+    <a href="case-16-onboarding.html">→ Case 16 (next)</a>
+  </div>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+
+</body>
+</html>

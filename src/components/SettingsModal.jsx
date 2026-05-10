@@ -2,7 +2,7 @@ import { editorThemes } from '../editorThemes';
 import * as Dialog from '@radix-ui/react-dialog';
 import { clsx } from 'clsx';
 import * as Select from '@radix-ui/react-select';
-import * as RadioGroup from '@radix-ui/react-radio-group';
+import { useState } from 'preact/hooks';
 
 function CheckboxSetting({
   title,
@@ -38,9 +38,7 @@ function CheckboxSetting({
 }
 
 export default function SettingsModal(props) {
-  const updateSetting = (e) => {
-    console.log(e)(e);
-  };
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <Dialog.Root open={props.open} onOpenChange={props.onClose}>
@@ -48,7 +46,8 @@ export default function SettingsModal(props) {
         <Dialog.Overlay className="bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow fixed inset-0" />
         <Dialog.Content className="text-sm overflow-y-auto text-gray-500 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
           <div className="my-6">
-            <h3 className="text-lg font-semibold mb-3">Editor</h3>
+            <h3 className="text-lg font-semibold mb-1">Settings</h3>
+            <h4 className="text-base font-medium mb-3 text-gray-400">Editor Appearance</h4>
             <div className="flex flex-col my-4">
               <div className="flex justify-between mt-4">
                 <div>Theme</div>
@@ -204,6 +203,18 @@ export default function SettingsModal(props) {
                         <Select.Group>
                           <Select.Item
                             className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="10"
+                          >
+                            <Select.ItemText>10 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="11"
+                          >
+                            <Select.ItemText>11 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
                             value="12"
                           >
                             <Select.ItemText>12 px</Select.ItemText>
@@ -243,6 +254,24 @@ export default function SettingsModal(props) {
                             value="18"
                           >
                             <Select.ItemText>18 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="20"
+                          >
+                            <Select.ItemText>20 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="22"
+                          >
+                            <Select.ItemText>22 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="24"
+                          >
+                            <Select.ItemText>24 px</Select.ItemText>
                           </Select.Item>
                         </Select.Group>
                       </Select.Viewport>
@@ -291,21 +320,46 @@ export default function SettingsModal(props) {
                     });
                   }}
                 />
-                <CheckboxSetting
-                  name="preserveConsoleLogs"
-                  title="Preserves the console logs across your preview refreshes"
-                  label="Preserve console logs"
-                  pref={props.prefs.preserveConsoleLogs}
-                  onChange={(e) => {
-                    props.onChange({
-                      settingName: 'preserveConsoleLogs',
-                      value: e.target.checked,
-                    });
-                  }}
-                />
               </div>
             </div>
+            <hr className="my-4 border-black-700" />
+            <div>
+              <button
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                aria-expanded={showAdvanced}
+              >
+                <span className="material-symbols-outlined text-sm">{showAdvanced ? 'expand_less' : 'expand_more'}</span>
+                Advanced / Developer
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <CheckboxSetting
+                    name="preserveConsoleLogs"
+                    title="Keep browser console output across page reloads — for developers debugging ZenUML integration"
+                    label="Preserve console logs"
+                    pref={props.prefs.preserveConsoleLogs}
+                    onChange={(e) => {
+                      props.onChange({
+                        settingName: 'preserveConsoleLogs',
+                        value: e.target.checked,
+                      });
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
+          {props.onResetDefaults && (
+            <div className="mt-4 pt-3 border-t border-black-700">
+              <button
+                className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors"
+                onClick={props.onResetDefaults}
+              >
+                Reset to defaults
+              </button>
+            </div>
+          )}
           <Dialog.Close asChild>
             <button
               className="hover:bg-black-600/30 text-gray-100 absolute top-7 right-6 inline-flex h-8 w-8 p-1.5 hover:bg-gray-600 appearance-none items-center justify-center rounded-md outline-none"

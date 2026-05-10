@@ -153,7 +153,7 @@ export default class EditorPanel extends Component {
         </div>
 
         {/* Editor Tabs */}
-        <div class="flex-grow overflow-hidden editor-panel-content">
+        <div id="editor" class="flex-grow overflow-hidden editor-panel-content">
           <Tabs
             keyboardShortcutsBtnClickHandler={keyboardShortcutsBtnClickHandler}
             ref={(tabs) => (this.tabsRef = tabs)}
@@ -182,6 +182,7 @@ export default class EditorPanel extends Component {
                     prettierParser: 'babel',
                     emmet: false,
                     theme: 'monokai',
+                    placeholder: '// Start typing — e.g.\nA->B: hello()',
                   }}
                   prefs={prefs}
                   autoComplete={prefs.autoComplete}

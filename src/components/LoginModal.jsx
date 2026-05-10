@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect } from 'preact/hooks';
 import mixpanel from '../services/mixpanel';
 
-export default function LoginModal({ open, onClose }) {
+export default function LoginModal({ open, onClose, reason }) {
   const login = (e) => {
     const provider = e.target.dataset.authProvider;
     mixpanel.track({
@@ -31,14 +31,28 @@ export default function LoginModal({ open, onClose }) {
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="bg-black/50 backdrop-blur data-[state=open]:animate-overlayShow fixed inset-0" />
-        <Dialog.Content className="text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[466px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
-          <Dialog.Title className="mt-10 mb-10 font-medium text-lg text-gray-100">
+        <Dialog.Content
+          aria-modal="true"
+          onOpenAutoFocus={(e) => {
+            // Explicitly focus first login button so keyboard focus stays inside modal
+            e.preventDefault();
+            const firstBtn = e.currentTarget.querySelector('button[data-auth-provider]');
+            if (firstBtn) firstBtn.focus();
+          }}
+          className="text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[466px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none"
+        >
+          <Dialog.Title className="mt-10 mb-4 font-medium text-lg text-gray-100">
             <svg className="h-10 w-10 -mx-1">
               <use xlinkHref="#outline-zenuml" />
             </svg>
             <p className="mt-3">Welcome to ZenUML.com</p>
           </Dialog.Title>
-          <div className="mt-6 w-full">
+          {reason && (
+            <p className="text-sm text-blue-300 bg-blue-900/30 rounded-lg px-3 py-2 mb-4">
+              {reason}
+            </p>
+          )}
+          <div className="mt-2 w-full">
             <div className="flex flex-col gap-3">
               <button
                 type="button"

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 14 – Sidebar Navigation UX · ZenUML UX Gap Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary .stat { text-align: center; }
+    .summary .num { font-size: 2.2rem; font-weight: 800; }
+    .summary .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .gap { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; border-left: 4px solid #334155; }
+    .gap.high { border-left-color: #ef4444; }
+    .gap.medium { border-left-color: #f59e0b; }
+    .gap.low { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.75rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .severity { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    .gap h3 { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+    .gap p { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; }
+    .gap ul { font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem; padding-left: 1.5rem; }
+    .gap ul li { margin-bottom: 0.25rem; }
+    .principles { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .principle { font-size: 0.7rem; background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 1rem; margin-top: 0.75rem; border: 1px solid #1e293b; }
+    .evidence-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: 600; }
+    code { font-family: 'SF Mono', Fira Code, monospace; font-size: 0.82rem; color: #7dd3fc; background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; border: 1px solid #334155; }
+    .recording img { width: 100%; border-radius: 8px; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.82rem; }
+    th { text-align: left; padding: 0.5rem 0.75rem; background: #0f172a; color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .ok { color: #22c55e; }
+    .bad { color: #ef4444; }
+    .warn { color: #f59e0b; }
+    .nav-links { display: flex; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; flex-wrap: wrap; }
+    .nav-links a { color: #60a5fa; text-decoration: none; font-size: 0.875rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">UX Gap Reports</a> › Case 14</div>
+  <h1>Case 14 – Left Sidebar Navigation UX</h1>
+  <p>6 icons, 3 interaction patterns, 0 aria-labels — and one panel that can't be closed</p>
+</header>
+
+<div class="container">
+
+  <div class="summary">
+    <div class="stat"><div class="num" style="color:#ef4444">2</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">2</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">6</div><div class="label">Icons audited</div></div>
+  </div>
+
+  <div class="recording">
+    <div class="section-title">Session Recording</div>
+    <p style="color:#64748b; font-size:0.875rem;">Walkthrough of all 6 sidebar icons — click behaviors, panel states, modals, external links.</p>
+    <img src="ux-case-14-sidebar-nav.gif" alt="Sidebar navigation UX recording">
+  </div>
+
+  <!-- Sidebar icon inventory -->
+  <div style="margin-bottom:2rem;">
+    <div class="section-title">Sidebar Icon Inventory</div>
+    <div class="evidence">
+      <table>
+        <tr>
+          <th>Icon</th><th>Title</th><th>Aria-label</th><th>Action</th><th>Behavior</th>
+        </tr>
+        <tr>
+          <td>folder_open</td>
+          <td>My Library</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td>Opens inline panel, replaces editor</td>
+        </tr>
+        <tr>
+          <td>code_blocks</td>
+          <td>Code Editor</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td class="bad">Inert when Library panel is open</td>
+        </tr>
+        <tr>
+          <td>keyboard</td>
+          <td>Keyboard Shortcuts</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td>Opens modal overlay</td>
+        </tr>
+        <tr>
+          <td>quick_reference</td>
+          <td>Cheatsheet</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td>Opens modal overlay</td>
+        </tr>
+        <tr>
+          <td>menu_book</td>
+          <td>Language Guide</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td class="warn">Opens external URL in new tab (no indicator)</td>
+        </tr>
+        <tr>
+          <td>settings</td>
+          <td>Settings</td>
+          <td class="bad">null</td>
+          <td>Click</td>
+          <td>Opens settings modal</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">Identified Gaps</div>
+
+  <!-- GAP-14-001 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-14-001</span>
+      <span class="severity sev-high">High</span>
+      <h3>All 6 sidebar icons missing aria-label — screen reader announces ligature text</h3>
+    </div>
+    <p>Every sidebar button relies solely on the HTML <code>title</code> attribute for labeling. The button text content is the raw Material Icons ligature string (<code>folder_open</code>, <code>code_blocks</code>, <code>quick_reference</code>, etc.). A screen reader announces these strings verbatim, providing zero semantic value.</p>
+    <ul>
+      <li><code>title</code> attributes are not announced by most screen readers when focus is managed</li>
+      <li><code>title</code> tooltips are invisible on touch/mobile devices</li>
+      <li>Screen reader output: "folder underscore open, button" instead of "My Library, button"</li>
+      <li>WCAG 4.1.2 Name, Role, Value — Level A failure for all 6 interactive elements</li>
+    </ul>
+    <div class="evidence">
+      <div class="evidence-label">DOM evidence — all 6 icons</div>
+      <code>&lt;button title="My Library"&gt;folder_open&lt;/button&gt;</code><br>
+      <code>&lt;a title="Language Guide" href="..." target="_blank"&gt;menu_book&lt;/a&gt;</code><br>
+      <code>ariaLabel: null</code> on every icon
+    </div>
+    <div class="principles">
+      <span class="principle">WCAG 4.1.2 Name, Role, Value (Level A)</span>
+      <span class="principle">Nielsen #4: Consistency &amp; Standards</span>
+      <span class="principle">Touch accessibility</span>
+    </div>
+  </div>
+
+  <!-- GAP-14-002 -->
+  <div class="gap high">
+    <div class="gap-header">
+      <span class="gap-id">GAP-14-002</span>
+      <span class="severity sev-high">High</span>
+      <h3>Library panel cannot be dismissed — Code Editor icon inert when Library is open</h3>
+    </div>
+    <p>Once "My Library" is opened, the user has no working path back to the Code Editor:</p>
+    <ul>
+      <li>Clicking the "My Library" folder icon again does <strong>not</strong> toggle it closed</li>
+      <li>Clicking the "Code Editor" icon while the Library panel is open does <strong>nothing</strong> — the panel state doesn't change</li>
+      <li>The "Collapse panel" chevron button (‹) visually disappears from the DOM after click but the panel content remains fully visible</li>
+      <li>Escape key closes modals but has no effect on the Library panel</li>
+      <li>No close (×) button on the Library panel itself</li>
+      <li>The only reliable recovery is refreshing the page</li>
+    </ul>
+    <div class="evidence">
+      <div class="evidence-label">Verified interactions — all fail to close Library</div>
+      <table>
+        <tr><th>Action</th><th>Expected</th><th>Actual</th></tr>
+        <tr><td>Click folder icon again</td><td>Closes library</td><td class="bad">No change</td></tr>
+        <tr><td>Click Code Editor icon</td><td>Switches to editor</td><td class="bad">No change</td></tr>
+        <tr><td>Click ‹ Collapse button</td><td>Collapses panel</td><td class="bad">Button disappears, panel stays open</td></tr>
+        <tr><td>Press Escape</td><td>Closes panel</td><td class="bad">No change</td></tr>
+      </table>
+    </div>
+    <div class="principles">
+      <span class="principle">Nielsen #3: User Control &amp; Freedom</span>
+      <span class="principle">Nielsen #1: Visibility of System Status</span>
+      <span class="principle">Interaction trap / dead end</span>
+    </div>
+  </div>
+
+  <!-- GAP-14-003 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-14-003</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>540px dead zone splits sidebar into two visually disconnected icon clusters</h3>
+    </div>
+    <p>The 6 sidebar icons are distributed in two polarised groups with no visual grouping, separator, or label to explain the split:</p>
+    <ul>
+      <li><strong>Top cluster</strong>: My Library (y=61px) + Code Editor (y=119px) — workspace actions</li>
+      <li><strong>Bottom cluster</strong>: Keyboard Shortcuts (y=661px), Cheatsheet (y=719px), Language Guide (y=776px), Settings (y=834px) — help/config</li>
+      <li>~540px gap between clusters with nothing visible — looks broken, not intentional</li>
+      <li>On shorter viewports (&lt;835px tall), Settings (y=834px) is clipped off-screen with no scroll affordance</li>
+      <li>Violates Gestalt Proximity — icons that belong together should sit together; unrelated icons should be separated by a visible divider, not empty space</li>
+    </ul>
+    <div class="evidence">
+      <div class="evidence-label">y-positions from getBoundingClientRect()</div>
+      <code>My Library: y=61 · Code Editor: y=119 · [540px gap] · Keyboard: y=661 · Cheatsheet: y=719 · Language Guide: y=776 · Settings: y=834</code>
+    </div>
+    <div class="principles">
+      <span class="principle">Gestalt: Proximity</span>
+      <span class="principle">Nielsen #4: Consistency &amp; Standards</span>
+      <span class="principle">Responsive layout</span>
+    </div>
+  </div>
+
+  <!-- GAP-14-004 -->
+  <div class="gap medium">
+    <div class="gap-header">
+      <span class="gap-id">GAP-14-004</span>
+      <span class="severity sev-medium">Medium</span>
+      <h3>Same icon strip, three different interaction patterns with no visual differentiation</h3>
+    </div>
+    <p>The 6 icons look identical in style but trigger fundamentally different interaction types, with no affordance distinguishing them:</p>
+    <ul>
+      <li><strong>Panel swap</strong>: My Library replaces the editor in-place</li>
+      <li><strong>Modal</strong>: Keyboard Shortcuts and Cheatsheet open overlay dialogs</li>
+      <li><strong>External link</strong>: Language Guide navigates away to <code>zenuml.com/docs</code> in a new tab — no external link icon (↗), no tooltip warning, no visual distinction</li>
+    </ul>
+    <p>Users cannot predict the outcome of clicking any icon. An external link inside an icon-only sidebar is a particularly dangerous pattern — the user loses context with no warning.</p>
+    <div class="principles">
+      <span class="principle">Nielsen #4: Consistency &amp; Standards</span>
+      <span class="principle">Nielsen #1: Visibility of System Status</span>
+      <span class="principle">Principle of Least Surprise</span>
+    </div>
+  </div>
+
+  <!-- GAP-14-005 -->
+  <div class="gap low">
+    <div class="gap-header">
+      <span class="gap-id">GAP-14-005</span>
+      <span class="severity sev-low">Low</span>
+      <h3>Typo in Cheatsheet: "Asyc message" and naming inconsistency "Cheatsheet" vs "Cheat sheet"</h3>
+    </div>
+    <p>Minor copy quality issues in the help content:</p>
+    <ul>
+      <li>Cheatsheet modal row label reads <strong>"Asyc message"</strong> — missing the 'n' (should be "Async message")</li>
+      <li>Sidebar button title says <code>Cheatsheet</code> (one word); modal header renders "Cheat sheet" (two words) — inconsistent</li>
+      <li>These issues signal reduced QA coverage in help/reference content</li>
+    </ul>
+    <div class="principles">
+      <span class="principle">Nielsen #4: Consistency &amp; Standards</span>
+      <span class="principle">Copy quality</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">← All Cases</a>
+    <a href="case-13-rename.html">← Case 13: Rename UX</a>
+    <a href="case-15-mobile.html">→ Case 15 (next)</a>
+  </div>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+
+</body>
+</html>
