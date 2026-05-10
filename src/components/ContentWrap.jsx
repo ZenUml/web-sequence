@@ -962,8 +962,11 @@ export default class ContentWrap extends Component {
 
   toolboxUpdateToApp(param) {
     trackEvent('ui', 'code', 'toolbox');
-    const code = this.cm.js.getValue();
-    this.cm.js.setValue(codeService.addCode(code, param));
+    const editor = this.cm.js;
+    const code = editor.getValue();
+    editor.setValue(codeService.addCode(code, param));
+    // Ensure editor receives focus after toolbar insert so user can continue typing
+    editor.focus();
   }
 
   async toggleFullscreen() {
