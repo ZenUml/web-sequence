@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 13: Diagram & Page Rename UX</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+    .rename-matrix { background: #0f172a; border-radius: 8px; padding: 1rem; margin: 0.75rem 0; font-size: 0.8rem; }
+    .rename-matrix table { width: 100%; border-collapse: collapse; }
+    .rename-matrix th { color: #64748b; font-weight: 600; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #334155; font-size: 0.7rem; text-transform: uppercase; }
+    .rename-matrix td { padding: 0.3rem 0.5rem; color: #94a3b8; border-bottom: 1px solid #1e293b; font-size: 0.8rem; }
+    .rename-matrix td:first-child { color: #f1f5f9; }
+    .yes { color: #4ade80; } .no { color: #ef4444; } .partial { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 13</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Diagram &amp; Page Rename UX</strong> — title rename discoverability, page tab naming, truncation, empty input &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html">Case 08</a>
+    <a href="case-09-canvas.html">Case 09</a>
+    <a href="case-10-new-diagram.html">Case 10</a>
+    <a href="case-11-undo-redo.html">Case 11</a>
+    <a href="case-12-syntax-errors.html">Case 12</a>
+    <a href="case-13-rename.html" style="border-color:#60a5fa;color:#60a5fa">Case 13: Rename</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">2</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Page tabs cannot be renamed at all — users with multiple pages are stuck with "Page 1", "Page 2" forever</h3>
+    <p>Testing confirmed: <strong>double-click on a page tab does nothing</strong>. Right-click produces the browser's native text selection toolbar, not a ZenUML context menu. DOM inspection confirms the page tabs are plain <code>&lt;button&gt;</code> elements with no <code>contentEditable</code>, no <code>ondblclick</code> handler, and no rename affordance of any kind. Users who create multi-page diagrams have no way to distinguish "Page 1" from "Page 2" by name — forcing them to click each tab and read its content to identify it.</p>
+    <p>Additionally, the diagram title rename — which <em>does</em> work — is hidden behind a hover-only pencil icon that requires clicking a specific 16×16px target. Clicking the title text itself does nothing. This is a discoverability failure that means many users never find the rename feature at all.</p>
+  </div>
+
+  <section style="margin-bottom: 1.5rem;">
+    <h2>🧪 Rename Interaction Matrix</h2>
+    <div class="rename-matrix">
+      <table>
+        <tr><th>Interaction</th><th>Target</th><th>Result</th></tr>
+        <tr><td>Click title text</td><td>Header "My Auth Flow Diagram"</td><td class="no">✗ Nothing — must click pencil icon specifically</td></tr>
+        <tr><td>Click pencil icon (hover to reveal)</td><td>Header ✏ icon</td><td class="yes">✓ Opens inline text input for rename</td></tr>
+        <tr><td>Double-click page tab</td><td>"Page 1" bottom tab</td><td class="no">✗ Nothing</td></tr>
+        <tr><td>Right-click page tab</td><td>"Page 1" bottom tab</td><td class="no">✗ Browser text-select toolbar (no app menu)</td></tr>
+        <tr><td>Press Escape during rename</td><td>Title input field</td><td class="yes">✓ Restores previous title (good recovery)</td></tr>
+        <tr><td>Delete all text + press Enter</td><td>Title input field</td><td class="partial">~ Accepts blank title — no validation</td></tr>
+        <tr><td>Type 107-character title</td><td>Title input field</td><td class="partial">~ Shows only tail end — no start indicator</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — hover pencil icon → rename diagram → blank title → long title truncation → failed page tab rename attempts</h2>
+      <img src="ux-case-13-rename.gif" alt="Diagram and page rename UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-13-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Page tabs cannot be renamed — no UI affordance exists for page-level naming</h3>
+        <p>Multi-page ZenUML diagrams permanently label their pages "Page 1", "Page 2", etc. with no way to rename them. Testing exhausted all standard interactions: double-click (nothing), right-click (browser toolbar, no app menu), DOM inspection (plain buttons, no contentEditable or event handlers). Users who use pages to separate diagram sections — e.g. "Login Flow", "Checkout Flow", "Error Handling" — must use workarounds: reading page content to identify them, or maintaining a mental map of which number corresponds to which concept. Figma, Notion, and every multi-page tool that exists supports page renaming as a core feature.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Fitts's Law — target labels must be readable · Information architecture</div>
+        <div class="fix">Add page rename via double-click on the tab text (universal standard). Implement an inline text input that appears on double-click, pre-selected with the current name, confirmed by Enter and cancelled by Escape. Also add a right-click context menu with "Rename", "Delete", "Duplicate" options for discoverability. Tab names should persist to localStorage and cloud saves. The fix is a contentEditable span or input overlay on the button — a standard pattern used by Chrome, VS Code, Notion, and Figma.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-13-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Diagram title rename is hidden behind a hover-only pencil icon — clicking the title text does nothing</h3>
+        <p>The diagram title rename workflow requires: (1) hovering over the title in the header to reveal the pencil icon, (2) clicking specifically on that ~16×16px icon — clicking the title text itself has no effect. During testing, clicking the title area without perfect icon targeting does nothing, providing no feedback that an editable field exists. Users who don't hover precisely enough never see the pencil. Users who click the title text expect it to become editable (standard in tools like Notion, Figma, Google Docs). The current UX forces pixel-precision discovery of a hidden affordance.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Nielsen #4 — Consistency and standards · Fitts's Law — target size</div>
+        <div class="fix">Make the entire title text area clickable to activate rename (not just the pencil icon). Show the pencil icon persistently (not only on hover) or replace it with a visible edit indicator. A subtitle label "Click to rename" or a subtle underline on the title signals editability without adding UI clutter. This is how Google Docs ("Click to add a title"), Figma, Notion, and Obsidian handle document title editing.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-13-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Long titles display only the tail — "…overflow or truncation issues" not "A very long diagram…"</h3>
+        <p>When a diagram title exceeds the header width, the field scrolls to show the <em>end</em> of the string rather than the beginning. The result is a header displaying <em>"low or truncation issues"</em> — the final words of a 107-character title — with no indication that the title starts with different text, and no ellipsis or fade. Users see a fragment that looks like an incomplete or corrupted title. Industry standard for overflowing titles is to show the beginning with a trailing ellipsis ("A very long diagram t…") so the identifying start is always visible. Additionally, hovering the title shows no tooltip with the full name.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status · Information scent — beginnings of titles are more identifying than endings</div>
+        <div class="fix">When the title overflows in display mode, truncate at the end with an ellipsis: <code>text-overflow: ellipsis; overflow: hidden; white-space: nowrap</code>. Add <code>title</code> attribute with full text for hover tooltip. In edit mode, scrolling the input to the right is acceptable — but display mode must always show the start. Set a soft character limit (e.g. 60 chars) with a counter during editing, similar to GitHub repo descriptions.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-13-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Empty title is accepted — clearing the name and pressing Enter produces a blank untitled diagram</h3>
+        <p>Deleting all characters from the title field and pressing Enter commits the empty string as the diagram name. The header shows a bare empty input box — visually indistinguishable from the rename-mode state — with no placeholder, no fallback name, and no error. Pressing Escape correctly restores the previous title, but this recovery path requires the user to know to press Escape before clicking elsewhere (clicking elsewhere while empty does not restore). An empty diagram name breaks library display, share links, and any UI surface that references the diagram by name.</p>
+        <div class="principle">Nielsen #5 — Error prevention · Input validation</div>
+        <div class="fix">Validate the title field on submit: if the field is empty or whitespace-only, either (a) restore the previous title and show a brief inline message "Diagram title cannot be empty", or (b) replace with a default like "Untitled Diagram". Show a character counter and placeholder text ("Enter diagram name…") inside the field during editing. This is standard in Google Docs (auto-restores "Untitled document"), Figma (reverts on blur if empty), and Notion.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-13-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Auto-generated names ("Untitled 10-5-4:8") are machine-readable timestamps, not human-readable defaults</h3>
+        <p>New diagrams receive names like "Untitled 10-5-4:8" — which encodes a date/index in a format that is neither a natural language name nor a recognizable date format. Users who create multiple diagrams without renaming them see a list of cryptic timestamps in their Library. The pattern is not explained anywhere in the UI. "Untitled" is a clear and universal fallback; "Untitled 10-5-4:8" is confusing because the numbers suggest meaning but require decoding. Compare: GitHub creates repos named after your username; Notion creates "Untitled"; Figma creates "Untitled".</p>
+        <div class="principle">Nielsen #2 — Match between system and real world · Plain language principle</div>
+        <div class="fix">Default new diagram names to "Untitled" or "New Diagram" — simple, human-readable, internationally recognizable. If deduplication is needed, use "Untitled (2)", "Untitled (3)". Avoid exposing timestamps or internal counters in user-facing names. The rename prompt (or title click-to-edit) can appear automatically on first save to encourage meaningful names, similar to how Figma prompts "Give your frame a name" after creating from a template.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

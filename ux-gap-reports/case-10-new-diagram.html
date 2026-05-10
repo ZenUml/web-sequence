@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 10: New Diagram Creation Flow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+    .flow-steps { background: #0f172a; border-radius: 8px; padding: 1rem; margin: 0.75rem 0; }
+    .flow-steps ol { padding-left: 1.25rem; }
+    .flow-steps li { font-size: 0.85rem; color: #94a3b8; padding: 0.25rem 0; }
+    .flow-steps li strong { color: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 10</span>
+    <span class="badge badge-gaps">6 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>New Diagram Creation Flow</strong> — blank vs template, discoverability, silent data loss &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html">Case 08</a>
+    <a href="case-09-canvas.html">Case 09</a>
+    <a href="case-10-new-diagram.html" style="border-color:#60a5fa;color:#60a5fa">Case 10: New Diagram</a>
+    <a href="case-11-undo-redo.html">Case 11</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">3</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">6</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Critical: "Start a blank creation" is a lie — it loads 18 lines of pre-filled code</h3>
+    <p>The new-diagram modal offers two paths: <strong>"Start a blank creation"</strong> (outlined button, prominent) and 4 style-named templates. Clicking "Start a blank creation" does <em>not</em> open an empty editor — it loads an 18-line pre-filled <code>BookLibService</code> / <code>Session</code> / <code>BookRepository</code> example with try/catch/finally blocks. The label is an outright misrepresentation of what the action does.</p>
+    <p>Meanwhile, selecting the <strong>"Blue" template</strong> silently replaces any unsaved work with a complex multi-participant order management system — with no confirmation dialog and no save warning. The only indication is a brief toast: <em>"Advanced was forked"</em> — developer jargon that tells non-technical users nothing.</p>
+  </div>
+
+  <section style="margin-bottom: 1.5rem;">
+    <h2>🔁 Tested User Flow</h2>
+    <div class="flow-steps">
+      <ol>
+        <li><strong>Hover "+ New" button</strong> → no tooltip appears</li>
+        <li><strong>Click "+ New"</strong> → modal opens with "Start a blank creation" + 4 template icons (Basic, Black &amp; White, Blue, StarUML) + tweet solicitation</li>
+        <li><strong>Hover template thumbnails</strong> → no content preview, only style name</li>
+        <li><strong>Press Escape</strong> → modal dismisses (no visible X button observed)</li>
+        <li><strong>Reopen → click "Blue"</strong> → loads complex order management system; toast: <em>"Advanced was forked"</em>; tab renamed "(Forked) Advanced"</li>
+        <li><strong>Reopen → click "Start a blank creation"</strong> → loads 18-line pre-filled REST API example; toast: "New item created"; tab: "Untitled 10-5-2:0"</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — new diagram modal, template selection, "blank" creation revealing pre-filled content, data loss</h2>
+      <img src="ux-case-10-new-diagram.gif" alt="New diagram creation flow UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-10-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>"Start a blank creation" loads a complex 18-line pre-filled example, not a blank editor</h3>
+        <p>The most prominent call-to-action in the new-diagram modal is labeled <strong>"Start a blank creation"</strong> with an outlined button style that implies a primary action. Clicking it loads a pre-written example: <code>BookLibService</code> calling <code>Session.findBooks()</code> and <code>BookRepository</code> with <code>try/catch/finally</code> — 18 lines of code involving 4 participants. A new user who wants a blank canvas is immediately confronted with unfamiliar example code they must manually delete before starting their own work.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Nielsen #1 — Visibility of system status · Label-action alignment</div>
+        <div class="fix">Either: (a) rename the button to "Start from example" to accurately describe what happens, or (b) actually deliver a blank editor with a single blank line when this button is clicked. If an example is pedagogically valuable, offer it as a named template ("Library System Example") alongside the truly blank option. The distinction matters — a user starting their own diagram should not be burdened with deleting someone else's work.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-10-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Template thumbnails show style icons only — no content preview before committing</h3>
+        <p>The 4 templates (Basic, Black &amp; White, Blue, StarUML) show only a small icon representing the visual style (color scheme, line thickness). There is no way to preview the <em>content</em> of each template before clicking. Testing revealed that "Blue" is actually an internal template named "Advanced" — a multi-participant order management system with <code>OrderService</code>, <code>PaymentService</code>, <code>InventoryService</code>. Users who pick "Blue" because they want a blue color scheme get a complex business flow they didn't expect. Template selection is a blind commitment.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Nielsen #3 — User control and freedom · Progressive disclosure</div>
+        <div class="fix">Show a hover preview panel (right side of modal) with the rendered diagram when hovering a template. Display: (1) the template's internal name ("Advanced"), (2) a small diagram thumbnail, (3) participant count and use-case description. Figma, Notion, and Miro all show content previews before template commitment. At minimum, surface the internal name alongside the color name so users know what content they're getting.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-10-003</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No save warning before replacing current diagram — unsaved work is silently discarded</h3>
+        <p>Selecting any template or "Start a blank creation" immediately replaces the current diagram without checking for unsaved changes. During testing, the active editor contained the "(Forked) Advanced" diagram — work that had just been created. Clicking "Start a blank creation" discarded it instantly, with no confirmation dialog, no "Save changes?" prompt, and no undo path back to the previous state. The only indication anything happened was a toast: "New item created." Any user who clicked "+ New" by accident or curiosity loses their work permanently.</p>
+        <div class="principle">Nielsen #3 — User control and freedom · Nielsen #5 — Error prevention · Reversibility</div>
+        <div class="fix">Before replacing the current diagram, check if there are unsaved changes. If yes, show a confirmation: "You have unsaved changes in [tab name]. Discard and create new diagram?" with Cancel and Discard buttons. This is standard in every code editor, document editor, and diagramming tool (Figma, Lucidchart, draw.io). The behavior should also be reversible via Undo (Cmd+Z) even if no modal is shown.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-10-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Toast message "was forked" uses developer jargon opaque to end users</h3>
+        <p>When a template is selected, the toast notification reads: <em>"Advanced was forked"</em>. The term "forked" is borrowed from software version control (git fork) and means nothing to non-developer users. A marketing designer, business analyst, or student would not know what "forked" means in this context — does it mean copied, modified, saved, broken? Even technical users might expect "forked" to mean the template remains linked to an upstream source they can pull updates from (as in GitHub forks). The term is misleading and alienating to a broad user base.</p>
+        <div class="principle">Nielsen #2 — Match between system and real world · Plain language principle</div>
+        <div class="fix">Replace "was forked" with plain language: <em>"Advanced template opened as a new diagram"</em> or simply <em>"New diagram created from Advanced template."</em> The word "forked" should never appear in user-facing UI — it belongs in developer console logs or commit messages, not product notifications.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-10-005</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Marketing tweet solicitation embedded inside the creation modal — wrong context</h3>
+        <p>The new-diagram modal contains a social media call-to-action asking users to tweet about ZenUML. This appears directly alongside the template selection UI, competing for visual attention in a context where the user has a specific goal: create a new diagram. Embedding marketing asks inside task-completion flows violates the single-responsibility principle of UI screens and creates cognitive friction at the worst possible moment — when the user is about to start working.</p>
+        <div class="principle">Nielsen #8 — Aesthetic and minimalist design · Task-context alignment</div>
+        <div class="fix">Move social media asks to post-action moments (after export, after sharing), to onboarding completion, or to an "About" / settings page. Never interrupt a task-starting flow with marketing. If tweet solicitation is required, make it a dismissable banner elsewhere in the UI — not inside a creation dialog that should stay focused on one job: helping users start a new diagram quickly.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-10-006</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Only 4 style-variant templates — no use-case or domain-specific templates</h3>
+        <p>The template library offers 4 options: Basic, Black &amp; White, Blue, StarUML. All 4 appear to be style variants of the same or similar content — they differentiate by color scheme and visual style, not by use case or domain. There are no domain-specific starter templates for common sequence diagram scenarios: API authentication flow, microservices communication, e-commerce checkout, CI/CD pipeline, user login sequence, WebSocket handshake. These are the diagrams developers actually draw most often.</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use · Accelerators for expert users</div>
+        <div class="fix">Add 6–10 use-case templates covering common developer scenarios: API auth (OAuth2/JWT), REST CRUD, WebSocket handshake, login flow, microservice call chain, database transaction. Label them by use case, not by visual style. Style selection can be a separate step or theme preference. Notion, Confluence, and Miro all provide domain-specific templates as a primary discovery mechanism for new users.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

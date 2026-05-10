@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case 19 — Tooltip &amp; Contextual Help UX · ZenUML UX Gaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    .breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+    .breadcrumb a { color: #60a5fa; text-decoration: none; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.4rem; font-size: 0.9rem; }
+    .container { max-width: 900px; margin: 2.5rem auto; padding: 0 2rem; }
+    .summary-bar { display: flex; gap: 2rem; background: #1e293b; border-radius: 12px; padding: 1.25rem 2rem; margin-bottom: 2.5rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; }
+    .stat .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gif-wrap { margin-bottom: 2.5rem; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+    .gif-wrap img { width: 100%; display: block; }
+    .gif-caption { background: #1e293b; padding: 0.75rem 1rem; font-size: 0.8rem; color: #64748b; }
+    .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 1rem; }
+    .gaps { display: grid; gap: 1.25rem; }
+    .gap-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; border-left: 4px solid #334155; }
+    .gap-card.high   { border-left-color: #ef4444; }
+    .gap-card.medium { border-left-color: #f59e0b; }
+    .gap-card.low    { border-left-color: #60a5fa; }
+    .gap-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .gap-id { font-size: 0.7rem; font-weight: 700; color: #475569; font-family: monospace; }
+    .sev { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+    .sev-high   { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low    { background: #0f2042; color: #60a5fa; }
+    .gap-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; flex: 1; }
+    .gap-body p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .gap-body p:last-child { margin-bottom: 0; }
+    .gap-body strong { color: #e2e8f0; }
+    .principle { display: inline-block; font-size: 0.65rem; font-weight: 600; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 0.1rem 0.4rem; margin-right: 0.25rem; color: #94a3b8; }
+    .evidence { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.78rem; color: #7dd3fc; border: 1px solid #1e3a5f; }
+    .fix { background: #0a1f0a; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.8rem; color: #86efac; border: 1px solid #14532d; }
+    .fix::before { content: "Suggested fix: "; font-weight: 700; }
+    .matrix { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.8rem; }
+    .matrix th { background: #0f172a; color: #64748b; padding: 0.4rem 0.75rem; text-align: left; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+    .matrix td { padding: 0.4rem 0.75rem; border-top: 1px solid #1e293b; color: #94a3b8; }
+    .matrix td:first-child { color: #e2e8f0; font-weight: 500; }
+    .ok { color: #4ade80; }
+    .fail { color: #ef4444; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="breadcrumb"><a href="index.html">← All Cases</a></div>
+  <h1>Case 19 — Tooltip &amp; Contextual Help UX</h1>
+  <p>Systematic hover audit · 39 interactive elements surveyed · tooltip presence, mechanism consistency, and content quality</p>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="num" style="color:#ef4444">1</div><div class="label">High</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">3</div><div class="label">Medium</div></div>
+    <div class="stat"><div class="num" style="color:#60a5fa">1</div><div class="label">Low</div></div>
+    <div class="stat"><div class="num" style="color:#f8fafc">5</div><div class="label">Total gaps</div></div>
+    <div class="stat"><div class="num" style="color:#94a3b8">39</div><div class="label">Elements audited</div></div>
+  </div>
+
+  <div class="gif-wrap">
+    <img src="ux-case-19-tooltip-help.gif" alt="Tooltip audit walkthrough — hovering over toolbar, canvas footer, and sidebar controls">
+    <div class="gif-caption">Hover audit across all UI zones — toolbar buttons show no tooltip; canvas footer controls (ⓘ, ☑ 1.2.3, zoom icons) are equally silent.</div>
+  </div>
+
+  <div class="section-title">Gaps Found</div>
+  <div class="gaps">
+
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-id">GAP-19-001</span>
+        <span class="sev sev-high">High</span>
+        <span class="gap-title">7 toolbar insert buttons: zero tooltip, no keyboard shortcut hint, no syntax preview</span>
+      </div>
+      <div class="gap-body">
+        <p>All 7 insert buttons in the editor toolbar (New participant, Async message, Sync message, Return value, Self message, New instance, ConditionalAlt) have <code>title=null</code>, <code>aria-label=null</code>, and no custom tooltip component. The visible text label alone leaves users without:</p>
+        <p>1. <strong>Keyboard shortcut</strong> — is there one? Can I trigger "Async message" from the keyboard?<br>
+        2. <strong>Resulting syntax</strong> — hovering "Async message" should preview <code>A -&gt;&gt; B: message</code><br>
+        3. <strong>Insertion behavior</strong> — does it insert at cursor or append at end?</p>
+        <p>Competing tools (Mermaid Live Editor, draw.io, PlantUML Editor) all show syntax snippets in toolbar tooltips. New ZenUML users must click and inspect the inserted code to reverse-engineer the syntax.</p>
+        <div class="evidence">
+// JS audit result (all 7 toolbar buttons):
+{ text: "New participant",  title: null, ariaLabel: null }
+{ text: "Async message",   title: null, ariaLabel: null }
+{ text: "Sync message",    title: null, ariaLabel: null }
+{ text: "Return value",    title: null, ariaLabel: null }
+{ text: "Self message",    title: null, ariaLabel: null }
+{ text: "New instance",    title: null, ariaLabel: null }
+{ text: "ConditionalAlt",  title: null, ariaLabel: null }
+        </div>
+        <div class="fix">Add a <code>title</code> attribute with the pattern <code>"[Label] — inserts: [syntax snippet]"</code>. Example: <code>title="Async message — inserts: A -&gt;&gt; B: message"</code>. For a richer experience, replace with a Radix UI Tooltip showing the syntax with syntax highlighting and the keyboard shortcut if one exists.</div>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+        <span class="principle">Nielsen #4 Consistency</span>
+        <span class="principle">Nielsen #1 Visibility</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-19-002</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Inconsistent tooltip mechanism across UI zones — 3 different patterns, one invisible</span>
+      </div>
+      <div class="gap-body">
+        <p>Three different tooltip strategies coexist with inconsistent behavior for sighted mouse users:</p>
+        <table class="matrix">
+          <tr><th>Zone</th><th>Mechanism</th><th>Visual tooltip?</th></tr>
+          <tr><td>Sidebar icons</td><td><code>title</code> attribute</td><td class="ok">✓ Yes (native, ~1s delay)</td></tr>
+          <tr><td>Header buttons</td><td><code>aria-label</code> only</td><td class="fail">✗ No (screen readers only)</td></tr>
+          <tr><td>Toolbar buttons</td><td>Visible text label</td><td class="fail">✗ No tooltip at all</td></tr>
+          <tr><td>Canvas footer</td><td>Nothing</td><td class="fail">✗ No tooltip at all</td></tr>
+          <tr><td>Bottom bar (Present/PNG)</td><td>Nothing</td><td class="fail">✗ No tooltip at all</td></tr>
+        </table>
+        <p style="margin-top:0.75rem"><strong>Impact:</strong> Users learn that hovering the sidebar icons works, then get zero feedback when hovering anywhere else. <code>aria-label</code> on header buttons ("Start a new creation", "Share diagram link") is consumed only by screen readers — sighted mouse users never see it. The pattern is broken.</p>
+        <div class="fix">Standardize on one tooltip mechanism app-wide. Recommended: Radix UI Tooltip on every interactive element, with a consistent 300ms open delay and 100ms close delay. The existing Radix UI dependency is already in the project — use it.</div>
+        <span class="principle">Nielsen #4 Consistency</span>
+        <span class="principle">WCAG 1.3.1</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-19-003</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">Canvas footer controls (ⓘ, ☑ 1.2.3, zoom icons) have no tooltip — "1.2.3" is cryptic</span>
+      </div>
+      <div class="gap-body">
+        <p>The diagram canvas footer contains 5 interactive controls with zero tooltip:</p>
+        <p>• <strong>ⓘ</strong> — what does this show? (appears to open a tips overlay)<br>
+        • <strong>☑ 1.2.3</strong> — completely cryptic; hovering reveals nothing. It toggles sequence step numbers, but this is undiscoverable without clicking.<br>
+        • <strong>⊕ / ⊖</strong> — zoom icons with no label or shortcut hint<br>
+        • <strong>100%</strong> — clicking this resets zoom, but hover reveals no hint</p>
+        <p>The "1.2.3" checkbox is the worst offender — even an experienced UML author might not know what this does on first sight. The label reads as a version number, not as "show/hide sequence numbers."</p>
+        <div class="fix">Add <code>title</code> attributes: <code>title="Show/hide step numbers"</code> on the 1.2.3 checkbox, <code>title="Tips &amp; shortcuts"</code> on ⓘ, <code>title="Zoom in (Ctrl+Plus)"</code> on ⊕, <code>title="Zoom out (Ctrl+Minus)"</code> on ⊖, <code>title="Reset zoom to 100%"</code> on the percentage text. Replace the 1.2.3 label with "1.2" or better — a sequence-number icon — and add a visible label "Step numbers" next to the checkbox.</div>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+        <span class="principle">Nielsen #1 Visibility</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-id">GAP-19-004</span>
+        <span class="sev sev-medium">Medium</span>
+        <span class="gap-title">No keyboard shortcut hints in any tooltip across the entire app</span>
+      </div>
+      <div class="gap-body">
+        <p>Even the 9 elements that do have tooltips (sidebar icons, header buttons) include no keyboard shortcut information. Modern productivity tools universally surface shortcuts in tooltips — VS Code, Figma, Linear, and Notion all follow the pattern: <em>"Action Name (Shortcut)"</em>.</p>
+        <p>ZenUML has a dedicated Keyboard Shortcuts panel (accessible via the sidebar) but zero in-context shortcut hints. Users must remember to open that panel separately. For frequent actions like "New diagram" (Cmd+N if supported), the shortcut is entirely invisible at the point of action.</p>
+        <div class="evidence">
+// Example of what tooltips could say:
+sidebar "My Library":         "My Library"              → ❌ no shortcut
+sidebar "Keyboard Shortcuts": "Keyboard Shortcuts"      → ❌ ironic: no shortcut hint
+header  "New":                "Start a new creation"    → ❌ should say "(Cmd+N)"
+        </div>
+        <div class="fix">Append the keyboard shortcut (if one exists) to every tooltip: <code>title="My Library (Ctrl+B)"</code>. For the Keyboard Shortcuts icon specifically, the tooltip <code>"Keyboard Shortcuts (Ctrl+/)"</code> would be self-documenting. Use a consistent format: label first, shortcut in parentheses.</div>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+        <span class="principle">Nielsen #4 Consistency</span>
+      </div>
+    </div>
+
+    <div class="gap-card low">
+      <div class="gap-header">
+        <span class="gap-id">GAP-19-005</span>
+        <span class="sev sev-low">Low</span>
+        <span class="gap-title">Bottom bar action buttons (Present, PNG, Copy PNG) lack descriptive tooltips</span>
+      </div>
+      <div class="gap-body">
+        <p>The three action buttons in the bottom-right corner of the app — "Present", "PNG", and "Copy PNG" — have no tooltip. "Present" is particularly ambiguous: does it open a link? Enter fullscreen? Launch a slideshow? A user who hasn't tried it has no pre-click information about the outcome.</p>
+        <p>"PNG" is slightly better (the format name is self-explanatory to technical users), but new users may not know whether clicking triggers a download, opens a dialog, or copies to clipboard.</p>
+        <div class="evidence">
+// Confirmed zero title/ariaLabel on all three:
+{ text: "Present",   title: null, ariaLabel: null }
+{ text: "PNG",       title: null, ariaLabel: null }
+{ text: "Copy PNG",  title: null, ariaLabel: null }
+        </div>
+        <div class="fix">Add descriptive titles: <code>title="Enter presentation mode (fullscreen)"</code>, <code>title="Download diagram as PNG image"</code>, <code>title="Copy diagram PNG to clipboard"</code>. These would disambiguate before the user clicks — especially important since PNG and Copy PNG look visually similar.</div>
+        <span class="principle">Nielsen #1 Visibility</span>
+        <span class="principle">Nielsen #6 Recognition over Recall</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Case 19 of the ZenUML UX Gap Analysis Loop &nbsp;·&nbsp; Generated 2026-05-10
+</footer>
+
+</body>
+</html>

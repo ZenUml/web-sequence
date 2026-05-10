@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenUML DX — UX Gap Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark">DX</div>
+      <div>
+        <h1>ZenUML DevExperience</h1>
+        <p class="tagline">UX gap tracker · evidence-driven · ready for the backlog</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span id="generated-date" class="meta-tag"></span>
+      <a class="meta-tag link" href="../ux-gap-reports/index.html">Original reports →</a>
+    </div>
+  </div>
+</header>
+
+<section class="kpis container">
+  <div class="kpi">
+    <div class="kpi-num" id="kpi-total">—</div>
+    <div class="kpi-label">Total gaps</div>
+  </div>
+  <div class="kpi" data-sev="high">
+    <div class="kpi-num kpi-high" id="kpi-high">—</div>
+    <div class="kpi-label">High severity</div>
+  </div>
+  <div class="kpi" data-sev="medium">
+    <div class="kpi-num kpi-medium" id="kpi-medium">—</div>
+    <div class="kpi-label">Medium severity</div>
+  </div>
+  <div class="kpi" data-sev="low">
+    <div class="kpi-num kpi-low" id="kpi-low">—</div>
+    <div class="kpi-label">Low severity</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-num" id="kpi-cases">—</div>
+    <div class="kpi-label">Cases audited</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-num" id="kpi-principles">—</div>
+    <div class="kpi-label">Principles cited</div>
+  </div>
+</section>
+
+<section class="filters container">
+  <div class="search-row">
+    <input type="search" id="search-input" placeholder="Search gaps — title, description, evidence, fix…" autocomplete="off">
+    <span id="result-count" class="result-count">—</span>
+  </div>
+  <div class="filter-row">
+    <div class="filter-group">
+      <span class="filter-label">Severity</span>
+      <div class="pill-group" id="filter-severity">
+        <button class="pill active" data-value="all">All</button>
+        <button class="pill pill-high" data-value="high">High</button>
+        <button class="pill pill-medium" data-value="medium">Medium</button>
+        <button class="pill pill-low" data-value="low">Low</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Case</span>
+      <select id="filter-case"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Principle</span>
+      <select id="filter-principle"></select>
+    </div>
+    <button class="reset-btn" id="reset-filters">Reset</button>
+  </div>
+</section>
+
+<main class="container" id="gap-list"></main>
+
+<dialog id="gap-modal" class="gap-modal">
+  <div class="modal-content" id="modal-content"></div>
+</dialog>
+
+<footer class="site-footer">
+  <span>ZenUML DX · derived from <span id="footer-cases">—</span> UX cases · <span id="footer-gaps">—</span> gaps tracked</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

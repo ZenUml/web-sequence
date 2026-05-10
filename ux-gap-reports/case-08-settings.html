@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 08: Settings Modal & Editor Preferences</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.4rem; margin: 0.75rem 0; background: #0f172a; border-radius: 8px; padding: 0.75rem; }
+    .theme-name { font-size: 0.7rem; font-family: monospace; color: #64748b; background: #1e293b; border-radius: 4px; padding: 0.25rem 0.5rem; text-align: center; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0; }
+    .comp-bad { background: #1a0a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #ef444422; }
+    .comp-good { background: #0a1a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #4ade8022; }
+    .comp-bad h4 { font-size: 0.7rem; color: #ef4444; margin-bottom: 0.3rem; }
+    .comp-good h4 { font-size: 0.7rem; color: #4ade80; margin-bottom: 0.3rem; }
+    .comp-bad p, .comp-good p { font-size: 0.8rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 08</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Settings Modal &amp; Editor Preferences</strong> — theme picker, font options, toggle settings, debug exposure &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html" style="border-color:#60a5fa;color:#60a5fa">Case 08: Settings</a>
+    <a href="case-09-canvas.html">Case 09</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">1</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">3</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>49 themes, zero visual previews — blind selection from cryptic names</h3>
+    <p>The Theme dropdown contains <strong>49 editor themes</strong> listed alphabetically by internal code name: <code>3024-day</code>, <code>abcdef</code>, <code>base2tone-meadow-dark</code>, <code>colorforth</code>, <code>icecoder</code>, <code>liquibyte</code>. These names carry no visual information. Selecting a theme applies it immediately (a "Setting saved" toast confirms auto-save), but the modal covers the editor — users cannot preview the effect without closing the dialog. They must pick-and-close, then open settings again if unsatisfied, repeating up to 49 times to find a theme they like.</p>
+    <p>Discovered positive: theme switching is instant and auto-saved. A live-preview mini-panel inside the modal could make this excellent.</p>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — settings gear → theme picker (49 options) → font family → font size → toggle inspection</h2>
+      <img src="ux-case-08-settings.gif" alt="Settings modal UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-08-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>49 themes with no preview — must close modal to see effect, modal covers editor during selection</h3>
+        <p>The theme dropdown lists 49 CodeMirror themes by internal code name with no color swatches, no preview panel, and no live-preview while hovering. Selecting a theme auto-saves and applies it instantly — but the settings modal sits on top of the editor, blocking the view. Users must dismiss the modal to see whether the theme looks good, then re-open settings to change it again. With 49 options, iterating through themes takes significant effort.</p>
+        <div class="theme-grid">
+          <span class="theme-name">3024-day</span><span class="theme-name">3024-night</span><span class="theme-name">abcdef</span>
+          <span class="theme-name">ambiance</span><span class="theme-name">base2tone-meadow-dark</span><span class="theme-name">base16-dark</span>
+          <span class="theme-name">bespin</span><span class="theme-name">cobalt</span><span class="theme-name">colorforth</span>
+          <span class="theme-name">dracula</span><span class="theme-name">icecoder</span><span class="theme-name">liquibyte</span>
+          <span class="theme-name">monokai</span><span class="theme-name">solarized dark</span><span class="theme-name">zenburn</span>
+          <span class="theme-name" style="color:#475569">+ 34 more…</span>
+        </div>
+        <div class="principle">Nielsen #1 — Visibility of system status · Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Show a small color swatch next to each theme name (background + text + keyword colors). Or add a live mini-preview panel in the modal showing "A→B: hello()" in the selected theme. VS Code, JetBrains, and GitHub Codespaces all show real-time theme previews. The infrastructure already supports instant switching — the only missing piece is a visible preview.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-08-002</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Settings modal titled "Editor" — gear icon conventionally means "Settings", not editor-specific config</h3>
+        <p>The gear icon at the bottom of the sidebar universally signals "Settings" or "Preferences" in software UI (VS Code, Figma, Linear, Notion, GitHub). Opening it reveals a modal titled <strong>"Editor"</strong> — the scope is narrower than the affordance implies. Users who expect app-level settings (account, keyboard shortcuts, diagram defaults, data storage location) find only editor appearance options. There is no indication that more settings exist elsewhere.</p>
+        <div class="principle">Nielsen #4 — Consistency and standards · Nielsen #2 — Match between system and real world</div>
+        <div class="comparison">
+          <div class="comp-bad"><h4>Current</h4><p>Modal title: "Editor" (3 appearance settings + 4 toggles)</p></div>
+          <div class="comp-good"><h4>Better</h4><p>Modal title: "Settings" with "Editor" as a section header; room for future "Diagram", "Account" sections</p></div>
+        </div>
+        <div class="fix">Rename modal to "Settings" or "Preferences". Promote current options under an "Editor Appearance" section header. This leaves room to add "Diagram defaults" (background color, watermark, actor style) and "Account" sections as features grow — without needing a new mental model for users.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-08-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>"Preserve console logs" debug toggle exposed to all users at the same level as user-facing settings</h3>
+        <p>The "Others" section contains four toggles: Line wrap, Auto-preview, Preserve last written code, and <strong>Preserve console logs</strong>. The first three are clearly user-facing features. "Preserve console logs" is a developer debugging option — it retains browser console output across sessions, which has no meaning to the target audience of sequence diagram creators (architects, product managers, technical writers). It is displayed at identical prominence to Line wrap, with no explanation of what it does or who it's for.</p>
+        <div class="principle">Nielsen #8 — Aesthetic and minimalist design · Progressive disclosure</div>
+        <div class="fix">Move "Preserve console logs" to a collapsible "Advanced / Developer" section, or remove it from the UI entirely if it was added only for debugging. If it must remain, add a tooltip: "Keep browser console output across page reloads — for developers debugging ZenUML integration." Exposing internal debugging toggles to end users adds noise and erodes trust in the product's polish.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-08-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>No "Reset to defaults" or Cancel — settings are permanent with no undo path</h3>
+        <p>Every setting change shows a "Setting saved" toast and immediately persists. The modal has only a close (×) button — no Cancel, no Reset, no Undo. If a user accidentally selects a hard-to-read theme (e.g. <code>colorforth</code> uses black background with dim colored text) and doesn't remember what the previous theme was called, they have no recovery path except scrolling through all 49 options to find something acceptable. The "Setting saved" toast actually makes this worse — it emphasizes irreversibility.</p>
+        <div class="principle">Nielsen #3 — User control and freedom · Nielsen #5 — Error prevention</div>
+        <div class="fix">Add a "Reset to defaults" link at the bottom of the modal. Store the last-applied setting before a change (one level of undo). Alternatively, add a "Cancel" button that reverts to the state when the modal was opened. VS Code's settings undo (Ctrl+Z works in settings) and macOS System Settings' "Revert" button are good models. A single "Reset to defaults" covers the most common recovery scenario.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-08-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Font size range capped at 12–18px — excludes accessibility users and large-display power users</h3>
+        <p>The Font Size dropdown offers 7 fixed values: 12 px, 13 px, 14 px (default), 15 px, 16 px, 17 px, 18 px. The cap at 18px does not accommodate users with low vision who rely on larger text, nor power users on ultra-high-DPI displays who prefer 20–24px in code editors. Conversely, 12px is below the WCAG minimum of 18pt (24px) for normal text — it may fail accessibility requirements for users who expect accessible code editors.</p>
+        <div class="principle">WCAG 1.4.4 — Resize Text · Nielsen #7 — Flexibility and efficiency of use</div>
+        <div class="fix">Extend the range to at least 10–28px, or replace the fixed dropdown with a numeric input with +/- stepper (min: 10, max: 32). VS Code allows custom font size via settings JSON with no cap. A reasonable UI range of 10–28px with 1px steps covers virtually all real-world needs. Consider also inheriting the browser's base font-size as the default rather than hardcoding 14px.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

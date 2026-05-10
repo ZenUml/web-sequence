@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 11: Undo/Redo &amp; Editor History</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+    .repro-steps { background: #0f172a; border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; }
+    .repro-steps ol { padding-left: 1.25rem; }
+    .repro-steps li { font-size: 0.85rem; color: #94a3b8; padding: 0.2rem 0; }
+    .repro-steps li strong { color: #f1f5f9; }
+    .repro-steps li code { color: #ef4444; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 11</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Undo/Redo &amp; Editor History</strong> — cross-page undo corruption, toolbar atomicity, silent erasure &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html">Case 08</a>
+    <a href="case-09-canvas.html">Case 09</a>
+    <a href="case-10-new-diagram.html">Case 10</a>
+    <a href="case-11-undo-redo.html" style="border-color:#60a5fa;color:#60a5fa">Case 11: Undo/Redo</a>
+    <a href="case-12-syntax-errors.html">Case 12</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">2</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Data corruption confirmed: Cmd+Z on Page 1 undoes Page 2 edits — global undo stack not page-scoped</h3>
+    <p>ZenUML uses a <strong>single shared CodeMirror editor instance</strong> for all pages. When switching pages, the editor content is replaced but the undo stack is not reset. This means pressing Cmd+Z on Page 1 after editing Page 2 will undo Page 2's edits while the Page 1 tab appears selected — corrupting content on the wrong page with zero warning.</p>
+    <p>Reproduction steps confirmed in live testing: (1) Type on Page 1 → (2) Add Page 2, type there → (3) Switch back to Page 1 → (4) Press Cmd+Z → Page 2's content appears in the editor with Page 1's tab selected → (5) Press Cmd+Z again → editor shows empty content while diagram canvas still renders Page 2's stale diagram.</p>
+  </div>
+
+  <section style="margin-bottom: 1.5rem;">
+    <h2>🔁 Exact Reproduction Steps</h2>
+    <div class="repro-steps">
+      <ol>
+        <li><strong>Type on Page 1:</strong> Select all, type <code>A → B: hello</code> — diagram renders A/B with "hello"</li>
+        <li><strong>Verify undo works:</strong> Cmd+Z restores prior content atomically ✓ Cmd+Shift+Z (redo) works ✓</li>
+        <li><strong>Verify toolbar insert undo:</strong> Click participant button (inserts "NewParticipant") → Cmd+Z removes it ✓ but requires multiple Cmd+Z presses for multi-character tokens</li>
+        <li><strong>Add Page 2:</strong> Click "+ Add Page" → switch to Page 2 → type <code>C → D: page2test</code></li>
+        <li><strong>Switch back to Page 1:</strong> Click "Page 1" tab — editor shows Page 1 content as expected</li>
+        <li><strong>Press Cmd+Z on Page 1:</strong> <code class="no">Editor shows "C → D: page2test" — Page 2 content — while Page 1 tab is selected</code></li>
+        <li><strong>Press Cmd+Z again:</strong> <code class="no">Editor empties entirely. Diagram canvas still shows C/D "page2test" — stale render from Page 2</code></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — undo/redo after typing, toolbar insert, page switch revealing cross-page undo corruption</h2>
+      <img src="ux-case-11-undo-redo.gif" alt="Undo/Redo editor history UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-11-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Global undo stack crosses page boundaries — Cmd+Z on Page 1 undoes Page 2 edits</h3>
+        <p>ZenUML uses a single CodeMirror editor instance shared across all pages. Switching pages replaces the editor content but does not reset or checkpoint the undo history. As a result, pressing Cmd+Z on Page 1 after having edited Page 2 undoes Page 2's changes while the UI shows Page 1 as selected. A second Cmd+Z empties the editor entirely. The diagram canvas continues rendering stale Page 2 content, creating a split-brain state where the editor and diagram are out of sync. <strong>This is a data corruption bug</strong> — a user can silently overwrite or erase another page's content simply by pressing Undo on their current page.</p>
+        <div class="principle">Nielsen #5 — Error prevention · Nielsen #3 — User control and freedom · Data integrity</div>
+        <div class="fix">Each page's CodeMirror instance must maintain an independent undo history. Either: (a) create separate CodeMirror instances per page (one per tab), or (b) save and restore the full history state when switching between pages. VS Code, Notion, and Obsidian all maintain per-document undo histories — switching tabs never cross-contaminates undo stacks. Fix requires storing the full <code>cm.historySize()</code> state per page on tab switch.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-11-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No warning before Cmd+Z silently erases entire page content</h3>
+        <p>When the undo history reaches the initial state (before any content was entered), a single Cmd+Z can clear the entire editor to an empty state. In testing: starting from "A → B: hello" (2 lines), one Cmd+Z jumped back to the 18-line example, and one more cleared everything. There is no safeguard, no "Undo will erase all content on this page — continue?" confirmation, no count of how many undos remain before the page goes blank. Silent erasure of all work with no recovery path is one of the most damaging editor UX failures.</p>
+        <div class="principle">Nielsen #5 — Error prevention · Nielsen #9 — Help users recognize, diagnose, and recover from errors</div>
+        <div class="fix">Add a visual undo depth indicator (small counter near the editor, e.g. "⌘Z · 3 steps") so users know how close they are to the bottom of the stack. When the next Cmd+Z would clear all content, show a brief inline warning: "Press again to clear all content (no more undo history)." Sublime Text and VS Code both show "Can't undo further" as a status bar message when the stack is exhausted. Alternatively, never allow undo to go past the initial load state of a page.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-11-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Toolbar inserts are not atomic undo units — require character-by-character reversal</h3>
+        <p>When the toolbar "Participant" button inserts <code>NewParticipant</code> (13 characters), pressing Cmd+Z once removes the entire token — that part works. However, the newline inserted by the toolbar to separate the token from surrounding content requires an additional Cmd+Z, making the complete reversal of one toolbar action require 2+ undo steps. More critically: clicking a toolbar button first steals focus from the editor, meaning the user must re-click the editor before pressing Cmd+Z — or the undo may fire on the wrong context. The disconnect between toolbar action and undo granularity violates user mental models where "one action = one undo step."</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use · Command pattern — each user action should be one undoable unit</div>
+        <div class="fix">Wrap each toolbar button click into a single CodeMirror transaction (<code>cm.operation()</code>) that groups all text insertions and cursor movements into one atomic undo entry. Ensure focus returns to the editor before the transaction is committed so Cmd+Z immediately after toolbar use reverses exactly the insert. GitHub's markdown toolbar and VS Code's snippet insertions are always single-undo-step operations.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-11-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>~2 second diagram re-render delay creates a decoupled undo experience</h3>
+        <p>After pressing Cmd+Z, the editor content updates immediately (correct behavior). However, the diagram canvas takes approximately 2 seconds to re-render the undone state. During this window, the editor shows the undone text but the diagram still shows the superseded content — creating a contradictory view where both panels are simultaneously "right" but at different points in time. Users who glance at the diagram after pressing Cmd+Z will see stale content and may press Cmd+Z again, overshooting their intended undo target.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status · Temporal consistency between coupled views</div>
+        <div class="fix">Show an explicit loading/re-rendering indicator on the diagram canvas during the 2-second render delay — a subtle spinner, pulsing border, or "Rendering…" label. This tells users "the diagram is catching up" rather than leaving them in a false steady state. Consider debounce optimization: if the re-render typically takes 500ms for small edits, the 2s delay for a 1-line undo suggests the full pipeline is being re-triggered rather than a diff-based update.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-11-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Redo shortcut (Cmd+Shift+Z) is undocumented — not listed in cheat sheet or any visible help</h3>
+        <p>Redo works via Cmd+Shift+Z, which was confirmed in testing. However, this shortcut appears nowhere in the visible UI — not in the keyboard shortcuts panel, not in the cheat sheet, not in any tooltip. Users who know Cmd+Z for undo will typically try Cmd+Shift+Z (macOS standard) or Cmd+Y (Windows standard) for redo. The ZenUML cheat sheet panel lists multiple shortcuts but omits undo/redo entirely. A user who accidentally over-undoes cannot recover their work unless they already know the platform-specific redo shortcut from external knowledge.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall · Documentation completeness</div>
+        <div class="fix">Add Cmd+Z (undo) and Cmd+Shift+Z (redo) to the keyboard shortcuts cheat sheet panel. Add tooltips to any undo/redo buttons if they exist (currently none are visible in the toolbar). Even a one-line mention in the "Help" sidebar would dramatically reduce the chance of users losing work by not knowing redo is available.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>

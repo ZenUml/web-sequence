@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 04: Share Link & My Library</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0; }
+    .comp-bad { background: #1a0a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #ef444422; }
+    .comp-good { background: #0a1a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #4ade8022; }
+    .comp-bad h4 { font-size: 0.7rem; color: #ef4444; margin-bottom: 0.3rem; }
+    .comp-good h4 { font-size: 0.7rem; color: #4ade80; margin-bottom: 0.3rem; }
+    .comp-bad p, .comp-good p { font-size: 0.8rem; color: #94a3b8; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 04</span>
+    <span class="badge badge-gaps">6 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Share Link &amp; My Library</strong> — sharing, collaboration, diagram management &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html" style="border-color:#60a5fa;color:#60a5fa">Case 04: Share &amp; Library</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">2</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">3</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">6</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Pattern found across cases</h3>
+    <p>This is the <strong>third time</strong> the same generic "Welcome to ZenUML.com" login modal appeared unexpectedly: triggered by PNG export (Case 02), Share Link, and potentially other actions. The modal gives zero context about <em>why</em> the user needs to sign in. This is a systemic anti-pattern — every auth-gated action should explain its value proposition at the moment of interruption.</p>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — Share Link click → login wall → My Library (empty) exploration</h2>
+      <img src="ux-case-04-share-library.gif" alt="Share Link and Library UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-04-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Share Link — the #1 CTA — requires login with no anonymous fallback</h3>
+        <p>"Share Link" is the most prominent button in the app (top-right, blue, always visible). Clicking it immediately shows a login wall. There is no URL-based sharing, no public link, no embed code, no "share without account" path — the core sharing value proposition is completely inaccessible to new users.</p>
+        <div class="principle">Jobs to be done — sharing is why people use diagram tools</div>
+        <div class="fix">Generate an anonymous share URL immediately (encode diagram in URL hash, like Mermaid Live Editor or Carbon). Gate <em>persistent</em> cloud links behind auth, not the act of sharing itself. The share button should always work — login extends its capabilities.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-04-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Same generic login modal for 3+ different auth-gated actions</h3>
+        <p>The identical "Welcome to ZenUML.com" modal fires for PNG export, Share Link, and likely other features. No context is given about what the user was trying to do or what they'll get by signing in. Users who clicked "Share Link" see no mention of sharing.</p>
+        <div class="principle">Nielsen #2 — Match between system and real world</div>
+        <div class="fix">Each auth prompt must state the specific value: <em>"Sign in to generate a persistent share link for this diagram"</em>. Show a preview of what they'll get post-login. One generic modal for all contexts is a conversion killer.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-04-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Auto-title "Untitled 9-5-23:24" is ambiguous and technical</h3>
+        <p>New diagrams get an auto-generated title using a non-standard date-time format (M-D-HH:MM). It's unclear if "9-5" is May 9th or September 5th, what timezone "23:24" refers to, and why a timestamp is used instead of a sequential number. Compare: Google Docs uses "Untitled document", Figma uses "Untitled", VS Code uses "Untitled-1".</p>
+        <div class="principle">Nielsen #4 — Consistency and standards</div>
+        <div class="comparison">
+          <div class="comp-bad"><h4>Current</h4><p>"Untitled 9-5-23:24"</p></div>
+          <div class="comp-good"><h4>Better</h4><p>"Untitled diagram" or "My Diagram 1"</p></div>
+        </div>
+        <div class="fix">Use a simple sequential name ("Untitled diagram", "Untitled 2") or prompt users to name the diagram on first save. If a timestamp must be included, use ISO format with timezone: "2026-05-09 11:24 PM".</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-04-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>My Library shows "Nothing saved yet" with no path forward</h3>
+        <p>The empty state for My Library says "Nothing saved yet." but gives no instructions for how to save, no "Sign in to access your saved diagrams" CTA, and no explanation that cloud save requires authentication. Users are left in a dead end.</p>
+        <div class="principle">Nielsen #9 — Help users recognize, diagnose, recover from errors</div>
+        <div class="fix">Replace the empty state with an actionable message: "Press Cmd+S to save your diagram here" (for logged-in users) or "Sign in to save and organize your diagrams" with a Sign In button (for guests). Good empty states are onboarding moments.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-04-005</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Opening My Library hides the code editor entirely</h3>
+        <p>Clicking the folder icon replaces the left panel (editor) with the My Library panel. There is no way to see both the library and the editor simultaneously. Users who want to find a saved diagram and compare it to their current work must constantly toggle panels.</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use</div>
+        <div class="fix">Implement the library as a slide-in overlay or a resizable third column — don't replace the editor. Alternatively, allow library to appear above the editor as a collapsible drawer. Notion, Linear, and Figma all allow navigation and content panels to coexist.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-04-006</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Library toolbar icons (refresh, upload, download) have no labels</h3>
+        <p>Three small icon buttons appear next to "New Folder" in the My Library header. None have labels, visible tooltips, or accessible names. Their functions (refresh list, import, export) are non-obvious from the icons alone.</p>
+        <div class="principle">Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Add hover tooltips with descriptive text. Consider replacing the download/upload icons with text buttons ("Import", "Export") since the library panel has ample horizontal space.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09
+</footer>
+</body>
+</html>

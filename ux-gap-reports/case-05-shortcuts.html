@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 05: Keyboard Shortcuts & Cheat Sheet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0; }
+    .comp-bad { background: #1a0a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #ef444422; }
+    .comp-good { background: #0a1a0a; border-radius: 6px; padding: 0.75rem; border: 1px solid #4ade8022; }
+    .comp-bad h4 { font-size: 0.7rem; color: #ef4444; margin-bottom: 0.3rem; }
+    .comp-good h4 { font-size: 0.7rem; color: #4ade80; margin-bottom: 0.3rem; }
+    .comp-bad p, .comp-good p { font-size: 0.8rem; color: #94a3b8; font-family: monospace; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 05</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Keyboard Shortcuts &amp; Cheat Sheet</strong> — discoverability, content completeness, terminology &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html" style="border-color:#60a5fa;color:#60a5fa">Case 05: Shortcuts</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">1</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">3</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Bootstrap paradox: shortcuts buried behind a click</h3>
+    <p>The keyboard shortcut to open the shortcuts modal is <strong>Ctrl/⌘ + Shift + ?</strong> — but this is only discoverable by already opening the modal via the unlabeled sidebar icon. New users have no way to know the shortcut exists without first finding the icon. The default diagram's code comment hints <em>"Go to the Cheat sheet tab"</em> but there is no visible tab labelled "Cheat sheet" — users must hunt for the unlabeled sidebar icon that reveals it.</p>
+  </div>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — sidebar keyboard icon → shortcuts modal → cheat sheet → Ctrl+Shift+? test</h2>
+      <img src="ux-case-05-shortcuts.gif" alt="Keyboard shortcuts and cheat sheet UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-05-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>Two separate help panels (Shortcuts + Cheat Sheet) split documentation across two unlabeled icons</h3>
+        <p>The sidebar has two distinct help panels: "Keyboard Shortcuts" (keyboard icon) and "Cheat sheet" (document-info icon). Both are accessed via unlabeled icons with no hover tooltips. Users have no way to know which icon opens which panel without clicking both. Splitting help content across two unlabeled modals fragments the experience and increases cognitive load.</p>
+        <div class="principle">Nielsen #4 — Consistency and standards · Nielsen #6 — Recognition over recall</div>
+        <div class="fix">Merge both into a single "Help" panel with tabs ("Syntax" and "Shortcuts"), accessible from one labeled icon. Add hover tooltips to all sidebar icons. Figma's help panel, VS Code's keyboard shortcuts UI, and Linear's help center all follow this merged pattern.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-05-002</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Default diagram hints at "Cheat sheet tab" — no such tab exists</h3>
+        <p>The pre-loaded example diagram includes the comment <code>// Go to the "Cheat sheet" tab or https://docs.zenuml.com</code>. There is no visible "Cheat sheet tab" in the interface. Users who follow this instruction will look for a tab in the editor header (ZenUML / CSS) and find nothing. The comment refers to the unlabeled sidebar icon, which appears nowhere near a "tab" in the conventional sense.</p>
+        <div class="principle">Nielsen #2 — Match between system and real world</div>
+        <div class="fix">Update the default example comment to accurately describe the UI: <code>// Click the book icon (left sidebar) or press Ctrl+Shift+? for syntax help</code>. Alternatively, rename the sidebar icon's panel to match the comment.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-05-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Keyboard Shortcuts modal uses "Emmet" — jargon that means nothing in a diagram tool</h3>
+        <p>The shortcuts modal lists <strong>Tab → Emmet code completion</strong>. Emmet is an HTML/CSS abbreviation expander with no recognized meaning in sequence diagram editing. ZenUML users (software architects, developers documenting APIs) won't know what "Emmet completion" means for participant/message syntax. The label misleads about what Tab actually does in this editor.</p>
+        <div class="principle">Nielsen #2 — Match between system and real world</div>
+        <div class="comparison">
+          <div class="comp-bad"><h4>Current</h4><p>Tab → Emmet code completion</p></div>
+          <div class="comp-good"><h4>Better</h4><p>Tab → Auto-complete syntax</p></div>
+        </div>
+        <div class="fix">Replace "Emmet code completion" with "Auto-complete (syntax snippets)" or just "Tab completion". If Emmet is specifically used, add a brief parenthetical: "Emmet (HTML abbreviation expansion — rarely used in ZenUML)".</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-05-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Cheat sheet is not scrollable and appears to be cut off</h3>
+        <p>The Cheat Sheet modal shows: Participant, Message, Async message, Nested message, Self-message, Alt, Loop — and the modal bottom is flush with the viewport edge. Scrolling inside the modal does not reveal additional content. ZenUML supports more constructs (title, note, divider, group, stereotype, opt, par, etc.) that are entirely absent. The cheat sheet is incomplete and gives users a false sense they've seen the full syntax.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status</div>
+        <div class="fix">Ensure the cheat sheet is scrollable and lists all supported constructs. Add a "Full syntax reference →" link at the bottom pointing to docs.zenuml.com. Show a scroll indicator (shadow or gradient) at the modal bottom to signal more content exists.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-05-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>No keyboard shortcut for diagram-level actions (Add Page, Refresh Preview uses obscure Ctrl+Shift+5)</h3>
+        <p>The Global shortcuts list contains <code>Ctrl/⌘ + Shift + 5</code> for "Refresh preview" — a non-intuitive binding (5 has no mnemonic connection to refresh). There are no shortcuts for adding a page, switching pages, or toggling panels. Power users who want keyboard-only workflows are blocked from diagram-level navigation.</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use</div>
+        <div class="fix">Replace Ctrl+Shift+5 with Ctrl+Shift+R (mnemonic: Refresh) or F5 (conventional refresh shortcut). Add shortcuts for Add Page (Ctrl+Shift+N), next/previous page (Ctrl+Tab / Ctrl+Shift+Tab), and toggle sidebar (Ctrl+B, like VS Code).</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-09
+</footer>
+</body>
+</html>

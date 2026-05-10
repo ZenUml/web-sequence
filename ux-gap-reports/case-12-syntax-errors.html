@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Gap Report — Case 12: Syntax Error Feedback</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+    header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem 3rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .badge-test { background: #1e3a5f; color: #60a5fa; }
+    .badge-gaps { background: #3b1f1f; color: #f87171; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
+    .recording { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .recording h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .recording img { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .gaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .gap-card { background: #1e293b; border-radius: 10px; padding: 1.25rem; border: 1px solid #334155; border-left: 4px solid; }
+    .gap-card.severity-high { border-left-color: #ef4444; }
+    .gap-card.severity-medium { border-left-color: #f59e0b; }
+    .gap-card.severity-low { border-left-color: #3b82f6; }
+    .gap-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: #f1f5f9; }
+    .gap-card .gap-id { font-size: 0.7rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .gap-card p { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .gap-card .principle { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: #0f172a; color: #64748b; display: inline-block; }
+    .gap-card .fix { font-size: 0.8rem; color: #4ade80; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #334155; }
+    .fix::before { content: "→ "; }
+    .severity-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+    .sev-high { background: #3f1010; color: #ef4444; }
+    .sev-medium { background: #3a2208; color: #f59e0b; }
+    .sev-low { background: #0f2042; color: #60a5fa; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f8fafc; }
+    .summary-bar { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; gap: 2rem; margin-bottom: 2rem; border: 1px solid #334155; flex-wrap: wrap; }
+    .summary-stat .num { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    .num-red { color: #ef4444; } .num-yellow { color: #f59e0b; } .num-blue { color: #60a5fa; }
+    .callout { background: #1a0a0a; border: 1px solid #ef444433; border-left: 4px solid #ef4444; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .callout h3 { font-size: 0.85rem; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .callout p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .nav a { padding: 0.4rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+    code { background: #0f172a; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.85em; color: #94a3b8; font-family: monospace; }
+    .error-matrix { background: #0f172a; border-radius: 8px; padding: 1rem; margin: 0.75rem 0; font-size: 0.8rem; }
+    .error-matrix table { width: 100%; border-collapse: collapse; }
+    .error-matrix th { color: #64748b; font-weight: 600; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #334155; font-size: 0.7rem; text-transform: uppercase; }
+    .error-matrix td { padding: 0.3rem 0.5rem; color: #94a3b8; border-bottom: 1px solid #1e293b; font-size: 0.8rem; }
+    .error-matrix td:first-child { color: #f1f5f9; font-family: monospace; }
+    .yes { color: #4ade80; } .no { color: #ef4444; } .partial { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    UX Gap Report
+    <span class="badge badge-test">Case 12</span>
+    <span class="badge badge-gaps">5 gaps found</span>
+  </h1>
+  <p>Test scenario: <strong>Syntax Error Feedback</strong> — invalid tokens, silent truncation, missing error UI in editor and diagram &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10</p>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html">← Index</a>
+    <a href="case-01-app-load.html">Case 01</a>
+    <a href="case-02-save-export.html">Case 02</a>
+    <a href="case-03-multipage.html">Case 03</a>
+    <a href="case-04-share-library.html">Case 04</a>
+    <a href="case-05-shortcuts.html">Case 05</a>
+    <a href="case-06-present-css.html">Case 06</a>
+    <a href="case-07-toolbar.html">Case 07</a>
+    <a href="case-08-settings.html">Case 08</a>
+    <a href="case-09-canvas.html">Case 09</a>
+    <a href="case-10-new-diagram.html">Case 10</a>
+    <a href="case-11-undo-redo.html">Case 11</a>
+    <a href="case-12-syntax-errors.html" style="border-color:#60a5fa;color:#60a5fa">Case 12: Syntax Errors</a>
+    <a href="case-13-rename.html">Case 13</a>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="num num-red">2</div><div class="label">High severity</div></div>
+    <div class="summary-stat"><div class="num num-yellow">2</div><div class="label">Medium severity</div></div>
+    <div class="summary-stat"><div class="num num-blue">1</div><div class="label">Low severity</div></div>
+    <div class="summary-stat"><div class="num" style="color:#94a3b8">5</div><div class="label">Total gaps</div></div>
+  </div>
+
+  <div class="callout">
+    <h3>Zero error UI — the diagram silently renders a partial or garbage result for any invalid input</h3>
+    <p>Across all syntax error scenarios tested — invalid tokens, mid-document parse failures, and completely unparseable garbage — <strong>no error message is shown anywhere in the ZenUML UI</strong>. The diagram canvas does not display an error state. The editor shows no gutter indicators. The footer (i) button provides no error summary. When invalid syntax appears mid-document, the parser silently truncates the diagram at the first error and renders only the preceding valid content as if it were complete — with no indication that content below the error line was dropped.</p>
+    <p>For <strong>completely unparseable input</strong> (e.g. <code>!!!BROKEN!!!SYNTAX!!!</code>), the diagram renders a lone default participant icon — indistinguishable from a valid empty diagram — with zero error indication. A new user who types wrong syntax has no way to know their code is broken.</p>
+  </div>
+
+  <section style="margin-bottom: 1.5rem;">
+    <h2>🧪 Error Behavior Matrix</h2>
+    <div class="error-matrix">
+      <table>
+        <tr><th>Input type</th><th>Editor highlight</th><th>Gutter error icon</th><th>Diagram error msg</th><th>Content after error</th></tr>
+        <tr><td><code>A -> B: hello</code> (valid)</td><td class="yes">✓ normal</td><td class="yes">✓ none needed</td><td class="yes">✓ renders</td><td class="yes">✓ shown</td></tr>
+        <tr><td><code>@@@ bad token @@@</code></td><td class="partial">~ pink tint</td><td class="no">✗ none</td><td class="no">✗ no error</td><td class="no">✗ silently dropped</td></tr>
+        <tr><td><code>!!!BROKEN!!!SYNTAX!!!</code></td><td class="no">✗ no highlight</td><td class="no">✗ none</td><td class="no">✗ shows lone icon</td><td class="no">✗ N/A</td></tr>
+        <tr><td>Valid + error + valid</td><td class="partial">~ line 2 pink</td><td class="no">✗ none</td><td class="no">✗ partial render</td><td class="no">✗ lines 3+ dropped</td></tr>
+        <tr><td>Unclosed <code>{</code></td><td class="partial">~ auto-completed</td><td class="no">✗ none</td><td class="yes">✓ renders (fixed)</td><td class="yes">✓ shown</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎬 Session Recording</h2>
+    <div class="recording">
+      <h2>Browser session — valid syntax → mixed valid/invalid → garbage input → silent partial render with zero error UI</h2>
+      <img src="ux-case-12-syntax-errors.gif" alt="Syntax error feedback UX recording">
+    </div>
+  </section>
+
+  <section>
+    <h2>🔴 Identified UX Gaps</h2>
+    <div class="gaps-grid">
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-12-001</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No error message in the diagram panel — invalid syntax renders a silent partial or empty diagram</h3>
+        <p>When the ZenUML parser encounters invalid syntax, the diagram canvas does not show an error state. For mid-document errors (e.g. <code>@@@ bad token @@@</code> on line 2), the canvas renders only the valid content before the error — showing a partial diagram with no indication it is incomplete. For fully unparseable input (e.g. <code>!!!BROKEN!!!SYNTAX!!!</code>), the canvas renders a lone participant icon — which looks identical to an intentionally empty diagram. There is no "Syntax error" banner, no error count, no line reference, no red border or warning color on the canvas. Users believe their diagram is correct when it is not.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status · Nielsen #9 — Help users recognize errors</div>
+        <div class="fix">When the parser produces an error, the diagram canvas should show a visible error state: a red/orange border or banner reading "Syntax error on line N — diagram may be incomplete." Include the error line number and a brief description. Mermaid Live Editor, PlantUML server, and Kroki all show explicit error panels. Even a simple "⚠ Parse error" badge on the canvas would be a major improvement over the current silent behavior.</div>
+      </div>
+
+      <div class="gap-card severity-high">
+        <div class="gap-id">GAP-12-002</div>
+        <span class="severity-tag sev-high">HIGH</span>
+        <h3>No editor gutter indicators — error lines have no squiggly underline, no line number icon, no hover tooltip</h3>
+        <p>The CodeMirror editor has no error annotations for invalid ZenUML syntax. Lines with parse errors get a faint pink syntax-highlighting tint (inconsistently — some invalid inputs show no highlighting at all), but there is no red squiggly underline, no gutter icon (🔴 or ⚠), and no hover tooltip explaining what is wrong with the line. A user looking at <code>@@@ bad token here @@@</code> on line 2 sees only a differently-colored line with no explanation. They cannot tell whether the color means "this is a comment", "this is a string", "this is a keyword", or "this is an error."</p>
+        <div class="principle">Nielsen #9 — Help users recognize, diagnose, and recover from errors · WCAG 1.4.1 — Use of color alone insufficient</div>
+        <div class="fix">Register CodeMirror linting annotations for the ANTLR parser's error output. On parse error, mark the offending token(s) with: (1) a red wavy underline on the token, (2) a red circle icon in the gutter at the error line number, (3) a hover tooltip with the parser error message. VS Code, Monaco Editor, and CodeMirror 6 all provide linting APIs for exactly this. The fix is a CodeMirror linter plugin that feeds ANTLR error messages back into the editor.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-12-003</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Parser silently truncates the diagram at the first error — valid content below the error is dropped without warning</h3>
+        <p>When an error appears on line N of a multi-line diagram, the ZenUML parser halts and renders only lines 1 through N-1. Lines N+1 onward are silently discarded — they never appear in the diagram and produce no warning. In testing with a 3-line document (valid / invalid / valid), only line 1 appeared in the diagram. Line 3's <code>C → D: world</code> was completely dropped. A user who has a long diagram and accidentally introduces an error mid-document will see half their diagram disappear — with no indication of where the cutoff happened or how many lines were skipped.</p>
+        <div class="principle">Nielsen #1 — Visibility of system status · Fail loudly, not silently</div>
+        <div class="fix">Either: (a) implement error recovery in the parser so it skips the invalid line and continues rendering the rest of the document (best experience — user sees all valid parts), or (b) show a count of dropped lines at the bottom of the diagram: "⚠ 2 lines skipped due to errors — see line 2." Option (a) is used by Mermaid (renders what it can) and is strongly preferred over silent truncation. Option (b) at minimum prevents users from discovering missing content only after export.</div>
+      </div>
+
+      <div class="gap-card severity-medium">
+        <div class="gap-id">GAP-12-004</div>
+        <span class="severity-tag sev-medium">MEDIUM</span>
+        <h3>Syntax highlighting color alone signals errors — non-compliant with WCAG 1.4.1 (color not sole differentiator)</h3>
+        <p>The only error signal in the editor is a faint pink/magenta tint on lines that contain invalid tokens. This coloring: (1) is inconsistent — completely garbage input (<code>!!!BROKEN!!!</code>) receives no tinting at all, (2) is indistinguishable from intentional syntax coloring for strings or keywords to a colorblind user, (3) carries no semantic label — hovering the colored line reveals nothing, and (4) violates WCAG 1.4.1, which requires that color not be the sole means of conveying information. A red-blind user sees the pink-tinted lines as identical to normal code lines.</p>
+        <div class="principle">WCAG 1.4.1 — Use of Color · Nielsen #9 — Error recognition</div>
+        <div class="fix">Pair any color-based error indication with a non-color signal: a gutter icon, an underline style, a tooltip, or a text label. The WCAG test is simple: "if I remove all color from this screenshot, can I still tell which lines have errors?" Currently the answer is no. Adding a ⚠ glyph in the gutter satisfies both the WCAG requirement and the UX requirement simultaneously.</div>
+      </div>
+
+      <div class="gap-card severity-low">
+        <div class="gap-id">GAP-12-005</div>
+        <span class="severity-tag sev-low">LOW</span>
+        <h3>Auto-bracket completion silently masks some syntax errors that the user intended to observe</h3>
+        <p>The editor auto-closes <code>{</code> to <code>{}</code> and <code>(</code> to <code>()</code> immediately on typing. While this is ergonomic for normal use, it means a user who types an intentionally partial token to test what the diagram does (e.g. typing <code>A.method(</code> then pausing to look at the diagram) sees an auto-corrected valid result rather than an error state. Developers debugging ZenUML syntax are robbed of the ability to observe incremental parse states. Additionally, auto-completion that fires immediately with no opt-out can be disruptive for users who intended to type a different character.</p>
+        <div class="principle">Nielsen #7 — Flexibility and efficiency of use · Progressive disclosure · User agency</div>
+        <div class="fix">Add a settings option to disable auto-bracket completion (already logged as part of Case 08 settings gaps). More importantly, implement a brief delay before auto-completing (e.g. 300ms) so users can type the opening bracket, glance at the diagram, and continue — rather than having the completion fire before they've observed the state. This is how VS Code, JetBrains IDEs, and CodeMirror 6 implement it.</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Generated by Claude Code UX Gap Analysis Loop &nbsp;·&nbsp; ZenUML Web Sequence &nbsp;·&nbsp; 2026-05-10
+</footer>
+</body>
+</html>
