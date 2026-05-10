@@ -1668,6 +1668,15 @@ BookLibService.Borrow(id) {
     });
   }
 
+  renamePage(pageId, newTitle) {
+    const { currentItem } = this.state;
+    if (!currentItem || !currentItem.pages) return;
+    const updatedPages = currentItem.pages.map(page =>
+      page.id === pageId ? { ...page, title: newTitle } : page
+    );
+    this.setState({ currentItem: { ...currentItem, pages: updatedPages } });
+  }
+
   render() {
     // remove field imageBase64 from currentItem and save it to a local variable as a copy
     const { imageBase64, ...currentItem } = this.state.currentItem;
@@ -1760,6 +1769,7 @@ BookLibService.Borrow(id) {
               onPageSwitch={this.switchToPage.bind(this)}
               onAddPage={this.addNewPage.bind(this)}
               onDeletePage={this.deletePage.bind(this)}
+              onRenamePage={this.renamePage.bind(this)}
               keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}

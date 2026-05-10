@@ -1172,6 +1172,7 @@ export default class ContentWrap extends Component {
             onTabClick={this.props.onPageSwitch}
             onAddPage={this.props.onAddPage}
             onDeletePage={this.props.onDeletePage}
+            onRenamePage={this.props.onRenamePage}
             onToggleFullscreen={this.toggleFullscreen.bind(this)}
             onExportPng={this.exportPngClickHandler.bind(this)}
             onCopyImage={this.copyImageClickHandler.bind(this)}
