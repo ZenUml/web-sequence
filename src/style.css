@@ -929,16 +929,48 @@ body > #demo-frame {
 }
 
 .gutter {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.gutter:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.gutter:active {
+  background: rgba(96, 165, 250, 0.45);
+}
+
+/* Drag-handle dots in the centre of the gutter */
+.gutter::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
 }
 
 .gutter-horizontal {
   cursor: ew-resize;
 }
 
+.gutter-horizontal::after {
+  width: 3px;
+  height: 28px;
+}
+
 .gutter-vertical {
   cursor: ns-resize;
+}
+
+.gutter-vertical::after {
+  width: 28px;
+  height: 3px;
 }
 
 .item-title-input {
