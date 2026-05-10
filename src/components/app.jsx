@@ -904,13 +904,16 @@ BookLibService.Borrow(id) {
     if (
       isUserChange &&
       this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
-      this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
+      this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT &&
+      window.saveBtn
     ) {
       window.saveBtn.classList.add('animated');
       window.saveBtn.classList.add('wobble');
       window.saveBtn.addEventListener('animationend', () => {
-        window.saveBtn.classList.remove('animated');
-        window.saveBtn.classList.remove('wobble');
+        if (window.saveBtn) {
+          window.saveBtn.classList.remove('animated');
+          window.saveBtn.classList.remove('wobble');
+        }
       });
     }
 
