@@ -971,6 +971,11 @@ body > #demo-frame {
   height: 28px;
 }
 
+/* title attribute shows browser tooltip on long hover — documents double-click reset */
+.gutter-horizontal[title] {
+  /* Ensure cursor-ew-resize remains primary interaction cue */
+}
+
 .gutter-vertical {
   cursor: ns-resize;
 }

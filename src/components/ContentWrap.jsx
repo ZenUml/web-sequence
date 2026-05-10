@@ -85,6 +85,8 @@ export default class ContentWrap extends Component {
   componentDidMount() {
     this.props.onRef(this);
     window.addEventListener('message', this.handleMessageCodeUpdate.bind(this));
+    // Double-click gutter to reset split to default 45/55
+    document.addEventListener('dblclick', this.handleGutterDblClick.bind(this));
   }
 
   componentWillUnmount() {
@@ -92,6 +94,7 @@ export default class ContentWrap extends Component {
       'message',
       this.handleMessageCodeUpdate.bind(this),
     );
+    document.removeEventListener('dblclick', this.handleGutterDblClick.bind(this));
   }
 
   handleMessageCodeUpdate(e) {
@@ -632,7 +635,7 @@ export default class ContentWrap extends Component {
     if (currentItem && currentItem.mainSizes) {
       mainSplitSizes = currentItem.mainSizes;
     } else {
-      mainSplitSizes = [30, 70];
+      mainSplitSizes = [45, 55]; // More balanced default: editor gets 45%
     }
     return mainSplitSizes;
   }
@@ -642,6 +645,13 @@ export default class ContentWrap extends Component {
       return this.props.currentItem.sizes;
     }
     return [85, 4, 11];
+  }
+
+  handleGutterDblClick(e) {
+    if (e.target && e.target.classList.contains('gutter-horizontal')) {
+      // Reset to default 45/55 split
+      this.setState({ mainSplitSizes: [45, 55] });
+    }
   }
 
   mainSplitDragEndHandler() {
