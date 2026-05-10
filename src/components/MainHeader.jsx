@@ -10,6 +10,7 @@ import userService from '../services/user_service';
 import mixpanel from '../services/mixpanel';
 
 export function MainHeader(props) {
+  const hasUnsavedChanges = (props.unsavedEditCount || 0) > 0;
   const [isEditing, setEditing] = useState(false);
   const [isSharePanelVisible, setIsSharePanelVisible] = useState(false);
   const [imageBase64] = useState();
@@ -82,7 +83,7 @@ export function MainHeader(props) {
           <span className="hidden lg:inline">New</span>
         </button>
       </div>
-      <div>
+      <div className="flex items-center gap-2">
         {isEditing ? (
           <input
             autoFocus
@@ -104,6 +105,13 @@ export function MainHeader(props) {
               <use xlinkHref="#icon-pen" />
             </svg>
           </div>
+        )}
+        {hasUnsavedChanges && (
+          <span
+            className="inline-block w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
+            title="Unsaved changes — press Cmd+S to save"
+            aria-label="Unsaved changes"
+          />
         )}
       </div>
       <div className="flex gap-4 items-center">

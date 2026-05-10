@@ -861,7 +861,8 @@ BookLibService.Borrow(id) {
       await this.setState({
         isSaving: false,
       });
-      // TODO: May be setState with currentItem
+      // Show visual feedback so user knows Cmd+S worked
+      alertsService.add('Diagram saved.');
 
       // If this is the first save, and auto-saving settings is enabled,
       // then start auto-saving from now on.
