@@ -105,7 +105,7 @@ export default class App extends Component {
       indentSize: 2,
       editorTheme: 'monokai',
       keymap: 'sublime',
-      fontSize: 16,
+      fontSize: 14,
       refreshOnResize: false,
       autoPreview: true,
       editorFont: 'FiraCode',
@@ -1033,7 +1033,7 @@ BookLibService.Borrow(id) {
     const defaultPrefs = {
       editorTheme: 'monokai',
       editorFont: 'FiraCode',
-      fontSize: 16,
+      fontSize: 14,
       lineWrap: true,
       autoPreview: true,
       preserveLastCode: true,
