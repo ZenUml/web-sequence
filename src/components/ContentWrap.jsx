@@ -1051,6 +1051,7 @@ export default class ContentWrap extends Component {
             </div>
             <div
               label="CSS"
+              locked={!window.user}
               onBeforeActiviation={this.onCSSActiviation.bind(this)}
             >
               <div

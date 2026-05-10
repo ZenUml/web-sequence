@@ -16,11 +16,11 @@ class Tab extends Component {
   render() {
     const {
       onClick,
-      props: { activeTab, label, lineOfCode },
+      props: { activeTab, label, lineOfCode, locked },
     } = this;
 
     let className =
-      'h-8 flex items-center justify-center px-10 tab-list-item bg-black-800 font-semibold';
+      'h-8 flex items-center justify-center px-6 gap-1.5 tab-list-item bg-black-800 font-semibold';
 
     if (activeTab === label) {
       className += ' border-b border-primary bg-black-500 text-primary-400';
@@ -35,8 +35,21 @@ class Tab extends Component {
     }
 
     return (
-      <li className={className} onClick={onClick}>
+      <li
+        className={className}
+        onClick={onClick}
+        title={locked ? `${label} — sign in required` : label}
+      >
         {label}
+        {loc}
+        {locked && (
+          <span
+            className="material-symbols-outlined text-xs opacity-60 leading-none"
+            aria-label="sign in required"
+          >
+            lock
+          </span>
+        )}
       </li>
     );
   }

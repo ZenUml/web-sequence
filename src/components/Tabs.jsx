@@ -51,13 +51,14 @@ class Tabs extends Component {
         <div className="h-8 flex justify-between items-center bg-black-500">
           <div className="flex justify-start tab-list">
             {children.map((child) => {
-              const { label, lineOfCode } = child.props;
+              const { label, lineOfCode, locked } = child.props;
               return (
                 <Tab
                   activeTab={activeTab}
                   key={label}
                   label={label}
                   lineOfCode={lineOfCode}
+                  locked={locked}
                   onClick={onClickTabItem}
                 />
               );
