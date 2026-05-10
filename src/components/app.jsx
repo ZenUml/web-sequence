@@ -52,6 +52,7 @@ import '../assets/tailwind.css';
 import CheatSheetModal from './CheatSheetModal';
 import SettingsModal from './SettingsModal';
 import LoginModal from './LoginModal';
+import { OnboardingModal } from './OnboardingModal';
 
 const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
@@ -1895,6 +1896,10 @@ BookLibService.Borrow(id) {
         <CheatSheetModal
           open={this.state.openCheatSheet}
           onClose={() => this.setState({ openCheatSheet: false })}
+        />
+        <OnboardingModal
+          show={this.state.isOnboardModalOpen}
+          closeHandler={async () => await this.setState({ isOnboardModalOpen: false })}
         />
         <div
           class="modal-overlay bg-black/50 backdrop-blur-sm"
