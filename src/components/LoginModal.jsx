@@ -31,7 +31,16 @@ export default function LoginModal({ open, onClose, reason }) {
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="bg-black/50 backdrop-blur data-[state=open]:animate-overlayShow fixed inset-0" />
-        <Dialog.Content className="text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[466px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
+        <Dialog.Content
+          aria-modal="true"
+          onOpenAutoFocus={(e) => {
+            // Explicitly focus first login button so keyboard focus stays inside modal
+            e.preventDefault();
+            const firstBtn = e.currentTarget.querySelector('button[data-auth-provider]');
+            if (firstBtn) firstBtn.focus();
+          }}
+          className="text-white data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[466px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none"
+        >
           <Dialog.Title className="mt-10 mb-4 font-medium text-lg text-gray-100">
             <svg className="h-10 w-10 -mx-1">
               <use xlinkHref="#outline-zenuml" />
