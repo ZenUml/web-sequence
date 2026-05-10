@@ -105,14 +105,7 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                   <p>
                     <span className="kbd-shortcut__keys">Tab</span>
                     <span className="kbd-shortcut__details">
-                      Emmet code completion{' '}
-                      <a
-                        href="https://emmet.io/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Read more
-                      </a>
+                      Auto-complete syntax snippets
                     </span>
                   </p>
                   <p>
