@@ -1011,6 +1011,24 @@ BookLibService.Borrow(id) {
     }
   }
 
+  async resetSettingsToDefaults() {
+    const defaultPrefs = {
+      editorTheme: 'monokai',
+      editorFont: 'FiraCode',
+      fontSize: 16,
+      lineWrap: true,
+      autoPreview: true,
+      preserveLastCode: true,
+      preserveConsoleLogs: false,
+    };
+    const prefs = { ...this.state.prefs, ...defaultPrefs };
+    await this.setState({ prefs });
+    db.sync.set(defaultPrefs, () => {
+      alertsService.add('Settings reset to defaults');
+    });
+    this.contentWrap.applyCodemirrorSettings(prefs);
+  }
+
   loginBtnClickHandler(reason) {
     this.setState({ isLoginModalOpen: true, loginReason: reason || null });
   }
@@ -1780,6 +1798,7 @@ BookLibService.Borrow(id) {
           open={this.state.isSettingsModalOpen}
           prefs={this.state.prefs}
           onChange={this.updateSetting.bind(this)}
+          onResetDefaults={this.resetSettingsToDefaults.bind(this)}
           onClose={async () =>
             await this.setState({ isSettingsModalOpen: false })
           }

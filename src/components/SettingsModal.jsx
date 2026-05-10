@@ -325,6 +325,16 @@ export default function SettingsModal(props) {
               )}
             </div>
           </div>
+          {props.onResetDefaults && (
+            <div className="mt-4 pt-3 border-t border-black-700">
+              <button
+                className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors"
+                onClick={props.onResetDefaults}
+              >
+                Reset to defaults
+              </button>
+            </div>
+          )}
           <Dialog.Close asChild>
             <button
               className="hover:bg-black-600/30 text-gray-100 absolute top-7 right-6 inline-flex h-8 w-8 p-1.5 hover:bg-gray-600 appearance-none items-center justify-center rounded-md outline-none"
