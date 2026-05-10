@@ -203,6 +203,18 @@ export default function SettingsModal(props) {
                         <Select.Group>
                           <Select.Item
                             className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="10"
+                          >
+                            <Select.ItemText>10 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="11"
+                          >
+                            <Select.ItemText>11 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
                             value="12"
                           >
                             <Select.ItemText>12 px</Select.ItemText>
@@ -242,6 +254,24 @@ export default function SettingsModal(props) {
                             value="18"
                           >
                             <Select.ItemText>18 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="20"
+                          >
+                            <Select.ItemText>20 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="22"
+                          >
+                            <Select.ItemText>22 px</Select.ItemText>
+                          </Select.Item>
+                          <Select.Item
+                            className="py-1.5 px-2 data-[highlighted]:outline-none data-[highlighted]:bg-primary text-sm rounded"
+                            value="24"
+                          >
+                            <Select.ItemText>24 px</Select.ItemText>
                           </Select.Item>
                         </Select.Group>
                       </Select.Viewport>
