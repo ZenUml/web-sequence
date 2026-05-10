@@ -1784,8 +1784,8 @@ BookLibService.Borrow(id) {
               keyboardShortcutsBtnClickHandler={this.handleShortcutsModalOpen.bind(
                 this,
               )}
-              editorInSidebar={this.state.activeLeftPanel === 'editor' && this.state.isEditorPanelOpen}
-              hideEditor={!this.state.isEditorPanelOpen || (this.state.activeLeftPanel === 'library')}
+              editorInSidebar={this.state.isEditorPanelOpen}
+              hideEditor={!this.state.isEditorPanelOpen}
             />
           </div>
         </div>
