@@ -34,10 +34,6 @@ export default function CreateNewModal({
                 />
               ))}
             </div>
-            <div className="text-center">
-              The development team needs your help. If you are actively using
-              ZenUML, please tweet about ZenUML at least once a month!
-            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
