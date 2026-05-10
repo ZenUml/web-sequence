@@ -96,12 +96,16 @@ export function MainHeader(props) {
           />
         ) : (
           <div
-            className="flex items-center gap-2 font-normal cursor-pointer hover:opacity-80 max-w-xs"
+            className="flex items-center gap-1.5 font-normal cursor-text hover:bg-black-600/40 rounded px-2 py-1 max-w-xs transition-colors"
             onClick={() => entryEditing()}
-            title={props.title || 'Untitled'}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') entryEditing(); }}
+            aria-label={`Diagram title: ${props.title || 'Untitled'} — click to rename`}
+            title="Click to rename diagram"
           >
             <span className="truncate max-w-[200px]">{props.title || 'Untitled'}</span>
-            <svg className="h-5 w-5 flex-shrink-0">
+            <svg className="h-4 w-4 flex-shrink-0 opacity-50" aria-hidden="true">
               <use xlinkHref="#icon-pen" />
             </svg>
           </div>
