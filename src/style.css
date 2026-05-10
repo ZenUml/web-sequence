@@ -12,6 +12,26 @@
   --console-height: 30px;
 }
 
+/* Skip-to-content link for keyboard users (WCAG 2.4.1) */
+.skip-nav {
+  position: fixed;
+  top: -100px;
+  left: 0;
+  z-index: 9999;
+  background: #4355CC;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s;
+}
+.skip-nav:focus {
+  top: 0;
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   padding: 0;

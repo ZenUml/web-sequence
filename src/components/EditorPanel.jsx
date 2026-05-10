@@ -153,7 +153,7 @@ export default class EditorPanel extends Component {
         </div>
 
         {/* Editor Tabs */}
-        <div class="flex-grow overflow-hidden editor-panel-content">
+        <div id="editor" class="flex-grow overflow-hidden editor-panel-content">
           <Tabs
             keyboardShortcutsBtnClickHandler={keyboardShortcutsBtnClickHandler}
             ref={(tabs) => (this.tabsRef = tabs)}
