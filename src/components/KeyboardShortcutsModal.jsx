@@ -61,6 +61,14 @@ const KeyboardShortcutsModal = ({ open, onClose }) => {
                 <h3 className="text-lg mb-4">Editor</h3>
                 <div className="flex flex-col gap-3">
                   <p>
+                    <span className="kbd-shortcut__keys">Ctrl/⌘ + Z</span>
+                    <span className="kbd-shortcut__details">Undo</span>
+                  </p>
+                  <p>
+                    <span className="kbd-shortcut__keys">Ctrl/⌘ + Shift + Z</span>
+                    <span className="kbd-shortcut__details">Redo</span>
+                  </p>
+                  <p>
                     <span className="kbd-shortcut__keys">Ctrl/⌘ + F</span>
                     <span className="kbd-shortcut__details">Find</span>
                   </p>
