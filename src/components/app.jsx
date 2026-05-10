@@ -1724,10 +1724,11 @@ BookLibService.Borrow(id) {
                 }}
                 onToggleEditorPanel={() => this.setState({ isEditorPanelOpen: !this.state.isEditorPanelOpen })}
                 onSwitchPanel={async (panel) => {
-                  await this.setState({ 
-                    activeLeftPanel: panel, 
-                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen, 
-                    isLibraryPanelOpen: panel === 'library' ? true : this.state.isLibraryPanelOpen 
+                  await this.setState({
+                    activeLeftPanel: panel,
+                    isEditorPanelOpen: panel === 'editor' ? true : this.state.isEditorPanelOpen,
+                    // Close library when switching to editor; open it when switching to library
+                    isLibraryPanelOpen: panel === 'library' ? true : false
                   });
                   if (panel === 'library') {
                     await this.openSavedItemsPane();
