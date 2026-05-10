@@ -53,6 +53,10 @@ export function MainHeader(props) {
 
   const onBlur = (e) => {
     exitEditing();
+    // If the title was cleared, restore to 'Untitled diagram' before blur handler
+    if (!e.target.value.trim()) {
+      e.target.value = 'Untitled diagram';
+    }
     props.titleInputBlurHandler(e);
   };
 
@@ -91,11 +95,12 @@ export function MainHeader(props) {
           />
         ) : (
           <div
-            className="flex items-center gap-2 font-normal"
+            className="flex items-center gap-2 font-normal cursor-pointer hover:opacity-80 max-w-xs"
             onClick={() => entryEditing()}
+            title={props.title || 'Untitled'}
           >
-            <span>{props.title || 'Untitled'} </span>
-            <svg className="h-5 w-5">
+            <span className="truncate max-w-[200px]">{props.title || 'Untitled'}</span>
+            <svg className="h-5 w-5 flex-shrink-0">
               <use xlinkHref="#icon-pen" />
             </svg>
           </div>
