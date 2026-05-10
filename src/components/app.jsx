@@ -72,6 +72,7 @@ export default class App extends Component {
       isPricingModalOpen: false,
       isNotificationsModalOpen: false,
       isLoginModalOpen: false,
+      loginReason: null,
       isProfileModalOpen: false,
       isSupportDeveloperModalOpen: false,
       isKeyboardShortcutsModalOpen: false,
@@ -1010,8 +1011,8 @@ BookLibService.Borrow(id) {
     }
   }
 
-  loginBtnClickHandler() {
-    this.setState({ isLoginModalOpen: true });
+  loginBtnClickHandler(reason) {
+    this.setState({ isLoginModalOpen: true, loginReason: reason || null });
   }
 
   async proBtnClickHandler() {
@@ -1776,7 +1777,8 @@ BookLibService.Borrow(id) {
         />
         <LoginModal
           open={this.state.isLoginModalOpen}
-          onClose={async () => await this.setState({ isLoginModalOpen: false })}
+          reason={this.state.loginReason}
+          onClose={async () => await this.setState({ isLoginModalOpen: false, loginReason: null })}
         />
 
         <HelpModal

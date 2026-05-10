@@ -121,7 +121,7 @@ export function MainHeader(props) {
           <button
             className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
             aria-label="Share diagram link"
-            onClick={props.onLogin.bind(this)}
+            onClick={() => props.onLogin('Sign in to generate a persistent share link for this diagram.')}
           >
             <span>Share Link</span>
           </button>
