@@ -104,9 +104,9 @@ export class PageTabs extends Component {
             <div className="flex items-center gap-2 text-sm font-normal ml-4">
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Toggle Fullscreen"
+                aria-label="Present — enter fullscreen mode"
                 onClick={onToggleFullscreen}
-                title="Toggle Fullscreen Presenting Mode"
+                title="Present — enter fullscreen mode (Esc to exit)"
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#fullscreen-icon"/>
@@ -115,7 +115,8 @@ export class PageTabs extends Component {
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Export as PNG"
+                aria-label="Export diagram as PNG — requires sign in"
+                title="Export as PNG (sign in required)"
                 onClick={onExportPng}
               >
                 <svg className="w-4 h-4 fill-current">
@@ -125,7 +126,8 @@ export class PageTabs extends Component {
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Copy PNG to Clipboard"
+                aria-label="Copy diagram as PNG to clipboard — requires sign in"
+                title="Copy PNG to clipboard (sign in required)"
                 onClick={onCopyImage}
               >
                 <svg className="w-4 h-4 fill-current">
