@@ -55,6 +55,7 @@ export default class UserCodeMirror extends Component {
       mode: options.mode,
       lineNumbers: true,
       lineWrapping: true,
+      placeholder: options.placeholder || '',
       autofocus: options.autofocus || false,
       autoCloseBrackets: true,
       autoCloseTags: true,

@@ -182,6 +182,7 @@ export default class EditorPanel extends Component {
                     prettierParser: 'babel',
                     emmet: false,
                     theme: 'monokai',
+                    placeholder: '// Start typing — e.g.\nA->B: hello()',
                   }}
                   prefs={prefs}
                   autoComplete={prefs.autoComplete}
