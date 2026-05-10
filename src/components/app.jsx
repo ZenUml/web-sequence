@@ -504,7 +504,7 @@ BookLibService.Borrow(id) {
         label: 'no_of_files_' + numOfItems,
       });
     } else {
-      this.loginBtnClickHandler();
+      this.loginBtnClickHandler('Sign in to save your diagram to your account and access it from any device.');
     }
   }
 
@@ -1131,7 +1131,7 @@ BookLibService.Borrow(id) {
 
   async openBtnClickHandler() {
     if (!window.user) {
-      this.loginBtnClickHandler();
+      this.loginBtnClickHandler('Sign in to open your saved diagrams from My Library.');
       return;
     }
     mixpanel.track({ event: 'openMyLibrary', category: 'ui' });

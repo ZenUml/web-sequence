@@ -48,7 +48,7 @@ export function MainHeader(props) {
     if (props.user) {
       props.profileBtnHandler();
     } else {
-      props.loginBtnHandler();
+      props.loginBtnHandler('Sign in to save your diagrams, access them from any device, and unlock export features.');
     }
   }, [props.user]);
 

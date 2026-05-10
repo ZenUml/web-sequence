@@ -548,7 +548,7 @@ export default class ContentWrap extends Component {
 
   async exportPngClickHandler(e) {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to export your diagram as a PNG image.');
       return;
     }
       const png = await this.getPngBlob();
@@ -570,7 +570,7 @@ export default class ContentWrap extends Component {
 
   async copyImageClickHandler(e) {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to copy your diagram as a PNG image to the clipboard.');
       return;
     }
     if (!navigator.clipboard || !navigator.clipboard.write) {
@@ -952,7 +952,7 @@ export default class ContentWrap extends Component {
 
   onCSSActiviation() {
     if (!window.user) {
-      this.props.onLogin();
+      this.props.onLogin('Sign in to access the CSS tab and apply custom styles to your diagram.');
     } else if (userService.isPlusOrAdvanced()) {
       return true;
     } else {
