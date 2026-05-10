@@ -115,25 +115,31 @@ export class PageTabs extends Component {
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Export diagram as PNG — requires sign in"
-                title="Export as PNG (sign in required)"
+                aria-label={window.user ? 'Export diagram as PNG' : 'Export as PNG — sign in required'}
+                title={window.user ? 'Export as PNG' : 'Sign in to export as PNG'}
                 onClick={onExportPng}
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#icon-download"/>
                 </svg>
                 <span>PNG</span>
+                {!window.user && (
+                  <span className="material-symbols-outlined text-sm leading-none opacity-60" aria-hidden="true">lock</span>
+                )}
               </button>
               <button
                 className="px-3 py-1 bg-black-600 text-gray-400 flex items-center gap-1.5 rounded-lg hover:bg-black-700 hover:text-gray-300 duration-200"
-                aria-label="Copy diagram as PNG to clipboard — requires sign in"
-                title="Copy PNG to clipboard (sign in required)"
+                aria-label={window.user ? 'Copy diagram as PNG to clipboard' : 'Copy PNG — sign in required'}
+                title={window.user ? 'Copy PNG to clipboard' : 'Sign in to copy as PNG'}
                 onClick={onCopyImage}
               >
                 <svg className="w-4 h-4 fill-current">
                   <use xlinkHref="#icon-copy"/>
                 </svg>
                 <span>Copy PNG</span>
+                {!window.user && (
+                  <span className="material-symbols-outlined text-sm leading-none opacity-60" aria-hidden="true">lock</span>
+                )}
               </button>
             </div>
           )}
