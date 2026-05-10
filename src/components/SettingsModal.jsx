@@ -48,7 +48,8 @@ export default function SettingsModal(props) {
         <Dialog.Overlay className="bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow fixed inset-0" />
         <Dialog.Content className="text-sm overflow-y-auto text-gray-500 data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] overflow-hidden max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-black-400 p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
           <div className="my-6">
-            <h3 className="text-lg font-semibold mb-3">Editor</h3>
+            <h3 className="text-lg font-semibold mb-1">Settings</h3>
+            <h4 className="text-base font-medium mb-3 text-gray-400">Editor Appearance</h4>
             <div className="flex flex-col my-4">
               <div className="flex justify-between mt-4">
                 <div>Theme</div>
