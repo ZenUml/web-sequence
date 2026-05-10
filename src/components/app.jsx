@@ -370,10 +370,10 @@ export default class App extends Component {
     }
     const fork = JSON.parse(JSON.stringify(sourceItem));
     delete fork.id;
-    fork.title = '(Forked) ' + sourceItem.title;
+    fork.title = sourceItem.title + ' (copy)';
     fork.updatedOn = Date.now();
     this.setCurrentItem(fork).then(() => this.refreshEditor());
-    alertsService.add(`"${sourceItem.title}" was forked`);
+    alertsService.add(`New diagram created from "${sourceItem.title}" template`);
     mixpanel.track({ event: 'itemForked', category: 'fn' });
   }
 
