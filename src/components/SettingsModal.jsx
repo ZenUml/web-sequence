@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { clsx } from 'clsx';
 import * as Select from '@radix-ui/react-select';
 import * as RadioGroup from '@radix-ui/react-radio-group';
+import { useState } from 'preact/hooks';
 
 function CheckboxSetting({
   title,
@@ -38,6 +39,8 @@ function CheckboxSetting({
 }
 
 export default function SettingsModal(props) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const updateSetting = (e) => {
     console.log(e)(e);
   };
@@ -292,19 +295,34 @@ export default function SettingsModal(props) {
                     });
                   }}
                 />
-                <CheckboxSetting
-                  name="preserveConsoleLogs"
-                  title="Preserves the console logs across your preview refreshes"
-                  label="Preserve console logs"
-                  pref={props.prefs.preserveConsoleLogs}
-                  onChange={(e) => {
-                    props.onChange({
-                      settingName: 'preserveConsoleLogs',
-                      value: e.target.checked,
-                    });
-                  }}
-                />
               </div>
+            </div>
+            <hr className="my-4 border-black-700" />
+            <div>
+              <button
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                aria-expanded={showAdvanced}
+              >
+                <span className="material-symbols-outlined text-sm">{showAdvanced ? 'expand_less' : 'expand_more'}</span>
+                Advanced / Developer
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <CheckboxSetting
+                    name="preserveConsoleLogs"
+                    title="Keep browser console output across page reloads — for developers debugging ZenUML integration"
+                    label="Preserve console logs"
+                    pref={props.prefs.preserveConsoleLogs}
+                    onChange={(e) => {
+                      props.onChange({
+                        settingName: 'preserveConsoleLogs',
+                        value: e.target.checked,
+                      });
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <Dialog.Close asChild>
