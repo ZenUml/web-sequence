@@ -45,7 +45,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",
-    "@preact/preset-vite": "^2.10.5",
+    "@preact/preset-vite": "^2.10.2",
     "@vitejs/plugin-legacy": "^6.1.1",
     "autoprefixer": "^10.5.0",
     "babel-minify": "^0.5.2",
