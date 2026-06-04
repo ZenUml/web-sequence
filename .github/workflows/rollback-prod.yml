@@ -1,0 +1,62 @@
+# Manual, deliberate production rollback: re-deploy a previous known-good
+# release to prod. A full `firebase deploy` covers ALL surfaces (hosting +
+# 6 Cloud Functions + Firestore rules/indexes), which `firebase hosting:rollback`
+# does NOT — so this is the correct mechanism when a bad release touched more
+# than the static site. See docs/adr/0001-release-pipeline-imitating-conf-app.md.
+#
+# FAST PATH for a HOSTING-only regression (no functions / rules changed):
+#   firebase hosting:rollback --project prod
+# That reverts to the previous hosting version in seconds. Use *this workflow*
+# when functions or Firestore rules must also be rolled back.
+
+name: Rollback Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or commit SHA to redeploy (e.g. a prior release-YYYYMMDDHHmm tag)'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout target ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - run: pnpm install --no-frozen-lockfile && pnpm build
+      - run: pnpm release
+      - name: Setup Firebase service account
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}' > /tmp/gcp-key.json
+      - name: Deploy functions config (prod)
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          cd functions && npm install && pnpm deploy:config:prod
+      - name: Deploy to prod
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          pnpm deploy:prod
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Smoke-test the rolled-back site
+        # Chromium only — same rationale as the staging gate / prod smoke.
+        env:
+          PW_BASE_URL: https://app.zenuml.com
+        run: pnpm exec playwright test --grep @smoke --project=chromium

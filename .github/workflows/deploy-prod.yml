@@ -50,3 +50,31 @@ jobs:
           asset_path: ./extension.zip
           asset_name: chrome-extension.zip
           asset_content_type: application/zip
+
+  # Verify the live production site immediately after deploy. Runs the fast,
+  # read-only @smoke subset against app.zenuml.com. A failure here is the signal
+  # to roll back (see .github/workflows/rollback-prod.yml).
+  smoke:
+    name: Post-deploy smoke (prod)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+      - run: pnpm install --no-frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run @smoke subset against production
+        # Chromium only — same rationale as the staging gate (deployed-URL
+        # webkit/firefox flakiness). @smoke is load + render + core-bundle.
+        env:
+          PW_BASE_URL: https://app.zenuml.com
+        run: pnpm exec playwright test --grep @smoke --project=chromium
