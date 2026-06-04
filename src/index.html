@@ -98,7 +98,17 @@
       }
     </style>
 
-    <script src="/lib/paddle.js"></script>
+    <!-- Paddle (CDN for web app; local for Chrome extension to comply with MV3 policy) -->
+    <script>
+        (function() {
+            var src = location.protocol === 'chrome-extension:'
+                ? '/lib/paddle.js'
+                : 'https://cdn.paddle.com/paddle/paddle.js';
+            var s = document.createElement('script');
+            s.src = src;
+            document.head.appendChild(s);
+        })();
+    </script>
   </head>
 
   <body>
