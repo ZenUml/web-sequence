@@ -46,7 +46,9 @@ export const WithImage = {
   },
 };
 
-// Compact sidebar mode
+// Compact sidebar mode - rendered inside a sidebar-like container that
+// matches the real app's dark left panel so the title, time, and (hover-only)
+// action buttons have room and don't overlap.
 export const Compact = {
   args: {
     item: {
@@ -63,9 +65,60 @@ export const Compact = {
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '240px', background: '#1e293b', borderRadius: '8px', padding: '8px' }}>
+      <div style={{ width: '300px', background: '#202020', borderRadius: '8px', padding: '8px' }}>
         <Story />
       </div>
     ),
   ],
+};
+
+// Multiple compact tiles stacked in the sidebar container - demonstrates
+// real usage in the app's left panel. Action buttons appear only on hover,
+// so they are correctly hidden in a static screenshot.
+export const CompactList = {
+  parameters: {
+    layout: 'padded',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: '300px', background: '#202020', borderRadius: '8px', padding: '8px' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: (args) => (
+    <div>
+      <ItemTile
+        {...args}
+        item={{
+          id: 'item-101',
+          title: 'User Login Flow',
+          updatedOn: 1705312800000, // 2024-01-15T10:00:00.000Z
+          img: null,
+        }}
+      />
+      <ItemTile
+        {...args}
+        item={{
+          id: 'item-102',
+          title: 'Payment Sequence Diagram With A Very Long Title',
+          updatedOn: 1704067200000, // 2024-01-01T00:00:00.000Z
+          img: null,
+        }}
+      />
+      <ItemTile
+        {...args}
+        item={{
+          id: 'item-103',
+          title: 'Order Processing',
+          updatedOn: 1706745600000, // 2024-02-01T00:00:00.000Z
+          img: null,
+        }}
+      />
+    </div>
+  ),
+  args: {
+    focusable: true,
+    compact: true,
+  },
 };
