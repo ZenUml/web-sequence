@@ -2,6 +2,30 @@ import { test, expect } from '@playwright/test';
 
 const SAVE_KEY = process.platform === 'darwin' ? 'Meta+s' : 'Control+s';
 
+// Deployed sites load third-party analytics/CDN scripts (Google Tag Manager,
+// Cloudflare Zaraz, Clarity, Paddle) that throw their own uncaught errors we
+// neither own nor can fix. Against staging/prod they would otherwise fail every
+// test via the pageerror handler. Errors whose source matches one of these is
+// treated as noise; genuine app errors still fail the test.
+const THIRD_PARTY_ERROR_SOURCES = [
+  'userscript.js', // Cloudflare Zaraz wraps third-party tools in userscript.js
+  'gtm.js',
+  'googletagmanager',
+  'google-analytics',
+  'analytics.js',
+  'clarity.js',
+  'clarity.ms',
+  'paddle.js',
+  'cdn.paddle.com',
+  'zaraz',
+  'cloudflareinsights',
+];
+
+function isThirdPartyError(err) {
+  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
+  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
+}
+
 test.beforeEach(async ({ page }) => {
   // Suppress the first-save confirm() dialog that fires for unsigned-in users.
   // See src/components/app.jsx:845 — the dialog blocks headless runs.
@@ -9,8 +33,10 @@ test.beforeEach(async ({ page }) => {
     window.localStorage.setItem('loginAndsaveMessageSeen', 'true');
   });
 
-  // Surface uncaught page errors as test failures.
+  // Surface uncaught page errors as test failures — except known third-party
+  // analytics/CDN noise, which we don't own (see THIRD_PARTY_ERROR_SOURCES).
   page.on('pageerror', (err) => {
+    if (isThirdPartyError(err)) return;
     throw err;
   });
 

@@ -34,6 +34,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile && pnpm build
+      # Pre-deploy guard: serve the built dist statically and verify the diagram
+      # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
+      # path) that the dev-server suite can't see, BEFORE anything ships to
+      # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
+      - name: Install Playwright (chromium)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Verify production build renders
+        env:
+          PW_PROD_BUILD: '1'
+        run: pnpm exec playwright test production-build --project=chromium
       - run: pnpm release
       - name: Setup Firebase service account
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json

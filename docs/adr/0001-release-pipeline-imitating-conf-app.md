@@ -42,6 +42,16 @@ Priority is **safety/reliability over convenience**, but we adopt both.
    smoke (`app.zenuml.com`). The suite is entirely client-side / localStorage,
    so it is safe to run against prod (no server state mutated).
 
+1b. **Pre-deploy build-render guard.** Before deploying, the build job serves the
+   built `dist/` statically (`PW_PROD_BUILD=1`, a plain static server on a
+   dedicated port) and runs `e2e/tests/production-build.spec.js`. The dev server
+   transparently serves Vite `/@fs/<abs>` URLs, so deploy-only bundling bugs
+   (e.g. an asset shim baking a dev-only path) are invisible to the dev-server
+   suite and only surface once served statically. This guard runs on PRs too, so
+   the bug class is caught at PR time — not just by the post-deploy gate. (The
+   pipeline's first real run caught exactly such a bug: the `@zenuml/core` UMD
+   shim emitted a `/@fs/` path that 404'd on staging; fixed in `vite.config.js`.)
+
 2. **Staging E2E is a hard gate.** On push to `master`: deploy staging → run the
    full suite against `staging.zenuml.com`. A red gate blocks release creation.
    The deployed-URL run is **chromium-only**: verified against live staging,
