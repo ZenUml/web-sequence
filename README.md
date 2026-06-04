@@ -55,13 +55,22 @@ $ yarn release  // copy resources to app / extension
 
 ### Staging environment
 
-1. When a PR is created or updated, a **preview** site will be created, and you can find the link in the PR page.
-2. When a PR is merged into `master` branch, a **staging** site will be created. The link to the staging site is https://staging.zenuml.com.
+1. When a PR is created or updated, the branch is built and packaged for validation (no staging deploy).
+2. When a PR is merged into `master`, the **staging** site is deployed (https://staging.zenuml.com), then the full
+   Playwright E2E suite runs against the live staging site as a gate.
 
 ### Production environment
 
-Create a tag as `release-<version>`, and push it to the remote. It doesn't matter which branch you are on. The CI/CD
-pipeline will create a production release. The link to the production site is https://app.zenuml.com.
+Production releases use a **draft-then-publish** flow — you no longer hand-craft tags:
+
+1. When the staging E2E gate passes on `master`, CI automatically creates a **draft** GitHub Release
+   (`release-<timestamp>`) with `extension.zip` attached.
+2. Review the draft and click **Publish**. Publishing triggers the `Deploy to Prod` workflow → https://app.zenuml.com,
+   followed by an automatic `@smoke` check against the live site.
+
+**Rollback:** for a hosting-only regression, run `firebase hosting:rollback --project prod` (instant). If functions or
+Firestore rules also need reverting, run the **Rollback Production** workflow (`workflow_dispatch`) with a prior
+`release-*` tag — it re-deploys all surfaces. See [docs/adr/0001](docs/adr/0001-release-pipeline-imitating-conf-app.md).
 
 ## Support
 

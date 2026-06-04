@@ -17,12 +17,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-test('app loads with editor and diagram preview visible', async ({ page }) => {
+test('app loads with editor and diagram preview visible @smoke', async ({ page }) => {
   await expect(page.locator('.CodeMirror').first()).toBeVisible();
   await expect(page.locator('#demo-frame')).toBeAttached();
 });
 
-test('editor renders default content and diagram renders', async ({ page }) => {
+test('editor renders default content and diagram renders @smoke', async ({ page }) => {
   // CodeMirror has been mounted and shows non-empty text.
   const editorText = page.locator('.CodeMirror .CodeMirror-code').first();
   await expect(editorText).toBeVisible();
@@ -272,7 +272,7 @@ test('main app container mounts under #app', async ({ page }) => {
   ).toBeGreaterThan(0);
 });
 
-test('preview iframe successfully loads the @zenuml/core UMD bundle', async ({ page }) => {
+test('preview iframe successfully loads the @zenuml/core UMD bundle @smoke', async ({ page }) => {
   // Regression for the Vite shim plugin in vite.config.js. If the shim breaks,
   // the iframe's <script src> would 404 and `window.zenuml` would never appear.
   await expect.poll(

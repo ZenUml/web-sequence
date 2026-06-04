@@ -99,9 +99,31 @@ Release Report: <tag>
 - Chrome extension asset: uploaded|skipped
 ```
 
+## Known CI Gotchas
+
+These issues have been encountered and fixed — document here so they don't repeat:
+
+| Symptom | Root cause | Fix applied |
+|---------|-----------|-------------|
+| `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` | pnpm 11 default: 24h age gate on new packages | `pnpm-workspace.yaml`: `minimumReleaseAge: 0` |
+| `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` (overrides) | `package.json` `resolutions` field → pnpm lockfile `overrides` mismatch across pnpm versions | workflow uses `pnpm install --no-frozen-lockfile` |
+| `Cannot find module 'firebase-functions'` | pnpm 10 strict module linking breaks firebase trigger parsing | `functions/` uses `npm install` not `pnpm install` |
+| pnpm `latest` requires Node >= 22 | pnpm 11 dropped Node 20 | Node pinned to 22.x; pnpm pinned to v10 |
+
+When creating the release tag, **always tag `HEAD` of `origin/master` explicitly**:
+
+```bash
+git tag v<tag> HEAD
+git push origin v<tag>
+gh release create v<tag> --title "..." --notes "..."
+```
+
+Using `gh release create` without pre-pushing the tag can result in the release pointing at a stale commit.
+
 ## Rules
 
 - Never create a release tag pointing at a commit that is not on `origin/master`.
 - Never force-push or delete release tags.
 - Never release if required CI checks on the last merge commit are red — check with `gh run list --branch master --limit 5` first.
 - If the deploy workflow fails, report the failure and the relevant log lines; do not retry automatically.
+- After each retry, verify the tag points at the correct (latest) commit with `git ls-remote origin refs/tags/<tag>`.

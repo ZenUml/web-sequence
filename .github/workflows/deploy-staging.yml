@@ -1,9 +1,18 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+# Build + deploy staging, gate on a deployed-URL E2E run, then auto-draft a
+# production release. See docs/adr/0001-release-pipeline-imitating-conf-app.md.
 
 name: Deploy to Stage
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  # Cancel superseded runs per ref, but NEVER cancel master — an in-flight run
+  # may be creating a draft release we must not lose.
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   build:
@@ -27,19 +36,89 @@ jobs:
       - run: pnpm install --no-frozen-lockfile && pnpm build
       - run: pnpm release
       - name: Setup Firebase service account
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
+      # Staging is a shared environment — only the master branch deploys to it.
+      # PRs build + package + upload artifacts for validation but never deploy.
+      - name: Deploy functions config (staging)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-      - run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           cd functions && npm install && pnpm deploy:config:staging
       - name: Deploy to staging
-        if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           pnpm deploy:staging
-      - name: Upload artifacts # Find artifacts under actions/jobs
+      - name: Upload extension dir # Browsable under actions/jobs
         uses: actions/upload-artifact@v4
         with:
           name: chrome-extension
           path: extension
+      - name: Upload extension.zip # Consumed by the draft-release job
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: extension.zip
+
+  # Hard gate: run the full Playwright suite against the *deployed* staging site.
+  # A red gate blocks the draft release, so a production release can only ever be
+  # created from a build already proven green on staging.
+  staging-gate:
+    name: E2E gate (staging)
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+      - run: pnpm install --no-frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      # Chromium only. Against the *deployed* site, webkit/firefox are flaky on
+      # network-timed localStorage/render tests (a remote-target artifact, not a
+      # product bug — the full 3-browser suite is green locally on PRs). Gating
+      # releases on chromium keeps "did the deploy work?" reliable without
+      # letting cross-browser flakiness block every release.
+      - name: Run full E2E suite against staging
+        env:
+          PW_BASE_URL: https://staging.zenuml.com
+        run: pnpm exec playwright test --project=chromium
+
+  # Once the gate is green, auto-create a DRAFT production release. The only
+  # remaining human action is clicking "Publish" on the draft, which fires
+  # deploy-prod.yml (on: release: published).
+  draft-release:
+    name: Create draft release
+    needs: staging-gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download extension.zip
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+      - name: Compute release tag
+        id: tag
+        # Seconds included so two merges in the same minute can't collide on tag.
+        run: echo "tag=release-$(date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GH_ACTION_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          gh release create "$tag" extension.zip \
+            --draft \
+            --target "${{ github.sha }}" \
+            --title "$tag" \
+            --notes "Auto-drafted after the staging E2E gate passed on commit ${{ github.sha }}. Review, then click **Publish** to deploy to production (app.zenuml.com)."

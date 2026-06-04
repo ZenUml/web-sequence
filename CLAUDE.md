@@ -92,9 +92,13 @@ Test files follow the pattern `*.test.js` and are located either in `/src/tests/
 
 ## Deployment Process
 
-- **Preview**: Created automatically for PRs
-- **Staging**: Merges to master deploy to https://staging.zenuml.com
-- **Production**: Create tag `release-<version>` to deploy to https://app.zenuml.com
+See [docs/adr/0001-release-pipeline-imitating-conf-app.md](docs/adr/0001-release-pipeline-imitating-conf-app.md) for the full design.
+
+- **PRs**: Built and packaged for validation; no staging deploy.
+- **Staging**: Merge to master → deploy to https://staging.zenuml.com → full Playwright E2E gate against the live staging site (chromium).
+- **Production**: When the staging gate passes, CI auto-creates a **draft** GitHub Release (`release-<timestamp>`). Click **Publish** → `deploy-prod.yml` ships to https://app.zenuml.com → automatic `@smoke` check. (No hand-crafted tags.)
+- **Rollback**: `firebase hosting:rollback --project prod` for hosting-only; the **Rollback Production** `workflow_dispatch` (with a prior `release-*` tag) for all surfaces (hosting + functions + Firestore rules).
+- **Chrome extension**: `extension.zip` is attached to each release as an asset. Publishing to the Chrome Web Store stays a **manual** step (`yarn upload` + `yarn pub`).
 
 ## Key Features to Understand
 
