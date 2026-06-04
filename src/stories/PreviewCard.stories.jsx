@@ -8,6 +8,26 @@ export default {
     layout: 'centered',
   },
   tags: ['autodocs'],
+  // PreviewCard is a white-surface component: in the real app it lives inside
+  // .share-panel (color:#000) on a white modal. It has no background of its own,
+  // so on the dark canvas its dark text would be unreadable. This decorator
+  // reproduces that white modal context (width/padding mirror .share-panel).
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          background: '#fff',
+          color: '#000',
+          width: '460px',
+          padding: '20px',
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export const Default = {
