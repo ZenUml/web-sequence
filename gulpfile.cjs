@@ -32,7 +32,7 @@ function minifyJs(fileName) {
 gulp.task('copyFiles', function () {
   return merge(
     // Copy static assets
-    gulp.src('static/**/*').pipe(gulp.dest('app/static')),
+    gulp.src(['static/**/*', '!static/manifest.json']).pipe(gulp.dest('app/static')),
     gulp.src('help/**/*').pipe(gulp.dest('app/help')),
     gulp.src('privacy-policy/*').pipe(gulp.dest('app/privacy-policy')),
     gulp

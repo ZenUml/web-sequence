@@ -19,8 +19,8 @@
     "test:e2e:ui": "playwright test --ui",
     "deploy:staging": "firebase deploy --project staging",
     "deploy:prod": "firebase deploy --project prod",
-    "upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret 5bIK01PSsjRykdAqaV-v4fFZ --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
-    "pub": "webstore publish --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef --client-id 457917008826-p6qkd4tkbbutbae4j7uc2p39a76lfjlr.apps.googleusercontent.com --client-secret 5bIK01PSsjRykdAqaV-v4fFZ --refresh-token 1/4YHJ8yliNMNLBgKkh2QhQ_PnZUc8trKNx_j-pLOGrh8",
+    "upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef",
+    "pub": "webstore publish --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef",
     "install": "ln -sf ../../git-hooks/pre-commit .git/hooks/pre-commit",
     "precommit": "lint-staged",
     "http-server-app": "http-server ./app"

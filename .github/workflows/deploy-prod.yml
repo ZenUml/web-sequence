@@ -29,7 +29,36 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile && pnpm build
-      - run: pnpm release
+      - name: Package Chrome extension
+        # gulp release is incompatible with Node 20+; replicate its steps directly.
+        run: |
+          rm -rf app extension
+          mkdir -p app
+          rsync -a --exclude='manifest.json' static/. app/static/
+          for d in help privacy-policy End-User-License-Agreement; do
+            [ -d "$d" ] && cp -R "$d/." "app/$d/" || true
+          done
+          cp -R dist/. app/
+          cp help.html app/ 2>/dev/null || true
+          cp ZenUML_Sequence_Diagram_addon_help.html app/ 2>/dev/null || true
+          cp src/detached-window.js app/ 2>/dev/null || true
+          cp src/icon-*.png app/ 2>/dev/null || true
+          cp static/manifest.json app/
+          cp -R app/. extension/
+          cp static/manifest.json extension/
+          cp src/extension/options.js extension/
+          cp src/extension/options.html extension/
+          cp src/extension/eventPage.js extension/
+          cp src/extension/script.js extension/
+          cp static/favicon-128x128.png extension/ 2>/dev/null || true
+          cp static/icon-*.png extension/ 2>/dev/null || true
+          rm -rf extension/partials
+          cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
+      - name: Upload extension.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: extension.zip
       - name: Setup Firebase service account
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}' > /tmp/gcp-key.json
@@ -78,3 +107,35 @@ jobs:
         env:
           PW_BASE_URL: https://app.zenuml.com
         run: pnpm exec playwright test --grep @smoke --project=chromium
+
+  # Publish the Chrome extension after the web app smoke tests pass.
+  # Requires three repository secrets: WEBSTORE_CLIENT_ID, WEBSTORE_CLIENT_SECRET,
+  # WEBSTORE_REFRESH_TOKEN (OAuth2 credentials from Google Cloud Console).
+  publish-extension:
+    name: Publish Chrome extension
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download extension.zip
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+      - name: Upload to Chrome Web Store
+        env:
+          CLIENT_ID: ${{ secrets.WEBSTORE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.WEBSTORE_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.WEBSTORE_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.WEBSTORE_PUBLISHER_ID }}
+        run: |
+          npx chrome-webstore-upload-cli@latest upload \
+            --source extension.zip \
+            --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef
+      - name: Publish to Chrome Web Store
+        env:
+          CLIENT_ID: ${{ secrets.WEBSTORE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.WEBSTORE_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.WEBSTORE_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.WEBSTORE_PUBLISHER_ID }}
+        run: |
+          npx chrome-webstore-upload-cli@latest publish \
+            --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef
