@@ -7,9 +7,23 @@ export default {
   component: FolderRow,
   parameters: {
     backgrounds: { default: 'dark' },
-    layout: 'padded',
+    layout: 'centered',
   },
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          width: '300px',
+          background: '#202020',
+          padding: '8px',
+          borderRadius: '8px',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
   args: {
     onToggle: fn(),
     onRename: fn(),
@@ -18,14 +32,6 @@ export default {
 };
 
 export const Default = {
-  args: {
-    folder: { id: 'folder-1', name: 'My Diagrams' },
-    isOpen: false,
-    itemCount: 5,
-  },
-};
-
-export const Collapsed = {
   args: {
     folder: { id: 'folder-1', name: 'My Diagrams' },
     isOpen: false,
