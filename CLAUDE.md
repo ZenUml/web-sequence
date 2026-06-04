@@ -11,11 +11,11 @@ This is **ZenUML Web Sequence**, a free sequence diagram online tool that conver
 - **Frontend Framework**: Preact (v10.18.1) - lightweight React alternative
 - **Build Tool**: Vite (v6.3.5)
 - **UI Libraries**: Tailwind CSS, Radix UI, Headless UI
-- **Core Engine**: @zenuml/core (v3.32.3) - sequence diagram rendering
+- **Core Engine**: @zenuml/core (v3.49.2) - sequence diagram rendering (Vue-based; vue + vuex are its peer deps)
 - **Code Editor**: CodeMirror (v5.65.16)
 - **Backend**: Firebase (authentication, Firestore, cloud functions)
-- **Testing**: Jest with Enzyme
-- **Package Manager**: Yarn (required - see volta config)
+- **Testing**: Jest + Enzyme (unit); Playwright (E2E)
+- **Package Manager**: Yarn (unit tests, dev, build — see volta config); pnpm (Playwright E2E — `playwright.config.js` uses `pnpm dev`)
 
 ## Architecture
 
@@ -31,6 +31,7 @@ Key directories:
 - `/src/services/` - Business logic and Firebase integration
 - `/src/zenuml/` - ZenUML specific components
 - `/functions/` - Firebase cloud functions
+- `/e2e/tests/` - Playwright E2E test specs
 
 ## Common Development Commands
 
@@ -63,26 +64,39 @@ yarn deploy:prod
 ## Testing
 
 ```bash
-# Run all unit tests
+# Run all unit tests (Jest + Enzyme)
 yarn test
 
-# Run a specific test file
+# Run a specific unit test file
 yarn test src/common/ensure.test.js
+
+# Run Playwright E2E tests against the local dev server
+yarn test:e2e
+
+# Run E2E in headed mode (useful for debugging)
+yarn test:e2e:headed
+
+# Run E2E against staging or production
+PW_BASE_URL=https://staging.zenuml.com yarn test:e2e
+
+# Run E2E against the production build (requires `yarn build` first)
+PW_PROD_BUILD=1 yarn test:e2e
 
 # Manual testing guide available at
 # src/manual-test-guide.md
 ```
 
-Test files follow the pattern `*.test.js` and are located either in `/src/tests/` or alongside the components they test.
+Unit test files follow the pattern `*.test.js` and are located either in `/src/tests/` or alongside the components they test. E2E tests live in `/e2e/tests/`.
 
 ## Important Development Notes
 
-1. **Always use Yarn**, not npm - the project uses Yarn workspaces and volta for version management
+1. **Package managers**: Use **Yarn** for most tasks (install, dev, test, build, lint). Use **pnpm** when running Playwright E2E — `playwright.config.js` boots the dev server via `pnpm dev`. Do not use npm.
 2. **Preact aliases**: React imports are aliased to Preact in the build config
 3. **No TypeScript**: This is a JavaScript project with JSX
 4. **Firebase emulators**: Use for local development - see `/docs/firebase-emulator-testing.md`
 5. **Pre-commit hooks**: Automatically run Prettier and ESLint
 6. **Chrome extension**: Built to `/extension/` directory during release
+7. **Storybook**: Available for component development — `yarn storybook` (port 6006), `yarn build-storybook` for a static build
 
 ## Code Style
 
