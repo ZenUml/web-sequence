@@ -2,6 +2,20 @@ import { Popover } from '../components/PopOver';
 
 const fn = () => () => {};
 
+const openLayoutDecorator = (Story) => (
+  <div
+    style={{
+      minHeight: '220px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+      paddingTop: '40px',
+    }}
+  >
+    <Story />
+  </div>
+);
+
 export default {
   title: 'Components/Popover',
   component: Popover,
@@ -9,13 +23,16 @@ export default {
     backgrounds: { default: 'dark' },
     layout: 'centered',
   },
+  decorators: [openLayoutDecorator],
   tags: ['autodocs'],
 };
 
-export const Default = {
+export const Interactive = {
   args: {
-    trigger: <button className="px-3 py-1 bg-blue-600 text-white rounded">Open</button>,
-    content: <div className="p-3 text-sm text-white">Popover content here.</div>,
+    trigger: <button className="px-3 py-1 bg-blue-600 text-white rounded">Open menu</button>,
+    content: (
+      <div className="p-3 text-sm text-gray-800">Click the trigger to toggle this popover.</div>
+    ),
     hasArrow: false,
     hasShadow: false,
     placement: 'bottom',
@@ -23,30 +40,30 @@ export const Default = {
   },
 };
 
-export const WithArrowAndShadow = {
+export const Open = {
   args: {
-    trigger: <button className="px-3 py-1 bg-purple-600 text-white rounded">Hover me</button>,
+    trigger: <button className="px-3 py-1 bg-green-600 text-white rounded">Always open</button>,
     content: (
-      <div className="p-3 text-sm text-white">
-        <strong>Info</strong>
-        <p>This popover has an arrow and a drop shadow.</p>
+      <div className="p-3 text-sm text-gray-800">
+        This popover is open by default so the content is visible.
       </div>
     ),
-    hasArrow: true,
-    hasShadow: true,
+    isVisible: true,
+    hasArrow: false,
+    hasShadow: false,
     placement: 'bottom',
     onVisibilityChange: fn(),
   },
 };
 
-export const ControlledVisible = {
+export const OpenWithArrowAndShadow = {
   args: {
-    trigger: <button className="px-3 py-1 bg-green-600 text-white rounded">Always Open</button>,
+    trigger: <button className="px-3 py-1 bg-purple-600 text-white rounded">Actions</button>,
     content: (
-      <ul className="p-3 text-sm text-white space-y-1">
-        <li>Action 1</li>
-        <li>Action 2</li>
-        <li>Action 3</li>
+      <ul className="p-3 text-sm text-gray-800 space-y-2">
+        <li className="cursor-pointer hover:text-blue-600">Rename page</li>
+        <li className="cursor-pointer hover:text-blue-600">Duplicate page</li>
+        <li className="cursor-pointer hover:text-red-600">Delete page</li>
       </ul>
     ),
     isVisible: true,
