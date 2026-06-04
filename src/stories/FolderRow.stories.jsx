@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { FolderRow } from '../components/FolderRow';
 
 const fn = () => () => {};

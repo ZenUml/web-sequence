@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { Notifications } from '../components/Notifications';
 
 const fn = () => () => {};
