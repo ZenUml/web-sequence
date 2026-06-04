@@ -32,7 +32,7 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          cd functions && pnpm install && pnpm deploy:config:staging
+          cd functions && npm install && pnpm deploy:config:staging
       - name: Deploy to staging
         if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' # This conditional will skip the step for Dependabot PRs
         run: |

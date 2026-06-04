@@ -36,7 +36,7 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          cd functions && pnpm install && pnpm deploy:config:prod
+          cd functions && npm install && pnpm deploy:config:prod
       - run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           pnpm deploy:prod
