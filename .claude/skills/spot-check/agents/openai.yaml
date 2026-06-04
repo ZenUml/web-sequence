@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spot Check"
+  short_description: "Ad hoc Playwright verification on staging or prod with a written plan first."
+  default_prompt: "Run a spot check on staging.zenuml.com for the recent diagram rendering changes."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validate Branch"
+  short_description: "Run web-sequence local preflight checks before PR or merge."
+  default_prompt: "Validate the current web-sequence branch and report what passed, failed, or was skipped."

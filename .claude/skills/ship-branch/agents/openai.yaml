@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ship Branch"
+  short_description: "Validate, PR, monitor CI, and merge a web-sequence branch."
+  default_prompt: "Ship the current web-sequence branch through validation, PR, CI, and merge."
