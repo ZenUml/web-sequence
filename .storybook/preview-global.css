@@ -1,1 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+/* Fonts (Material Symbols Outlined + Inter) are loaded via .storybook/preview-head.html,
+   which is injected verbatim into the preview iframe <head> — the robust way to load
+   remote fonts, mirroring the real app (src/index.html). Do not re-add an @import here:
+   @import of a remote stylesheet is unreliable inside Storybook's iframe / PostCSS pipeline. */

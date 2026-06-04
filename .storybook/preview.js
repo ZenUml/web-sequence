@@ -1,3 +1,4 @@
+import "../src/assets/tailwind.css";
 import "../src/style.css";
 import "./preview-global.css";
 
