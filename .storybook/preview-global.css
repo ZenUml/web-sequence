@@ -1,0 +1,4 @@
+/* Fonts (Material Symbols Outlined + Inter) are loaded via .storybook/preview-head.html,
+   which is injected verbatim into the preview iframe <head> — the robust way to load
+   remote fonts, mirroring the real app (src/index.html). Do not re-add an @import here:
+   @import of a remote stylesheet is unreliable inside Storybook's iframe / PostCSS pipeline. */
