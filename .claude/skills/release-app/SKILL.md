@@ -1,6 +1,6 @@
 ---
 name: release-app
-description: Release ZenUML web-sequence to production (app.zenuml.com) by pushing master and publishing a GitHub release. Use when the user says "release", "release app", "deploy to prod", "ship to production", or invokes /release-app. Does not merge PRs — use ship-branch first if there are pending changes on a feature branch.
+description: Release ZenUML web-sequence to production (app.zenuml.com) by publishing a GitHub release, wait for deploy-prod CI + @smoke, then run a release-delta spot check (spot-check skill Step 5.5). Use when the user says "release", "release app", "deploy to prod", "ship to production", or invokes /release-app. Does not merge PRs — use ship-branch first if there are pending changes on a feature branch.
 ---
 
 # Release App
@@ -77,16 +77,63 @@ gh run watch <run-id>
 
 Report the final run status. A successful run deploys the app and uploads `chrome-extension.zip` as a release asset.
 
-## Post-release Smoke Test
+### Step 5: Wait for deploy + CI smoke (mandatory)
 
-After CI turns green:
+After publish, monitor **both** jobs in `deploy-prod.yml`:
 
-1. Open https://app.zenuml.com in the browser.
-2. Confirm the diagram canvas loads and renders a simple diagram.
-3. Check the version label in the footer/header matches the release if visible.
-4. Report any console errors.
+```bash
+gh run list --workflow=deploy-prod.yml --limit 3
+gh run watch <run-id>
+```
 
-Use the Playwright MCP (`user-playwright`) for this — navigate to `https://app.zenuml.com`, take a screenshot, and check the console.
+The **`Post-deploy smoke (prod)`** job runs `@smoke` against `https://app.zenuml.com` (chromium). Do not skip waiting for it.
+
+### Step 5.5: Spot check (targeted coverage for **this** release)
+
+**Runs after Step 5 is green. Do not skip.**
+
+General workflow: **spot-check** skill.
+
+Release-specific: understand **what shipped** between the previous published release and this tag, then verify **those behaviors** on production (or staging if prod is blocked) — not “run every recipe blindly.”
+
+#### 1. Establish the release delta
+
+```bash
+gh release list --repo ZenUml/web-sequence --exclude-drafts --limit 5 --json tagName
+git fetch --tags
+git log <prev-published-tag>..<new-tag> --oneline
+```
+
+Read commits as product intent. For non-obvious subjects, `git show <sha>` before planning.
+
+**Mandatory triage table** (every commit in the range):
+
+| Category | Criteria | Plan action |
+|----------|----------|-------------|
+| `behavioral` | User-visible app, diagram, editor, extension packaging, Firebase rules/functions affecting UX | ≥1 `[ ]` assertion |
+| `instrumentation` | Analytics only | Optional Mixpanel assertion or skip with reason |
+| `infra/test/docs` | CI, tests, docs, skills only | `Skipped: …` |
+
+`Spot check: N/A` only if **every** commit is `infra/test/docs`. Output the triage table before the plan or N/A.
+
+#### 2. Write the spot check plan (before browser)
+
+Use the **spot-check** plan format. Target **`https://app.zenuml.com`** unless the release did not deploy.
+
+Map delta themes to methods (examples):
+
+| Themes in delta | Typical checks |
+|-----------------|----------------|
+| Diagram / `@zenuml/core` / `vite.config.js` | Edit DSL → SVG in `#demo-frame`; optional `dsl-spot-check` recipe on prod |
+| Editor / modals / multi-page | Smoke paths from `smoke.spec.js` relevant to changed UI |
+| Deploy / hosting only | `@smoke` on prod (likely already green in Step 5) + one manual DSL edit |
+| Chrome extension | Note: extension ships as release asset; web app spot check does not replace Web Store verification |
+
+#### 3. Execute
+
+Follow **spot-check** execution. `@smoke` passing in CI does **not** replace delta assertions you wrote.
+
+Record pass / fail / skipped per planned `[ ]` line.
 
 ## Report
 
@@ -94,8 +141,9 @@ Use the Playwright MCP (`user-playwright`) for this — navigate to `https://app
 Release Report: <tag>
 - Commits released: <N>
 - GitHub Release: <url>
-- CI run: <url> — PASS|FAIL|IN_PROGRESS
-- Production smoke: PASS|FAIL|SKIPPED
+- CI deploy: <url> — PASS|FAIL
+- CI @smoke (prod): PASS|FAIL
+- Spot check (delta): PASS|FAIL|N/A — <summary>
 - Chrome extension asset: uploaded|skipped
 ```
 

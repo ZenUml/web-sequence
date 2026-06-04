@@ -1,0 +1,4 @@
+interface:
+  display_name: "Land PR"
+  short_description: "Merge a green web-sequence PR into master and verify staging."
+  default_prompt: "Land the web-sequence PR and verify post-merge staging CI."

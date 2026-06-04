@@ -1,0 +1,4 @@
+interface:
+  display_name: "Babysit PR"
+  short_description: "Monitor and fix web-sequence PR CI failures."
+  default_prompt: "Babysit the current web-sequence PR and report CI status or fixes."
