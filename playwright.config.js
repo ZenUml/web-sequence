@@ -4,8 +4,38 @@ import { defineConfig, devices } from '@playwright/test';
 // the deployed staging site (the post-staging-deploy gate), or production
 // (the post-prod-deploy smoke). When it points at a remote URL we must NOT
 // spin up the local dev server. See docs/adr/0001-release-pipeline-imitating-conf-app.md.
-const baseURL = process.env.PW_BASE_URL || 'http://localhost:3000';
 const isRemoteTarget = !!process.env.PW_BASE_URL;
+const isProdBuild = process.env.PW_PROD_BUILD === '1';
+
+// Prod-build mode uses a dedicated port so it never collides with a dev server
+// that may already be running on 3000.
+const PROD_BUILD_PORT = 3100;
+const baseURL =
+  process.env.PW_BASE_URL ||
+  (isProdBuild ? `http://localhost:${PROD_BUILD_PORT}` : 'http://localhost:3000');
+
+// PW_PROD_BUILD=1 serves the *built* `dist/` with a plain static server instead
+// of the dev server. The dev server transparently serves Vite `/@fs/<abs>` URLs,
+// which hides deploy-only bundling bugs (e.g. an asset shim that bakes a dev-only
+// `/@fs/` path). A static server rooted at `dist/` 404s such paths exactly like
+// Firebase Hosting does. Requires `dist/` to be built first (`pnpm build`).
+function resolveWebServer() {
+  if (isRemoteTarget) return undefined; // site already live
+  if (isProdBuild) {
+    return {
+      command: `npx http-server ./dist -p ${PROD_BUILD_PORT} -s -c-1`,
+      url: `http://localhost:${PROD_BUILD_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    };
+  }
+  return {
+    command: 'pnpm dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  };
+}
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -36,14 +66,6 @@ export default defineConfig({
     },
   ],
 
-  // Only start a local dev server when testing locally. Against a deployed
-  // URL (PW_BASE_URL set) the site is already live, so skip it entirely.
-  webServer: isRemoteTarget
-    ? undefined
-    : {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-      },
+  // Local dev server, static production-build server, or nothing (remote URL).
+  webServer: resolveWebServer(),
 });

@@ -4,6 +4,7 @@ import legacy from '@vitejs/plugin-legacy';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,10 +19,21 @@ function getCommitHash() {
 // @zenuml/core's package.json `exports` only exposes the root entry, so
 // `import '@zenuml/core/dist/zenuml?url'` in src/utils.js is rejected by both
 // node-style resolution and Vite's alias + dep-optimizer pipeline. This plugin
-// intercepts that one specifier and returns the file's @fs URL directly.
+// intercepts that one specifier and resolves it to the bundle's URL.
+//
+// Dev (serve) and build must differ:
+//   - serve: return Vite's `/@fs/<abs>` URL — the dev server streams the file.
+//   - build: a `/@fs/<abs>` URL is dev-server-only and 404s once the build is
+//     served statically (Firebase Hosting), so the diagram never renders. We
+//     must emit the file as a real hashed asset and reference it by its built
+//     URL. Guarded by e2e/tests/production-build.spec.js.
+let zenumlShimIsBuild = false;
 const zenumlAssetUrlShim = {
   name: 'zenuml-core-asset-url-shim',
   enforce: 'pre',
+  configResolved(config) {
+    zenumlShimIsBuild = config.command === 'build';
+  },
   resolveId(source) {
     if (source === '@zenuml/core/dist/zenuml?url') {
       return '\0zenuml-core-asset-url';
@@ -34,6 +46,14 @@ const zenumlAssetUrlShim = {
         __dirname,
         'node_modules/@zenuml/core/dist/zenuml.js',
       );
+      if (zenumlShimIsBuild) {
+        const referenceId = this.emitFile({
+          type: 'asset',
+          name: 'zenuml.js',
+          source: readFileSync(filePath),
+        });
+        return `export default import.meta.ROLLUP_FILE_URL_${referenceId};`;
+      }
       return `export default ${JSON.stringify('/@fs' + filePath)};`;
     }
     return null;
