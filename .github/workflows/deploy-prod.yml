@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
-      - run: pnpm install && pnpm build
+      - run: pnpm install --no-frozen-lockfile && pnpm build
       - run: pnpm release
       - name: Setup Firebase service account
         run: |
