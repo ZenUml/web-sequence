@@ -61,7 +61,7 @@ export const Compact = {
     compact: true,
   },
   parameters: {
-    layout: 'padded',
+    layout: 'centered',
   },
   decorators: [
     (Story) => (
@@ -77,7 +77,7 @@ export const Compact = {
 // so they are correctly hidden in a static screenshot.
 export const CompactList = {
   parameters: {
-    layout: 'padded',
+    layout: 'centered',
   },
   decorators: [
     (Story) => (
