@@ -1,11 +1,19 @@
 ---
 name: submit-branch
-description: Push the current ZenUML web-sequence branch and create or reuse a GitHub PR against master. Use when the user says "submit", "create PR", "open a pull request", "push and PR", or wants to publish branch work without merging. Does not fix CI or merge.
+description: Push the current ZenUML web-sequence branch, create or reuse a GitHub PR against master, then always run babysit-pr until CI is green or blocked. Use when the user says "submit", "create PR", "open a pull request", "push and PR", or wants to publish branch work without merging. Does not merge — use land-pr after babysit passes.
 ---
 
 # Submit Branch
 
-Publish the current branch as a PR for `ZenUml/web-sequence`.
+Publish the current branch as a PR for `ZenUml/web-sequence`, then **always** babysit CI on that PR.
+
+## Flow
+
+```text
+commit (if needed) → push → create or reuse PR → babysit-pr
+```
+
+Stop at the first failing step. Do not merge.
 
 ## Preconditions
 
@@ -48,8 +56,6 @@ Check for an existing PR:
 gh pr view --json number,title,url,state,isDraft,headRefName
 ```
 
-If one exists, report it and stop.
-
 If no PR exists, create one against `master`:
 
 ```bash
@@ -63,7 +69,18 @@ EOF
 )"
 ```
 
+If a PR already exists, note its number and URL — do not create a duplicate.
+
 Use Draft only if the user asks or if the branch is intentionally not ready. This repo does not have a documented draft gate that skips expensive PR E2E.
+
+### 4. Babysit CI (mandatory)
+
+**Always** invoke the **babysit-pr** skill on the PR from Step 3 (new or reused).
+
+- Pass the PR number explicitly if you have it.
+- Let babysit watch `Deploy to Stage`, diagnose failures, fix code-caused issues (up to its retry budget), and report final status.
+- If babysit ends **FAILED** or **BLOCKED**, stop here — do not merge. Tell the user what failed and whether a fix was pushed.
+- If babysit ends **PASSED** or checks are still **PENDING** with babysit still watching, report that state; do not call **land-pr** unless the user asked to ship/merge.
 
 ## PR Body Guidance
 
@@ -83,11 +100,11 @@ Submitted: PR #<number> <url>
 Branch: <branch>
 Base: master
 Validation included: <yes/no, summary>
+Babysit: PASSED|FAILED|PENDING|BLOCKED — <summary>
 Notes: <draft state, skipped checks, unrelated local files>
 ```
 
 ## Does Not
 
-- Run full validation by default; use `validate-branch`.
-- Monitor or fix CI; use `babysit-pr`.
-- Merge; use `land-pr`.
+- Run full validation by default; use `validate-branch` before submit when the branch needs local preflight.
+- Merge; use `land-pr` after babysit is green and the user wants to land.

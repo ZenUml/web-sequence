@@ -11,8 +11,7 @@ Orchestrate the complete branch-to-`master` path for web-sequence.
 
 ```text
 validate-branch
-  -> submit-branch
-  -> babysit-pr
+  -> submit-branch   # includes mandatory babysit-pr
   -> land-pr
 ```
 
@@ -24,19 +23,15 @@ Stop at the first failing step. Do not skip validation unless the user explicitl
 
 Use `validate-branch`. If it reports FAIL, stop and fix locally. If it reports PARTIAL, decide whether the blocker is acceptable before proceeding; mention the risk to the user.
 
-### 2. Submit PR
+### 2. Submit PR and babysit CI
 
-Use `submit-branch`. Create the PR against `master`. If a PR already exists, reuse it.
+Use `submit-branch` (pushes, opens or reuses the PR, then **always** runs `babysit-pr`). If babysit reports FAILED or BLOCKED, stop.
 
-### 3. Get CI Green
-
-Use `babysit-pr` on the PR. Let it monitor `Deploy to Stage`, fix code-caused failures, or report infra/secrets blockers. If it exhausts retries, stop.
-
-### 4. Merge
+### 3. Merge
 
 Confirm with the user before merging unless they explicitly said "ship it" or "ship this branch". Then use `land-pr`.
 
-### 5. Report
+### 4. Report
 
 On success:
 

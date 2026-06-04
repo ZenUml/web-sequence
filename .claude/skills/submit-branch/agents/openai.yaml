@@ -1,4 +1,4 @@
 interface:
   display_name: "Submit Branch"
-  short_description: "Push a web-sequence branch and open or reuse a PR."
-  default_prompt: "Submit the current web-sequence branch as a PR against master."
+  short_description: "Push a web-sequence branch, open or reuse a PR, then babysit CI until green or blocked."
+  default_prompt: "Submit the current web-sequence branch as a PR against master and babysit CI until it passes."
