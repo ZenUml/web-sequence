@@ -1,6 +1,7 @@
 import { h } from 'preact';
-import { fn } from '@storybook/test';
 import { FolderRow } from '../components/FolderRow';
+
+const fn = () => () => {};
 
 export default {
   title: 'Components/FolderRow',
@@ -14,6 +15,14 @@ export default {
     onToggle: fn(),
     onRename: fn(),
     onDelete: fn(),
+  },
+};
+
+export const Default = {
+  args: {
+    folder: { id: 'folder-1', name: 'My Diagrams' },
+    isOpen: false,
+    itemCount: 5,
   },
 };
 

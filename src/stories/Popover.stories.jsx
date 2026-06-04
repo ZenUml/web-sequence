@@ -1,5 +1,6 @@
-import { fn } from '@storybook/test';
 import { Popover } from '../components/PopOver';
+
+const fn = () => () => {};
 
 export default {
   title: 'Components/Popover',

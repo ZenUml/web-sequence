@@ -1,5 +1,6 @@
-import { fn } from '@storybook/test';
 import Tab from '../components/Tab';
+
+const fn = () => () => {};
 
 export default {
   title: 'Components/Tab',
@@ -9,6 +10,15 @@ export default {
     layout: 'centered',
   },
   tags: ['autodocs'],
+};
+
+export const Default = {
+  args: {
+    label: 'Sequence',
+    activeTab: 'Sequence',
+    onClick: fn(),
+    lineOfCode: 0,
+  },
 };
 
 export const Active = {

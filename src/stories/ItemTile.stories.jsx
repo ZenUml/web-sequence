@@ -1,5 +1,6 @@
-import { fn } from '@storybook/test';
 import { ItemTile } from '../components/ItemTile';
+
+const fn = () => () => {};
 
 export default {
   title: 'Components/ItemTile',

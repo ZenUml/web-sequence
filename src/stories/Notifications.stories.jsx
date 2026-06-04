@@ -1,6 +1,7 @@
 import { h } from 'preact';
-import { fn } from '@storybook/test';
 import { Notifications } from '../components/Notifications';
+
+const fn = () => () => {};
 
 export default {
   title: 'Components/Notifications',
