@@ -68,7 +68,18 @@ e2e/ (repo root, legacy specs re-pointed in Task 20)
 - [ ] **Step 1: Install runtime deps** (from repo root)
 
 ```bash
+# editor + preview + layout
 pnpm -C web add --ignore-workspace @uiw/react-codemirror @codemirror/state @codemirror/view @codemirror/commands @codemirror/search @codemirror/autocomplete @codemirror/lint @codemirror/language @codemirror/lang-javascript @codemirror/lang-css @codemirror/legacy-modes @replit/codemirror-vim @emmetio/codemirror6-plugin @uiw/codemirror-theme-monokai @uiw/codemirror-themes prettier split.js
+# transpilers (REQ-ED-2 / REQ-PRV-4) — installed up front because TypeScript resolves
+# dynamic-import() specifiers, so `tsc`/`vite build` fail with TS2307 if any are absent.
+pnpm -C web add --ignore-workspace sass less stylus atomizer @babel/standalone coffeescript
+```
+
+- [ ] **Step 1b: Install type deps** (transpilers that don't ship their own types)
+
+```bash
+# sass + atomizer ship types; less/stylus/@babel/standalone have @types; coffeescript has none (shim in Task 12).
+pnpm -C web add --ignore-workspace -D @types/less @types/stylus @types/babel__standalone
 ```
 
 - [ ] **Step 2: Record the M04 modal deferrals** in roadmap §9
@@ -844,6 +855,10 @@ export function AppRoot() {
   const previewRef = useRef<PreviewHandle>(null);
 
   useEffect(() => { if (!item) loadItem(STARTER); }, [item, loadItem]);
+  // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
+  // real location; only the iframe is srcdoc). Read once from window.location.search
+  // and pass into the render message. (M00's router also validates this param.)
+  const stickyOffset = Number(new URLSearchParams(window.location.search).get('stickyOffset') ?? 0) || 0;
   if (!item) return null;
 
   return (
@@ -852,14 +867,14 @@ export function AppRoot() {
         <CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" />
       </section>
       <section data-testid="preview-region" className="w-1/2" aria-label="Preview">
-        <PreviewFrame ref={previewRef} code={item.js} css={item.css} stickyOffset={0} onCodeChange={setDsl} />
+        <PreviewFrame ref={previewRef} code={item.js} css={item.css} stickyOffset={stickyOffset} onCodeChange={setDsl} />
       </section>
     </div>
   );
 }
 ```
 
-> `stickyOffset={0}` for now; Task 10/router integration can thread the real search param later (the protocol already supports it). The legacy starter snippet keeps the tracer meaningful.
+> The legacy starter snippet keeps the tracer meaningful. `stickyOffset` is read from the host URL (REQ-PRV-3) and flows to the iframe via the `render` message.
 
 - [ ] **Step 4: Run** — `pnpm -C web test src/app/AppRoot.test.tsx` → PASS.
 
@@ -1162,13 +1177,25 @@ export async function computeJs(code: string, mode: JsMode): Promise<TranspileRe
 }
 ```
 
-> Transpiler libs (`sass`, `less`, `stylus`, `atomizer`, `@babel/standalone`, `typescript`, `coffeescript`) are added to `package.json` only as the corresponding mode is wired (YAGNI). For M01, the tested paths are `css`/`js`/`acss(no-settings)`; the others are dynamically imported and proven when their mode is exercised. If a dep is not yet installed, guard with a try/catch returning `{ code, errors:[…'transpiler unavailable'] }` so the build never breaks — **and `log`/surface that the mode is pending** (do not silently swallow).
+> Transpiler libs are installed up front in Task 1 (not lazily) because `tsc --noEmit` and `vite build` **resolve dynamic-import specifiers** — an uninstalled `import('sass')` throws TS2307 and breaks the build even though the runtime branch is lazy. They are all named requirements (REQ-ED-2), so this is in-scope, not premature. Lazy *loading* (code-splitting at runtime) still holds via `import()`; only the *install* is eager.
 
-- [ ] **Step 4: Run** — PASS.
+- [ ] **Step 3b: Add the `coffeescript` type shim** (it ships no types and has no `@types`)
+
+Create `web/src/types/coffeescript.d.ts`:
+```ts
+declare module 'coffeescript' {
+  export function compile(code: string, options?: Record<string, unknown>): string;
+  const _default: { compile: typeof compile };
+  export default _default;
+}
+```
+(`sass`/`atomizer` ship types; `less`/`stylus`/`@babel/standalone` are covered by the `@types/*` from Task 1b. Verify `pnpm -C web typecheck` is clean after this.)
+
+- [ ] **Step 4: Run** — PASS, and `pnpm -C web typecheck` clean (proves all six dynamic imports resolve).
 
 - [ ] **Step 5: Commit**
 ```bash
-git add web/src/preview/transpilers.ts web/src/preview/transpilers.test.ts web/src/editor/modes.ts
+git add web/src/preview/transpilers.ts web/src/preview/transpilers.test.ts web/src/editor/modes.ts web/src/types/coffeescript.d.ts
 git commit -m "feat(m01): lazy transpiler dispatch (REQ-PRV-4, REQ-ED-2)"
 ```
 
@@ -1240,7 +1267,18 @@ describe('themes', () => {
 
 - [ ] **Step 2: Run to verify failure** — FAIL.
 
-- [ ] **Step 3: Implement `web/src/editor/themes.ts`**
+- [ ] **Step 2b: Install + VERIFY theme export names** (do not assume — `@uiw` theme packages aren't uniformly named)
+
+```bash
+pnpm -C web add --ignore-workspace @uiw/codemirror-theme-dracula @uiw/codemirror-theme-github @uiw/codemirror-theme-solarized
+# print the real named exports and adjust the imports below to match:
+for p in @uiw/codemirror-theme-monokai @uiw/codemirror-theme-dracula @uiw/codemirror-theme-github @uiw/codemirror-theme-solarized; do
+  node -e "import('$p').then(m=>console.log('$p ->', Object.keys(m)))"
+done
+```
+Expected (adjust if the output differs): monokai→`monokai`; dracula→`dracula`; github→`githubLight`,`githubDark`; solarized→`solarizedLight`,`solarizedDark`. If a package only exposes `xxxInit`, use `xxxInit()` instead.
+
+- [ ] **Step 3: Implement `web/src/editor/themes.ts`** (use the export names confirmed in Step 2b)
 
 ```ts
 import type { Extension } from '@codemirror/state';
@@ -1264,8 +1302,6 @@ export function resolveTheme(id: string): Extension {
   return (THEMES.find((t) => t.id === id) ?? THEMES[0]).extension;
 }
 ```
-
-> Install the extra theme packages: `pnpm -C web add --ignore-workspace @uiw/codemirror-theme-dracula @uiw/codemirror-theme-github @uiw/codemirror-theme-solarized`.
 
 - [ ] **Step 4: Convert `CodeEditor.tsx` to Compartment-based theme** (so theme changes don't remount):
 ```tsx
@@ -1346,7 +1382,21 @@ export async function formatCss(code: string): Promise<string> {
 
 > `replaceAll` imported to keep the search module tree-shake-stable; the dedicated replace UI is CM's search panel (Mod-Alt-f opens it). The DSL editor gets NO Prettier command (trap #2).
 
-- [ ] **Step 4: Wire into `CodeEditor.tsx`**: add `keymap.of([...editorKeymap, ...defaultKeymap])` to extensions; add a `vimCompartment` that holds `vim()` from `@replit/codemirror-vim` when `keymap === 'vim'` else `[]`; expose a Prettier-format command only when `language === 'css'` (e.g. a small format button or `Ctrl-Shift-f` binding that calls `formatCss` and sets the value). Run `pnpm -C web test`.
+- [ ] **Step 4: Wire keymap + Vim + Prettier into `CodeEditor.tsx`**: add `keymap.of([...editorKeymap, ...defaultKeymap])` to extensions; add a `vimCompartment` that holds `vim()` from `@replit/codemirror-vim` when `keymap === 'vim'` else `[]`; expose a Prettier-format command **only when `language === 'css'`** (a format button or `Ctrl-Shift-f` binding that calls `formatCss` and sets the value). The DSL editor gets no format command (trap #2). Run `pnpm -C web test`.
+
+- [ ] **Step 4b: Wire Emmet (CSS editor only)** — `@emmetio/codemirror6-plugin`
+
+First confirm the export name:
+```bash
+node -e "import('@emmetio/codemirror6-plugin').then(m=>console.log(Object.keys(m)))"
+```
+Then, in `CodeEditor.tsx`, when `language === 'css'`, add the Emmet tracker to `extensions` (it provides Tab-to-expand for the CSS editor):
+```ts
+import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
+// in the css branch of the extensions list:
+//   ...(language === 'css' ? [abbreviationTracker()] : [])
+```
+If the verified export differs (e.g. `expandAbbreviation` + a manual Tab keybinding), adapt to match. Emmet must NOT be added for the DSL editor (REQ-ED-3: CSS only). Run `pnpm -C web test` and manually confirm `m0` + Tab expands to `margin: 0;` in the CSS editor.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -1596,29 +1646,29 @@ git commit -m "feat(m01): fullscreen present mode (REQ-PRV-7)"
 
 ### Task 20: Re-green E2E — smoke, dsl-spot-check, production-build asset
 
-**Files:** Modify `playwright.config.js` (point at `web/`), `e2e/tests/*.spec.js` (selectors → `data-testid`); Create `web/e2e/` specs if a clean split is preferred (decide during execution — keep ONE Playwright project pointed at the new app)
+**Files:** Modify repo-root `playwright.config.js` (boot the new app) and `e2e/tests/*.spec.js` (selectors → `data-testid`)
 
-> This is the **real** render verification (trap #3). The production-build asset spec finally exercises the M00 shim **build path** — the thing M00 explicitly deferred.
+> **Playwright lives at the repo root** (root `playwright.config.js` + the pnpm E2E install per CLAUDE.md), NOT in `web/`. Run all Playwright commands **from the repo root** (`pnpm exec playwright test …`); only the dev server it boots lives in `web/`. This is the **real** render verification (trap #3); the production-build asset spec finally exercises the M00 shim **build path**.
 
-- [ ] **Step 1: Point Playwright at the new app**
+- [ ] **Step 1: Point Playwright's webServer at the new app** (repo-root `playwright.config.js`)
 
-Update `playwright.config.js` `webServer` to boot the new app: `command: 'pnpm -C web dev'`, `url: 'http://localhost:3000'` (or the port it binds). Keep chromium project.
+Set `webServer.command: 'pnpm -C web dev'` and `webServer.url: 'http://localhost:3000'` (match the port the new app binds — M00 uses 3000; if taken it falls back, so pin it or read from the config). Keep the chromium project. Leave the config file otherwise as-is.
 
-- [ ] **Step 2: Update `smoke.spec.js`** to target the new DOM: assert `[data-testid="dsl-editor"]` and `[data-testid="preview-iframe"]` are visible, and the iframe's `#mounting-point` exists. Run: `pnpm -C web exec playwright test smoke --project=chromium` (install browsers first if needed: `pnpm -C web exec playwright install chromium`). Expected: PASS.
+- [ ] **Step 2: Update `e2e/tests/smoke.spec.js`** to target the new DOM: assert `[data-testid="dsl-editor"]` and `[data-testid="preview-iframe"]` are visible, and the iframe's `#mounting-point` exists. Run from repo root: `pnpm exec playwright install chromium` (once) then `pnpm exec playwright test smoke --project=chromium`. Expected: PASS.
 
-- [ ] **Step 3: Update `dsl-spot-check.spec.js`** to type DSL into the CM6 editor (`.cm-content`) and assert the iframe renders a `<seq-diagram>` / SVG inside `#mounting-point`. This proves the full editor→postMessage→`@zenuml/core` path. Expected: PASS.
+- [ ] **Step 3: Update `e2e/tests/dsl-spot-check.spec.js`** to type DSL into the CM6 editor (`.cm-content`) and assert the iframe renders a `<seq-diagram>` / SVG inside `#mounting-point`. This proves the full editor→postMessage→`@zenuml/core` path. Run from repo root. Expected: PASS.
 
 - [ ] **Step 4: Production-build asset spec (the M00 shim build-path proof)**
 
-Add/point a spec that runs against `pnpm -C web build` output (`web/dist`): serve `web/dist`, load it, and assert (a) a hashed `assets/zenuml-*.js` exists, (b) the diagram renders from the built bundle (no `/@fs/` URL, no 404 for the core asset). Run: build, then the spec. Expected: PASS — this is the assertion M00 could only stub.
+Point/author a spec that runs against the `pnpm -C web build` output (`web/dist`): serve `web/dist` (e.g. a static server or `pnpm -C web preview`), load it, and assert (a) a hashed `assets/zenuml-*.js` exists, (b) the diagram renders from the built bundle (no `/@fs/` URL, no 404 for the core asset). Run from repo root. Expected: PASS — the assertion M00 could only stub.
 
 - [ ] **Step 5: Full gate**
 
-Run: `pnpm -C web typecheck && pnpm -C web test && pnpm -C web build`. All green. Run the Playwright suite green.
+Run: `pnpm -C web typecheck && pnpm -C web test && pnpm -C web build` (all green), then from repo root `pnpm exec playwright test --project=chromium` (green).
 
 - [ ] **Step 6: Commit**
 ```bash
-git add playwright.config.js e2e web/e2e 2>/dev/null; git add -A
+git add playwright.config.js e2e
 git commit -m "test(m01): re-green smoke + dsl-spot-check + production-build asset E2E against web/"
 ```
 
