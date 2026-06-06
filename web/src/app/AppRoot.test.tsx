@@ -1,16 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from './AppRoot';
+import { useAuthStore } from '../state/authStore';
+import { useEditorStore } from '../state/editorStore';
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
 // useAuth → services/firebase (initializeApp, onAuthStateChanged…) must be stubbed
 // to avoid live Firebase initialisation in jsdom. Same pattern as useAuth.test.tsx.
+// onAuthChange fires the callback immediately with null so authReady becomes true
+// (FIX 1: boot is gated on authReady; without this, AppRoot returns null and all tests fail).
 vi.mock('../services/firebase', () => ({
   login: vi.fn(async () => {}),
   logout: vi.fn(async () => {}),
-  onAuthChange: vi.fn(() => () => {}),
+  onAuthChange: vi.fn((cb: (u: unknown) => void) => { cb(null); return () => {}; }),
   auth: {},
   db: {},
 }));
@@ -35,6 +39,11 @@ vi.mock('../services/itemService', () => ({
     saveItems: vi.fn(async () => {}),
   }),
 }));
+
+beforeEach(() => {
+  useAuthStore.setState({ user: null, online: true, authReady: false });
+  useEditorStore.getState().reset();
+});
 
 describe('AppRoot', () => {
   it('renders editor and preview regions', async () => {

@@ -13,6 +13,8 @@ export function useAuth() {
   useEffect(() => {
     return onAuthChange((user) => {
       setUser(user);
+      // Mark auth resolved on the first callback fire (idempotent — always set to true).
+      useAuthStore.getState().setAuthReady(true);
       if (user) {
         void ensureUser(user.uid).catch(() => {});
         void getUserSettings(user.uid).then((s) => useSettingsStore.getState().merge(s)).catch(() => {});
@@ -28,7 +30,9 @@ export function useAuth() {
       if ((e as { code?: string })?.code === 'auth/account-exists-with-different-credential') {
         window.alert('You have already signed up with the same email using a different social login.');
       } else {
-        throw e;
+        // FIX 7: swallow + log other errors (legacy parity) — call sites don't catch,
+        // so rethrowing causes unhandled promise rejections with no user-visible feedback.
+        console.error('[auth] login failed', e);
       }
     }
   }, []);

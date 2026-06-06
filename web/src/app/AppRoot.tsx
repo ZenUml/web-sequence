@@ -23,7 +23,7 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem } from '../services/cloudFunctions';
-import { setItemForUser, unsetItemForUser } from '../services/userService';
+import { ensureUser, setItemForUser, unsetItemForUser } from '../services/userService';
 import { localStore } from '../services/storage';
 import { LS_KEYS } from '../config/constants';
 import type { ProviderName } from '../services/types';
@@ -64,6 +64,7 @@ export function AppRoot() {
   const unsavedCount = useEditorStore((s) => s.unsavedCount);
 
   const user = useAuthStore((s) => s.user);
+  const authReady = useAuthStore((s) => s.authReady);
 
   const preserveLastCode = useSettingsStore((s) => s.settings.preserveLastCode);
   const autoSave = useSettingsStore((s) => s.settings.autoSave);
@@ -140,7 +141,8 @@ export function AppRoot() {
   const idParam = params.get('id');
   const shareToken = params.get('share-token');
 
-  // Boot: resolve the item to load (replaces the old STARTER seeding effect)
+  // Boot: resolve the item to load (replaces the old STARTER seeding effect).
+  // authReady gates resolution so a ?id= URL works for signed-in users (FIX 1 — boot race).
   useBootItem({
     idParam,
     shareToken,
@@ -148,13 +150,15 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
-  });
+  }, authReady);
 
   // Lifecycle: save last code on tab hide / window unload (REQ-PST)
   useEffect(() => {
     function persist() {
       const current = useEditorStore.getState().currentItem;
-      if (current) itemService.saveLastCode(current);
+      // FIX 2: skip persisting read-only items so the next cold boot doesn't restore
+      // an isReadOnly item into the last-code slot.
+      if (current && !current.isReadOnly) itemService.saveLastCode(current);
     }
     function onVisibilityChange() {
       if (document.hidden) persist();
@@ -174,8 +178,13 @@ export function AppRoot() {
     const itemToSave: Item = { ...it, updatedOn: Date.now() };
     useEditorStore.getState().setSaving(true);
     try {
-      await itemService.setItem(itemToSave.id, itemToSave);
+      // FIX 6: ensure user doc exists before any cloud write to prevent membership loss
+      // on first save after login (ensureUser is memoized per-uid so repeat calls are cheap).
       const uid = useAuthStore.getState().user?.uid;
+      if (uid) {
+        await ensureUser(uid);
+      }
+      await itemService.setItem(itemToSave.id, itemToSave);
       if (uid) {
         try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
       }

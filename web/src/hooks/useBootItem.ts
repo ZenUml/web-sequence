@@ -67,16 +67,18 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
 }
 
 /**
- * Hook that resolves the boot item once on mount and applies it to the editor store.
+ * Hook that resolves the boot item once auth is ready and applies it to the editor store.
  * Guards with a ref so it only fires once regardless of StrictMode double-invocation.
+ * authReady must be true before resolution begins — prevents a race where auth is null
+ * at mount and a ?id= item silently falls back to 'new' before auth resolves.
  */
-export function useBootItem(deps: BootDeps): void {
+export function useBootItem(deps: BootDeps, authReady: boolean): void {
   const booted = useRef(false);
   const loadItem = useEditorStore((s) => s.loadItem);
   const newItem = useEditorStore((s) => s.newItem);
 
   useEffect(() => {
-    if (booted.current) return;
+    if (!authReady || booted.current) return;
     booted.current = true;
 
     resolveBootItem(deps).then((result) => {
@@ -95,5 +97,5 @@ export function useBootItem(deps: BootDeps): void {
       newItem();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authReady]);
 }

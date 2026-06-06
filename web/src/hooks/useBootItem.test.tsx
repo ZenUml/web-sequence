@@ -145,6 +145,56 @@ describe('useBootItem hook', () => {
     vi.resetModules();
   });
 
+  it('does NOT resolve when authReady=false (FIX 1 boot race gate)', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const getItem = vi.fn(async () => makeItem({ id: 'gated-item', js: 'A.gated' }));
+    const deps = makeBaseDeps({ idParam: 'gated-item', getItem });
+
+    await act(async () => {
+      // authReady=false — boot must not fire
+      renderHook(() => useBootItem(deps, false));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    // Store must remain empty — neither loadItem nor newItem called
+    expect(useEditorStore.getState().currentItem).toBeNull();
+    expect(getItem).not.toHaveBeenCalled();
+  });
+
+  it('resolves after authReady flips to true (FIX 1 boot race rerender)', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const ownedItem = makeItem({ id: 'ready-item', js: 'A.ready' });
+    const getItem = vi.fn(async () => ownedItem);
+    const deps = makeBaseDeps({ idParam: 'ready-item', getItem });
+
+    let authReady = false;
+    const { rerender } = renderHook(() => useBootItem(deps, authReady));
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    // Still not resolved
+    expect(useEditorStore.getState().currentItem).toBeNull();
+
+    // Now flip authReady
+    authReady = true;
+    await act(async () => {
+      rerender();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(useEditorStore.getState().currentItem?.id).toBe('ready-item');
+    expect(getItem).toHaveBeenCalledTimes(1);
+  });
+
   it('calls loadItem on the editor store when item resolved', async () => {
     // Import after potential reset
     const { useBootItem } = await import('./useBootItem');
@@ -159,7 +209,7 @@ describe('useBootItem hook', () => {
     });
 
     await act(async () => {
-      renderHook(() => useBootItem(deps));
+      renderHook(() => useBootItem(deps, true));
       // Let the async resolution complete
       await new Promise((r) => setTimeout(r, 0));
     });
@@ -177,7 +227,7 @@ describe('useBootItem hook', () => {
     const deps = makeBaseDeps(); // all null → kind:'new'
 
     await act(async () => {
-      renderHook(() => useBootItem(deps));
+      renderHook(() => useBootItem(deps, true));
       await new Promise((r) => setTimeout(r, 0));
     });
 
@@ -197,7 +247,7 @@ describe('useBootItem hook', () => {
     const deps = makeBaseDeps({ idParam: 'once-item', getItem });
 
     await act(async () => {
-      const { rerender } = renderHook(() => useBootItem(deps));
+      const { rerender } = renderHook(() => useBootItem(deps, true));
       await new Promise((r) => setTimeout(r, 0));
       rerender();
       await new Promise((r) => setTimeout(r, 0));

@@ -13,7 +13,7 @@ vi.mock('../services/userService', () => ({ ensureUser: vi.fn(async () => ({})),
 import { useAuth } from './useAuth';
 import { useAuthStore } from '../state/authStore';
 
-beforeEach(() => { vi.clearAllMocks(); useAuthStore.setState({ user: null, online: true }); window.localStorage.clear(); });
+beforeEach(() => { vi.clearAllMocks(); useAuthStore.setState({ user: null, online: true, authReady: false }); window.localStorage.clear(); });
 
 describe('useAuth', () => {
   it('subscribes to auth changes and reflects the user in the store', async () => {
@@ -34,9 +34,18 @@ describe('useAuth', () => {
     await act(async () => { await result.current.login('github'); });
     expect(alertSpy).toHaveBeenCalled();
   });
-  it('login rethrows non-account-exists errors', async () => {
+  it('login swallows and logs non-account-exists errors (FIX 7)', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     fb.login.mockRejectedValueOnce(new Error('network-failure'));
     const { result } = renderHook(() => useAuth());
-    await expect(act(() => result.current.login('google'))).rejects.toThrow('network-failure');
+    // Must NOT reject — swallows and logs instead of rethrowing.
+    await expect(act(() => result.current.login('google'))).resolves.toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith('[auth] login failed', expect.any(Error));
+    consoleSpy.mockRestore();
+  });
+  it('onAuthChange sets authReady to true (FIX 1)', async () => {
+    renderHook(() => useAuth());
+    await act(async () => { fb._cb(null); });
+    expect(useAuthStore.getState().authReady).toBe(true);
   });
 });
