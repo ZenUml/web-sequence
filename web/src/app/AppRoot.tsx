@@ -23,10 +23,13 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem } from '../services/cloudFunctions';
-import { setItemForUser } from '../services/userService';
+import { setItemForUser, unsetItemForUser } from '../services/userService';
 import { localStore } from '../services/storage';
 import { LS_KEYS } from '../config/constants';
 import type { ProviderName } from '../services/types';
+import { useItems } from '../hooks/useItems';
+import { migrateToPages } from '../domain/item';
+import { ItemListStub } from '../components/library/ItemListStub';
 
 const JS_MODES: { value: JsMode; label: string }[] = [
   { value: 'js', label: 'JavaScript' },
@@ -75,6 +78,11 @@ export function AppRoot() {
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  const activePanel = useUiStore((s) => s.activePanel);
+  const setActivePanel = useUiStore((s) => s.setActivePanel);
+
+  // REQ-PST (M02 Task 16): library panel — items list from hook.
+  const { items } = useItems();
 
   // REQ-PRV-6: console entries accumulate across re-renders.
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
@@ -187,6 +195,20 @@ export function AppRoot() {
     // M04: enforce plan limit; trackEvent('fn','saved').
   }
 
+  // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
+  function handleOpenItem(it: Item) {
+    useEditorStore.getState().loadItem(migrateToPages(it));
+    setActivePanel('editor');
+  }
+
+  async function handleDeleteItem(id: string) {
+    await itemService.removeItem(id);
+    const uid = useAuthStore.getState().user?.uid;
+    if (uid) {
+      try { await unsetItemForUser(uid, id); } catch { /* best-effort */ }
+    }
+  }
+
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
   // real location; only the iframe is srcdoc). Read once from window.location.search
   // and pass into the render message. (M00's router also validates this param.)
@@ -233,6 +255,13 @@ export function AppRoot() {
         <Sidebar />
         <Layout
           editor={
+            activePanel === 'library' ? (
+              <ItemListStub
+                items={items}
+                onOpen={handleOpenItem}
+                onDelete={(id) => void handleDeleteItem(id)}
+              />
+            ) : (
             <div className="flex flex-col h-full">
               <PageTabs
                 pages={item.pages ?? []}
@@ -271,6 +300,7 @@ export function AppRoot() {
               <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
               <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
             </div>
+            )
           }
           preview={
             <div className={fullscreen ? 'fixed inset-0 z-50 bg-white flex flex-col' : 'relative h-full flex flex-col'}>
