@@ -154,6 +154,32 @@ describe('LibraryItemRow', () => {
     expect(h.onOpen).not.toHaveBeenCalled();
   });
 
+  it('keyboard Enter on the kebab opens the menu and does NOT fire the row onOpen (advisor fix #4)', async () => {
+    // Radix Trigger preventDefaults Enter/Space but does not stopPropagation, so
+    // without the kebab's onKeyDown the keydown bubbles to the row → onOpen, which
+    // unmounts the panel before the menu renders (menu unreachable by keyboard).
+    const item = makeItem();
+    const h = baseHandlers();
+    render(<LibraryItemRow item={item} folders={folders} {...h} />);
+    const kebab = screen.getByTestId('lib-row-menu-item-1');
+    kebab.focus();
+    await userEvent.keyboard('{Enter}');
+    // Menu opened via keyboard...
+    expect(await screen.findByTestId('lib-action-open-item-1')).toBeInTheDocument();
+    // ...and the row's onOpen did NOT fire from the bubbled keydown.
+    expect(h.onOpen).not.toHaveBeenCalled();
+  });
+
+  it('Delete action uses the danger token, not signal-amber (design system; advisor fix #5)', async () => {
+    const item = makeItem();
+    const h = baseHandlers();
+    render(<LibraryItemRow item={item} folders={folders} {...h} />);
+    await userEvent.click(screen.getByTestId('lib-row-menu-item-1'));
+    const del = await screen.findByTestId('lib-action-delete-item-1');
+    expect(del.className).toContain('text-danger');
+    expect(del.className).not.toContain('signal-amber');
+  });
+
   it('delete then cancel does not call onDelete', async () => {
     const item = makeItem();
     const h = baseHandlers();

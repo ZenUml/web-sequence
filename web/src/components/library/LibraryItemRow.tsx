@@ -85,6 +85,13 @@ export function LibraryItemRow({
               size="sm"
               surface="dark"
               onClick={(e) => e.stopPropagation()}
+              // Radix's Trigger keydown handler preventDefaults but does NOT
+              // stopPropagation, so Enter/Space on the kebab would bubble to the
+              // row's onKeyDown → onOpen, unmounting the panel before the menu can
+              // render — making the actions menu unreachable by keyboard. Stop the
+              // keydown here (mirrors onClick); stopPropagation ≠ preventDefault, so
+              // Radix still opens the menu on the same element.
+              onKeyDown={(e) => e.stopPropagation()}
             >
               {/* Vertical kebab icon — inline SVG, no extra dep. */}
               <svg
@@ -145,7 +152,7 @@ export function LibraryItemRow({
             <MenuSeparator />
             <MenuItem
               data-testid={`lib-action-delete-${item.id}`}
-              className="data-[highlighted]:bg-signal-amber/20 data-[highlighted]:text-onlight-strong text-signal-amber"
+              className="data-[highlighted]:bg-danger/20 data-[highlighted]:text-onlight-strong text-danger"
               onSelect={() => setConfirming(true)}
             >
               Delete
