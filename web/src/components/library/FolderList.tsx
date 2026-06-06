@@ -131,9 +131,17 @@ export function FolderList({
               if (!isRenaming) onSelectFolder(folder.id);
             }}
             onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !isRenaming) {
+              if (isRenaming) return;
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 onSelectFolder(folder.id);
+              } else if (e.key === 'F2' && !readOnly) {
+                // Keyboard rename affordance — onDoubleClick is mouse-only, leaving
+                // keyboard/AT users with no path to rename (Delete is reachable via the
+                // focusable IconButton). F2 mirrors the platform rename convention and
+                // adds no nested interactive element (adversarial review).
+                e.preventDefault();
+                startRename(folder);
               }
             }}
           >

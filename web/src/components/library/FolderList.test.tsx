@@ -131,6 +131,23 @@ describe('FolderList', () => {
     expect(screen.queryByTestId('folder-rename-folder-a')).not.toBeInTheDocument();
   });
 
+  it('rename: F2 on the focused folder row opens the rename input (keyboard access)', () => {
+    // onDoubleClick is mouse-only; a keyboard/AT user had no path to rename a folder
+    // (Delete IS reachable via its focusable IconButton). F2 on the row must open the
+    // rename input. Revert the F2 branch in the row onKeyDown → no input → fails.
+    render(<FolderList {...baseProps} />);
+    const row = screen.getByTestId('folder-folder-a');
+    fireEvent.keyDown(row, { key: 'F2' });
+    expect(screen.getByTestId('folder-rename-folder-a')).toBeInTheDocument();
+  });
+
+  it('rename: F2 does nothing in readOnly mode', () => {
+    render(<FolderList {...baseProps} readOnly />);
+    const row = screen.getByTestId('folder-folder-a');
+    fireEvent.keyDown(row, { key: 'F2' });
+    expect(screen.queryByTestId('folder-rename-folder-a')).not.toBeInTheDocument();
+  });
+
   it('delete: clicking delete then confirm calls onDelete(id)', async () => {
     const onDelete = vi.fn();
     render(<FolderList {...baseProps} onDelete={onDelete} />);
