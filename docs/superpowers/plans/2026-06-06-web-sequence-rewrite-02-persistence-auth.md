@@ -16,6 +16,7 @@
 - **Backend is FROZEN** (NFR-1): no changes to Cloud Functions, Firestore schema/rules/indexes, or external services. Match the existing shapes EXACTLY (contract spec §3–§5).
 - **M00 gives you:** `services/firebase.ts` (`auth`, `db`, `login(provider)`, `logout()`, `onAuthChange(cb)`, `getIdToken()`), `services/storage.ts` (`localStore`, `syncStore` KvStore), `domain/types.ts` (`Item`/`Page`/`Folder`/`Subscription`/`AppUser`/`Settings`/`DEFAULT_SETTINGS`), `domain/item.ts` (`migrateToPages`/`applyPageEdit`/`addPage`/`deletePage`/`switchPage`), `domain/plan.ts`, `config/constants.ts` (`AUTO_SAVE_INTERVAL=15000`, `UNSAVED_WARNING_COUNT=15`, `LS_KEYS`), `config/firebaseConfig.ts` (`config.features.payment`).
 - **M01 gives you:** `state/editorStore.ts` (`useEditorStore`: `currentItem`/`dirty`/`loadItem`/`setDsl`/`setCss`/`set*Mode`/`addPage`/`deletePage`/`switchPage`/`reset`), `app/AppRoot.tsx` (currently seeds a hardcoded `STARTER` item — M02 Task 12 replaces that seeding with real boot/restore), `components/Sidebar.tsx`, `components/Layout.tsx`.
+- **DESIGN SYSTEM (mandatory for all UI tasks — 11, 14, 16):** Read `docs/superpowers/specs/2026-06-07-design-system.md` ("Drafting Table"). Build every component from the primitives in `web/src/ui/` (`Button`, `IconButton`, `Dialog`/`DialogContent`, `cn`) + Tailwind **semantic tokens** (`ink-*`, `paper-*`, `accent`, `font-mono`/`font-serif`, `ring-draft`, `bg-blueprint`, etc.). NO raw hex, NO `gray-*`/`white/10` literals, NO ad-hoc fonts. App header/rail/empty-states on **ink** (`.bg-blueprint`); modals/menus on **paper** with `shadow-pop`. One `Button variant="primary"` per surface; metadata/labels in `font-mono` uppercase tracked; modal/empty-state headlines in `font-serif`. If a needed primitive is missing (e.g. `Tabs`, `Menu`, `TextInput`, `Tooltip`), ADD it to `web/src/ui/` (wrapping the matching Radix part) before building the feature. Keep all `data-testid`s.
 
 ### Key facts from the legacy (ground truth — match these)
 - **`items/{id}` doc**: full `Item` (js/css/html/modes/pages/currentPageId/sizes/mainSizes/`createdBy`/`updatedOn`/sharing fields/`externalLibs`). Saved with `setDoc(..., {merge:true})`. `imageBase64` is STRIPPED before any save. Owner reads verify `item.createdBy === uid`.
@@ -917,7 +918,9 @@ git commit -m "feat(m02): useItems — live owned-items list (onSnapshot bridge,
 
 **Files:** Create `web/src/components/auth/LoginModal.tsx`, `web/src/components/auth/ProfileMenu.tsx`, `web/src/components/header/AppHeader.tsx`; Tests for each.
 
-> Header: title (editable), **New**, **Save**, **Fork**, and either a **Login** button (opens LoginModal) or the ProfileMenu (avatar + Logout). LoginModal: 4 provider buttons (Google/GitHub/Facebook/Twitter) calling `login(provider)`, with a "last used" hint from `LS_KEYS.lastAuthProvider`. Use Radix Dialog (installed M00).
+> **DESIGN SYSTEM (mandatory):** build from `web/src/ui/` (`Button`, `IconButton`, `Dialog`/`DialogContent`) + semantic tokens per `docs/superpowers/specs/2026-06-07-design-system.md`. Header sits on **ink** (`bg-ink-900`/`bg-blueprint`, `border-ink-line/40`); the editable title uses `font-serif`; New/Save/Fork are `Button` (Save = `variant="primary"`, the others `subtle`/`ghost`); the unsaved indicator is a `signal-amber` dot. LoginModal uses `DialogContent` (paper surface, serif title) with the 4 provider buttons as `Button variant="subtle" surface="light"`. ProfileMenu wraps Radix dropdown-menu — add a styled `Menu` primitive to `web/src/ui/` if it eases reuse. Add a `TextInput` primitive to `web/src/ui/` for the title edit. NO `gray-*`/raw hex.
+>
+> Header: title (editable), **New**, **Save**, **Fork**, and either a **Login** button (opens LoginModal) or the ProfileMenu (avatar + Logout). LoginModal: 4 provider buttons (Google/GitHub/Facebook/Twitter) calling `login(provider)`, with a "last used" hint from `LS_KEYS.lastAuthProvider`. Use the design-system `Dialog` (wraps Radix Dialog, installed M00).
 
 - [ ] **Steps:** TDD each component (RTL): LoginModal renders 4 buttons and clicking one calls the injected `onLogin(provider)`; AppHeader shows Login when `user==null` and ProfileMenu when set; Save button calls `onSave`, New calls `onNew`, Fork calls `onFork`. Wire `data-testid`s (`header-save`, `header-new`, `header-fork`, `header-login`, `login-google` etc.). Keep components presentational (handlers injected) for testability. Commit:
 ```bash
@@ -975,6 +978,8 @@ git commit -m "feat(m02): save flow + import-on-login (REQ-PST, REQ-AC)"
 **Files:** Create `web/src/components/pages/PageTabs.tsx`, Test `web/src/components/pages/PageTabs.test.tsx`; Modify `web/src/app/AppRoot.tsx`
 
 > The store already has `addPage/switchPage/deletePage` (M01). Add **rename** (REQ-PG-6) to the store + a tab UI. Default/first page has no delete control (REQ-PG-3). Rename via double-click → inline input.
+>
+> **DESIGN SYSTEM (mandatory):** tabs live on **ink** chrome per `docs/superpowers/specs/2026-06-07-design-system.md`. Tab row uses `font-mono` for the page number/label, the active tab marked with the `accent` underline/`accent-soft` fill, add/delete via `IconButton` (with `aria-label`). Inline rename uses the `TextInput` primitive. NO `gray-*`/raw hex.
 
 - [ ] **Step 1:** Add `renamePage(pageId, title)` to `editorStore` (uses `applyPageEdit(item, pageId, {title})`) + a test.
 - [ ] **Step 2:** TDD `PageTabs`: renders a tab per `pages` with the active one marked (`aria-selected`); clicking a tab calls `onSwitch(id)`; an "Add page" button calls `onAdd`; non-default tabs show a delete control calling `onDelete(id)` (with a confirm); double-click a tab title → inline `<input>` that on Enter/blur calls `onRename(id, value)`. `data-testid`s: `page-tab-<id>`, `page-add`, `page-delete-<id>`, `page-rename-<id>`.
@@ -1002,6 +1007,8 @@ git commit -m "feat(m02): auto-save loop (REQ-PST-2, AUTO_SAVE_INTERVAL)"
 **Files:** Modify `web/src/app/AppRoot.tsx`; small `web/src/components/library/ItemListStub.tsx` (minimal, M03 replaces)
 
 > M02 needs delete + a way to open a saved item to exercise the lifecycle; the full library is M03. Provide a minimal list (from `useItems`) in the sidebar's "library" panel slot. Each `useItems` row already holds the full `Item` object (cloud snapshot when signed-in, `localStore` slot when signed-out), so **open via `editorStore.loadItem(migrateToPages(row))` directly** — no `getItem` round-trip (it would be redundant, and avoids relying on the signed-out local-read path for a second time). Delete = `itemService.removeItem(id)` + (signed-in) `userService.unsetItemForUser(uid, id)` + confirm. Mark the file `// M03: replace with full library panel`.
+>
+> **DESIGN SYSTEM (mandatory):** the list panel sits on **ink** per `docs/superpowers/specs/2026-06-07-design-system.md`. Rows: title in `font-sans`, `updatedOn`/metadata in `font-mono text-ondark-faint`, hover `bg-white/5`, open on row click, delete via `IconButton variant`/`Button variant="danger"`. Empty state uses `.bg-blueprint` + a `font-serif` headline. Confirm uses the `Dialog` primitive. NO `gray-*`/raw hex.
 
 - [ ] **Steps:** TDD the open + delete handlers (logic, with injected service fakes). Render the stub list in the `activePanel==='library'` slot (uiStore from M01). Run full suite + typecheck → green. Commit:
 ```bash
