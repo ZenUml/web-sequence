@@ -13,7 +13,8 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
     try {
       inst = Split([leftRef.current, rightRef.current], {
         sizes, minSize: 240, gutterSize: 6, direction: 'horizontal',
-        onDragEnd: (s) => { if (item) item.mainSizes = s; }, // persisted on save in M02
+        // FIX 5: use getState() to avoid stale closure over `item`; update store immutably.
+        onDragEnd: (s) => useEditorStore.getState().setMainSizes(s.map(Number)),
       });
     } catch (e) {
       // split.js may throw in jsdom (zero-size layout APIs); skip splitting in test env
