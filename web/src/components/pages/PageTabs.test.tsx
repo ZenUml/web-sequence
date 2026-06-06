@@ -66,11 +66,15 @@ describe('PageTabs', () => {
     expect(onSwitch).toHaveBeenCalledWith('p2');
   });
 
-  it('page-add button calls onAdd', async () => {
+  it('page-add button calls onAdd with NO arguments (must not forward the click event)', async () => {
+    // Regression guard: onAdd is `(): void`; the store's addPage(title?) would
+    // otherwise receive the SyntheticEvent as `title` and render an object as a
+    // React child, crashing the editor (caught by the multi-page E2E).
     const onAdd = vi.fn();
     render(<PageTabs {...defaultProps} onAdd={onAdd} />);
     await userEvent.click(screen.getByTestId('page-add'));
     expect(onAdd).toHaveBeenCalledTimes(1);
+    expect(onAdd).toHaveBeenCalledWith();
   });
 
   it('first page (isDefault) has no delete button', () => {

@@ -150,7 +150,11 @@ export function PageTabs({
           surface="dark"
           aria-label="Add page"
           data-testid="page-add"
-          onClick={onAdd}
+          // Wrap so the click event is NOT forwarded as onAdd's first arg — onAdd
+          // is `(): void` and the store's addPage(title?) would otherwise receive
+          // the SyntheticEvent as `title`, rendering an object as a React child
+          // (crashes the editor subtree). Caught by the multi-page E2E.
+          onClick={() => onAdd()}
           className="ml-1"
         >
           {/* + icon */}
