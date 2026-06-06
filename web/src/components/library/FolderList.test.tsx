@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FolderList } from './FolderList';
 import type { Folder } from '../../domain/types';
@@ -138,6 +138,23 @@ describe('FolderList', () => {
     const confirm = await screen.findByTestId('confirm-ok');
     await userEvent.click(confirm);
     expect(onDelete).toHaveBeenCalledWith('folder-a');
+  });
+
+  it('delete: Enter/Space on the focused Delete button must NOT select the folder (adversarial review)', () => {
+    // The folder row is role="button" with an onKeyDown that preventDefault()s
+    // Enter/Space and calls onSelectFolder. The nested Delete IconButton stops onClick
+    // but, without an onKeyDown stopPropagation, a keyboard activation bubbles to the
+    // row → the row swallows the button's own activation and selects the folder instead
+    // of opening the delete confirm. Discriminating signal: a keydown on the Delete
+    // button must not reach onSelectFolder. Revert the onKeyDown handler → it does → fails.
+    // (jsdom does not synthesize a click from keydown, so we assert the row handler
+    // is NOT invoked rather than that the confirm opens.)
+    const onSelectFolder = vi.fn();
+    render(<FolderList {...baseProps} onSelectFolder={onSelectFolder} />);
+    const del = screen.getByTestId('folder-delete-folder-a');
+    fireEvent.keyDown(del, { key: 'Enter' });
+    fireEvent.keyDown(del, { key: ' ' });
+    expect(onSelectFolder).not.toHaveBeenCalled();
   });
 
   it('readOnly hides New/rename/delete controls but selection still works', async () => {

@@ -186,6 +186,11 @@ export function FolderList({
                   e.stopPropagation();
                   setDeleteId(folder.id);
                 }}
+                // Stop the keydown from bubbling to the parent row's onKeyDown, which
+                // preventDefault()s Enter/Space and selects the folder — swallowing the
+                // button's own activation so the delete confirm never opens. Mirrors the
+                // kebab fix in LibraryItemRow.tsx (adversarial review).
+                onKeyDown={(e) => e.stopPropagation()}
               >
                 <TrashIcon />
               </IconButton>
