@@ -1,9 +1,14 @@
 import type { Item, Page } from './types';
 
-let counter = 0;
+// Collision-resistant page id. MUST NOT derive from a session-local counter:
+// page ids are persisted and restored across reloads (REQ-PG-2), so a
+// counter that resets to 0 each session would re-emit ids that already exist
+// on a saved item, producing two pages with the same id (applyPageEdit/
+// deletePage operate on ALL matches → silent diagram corruption).
 function genId(prefix = 'p'): string {
-  counter += 1;
-  return `${prefix}-${counter}-${(counter * 2654435761 % 2 ** 31).toString(36)}`;
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return `${prefix}-${uuid}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function migrateToPages(item: Item): Item {
@@ -44,13 +49,17 @@ export function addPage(item: Item, title?: string): Item {
 
 export function deletePage(item: Item, pageId: string): Item {
   if (item.pages.length <= 1) throw new Error('Cannot delete the last page');
-  const target = item.pages.find((p) => p.id === pageId);
-  if (!target) throw new Error('Page not found');
-  if (target.isDefault) throw new Error('Cannot delete the default page');
+  const idx = item.pages.findIndex((p) => p.id === pageId);
+  if (idx === -1) throw new Error('Page not found');
+  if (item.pages[idx].isDefault) throw new Error('Cannot delete the default page');
   const pages = item.pages.filter((p) => p.id !== pageId);
   const next: Item = { ...item, pages };
   if (item.currentPageId === pageId) {
-    return switchPage(next, pages[0].id);
+    // Switch to the NEAREST remaining page (REQ-PG-3), matching legacy
+    // app.jsx: newIndex = min(deletedIndex, remaining.length - 1). This is the
+    // page that was immediately after the deleted one (or the new last page).
+    const nearest = pages[Math.min(idx, pages.length - 1)];
+    return switchPage(next, nearest.id);
   }
   return next;
 }

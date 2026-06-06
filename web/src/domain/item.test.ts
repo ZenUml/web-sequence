@@ -68,6 +68,41 @@ describe('deletePage', () => {
     expect(next.pages).toHaveLength(1);
     expect(next.currentPageId).toBe(next.pages[0].id);
   });
+  it('switches to the NEAREST remaining page (not always the default) when the active page is deleted (REQ-PG-3)', () => {
+    let item = migrateToPages(base()); // [default]
+    item = addPage(item, 'A');         // [default, A]
+    item = addPage(item, 'B');         // [default, A, B]
+    item = addPage(item, 'C');         // [default, A, B, C]
+    const [, , pB, pC] = item.pages;
+    // Active = middle page B; deleting it lands on the page that was immediately
+    // after it (C), matching legacy Math.min(idx, remaining-1) — NOT the default.
+    item = switchPage(item, pB.id);
+    let next = deletePage(item, pB.id);
+    expect(next.currentPageId).toBe(pC.id);
+    // Active = last page C; deleting it lands on the new last page (the old neighbour).
+    item = switchPage(item, pC.id);
+    const neighbourOfC = item.pages[item.pages.length - 2];
+    next = deletePage(item, pC.id);
+    expect(next.currentPageId).toBe(neighbourOfC.id);
+  });
+  it('does not change currentPageId when a non-active page is deleted', () => {
+    let item = migrateToPages(base());
+    item = addPage(item, 'A');
+    item = addPage(item, 'B'); // active = B
+    const active = item.currentPageId;
+    const pA = item.pages[1];
+    const next = deletePage(item, pA.id); // delete non-active A
+    expect(next.currentPageId).toBe(active);
+  });
+});
+
+describe('genId / page id uniqueness (no session-reset collisions)', () => {
+  it('assigns a unique id to every page across many adds', () => {
+    let item = migrateToPages(base());
+    for (let i = 0; i < 50; i++) item = addPage(item, `P${i}`);
+    const ids = item.pages.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
 
 describe('switchPage', () => {
