@@ -2,6 +2,7 @@ import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import { Compartment, type Extension } from '@codemirror/state';
+import { linter, lintGutter, type Diagnostic } from '@codemirror/lint';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
@@ -19,6 +20,7 @@ export interface CodeEditorProps {
   fontFamily?: string;            // default 'FiraCode' (DEFAULT_SETTINGS.editorFont)
   fontSize?: number;              // default 16 (DEFAULT_SETTINGS.fontSize)
   keymap?: 'sublime' | 'vim';     // default 'sublime' (CM6 default keymap, no vim)
+  diagnostics?: { lineNumber: number; message: string }[]; // REQ-ED-7: inline error markers
 }
 
 function fontTheme(family: string, size: number): Extension {
@@ -26,6 +28,22 @@ function fontTheme(family: string, size: number): Extension {
     '&': { fontSize: size + 'px' },
     '.cm-content': { fontFamily: family },
   });
+}
+
+// Stable default so editors without diagnostics don't reconfigure the lint
+// compartment on every render (a fresh [] would change identity each time).
+const NO_DIAGNOSTICS: { lineNumber: number; message: string }[] = [];
+
+// Builds a linter extension from caller-provided errors. `lineNumber` is 0-based;
+// map it to a 1-based, clamped CM line and mark the whole line as an error.
+function diagnosticsLinter(items: { lineNumber: number; message: string }[]): Extension {
+  return linter((view) =>
+    items.map((it) => {
+      const lineNo = Math.min(Math.max(it.lineNumber + 1, 1), view.state.doc.lines); // 1-based, clamped
+      const line = view.state.doc.line(lineNo);
+      return { from: line.from, to: line.to, severity: 'error', message: it.message } as Diagnostic;
+    }),
+  );
 }
 
 export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(function CodeEditor(
@@ -39,12 +57,14 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     fontFamily = 'FiraCode',
     fontSize = 16,
     keymap: keymapMode = 'sublime',
+    diagnostics = NO_DIAGNOSTICS,
   },
   ref,
 ) {
   const themeCompartment = useRef(new Compartment());
   const fontCompartment = useRef(new Compartment());
   const keymapCompartment = useRef(new Compartment());
+  const lintCompartment = useRef(new Compartment());
   const viewRef = useRef<EditorView | null>(null);
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
   const onChangeRef = useRef(onChange);
@@ -77,6 +97,8 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
 
     return [
       EditorView.lineWrapping,
+      lintGutter(),
+      lintCompartment.current.of(diagnosticsLinter(diagnostics)),
       themeCompartment.current.of(resolveTheme(themeId)),
       fontCompartment.current.of(fontTheme(fontFamily, fontSize)),
       keymapCompartment.current.of(keymapMode === 'vim' ? vim() : []),
@@ -104,6 +126,12 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       effects: fontCompartment.current.reconfigure(fontTheme(fontFamily, fontSize)),
     });
   }, [fontFamily, fontSize]);
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: lintCompartment.current.reconfigure(diagnosticsLinter(diagnostics)),
+    });
+  }, [diagnostics]);
 
   return (
     <div data-testid={testId} className="h-full overflow-hidden">

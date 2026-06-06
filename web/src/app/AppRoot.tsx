@@ -44,11 +44,13 @@ export function AppRoot() {
   // the source is the HTML (atomizer scans markup for utility classes). Full
   // transpiled-mode rendering is verified by E2E when those modes are exercised.
   const [transpiledCss, setTranspiledCss] = useState(item?.css ?? '');
+  // REQ-ED-7: transpile errors surface as inline lint markers in the CSS editor.
+  const [cssErrors, setCssErrors] = useState<{ lineNumber: number; message: string }[]>([]);
   useEffect(() => {
-    if (!item || item.cssMode === 'css') return;
+    if (!item || item.cssMode === 'css') { setCssErrors([]); return; }
     let cancelled = false;
     computeCss(item.cssMode === 'acss' ? item.html : item.css, item.cssMode, item.cssSettings)
-      .then((r) => { if (!cancelled) setTranspiledCss(r.code); });
+      .then((r) => { if (!cancelled) { setTranspiledCss(r.code); setCssErrors(r.errors ?? []); } });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.css, item?.html, item?.cssMode, item?.cssSettings]);
@@ -94,7 +96,7 @@ export function AppRoot() {
             </div>
             <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
             <div className="flex-1 min-h-0"><CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
-            <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} /></div>
+            <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
           </div>
         }
         preview={<PreviewFrame ref={previewRef} code={item.js} css={previewCss} stickyOffset={stickyOffset} onCodeChange={setDsl} />}

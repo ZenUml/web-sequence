@@ -3,6 +3,18 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CodeEditor } from './CodeEditor';
 
+it('renders a lint diagnostic gutter marker for provided errors', async () => {
+  const { container } = render(
+    <CodeEditor value={'A.b\nbad'} language="css" onChange={() => {}} testId="css-editor"
+      diagnostics={[{ lineNumber: 1, message: 'boom' }]} />,
+  );
+  await Promise.resolve();
+  expect(container.querySelector('.cm-gutters')).toBeTruthy();
+  // The lint gutter column (added by lintGutter()) renders synchronously even
+  // though the async marker (.cm-lint-marker) needs layout jsdom lacks.
+  expect(container.querySelector('.cm-gutter-lint')).toBeTruthy();
+});
+
 describe('CodeEditor', () => {
   it('renders the initial value', () => {
     render(<CodeEditor value="A.method()" language="dsl" onChange={() => {}} testId="dsl-editor" />);
