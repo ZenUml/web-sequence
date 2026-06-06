@@ -19,6 +19,7 @@ import { addCode } from '../editor/snippets';
 import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useBootItem } from '../hooks/useBootItem';
+import { useAutoSave } from '../hooks/useAutoSave';
 import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem } from '../services/cloudFunctions';
@@ -62,6 +63,12 @@ export function AppRoot() {
   const user = useAuthStore((s) => s.user);
 
   const preserveLastCode = useSettingsStore((s) => s.settings.preserveLastCode);
+  const autoSave = useSettingsStore((s) => s.settings.autoSave);
+
+  // REQ-PST-2: auto-save loop — fires every AUTO_SAVE_INTERVAL when enabled + unsaved edits exist.
+  // `save` is defined later in this function; useAutoSave reads it via ref so no stale closure
+  // (same pattern as PreviewFrame's cbRef — interval keyed only on `enabled`).
+  useAutoSave({ enabled: autoSave, hasUnsaved: unsavedCount > 0, onSave: () => void save() });
 
   const previewRef = useRef<PreviewHandle>(null);
   const consoleOpen = useUiStore((s) => s.consoleOpen);
