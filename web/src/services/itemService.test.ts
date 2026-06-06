@@ -131,6 +131,21 @@ describe('itemService.saveItems (import)', () => {
     expect(batch.update).toHaveBeenCalledTimes(2);
     expect(batch.commit).toHaveBeenCalledTimes(1);
   });
+  it('strips backend-owned sharing fields from every batch payload (advisor fix #2)', async () => {
+    // Contract §3.1: isShared/shareToken/sharedAt are written by create_share only.
+    // An imported export carrying a stale share token must NOT resurrect a public
+    // share on the new owner's item. Revert (no strip in saveItems) → fields present → fails.
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.saveItems({
+      a: baseItem({ id: 'a', isShared: true, shareToken: 'stale-tok', sharedAt: 999 } as Partial<Item>),
+    });
+    const data = batch.set.mock.calls[0][1] as any;
+    expect('isShared' in data).toBe(false);
+    expect('shareToken' in data).toBe(false);
+    expect('sharedAt' in data).toBe(false);
+  });
 });
 
 describe('itemService.setItem — strips backend-owned sharing fields from the cloud payload (advisor fix A)', () => {
@@ -151,11 +166,18 @@ describe('itemService.moveToFolder (takes the held Item — advisor fix B)', () 
     const data = (fs.setDoc.mock.calls.at(-1) as unknown as unknown[])[1] as any;
     expect(data.folderId).toBe('folder-9');
   });
-  it('moveToFolder(item, null) clears the folderId', async () => {
+  it('moveToFolder(item, null) clears the folderId in the CLOUD payload (explicit null, not absent)', async () => {
+    // Discriminating: setDoc uses merge:true, so an ABSENT folderId key does NOT
+    // clear the cloud doc — Firestore retains the stale value. The clear path must
+    // write an explicit null. Revert to `delete next.folderId` → key absent → fails.
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
     await svc.moveToFolder(baseItem({ id: 'item-1', folderId: 'folder-9' } as Partial<Item>), null);
+    const data = (fs.setDoc.mock.calls.at(-1) as unknown as unknown[])[1] as any;
+    expect('folderId' in data).toBe(true);
+    expect(data.folderId).toBeNull();
+    // The local copy is also an explicit null (not a deleteField sentinel object).
     const local = await localStore.get<any>('item-1', null);
-    expect(local.folderId).toBeUndefined();
+    expect(local.folderId).toBeNull();
   });
 });
 

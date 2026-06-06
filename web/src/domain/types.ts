@@ -30,7 +30,7 @@ export interface Item {
   // Ownership / meta
   createdBy?: string;               // owner uid — stamped on every cloud write
   updatedOn?: number;
-  folderId?: string;
+  folderId?: string | null;         // null clears the folder via setDoc(merge) → Unfiled
   // Sharing (written by backend create_share only)
   isShared?: boolean;
   shareToken?: string;

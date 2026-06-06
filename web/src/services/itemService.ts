@@ -91,6 +91,13 @@ export function makeItemService(getAuth: AuthContextGetter) {
     for (const [id, it] of entries) {
       const data: Item = { ...migrateToPages(it), createdBy: uid, updatedOn: it.updatedOn ?? Date.now() };
       delete (data as any).imageBase64;
+      // Sharing fields are backend-owned (contract §3.1: written by create_share,
+      // never by client). An imported JSON export can carry a stale isShared/shareToken;
+      // writing it would resurrect a public share the backend never minted for this
+      // owner. Strip for parity with setItem (advisor fix).
+      delete (data as any).isShared;
+      delete (data as any).shareToken;
+      delete (data as any).sharedAt;
       batch.set(doc(db, `items/${id}`), data);
       batch.update(doc(db, `users/${uid}`), { [`items.${id}`]: true });
     }
@@ -100,9 +107,16 @@ export function makeItemService(getAuth: AuthContextGetter) {
   async function moveToFolder(item: Item, folderId: string | null): Promise<void> {
     // Take the held Item (from useItems) — do NOT re-fetch from localStore, which
     // is empty for cloud-only items delivered by onSnapshot (advisor fix).
-    const next: Item = { ...item };
-    if (folderId) next.folderId = folderId;
-    else delete (next as Partial<Item>).folderId;
+    //
+    // Clearing the folder (move to Unfiled / out of any folder) MUST write an
+    // explicit `null`, not `delete next.folderId`. setItem writes the cloud doc via
+    // setDoc(merge:true): with merge, an ABSENT key is NOT a deletion — Firestore
+    // retains the stale folderId, so onSnapshot re-delivers it and the item snaps
+    // back into its old folder. Writing null persists through merge and the grouping
+    // treats null as falsy → Unfiled (mirrors legacy LibraryPanel.jsx:136). We use
+    // explicit null rather than deleteField() because setItem persists the local copy
+    // first (a deleteField sentinel would leak into localStore as a FieldValue object).
+    const next: Item = { ...item, folderId };
     await setItem(next.id, next);
   }
 
