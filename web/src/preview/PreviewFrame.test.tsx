@@ -56,6 +56,17 @@ describe('PreviewFrame', () => {
     expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
   });
 
+  it('posts updateCss (not a full render) when only css changes after ready', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css=".a{}" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    post.mockClear();
+    rerender(<PreviewFrame code="A.b" css=".b{}" stickyOffset={0} />);
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css: '.b{}' }), '*');
+  });
+
   it('getPng posts a getPng message and resolves on the matching png reply', async () => {
     const ref = createRef<PreviewHandle>();
     const { container } = render(<PreviewFrame ref={ref} code="A.b" css="" stickyOffset={0} />);

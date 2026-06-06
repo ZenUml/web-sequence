@@ -31,8 +31,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
   const cbRef = useRef({ onCodeChange, onConsole, onError });
   cbRef.current = { onCodeChange, onConsole, onError };
-  // Build srcdoc once per CSS identity; DSL changes go via postMessage.
-  const srcdoc = useMemo(() => getCompleteHtml({ css }), [css]);
+  // Build srcdoc ONCE from the css at mount; later css updates use the fast path
+  // (REQ-PRV-5) rather than rebuilding the iframe.
+  const initialCss = useRef(css);
+  const srcdoc = useMemo(() => getCompleteHtml({ css: initialCss.current }), []);
 
   const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
 
@@ -71,7 +73,16 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, stickyOffset, autoPreview]);
 
-  // Rebuilding srcdoc resets readiness; the new doc posts `ready` again.
+  // CSS-only fast path (REQ-PRV-5): once ready, push CSS via postMessage on css
+  // changes instead of rebuilding/reloading the iframe.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    post({ type: 'updateCss', css });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [css]);
+
+  // srcdoc is now stable for the component's life, so this is a one-time no-op;
+  // kept as a safety net should the iframe ever reload and re-fire `ready`.
   useEffect(() => { readyRef.current = false; }, [srcdoc]);
 
   useImperativeHandle(ref, () => ({

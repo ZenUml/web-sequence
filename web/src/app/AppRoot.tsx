@@ -16,6 +16,7 @@ export function AppRoot() {
   const item = useEditorStore((s) => s.currentItem);
   const loadItem = useEditorStore((s) => s.loadItem);
   const setDsl = useEditorStore((s) => s.setDsl);
+  const setCss = useEditorStore((s) => s.setCss);
   const previewRef = useRef<PreviewHandle>(null);
 
   useEffect(() => { if (!item) loadItem(STARTER); }, [item, loadItem]);
@@ -29,7 +30,12 @@ export function AppRoot() {
     <div className="flex h-full w-full">
       <Sidebar />
       <Layout
-        editor={<CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" />}
+        editor={
+          <div className="flex flex-col h-full">
+            <div className="flex-1 min-h-0"><CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
+            <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} /></div>
+          </div>
+        }
         preview={<PreviewFrame ref={previewRef} code={item.js} css={item.css} stickyOffset={stickyOffset} onCodeChange={setDsl} />}
       />
     </div>
