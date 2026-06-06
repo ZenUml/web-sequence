@@ -109,9 +109,15 @@ export function LibraryItemRow({
             </IconButton>
           </MenuTrigger>
           {/* MenuContent is portaled but remains a React child of this row, so its
-              click events bubble through the React tree to the row's onClick →
-              onOpen. Stop propagation here so menu actions never trigger onOpen. */}
-          <MenuContent onClick={(e) => e.stopPropagation()}>
+              events bubble through the React tree to the row's onClick/onKeyDown →
+              onOpen. Stop BOTH twins: click for mouse activation, keydown because Radix
+              MenuItem does not stopPropagation on Enter/Space, so keyboard-activating an
+              action (e.g. Fork) would also fire the row's onOpen(item) — clobbering the
+              fork by re-opening the original (adversarial review). */}
+          <MenuContent
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <MenuItem
               data-testid={`lib-action-open-${item.id}`}
               onSelect={() => onOpen(item)}

@@ -170,6 +170,25 @@ describe('LibraryItemRow', () => {
     expect(h.onOpen).not.toHaveBeenCalled();
   });
 
+  it('keyboard-activating a menu item (Fork) does NOT bubble to the row onOpen (adversarial review)', async () => {
+    // The portaled MenuContent is a React child of the role=button row, so a keydown
+    // that Radix does not stopPropagation bubbles to the row's onKeyDown → onOpen.
+    // Worst case is Fork: it loads+forks, then the bubbled keydown re-opens the
+    // original, clobbering the fork. Keyboard-activate Fork and assert onOpen never
+    // fires. Revert MenuContent's onKeyDown stopPropagation → this fails.
+    const item = makeItem();
+    const h = baseHandlers();
+    render(<LibraryItemRow item={item} folders={folders} {...h} />);
+    const kebab = screen.getByTestId('lib-row-menu-item-1');
+    kebab.focus();
+    await userEvent.keyboard('{Enter}');
+    // Move focus from the first item (Open) to Fork, then activate via keyboard.
+    await screen.findByTestId('lib-action-fork-item-1');
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+    expect(h.onFork).toHaveBeenCalledWith(item);
+    expect(h.onOpen).not.toHaveBeenCalled();
+  });
+
   it('Delete action uses the danger token, not signal-amber (design system; advisor fix #5)', async () => {
     const item = makeItem();
     const h = baseHandlers();
