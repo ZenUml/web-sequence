@@ -38,6 +38,7 @@ interface EditorState {
   addPage(title?: string): void;
   deletePage(pageId: string): void;
   switchPage(pageId: string): void;
+  renamePage(pageId: string, title: string): void;
   reset(): void;
   markSaved(): void;
   setSaving(b: boolean): void;
@@ -63,6 +64,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   addPage: (title) => set((s) => s.currentItem ? { currentItem: addPage(s.currentItem, title), dirty: true } : s),
   deletePage: (pageId) => set((s) => s.currentItem ? { currentItem: deletePage(s.currentItem, pageId), dirty: true } : s),
   switchPage: (pageId) => set((s) => s.currentItem ? { currentItem: switchPage(s.currentItem, pageId) } : s),
+  // Rename is a metadata edit: dirty=true, unsavedCount unchanged (same pattern as setTitle).
+  renamePage: (pageId, title) => set((s) => s.currentItem
+    ? { currentItem: applyPageEdit(s.currentItem, pageId, { title }), dirty: true } : s),
   reset: () => set({ currentItem: null, dirty: false, unsavedCount: 0, saving: false }),
   markSaved: () => set({ dirty: false, unsavedCount: 0 }),
   setSaving: (saving) => set({ saving }),

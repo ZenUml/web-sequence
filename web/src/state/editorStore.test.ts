@@ -50,6 +50,17 @@ describe('editorStore', () => {
     expect(useEditorStore.getState().unsavedCount).toBe(0);
     expect(it.js).toBe(DEFAULT_STARTER.js);
   });
+  it('renamePage updates the page title, marks dirty, and does not increment unsavedCount', () => {
+    useEditorStore.getState().loadItem(sample());
+    const pageId = useEditorStore.getState().currentItem!.pages[0].id;
+    const before = useEditorStore.getState().unsavedCount;
+    useEditorStore.getState().renamePage(pageId, 'Renamed');
+    const it = useEditorStore.getState().currentItem!;
+    expect(it.pages[0].title).toBe('Renamed');
+    expect(useEditorStore.getState().dirty).toBe(true);
+    expect(useEditorStore.getState().unsavedCount).toBe(before);
+  });
+
   it('forkCurrent clears id, prefixes title, resets unsavedCount', () => {
     useEditorStore.getState().loadItem(sample({ id: 'item-1', title: 'Orig' }));
     useEditorStore.getState().forkCurrent();

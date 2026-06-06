@@ -11,6 +11,7 @@ import { computeCss } from '../preview/transpilers';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
+import { PageTabs } from '../components/pages/PageTabs';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
 import { AskToImportModal } from '../components/modals/AskToImportModal';
@@ -52,6 +53,10 @@ export function AppRoot() {
   const setJsMode = useEditorStore((s) => s.setJsMode);
   const setCssMode = useEditorStore((s) => s.setCssMode);
   const setTitle = useEditorStore((s) => s.setTitle);
+  const addPageAction = useEditorStore((s) => s.addPage);
+  const deletePageAction = useEditorStore((s) => s.deletePage);
+  const switchPageAction = useEditorStore((s) => s.switchPage);
+  const renamePageAction = useEditorStore((s) => s.renamePage);
   const unsavedCount = useEditorStore((s) => s.unsavedCount);
 
   const user = useAuthStore((s) => s.user);
@@ -222,6 +227,15 @@ export function AppRoot() {
         <Layout
           editor={
             <div className="flex flex-col h-full">
+              <PageTabs
+                pages={item.pages ?? []}
+                currentPageId={item.currentPageId ?? ''}
+                onSwitch={switchPageAction}
+                onAdd={addPageAction}
+                onDelete={deletePageAction}
+                onRename={renamePageAction}
+                readOnly={!!item.isReadOnly}
+              />
               <div className="flex items-center gap-2 px-2 py-1 border-b border-gray-200 text-xs">
                 <label className="flex items-center gap-1">
                   <span className="text-gray-500">JS</span>
@@ -247,8 +261,8 @@ export function AppRoot() {
                 </label>
               </div>
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
-              <div className="flex-1 min-h-0"><CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
-              <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
+              <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
+              <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
             </div>
           }
           preview={
