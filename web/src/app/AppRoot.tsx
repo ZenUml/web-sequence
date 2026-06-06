@@ -12,15 +12,19 @@ import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
 import { AppHeader } from '../components/header/AppHeader';
+import { ConfirmDialog } from '../components/modals/ConfirmDialog';
+import { AskToImportModal } from '../components/modals/AskToImportModal';
 import { addCode } from '../editor/snippets';
 import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useBootItem } from '../hooks/useBootItem';
+import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem } from '../services/cloudFunctions';
 import { setItemForUser } from '../services/userService';
 import { localStore } from '../services/storage';
 import { LS_KEYS } from '../config/constants';
+import type { ProviderName } from '../services/types';
 
 const JS_MODES: { value: JsMode; label: string }[] = [
   { value: 'js', label: 'JavaScript' },
@@ -95,6 +99,9 @@ export function AppRoot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.css, item?.html, item?.cssMode, item?.cssSettings]);
 
+  // State for the one-time "saved locally, sign in to sync" notice (signed-out first save)
+  const [noticeOpen, setNoticeOpen] = useState(false);
+
   // ItemService — created once, injects auth/online context lazily via getState()
   const itemService = useMemo(
     () => makeItemService(() => ({
@@ -103,6 +110,10 @@ export function AppRoot() {
     })),
     [],
   );
+
+  // Import-on-login: when the user signs in with local diagrams, offer to import them.
+  const { pending: importPending, count: importCount, doImport, dismiss: dismissImport } =
+    useImportOnLogin(itemService.saveItems);
 
   // Read URL params — following existing stickyOffset pattern (no router hook, safe in bare tests)
   const params = new URLSearchParams(window.location.search);
@@ -136,22 +147,32 @@ export function AppRoot() {
     };
   }, [itemService]);
 
-  // Minimal save handler (Task 13 will add import-on-login, login-and-save notice, plan-limit/trackEvent seams)
   async function save() {
     const it = useEditorStore.getState().currentItem;
     if (!it || it.isReadOnly) return;
+    // Stamp updatedOn so the local copy reflects the save time.
+    const itemToSave: Item = { ...it, updatedOn: Date.now() };
     useEditorStore.getState().setSaving(true);
     try {
-      await itemService.setItem(it.id, it);
+      await itemService.setItem(itemToSave.id, itemToSave);
       const uid = useAuthStore.getState().user?.uid;
       if (uid) {
-        try { await setItemForUser(uid, it.id); } catch { /* membership best-effort */ }
+        try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
       }
       useEditorStore.getState().markSaved();
     } finally {
       useEditorStore.getState().setSaving(false);
     }
-    // Task 13: import-on-login, login-and-save notice. M04: enforce plan limit; trackEvent('fn','saved').
+    // Signed-out first save: show one-time notice prompting sign-in.
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      const seen = await localStore.get<boolean>(LS_KEYS.loginAndSaveMessageSeen, false);
+      if (!seen) {
+        await localStore.set(LS_KEYS.loginAndSaveMessageSeen, true);
+        setNoticeOpen(true);
+      }
+    }
+    // M04: enforce plan limit; trackEvent('fn','saved').
   }
 
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
@@ -165,6 +186,24 @@ export function AppRoot() {
 
   return (
     <div className="flex flex-col h-full w-full">
+      {/* One-time "saved locally" notice for signed-out users (REQ-PST) */}
+      <ConfirmDialog
+        open={noticeOpen}
+        onOpenChange={setNoticeOpen}
+        title="Saved on this device"
+        message="Sign in to save and sync across devices."
+        confirmLabel="Sign in"
+        cancelLabel="Not now"
+        onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
+      />
+      {/* Import local diagrams after login (REQ-AC) */}
+      <AskToImportModal
+        open={importPending}
+        onOpenChange={(o) => { if (!o) void dismissImport(); }}
+        count={importCount}
+        onImport={() => void doImport()}
+        onDismiss={() => void dismissImport()}
+      />
       <AppHeader
         title={item.title ?? ''}
         unsavedCount={unsavedCount}

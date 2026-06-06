@@ -32,6 +32,7 @@ vi.mock('../services/itemService', () => ({
     setItem: vi.fn(async () => {}),
     getItem: vi.fn(async () => { throw new Error('not found'); }),
     saveLastCode: vi.fn(),
+    saveItems: vi.fn(async () => {}),
   }),
 }));
 
