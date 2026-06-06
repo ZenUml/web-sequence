@@ -16,4 +16,10 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="dsl-editor"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="preview-iframe"]')).toBeTruthy();
   });
+
+  it('renders js and css mode selects', () => {
+    const { container } = render(<AppRoot />);
+    expect(container.querySelector('[data-testid="js-mode-select"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="css-mode-select"]')).toBeTruthy();
+  });
 });

@@ -22,4 +22,14 @@ describe('editorStore', () => {
     expect(it.pages[0].js).toBe('C.d');
     expect(useEditorStore.getState().dirty).toBe(true);
   });
+  it('switching to acss sets cssMode (drives CSS editor read-only)', () => {
+    useEditorStore.getState().loadItem(sample());
+    useEditorStore.getState().setCssMode('acss');
+    expect(useEditorStore.getState().currentItem!.cssMode).toBe('acss');
+  });
+  it('setJsMode persists the js mode', () => {
+    useEditorStore.getState().loadItem(sample());
+    useEditorStore.getState().setJsMode('typescript');
+    expect(useEditorStore.getState().currentItem!.jsMode).toBe('typescript');
+  });
 });
