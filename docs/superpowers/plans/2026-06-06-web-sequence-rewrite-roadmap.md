@@ -347,3 +347,14 @@ The iframe document is assembled by `previewHtml.getCompleteHtml()`, which injec
 - **CQ-3 Keep parity on folder delete.** Remove folder only; no item rewrite; orphaned `folderId` → "Unfiled" via existence-check grouping. [M03]
 - **CQ-4 Load all items.** No pagination (breaks search/grouping, can't cut download cost without a backend index); add render virtualization only if a large library lags. [M03]
 - **CQ-5 Modular SDK v10+, multi-tab supported.** `persistentLocalCache({ tabManager: persistentMultipleTabManager() })`; the legacy multi-tab warning is **removed**; fall back to memory cache if IndexedDB is unavailable. [M00 init / M02 behavior, REQ-PST-4]
+
+---
+
+## 9. Adversarial-review carry-forward (M00 → later milestones)
+
+> Raised by the M00 adversarial-review panel (2026-06-06); deferred deliberately, not forgotten. Each must be addressed in the milestone noted.
+
+- **M02 — `firebase.ts` HMR/double-init safety.** `initializeApp` runs at module load with no guard; under HMR or a second import it throws `Firebase App named [DEFAULT] already exists`. When the module is first wired up, use `getApps().length ? getApp() : initializeApp(config.firebase)`.
+- **M02 — `firebase.ts` persistence fallback.** `persistentLocalCache` accesses IndexedDB lazily (no synchronous throw at init), but the first Firestore op fails in private browsing / when IndexedDB is unavailable. Wrap with a try/catch fallback to `memoryLocalCache()` (per CQ-5).
+- **M02 — login-side behaviors not in the foundation service.** Legacy `login()` also: fires `trackEvent('fn','loggedIn',provider)`, persists `lastAuthProvider` (LS_KEYS), and alerts the user on `auth/account-exists-with-different-credential`. The foundation `login()` only does `signInWithPopup` and propagates errors — reimplement these at the UI/analytics call sites so UX is preserved.
+- **M01+ — `web/public` static assets.** `vite.config.ts` sets `publicDir: 'public'`, which does not yet exist (Vite silently skips it). Legacy served favicons/fonts/animations from `../static`; migrate them into `web/public` before cutover or the app ships without icons/fonts.
