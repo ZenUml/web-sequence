@@ -4,14 +4,18 @@ import { getIdToken } from './firebase';
 // Hosting-rewritten endpoints are same-origin paths (dev: Vite proxy → emulator;
 // prod: Firebase Hosting rewrites). See contract spec §5.
 
-// POST /create-share — body { id, token: freshIdToken }. Item must be SAVED first
-// (the function reads items/{id}). Returns the share URL with the md5 cache-buster.
+// POST /create-share — body { id, token: freshIdToken, origin }. Item must be SAVED
+// first (the function reads items/{id}). Returns the share URL with the md5
+// cache-buster. `origin` honors contract §5.1: the backend builds page_share from it
+// and only falls back to env-specific hosts when absent. Without it, a non-canonical
+// origin (local dev off :3000, preview deploys) would mint a share link on the wrong
+// host (mirrors legacy syncService.js:34).
 export async function createShare(id: string): Promise<{ url: string; md5: string }> {
   const token = await getIdToken();
   const res = await fetch('/create-share', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, token }),
+    body: JSON.stringify({ id, token, origin: window.location.origin }),
   });
   if (!res.ok) {
     let msg = 'Failed to create share link';

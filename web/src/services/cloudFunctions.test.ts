@@ -38,9 +38,12 @@ describe('getSharedItem', () => {
 describe('createShare', () => {
   it('POSTs id + fresh token, returns the share URL with the md5 cache-buster appended', async () => {
     server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
-      const body = (await request.json()) as { id: string; token: string };
+      const body = (await request.json()) as { id: string; token: string; origin: string };
       expect(body.id).toBe('item-1');
       expect(body.token).toBe('fresh-token');
+      // Contract §5.1: the frontend must send origin so the backend builds the share
+      // URL on the real host instead of an env fallback (advisor fix #3).
+      expect(body.origin).toBe(window.location.origin);
       return HttpResponse.json({ page_share: 'http://localhost?id=item-1&share-token=tok', md5: 'abc123' });
     }));
     const { url, md5 } = await createShare('item-1');
