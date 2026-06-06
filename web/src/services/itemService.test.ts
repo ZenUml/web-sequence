@@ -127,9 +127,29 @@ describe('itemService.saveItems (import)', () => {
     fs.writeBatch.mockReturnValueOnce(batch);
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
     await svc.saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }) });
-    expect(batch.set).toHaveBeenCalledTimes(2);
-    expect(batch.update).toHaveBeenCalledTimes(2);
+    // 2 item docs + 2 user-doc merges = 4 set calls; commit once.
+    expect(batch.set).toHaveBeenCalledTimes(4);
     expect(batch.commit).toHaveBeenCalledTimes(1);
+  });
+  it('writes users/{uid} via set(merge:true), NOT update — so a missing user doc cannot abort the import (adversarial review)', async () => {
+    // batch.update() requires the target doc to already exist and aborts the whole
+    // batch otherwise. A freshly-signed-in user (users/{uid} created fire-and-forget
+    // on login) who imports immediately would silently lose every item. Revert to
+    // batch.update(users/...) → this test fails (update called, set on users path
+    // absent, no merge opts). set(merge:true) is create-or-merge → safe.
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.saveItems({ a: baseItem({ id: 'a' }) });
+    // The user doc must NEVER be touched via update() (the abort-on-missing path).
+    expect(batch.update).not.toHaveBeenCalled();
+    // It must be written with set(...merge:true) on the users/{uid} path.
+    const userSet = batch.set.mock.calls.find(
+      (c: any[]) => c[0]?.path === 'users/u1',
+    );
+    expect(userSet).toBeDefined();
+    expect(userSet![1]).toEqual({ items: { a: true } });
+    expect(userSet![2]).toEqual({ merge: true });
   });
   it('strips backend-owned sharing fields from every batch payload (advisor fix #2)', async () => {
     // Contract §3.1: isShared/shareToken/sharedAt are written by create_share only.

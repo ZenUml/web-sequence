@@ -99,7 +99,13 @@ export function makeItemService(getAuth: AuthContextGetter) {
       delete (data as any).shareToken;
       delete (data as any).sharedAt;
       batch.set(doc(db, `items/${id}`), data);
-      batch.update(doc(db, `users/${uid}`), { [`items.${id}`]: true });
+      // Use set(merge:true), NOT update(): Firestore's batch update() requires the
+      // target doc to already exist and aborts the WHOLE batch if it doesn't.
+      // users/{uid} is created fire-and-forget on login (useAuth.ensureUser, unawaited);
+      // a freshly-signed-in user importing immediately can race ahead of that write and
+      // silently lose the entire import. set(merge:true) creates-or-merges the user doc
+      // so the import is robust regardless of ordering (adversarial review).
+      batch.set(doc(db, `users/${uid}`), { items: { [id]: true } }, { merge: true });
     }
     await batch.commit();
   }
