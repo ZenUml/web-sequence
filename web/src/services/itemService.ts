@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, deleteField, collection, query, where, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { localStore } from './storage';
 import * as localItems from './localItems';
@@ -26,6 +26,11 @@ export function makeItemService(getAuth: AuthContextGetter) {
 
     const withMeta: Item = { ...migrateToPages(clean as Item), createdBy: uid, updatedOn: Date.now() };
     delete (withMeta as any).imageBase64;
+    // Sharing fields are backend-owned (create_share sets; stopSharing clears).
+    // Never let a normal save re-assert a stale isShared/shareToken (advisor fix).
+    delete (withMeta as any).isShared;
+    delete (withMeta as any).shareToken;
+    delete (withMeta as any).sharedAt;
     const ref = doc(db, `items/${id}`);
     const cloud = setDoc(ref, withMeta, { merge: true });
     // Online: await so callers see the result. Offline: don't block — Firestore's
@@ -92,7 +97,22 @@ export function makeItemService(getAuth: AuthContextGetter) {
     await batch.commit();
   }
 
-  return { setItem, saveLastCode, getItem, removeItem, subscribeAllItems, saveItems };
+  async function moveToFolder(item: Item, folderId: string | null): Promise<void> {
+    // Take the held Item (from useItems) — do NOT re-fetch from localStore, which
+    // is empty for cloud-only items delivered by onSnapshot (advisor fix).
+    const next: Item = { ...item };
+    if (folderId) next.folderId = folderId;
+    else delete (next as Partial<Item>).folderId;
+    await setItem(next.id, next);
+  }
+
+  async function stopSharing(id: string): Promise<void> {
+    const { uid } = getAuth();
+    if (!uid) return; // sharing requires sign-in
+    await setDoc(doc(db, `items/${id}`), { isShared: false, shareToken: deleteField() }, { merge: true });
+  }
+
+  return { setItem, saveLastCode, getItem, removeItem, subscribeAllItems, saveItems, moveToFolder, stopSharing };
 }
 
 export type ItemService = ReturnType<typeof makeItemService>;

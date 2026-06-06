@@ -5,6 +5,7 @@ const fs = vi.hoisted(() => ({
   getDoc: vi.fn(),
   setDoc: vi.fn(async () => {}),
   deleteDoc: vi.fn(async () => {}),
+  deleteField: vi.fn(() => '__DELETE__'),
   writeBatch: vi.fn(),
   collection: vi.fn(() => ({})),
   query: vi.fn((...a) => ({ a })),
@@ -129,5 +130,48 @@ describe('itemService.saveItems (import)', () => {
     expect(batch.set).toHaveBeenCalledTimes(2);
     expect(batch.update).toHaveBeenCalledTimes(2);
     expect(batch.commit).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('itemService.setItem — strips backend-owned sharing fields from the cloud payload (advisor fix A)', () => {
+  it('does NOT write isShared/shareToken/sharedAt to the cloud (so a stopped share stays revoked)', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.setItem('item-1', baseItem({ isShared: true, shareToken: 'tok', sharedAt: 123 } as Partial<Item>));
+    const [, data] = fs.setDoc.mock.calls.at(-1)!;
+    expect('isShared' in data).toBe(false);
+    expect('shareToken' in data).toBe(false);
+    expect('sharedAt' in data).toBe(false);
+  });
+});
+
+describe('itemService.moveToFolder (takes the held Item — advisor fix B)', () => {
+  it('signed-in: re-saves the GIVEN item with the new folderId (no localStore re-fetch)', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.moveToFolder(baseItem({ id: 'item-1' }), 'folder-9');
+    const [, data] = fs.setDoc.mock.calls.at(-1)!;
+    expect(data.folderId).toBe('folder-9');
+  });
+  it('moveToFolder(item, null) clears the folderId', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.moveToFolder(baseItem({ id: 'item-1', folderId: 'folder-9' } as Partial<Item>), null);
+    const local = await localStore.get<any>('item-1', null);
+    expect(local.folderId).toBeUndefined();
+  });
+});
+
+describe('itemService.stopSharing', () => {
+  it('signed-in: setDoc(merge) isShared:false + deletes shareToken', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.stopSharing('item-1');
+    expect(fs.setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'items/item-1' }),
+      { isShared: false, shareToken: '__DELETE__' },
+      { merge: true },
+    );
+  });
+  it('signed-out: no cloud write', async () => {
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    await svc.stopSharing('item-1');
+    expect(fs.setDoc).not.toHaveBeenCalled();
   });
 });
