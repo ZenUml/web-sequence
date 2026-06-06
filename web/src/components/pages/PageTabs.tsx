@@ -31,6 +31,9 @@ export function PageTabs({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Fix 2: cancellation guard — prevents blur from committing after Escape
+  const cancelledRef = useRef(false);
+
   // Focus the input when entering rename mode
   useEffect(() => {
     if (editingId !== null) {
@@ -40,12 +43,18 @@ export function PageTabs({
 
   function startRename(page: Page) {
     if (readOnly) return;
+    cancelledRef.current = false; // reset on every new rename
     setEditingId(page.id);
     setDraft(page.title);
   }
 
   function commitRename() {
     if (editingId === null) return;
+    // Fix 2: if Escape was pressed, the blur that follows must no-op
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      return;
+    }
     const trimmed = draft.trim();
     if (trimmed) {
       onRename(editingId, trimmed);
@@ -54,6 +63,7 @@ export function PageTabs({
   }
 
   function cancelRename() {
+    cancelledRef.current = true;
     setEditingId(null);
   }
 
@@ -86,15 +96,21 @@ export function PageTabs({
                 aria-label="Rename page"
               />
             ) : (
-              <button
+              // Fix 1: use <div role="tab"> so IconButton (a <button>) is NOT nested inside a <button>
+              <div
                 role="tab"
                 data-testid={`page-tab-${page.id}`}
                 aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => onSwitch(page.id)}
                 onDoubleClick={() => startRename(page)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { onSwitch(page.id); }
+                  if (e.key === ' ') { e.preventDefault(); onSwitch(page.id); }
+                }}
                 className={cn(
                   'relative flex items-center gap-1 h-7 px-2.5 rounded-t text-[11px] font-mono uppercase tracking-[0.1em]',
-                  'transition-colors duration-150 ease-draft select-none whitespace-nowrap',
+                  'transition-colors duration-150 ease-draft select-none whitespace-nowrap cursor-pointer',
                   'focus-visible:outline-none ring-draft',
                   isActive
                     ? [
@@ -107,28 +123,22 @@ export function PageTabs({
               >
                 {page.title}
                 {canDelete && (
-                  <span
-                    role="presentation"
+                  // Fix 1: IconButton is a sibling to the label text, not nested in a <button>
+                  <IconButton
+                    size="sm"
+                    surface="dark"
+                    aria-label="Delete page"
+                    data-testid={`page-delete-${page.id}`}
+                    className="ml-0.5 h-4 w-4"
                     onClick={(e) => { e.stopPropagation(); setDeleteId(page.id); }}
-                    className="ml-0.5"
                   >
-                    <IconButton
-                      size="sm"
-                      surface="dark"
-                      aria-label="Delete page"
-                      data-testid={`page-delete-${page.id}`}
-                      className="h-4 w-4"
-                      // Don't propagate to the tab button (handled by onClick above)
-                      onClick={(e) => { e.stopPropagation(); setDeleteId(page.id); }}
-                    >
-                      {/* × close icon */}
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden>
-                        <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                      </svg>
-                    </IconButton>
-                  </span>
+                    {/* × close icon */}
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden>
+                      <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </IconButton>
                 )}
-              </button>
+              </div>
             )}
           </div>
         );

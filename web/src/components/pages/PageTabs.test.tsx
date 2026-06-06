@@ -175,4 +175,35 @@ describe('PageTabs', () => {
     expect(screen.getByTestId('page-delete-p2')).toBeInTheDocument();
     expect(screen.getByTestId('page-delete-p3')).toBeInTheDocument();
   });
+
+  // Fix 3: empty-rename guard
+  it('committing an empty rename does not call onRename', async () => {
+    const onRename = vi.fn();
+    render(<PageTabs {...defaultProps} onRename={onRename} />);
+
+    await userEvent.dblClick(screen.getByTestId('page-tab-p1'));
+    const input = screen.getByTestId('page-rename-p1');
+
+    // Clear the input entirely then press Enter
+    await userEvent.clear(input);
+    await userEvent.type(input, '{Enter}');
+
+    expect(onRename).not.toHaveBeenCalled();
+    // Rename mode should exit regardless
+    expect(screen.queryByTestId('page-rename-p1')).not.toBeInTheDocument();
+  });
+
+  it('committing a whitespace-only rename does not call onRename', async () => {
+    const onRename = vi.fn();
+    render(<PageTabs {...defaultProps} onRename={onRename} />);
+
+    await userEvent.dblClick(screen.getByTestId('page-tab-p1'));
+    const input = screen.getByTestId('page-rename-p1');
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '   {Enter}');
+
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('page-rename-p1')).not.toBeInTheDocument();
+  });
 });
