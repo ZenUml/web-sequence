@@ -33,21 +33,24 @@ export const PREVIEW_BOOTSTRAP = `
   });
 
   window.addEventListener('message', function (e) {
+    if (e.source !== parent) return;
     var msg = e.data;
     if (!msg || typeof msg !== 'object') return;
 
     if (msg.type === 'render' && app) {
-      try {
-        app.render(msg.code, {
-          enableMultiTheme: false,
-          theme: 'theme-default',
-          onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
-          stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
-        });
-        post({ type: 'rendered' });
-      } catch (err) {
-        post({ type: 'error', message: String((err && err.message) || err) });
-      }
+      (async function () {
+        try {
+          await app.render(msg.code, {
+            enableMultiTheme: false,
+            theme: 'theme-default',
+            onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
+            stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
+          });
+          post({ type: 'rendered' });
+        } catch (err) {
+          post({ type: 'error', message: String((err && err.message) || err) });
+        }
+      })();
     } else if (msg.type === 'updateCss') {
       var styleEl = document.getElementById('zenumlstyle');
       if (styleEl) styleEl.textContent = msg.css || '';

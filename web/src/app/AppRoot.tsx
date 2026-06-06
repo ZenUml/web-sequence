@@ -67,7 +67,8 @@ export function AppRoot() {
     if (!item || item.cssMode === 'css') { setCssErrors([]); return; }
     let cancelled = false;
     computeCss(item.cssMode === 'acss' ? item.html : item.css, item.cssMode, item.cssSettings)
-      .then((r) => { if (!cancelled) { setTranspiledCss(r.code); setCssErrors(r.errors ?? []); } });
+      .then((r) => { if (!cancelled) { setTranspiledCss(r.code); setCssErrors(r.errors ?? []); } })
+      .catch((e) => { if (!cancelled) { setTranspiledCss(''); setCssErrors([{ lineNumber: 0, message: String(e) }]); } });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.css, item?.html, item?.cssMode, item?.cssSettings]);
@@ -133,6 +134,7 @@ export function AppRoot() {
                 stickyOffset={stickyOffset}
                 onCodeChange={setDsl}
                 onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
+                onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
               />
             </div>
             <Console

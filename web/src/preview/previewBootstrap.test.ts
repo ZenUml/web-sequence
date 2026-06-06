@@ -11,6 +11,12 @@ describe('PREVIEW_BOOTSTRAP', () => {
     expect(PREVIEW_BOOTSTRAP).toContain('msg.options');
     expect(PREVIEW_BOOTSTRAP).not.toContain('window.location.search');
   });
+  it('awaits render so rejections post error and rendered posts only on success', () => {
+    expect(PREVIEW_BOOTSTRAP).toContain('await app.render');
+  });
+  it('guards the message listener to the parent source', () => {
+    expect(PREVIEW_BOOTSTRAP).toContain('e.source !== parent');
+  });
   it('handles updateCss, getPng and evalConsole, and forwards codeChange', () => {
     expect(PREVIEW_BOOTSTRAP).toContain("'updateCss'");
     expect(PREVIEW_BOOTSTRAP).toContain("'getPng'");
