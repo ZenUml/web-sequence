@@ -40,13 +40,23 @@ const zenumlAssetUrlShim = {
 };
 
 const FN = 'http://127.0.0.1:5002/staging-zenuml-27954/us-central1';
-const proxy = (fn: string) => ({ target: FN, changeOrigin: true, rewrite: () => `/${fn}` });
+// Rewrite path → function id while PRESERVING the query string (and any path
+// suffix), matching the legacy vite.config.js `path.replace(...)` rewrites. This
+// matters for GET /get-shared-item?id=…&share-token=… — a bare `() => '/fn'`
+// would drop the query and break dev share-loading.
+const proxy = (path: string, fn: string) => ({
+  target: FN,
+  changeOrigin: true,
+  rewrite: (p: string) => p.replace(path, `/${fn}`),
+});
 
 export default defineConfig({
   plugins: [zenumlAssetUrlShim, react()],
   // Conventional layout: root = web/ (this dir), index.html at web/index.html,
   // source under web/src, build output to web/dist. (Differs from the legacy
   // app's root:'src' quirk — this is a clean self-contained project.)
+  // publicDir defaults to web/public (created when static assets — favicons,
+  // fonts — are migrated from the legacy ../static in a later milestone).
   publicDir: 'public',
   build: { outDir: 'dist', emptyOutDir: true, assetsDir: 'assets' },
   define: { __COMMITHASH__: JSON.stringify(getCommitHash()) },
@@ -55,12 +65,12 @@ export default defineConfig({
     host: true,
     port: 3000,
     proxy: {
-      '/create-share': proxy('create_share'),
-      '/get-shared-item': proxy('get_shared_item'),
-      '/sync-diagram': proxy('sync_diagram'),
-      '/authenticate': proxy('authenticate'),
-      '/track': proxy('track'),
-      '/info': proxy('info'),
+      '/create-share': proxy('/create-share', 'create_share'),
+      '/get-shared-item': proxy('/get-shared-item', 'get_shared_item'),
+      '/sync-diagram': proxy('/sync-diagram', 'sync_diagram'),
+      '/authenticate': proxy('/authenticate', 'authenticate'),
+      '/track': proxy('/track', 'track'),
+      '/info': proxy('/info', 'info'),
     },
   },
   test: {
