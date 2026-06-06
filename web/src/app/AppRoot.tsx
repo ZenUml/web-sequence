@@ -42,6 +42,8 @@ export function AppRoot() {
   const previewRef = useRef<PreviewHandle>(null);
   const consoleOpen = useUiStore((s) => s.consoleOpen);
   const toggleConsole = useUiStore((s) => s.toggleConsole);
+  const fullscreen = useUiStore((s) => s.fullscreen);
+  const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
   // REQ-PRV-6: console entries accumulate across re-renders (preserveConsoleLogs treated as true).
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
 
@@ -115,7 +117,14 @@ export function AppRoot() {
           </div>
         }
         preview={
-          <div className="flex flex-col h-full">
+          <div className={fullscreen ? 'fixed inset-0 z-50 bg-white flex flex-col' : 'relative h-full flex flex-col'}>
+            <button
+              data-testid="preview-fullscreen"
+              onClick={toggleFullscreen}
+              className="absolute right-2 top-2 z-10 rounded bg-gray-800/70 px-2 py-1 text-xs text-white"
+            >
+              {fullscreen ? 'Exit' : 'Fullscreen'}
+            </button>
             <div className="flex-1 min-h-0">
               <PreviewFrame
                 ref={previewRef}

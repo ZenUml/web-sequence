@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AppRoot } from './AppRoot';
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
@@ -31,5 +32,12 @@ describe('AppRoot', () => {
   it('renders the console panel', () => {
     const { container } = render(<AppRoot />);
     expect(container.querySelector('[data-testid="console"]')).toBeTruthy();
+  });
+
+  it('fullscreen button toggles the fullscreen ui state', async () => {
+    const { getByTestId } = render(<AppRoot />);
+    const { useUiStore } = await import('../state/uiStore');
+    await userEvent.click(getByTestId('preview-fullscreen'));
+    expect(useUiStore.getState().fullscreen).toBe(true);
   });
 });
