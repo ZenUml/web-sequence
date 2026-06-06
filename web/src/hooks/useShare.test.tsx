@@ -109,6 +109,78 @@ describe('useShare', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('captures the click-time id before awaits and ignores a stale createShare result if the item switched mid-flight (adversarial review)', async () => {
+    // Race: user clicks Share on item A, then switches to B while onBeforeShare (save)
+    // is in flight. createShare must target A (the bound item), NOT the now-current B,
+    // and the late result must NOT repopulate the popover for A after the switch.
+    let currentId = 'A';
+    const getItemId = () => currentId;
+    let releaseSave!: () => void;
+    const onBeforeShare = vi.fn(
+      () => new Promise<void>((resolve) => { releaseSave = resolve; }),
+    );
+    const createShare = vi.fn(async (id: string) => ({ url: `url-for-${id}`, md5: 'm' }));
+
+    const { result, rerender } = renderHook(
+      ({ itemId }) =>
+        useShare({
+          itemId,
+          getItemId,
+          createShare,
+          stopSharing: stopSharingMock,
+          onBeforeShare,
+        }),
+      { initialProps: { itemId: 'A' } },
+    );
+
+    // Click Share while bound to A; save is pending (not yet resolved).
+    let sharePromise!: Promise<void>;
+    act(() => { sharePromise = result.current.share(); });
+
+    // User switches to B during the save await.
+    currentId = 'B';
+    rerender({ itemId: 'B' });
+
+    // Save completes; createShare runs and resolves.
+    await act(async () => { releaseSave(); await sharePromise; });
+
+    // Targeted the click-time item A, not the switched-to B.
+    expect(createShare).toHaveBeenCalledWith('A');
+    expect(createShare).not.toHaveBeenCalledWith('B');
+    // The stale result must not repopulate the popover (item is now B). Revert the
+    // capture-before-await + stale guard → createShare('B') and/or url set → fails.
+    expect(result.current.url).toBeNull();
+  });
+
+  it('a createShare FAILURE for the click-time item does not surface as an error after switching items (adversarial review)', async () => {
+    // Symmetric to the success race: user shares A → switches to B → createShare(A)
+    // rejects (e.g. A was never saved → 404). The catch must NOT set error for the
+    // now-active B (the itemId reset effect clears error on switch). Revert the catch
+    // guard (`if (getItemId() === id)`) → error repopulated for B → fails.
+    let currentId = 'A';
+    const getItemId = () => currentId;
+    let releaseSave!: () => void;
+    const onBeforeShare = vi.fn(
+      () => new Promise<void>((resolve) => { releaseSave = resolve; }),
+    );
+    const createShare = vi.fn(async () => { throw new Error('A not saved'); });
+
+    const { result, rerender } = renderHook(
+      ({ itemId }) =>
+        useShare({ itemId, getItemId, createShare, stopSharing: stopSharingMock, onBeforeShare }),
+      { initialProps: { itemId: 'A' } },
+    );
+
+    let sharePromise!: Promise<void>;
+    act(() => { sharePromise = result.current.share(); });
+    currentId = 'B';
+    rerender({ itemId: 'B' });
+    await act(async () => { releaseSave(); await sharePromise; });
+
+    expect(createShare).toHaveBeenCalledWith('A');
+    expect(result.current.error).toBeNull();
+  });
+
   it('does NOT reset url when itemId is unchanged across re-renders (advisor fix #8 — no over-reset)', async () => {
     const { result, rerender } = renderHook(
       ({ itemId }) => useShare(makeOpts({ itemId })),

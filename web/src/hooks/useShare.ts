@@ -34,16 +34,25 @@ export function useShare(opts: UseShareOpts): UseShareResult {
   }, [itemId]);
 
   async function share(): Promise<void> {
+    // Capture the click-time id BEFORE any await. onBeforeShare() runs the app save,
+    // during which the user can switch diagrams; reading getItemId() afterwards would
+    // target the now-current item (404 if it was never saved). Guard the late setUrl
+    // too: if the active item changed while createShare was in flight, don't repopulate
+    // the popover for an item that is no longer shown (defeats the itemId reset effect)
+    // (adversarial review).
+    const id = getItemId();
+    if (!id) return;
     setError(null);
     setSharing(true);
     try {
       await onBeforeShare?.();
-      const id = getItemId();
-      if (!id) return;
       const { url: shareUrl } = await createShare(id);
-      setUrl(shareUrl);
+      if (getItemId() === id) setUrl(shareUrl);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      // Guard like the setUrl above: a failure for the click-time item A must not
+      // surface as an error on item B if the user switched mid-flight (the reset
+      // effect clears error on switch; this avoids re-populating it) (adversarial review).
+      if (getItemId() === id) setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSharing(false);
     }
