@@ -8,18 +8,18 @@ export const MOUNT_HTML =
   '<main id="demo"><div id="diagram"><div id="mounting-point"><seq-diagram></seq-diagram></div></div></main>';
 
 export interface PreviewParts {
+  // Kept for signature compatibility; the initial document NEVER bakes css.
+  // CSS is pushed via `updateCss` postMessages after the iframe is ready, which
+  // also eliminates any `</style>` breakout from interpolating user css here.
   css?: string;
 }
 
-export function getCompleteHtml(parts: PreviewParts): string {
-  const css = parts.css ?? '';
+export function getCompleteHtml(_parts: PreviewParts = {}): string {
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8" />
-<style id="zenumlstyle">
-${css}
-</style>
+<style id="zenumlstyle"></style>
 </head>
 <body>
 ${MOUNT_HTML}

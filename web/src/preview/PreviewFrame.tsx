@@ -31,13 +31,13 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // Refs hold the latest values so the `[]`-deps message listener never reads
   // a stale closure (e.g. after a css-driven iframe reload re-fires `ready`).
   const codeRef = useRef(code); codeRef.current = code;
+  const cssRef = useRef(css); cssRef.current = css;
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
   const cbRef = useRef({ onCodeChange, onConsole, onError });
   cbRef.current = { onCodeChange, onConsole, onError };
-  // Build srcdoc ONCE from the css at mount; later css updates use the fast path
-  // (REQ-PRV-5) rather than rebuilding the iframe.
-  const initialCss = useRef(css);
-  const srcdoc = useMemo(() => getCompleteHtml({ css: initialCss.current }), []);
+  // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
+  // `ready` (and on subsequent css changes) rather than baked into the document.
+  const srcdoc = useMemo(() => getCompleteHtml(), []);
 
   const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
 
@@ -52,6 +52,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
         case 'ready':
           readyRef.current = true;
           post({ type: 'render', code: codeRef.current, options: renderOptions() });
+          // Push the LATEST css on ready so css that resolved before the heavy
+          // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
+          // dropped — the empty initial <style> would otherwise stay empty.
+          post({ type: 'updateCss', css: cssRef.current });
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;

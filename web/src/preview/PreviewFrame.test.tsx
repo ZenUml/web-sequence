@@ -67,6 +67,26 @@ describe('PreviewFrame', () => {
     expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css: '.b{}' }), '*');
   });
 
+  it('on ready posts BOTH a render AND an updateCss carrying the current css', () => {
+    const { container } = render(<PreviewFrame code="A.b" css=".a{}" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'A.b' }), '*');
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css: '.a{}' }), '*');
+  });
+
+  it('css that changes BEFORE ready still reaches the iframe (latest css on ready)', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css=".a{}" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    rerender(<PreviewFrame code="A.b" css=".later{}" stickyOffset={0} />); // css changes while !ready
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css: '.later{}' }), '*');
+  });
+
   it('getPng posts a getPng message and resolves on the matching png reply', async () => {
     const ref = createRef<PreviewHandle>();
     const { container } = render(<PreviewFrame ref={ref} code="A.b" css="" stickyOffset={0} />);
