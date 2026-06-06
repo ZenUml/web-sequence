@@ -17,19 +17,26 @@ export async function computeCss(code: string, mode: CssMode, settings: unknown)
         const out = sass.compileString(code, { syntax: mode === 'sass' ? 'indented' : 'scss' });
         return { code: out.css };
       } catch (e) {
-        return { code: '', errors: [{ lineNumber: 0, message: String(e) }] };
+        // sass exposes the error span; span.start.line is already 0-based.
+        const line = (e as any)?.span?.start?.line ?? 0;
+        return { code: '', errors: [{ lineNumber: line, message: (e as any)?.message ?? String(e) }] };
       }
     }
     case 'less': {
       const less = (await import('less')).default;
       try { return { code: (await less.render(code)).css }; }
-      catch (e) { return { code: '', errors: [{ lineNumber: 0, message: String(e) }] }; }
+      catch (e) {
+        // less reports a 1-based line; normalize to 0-based.
+        const line = ((e as any)?.line ?? 1) - 1;
+        return { code: '', errors: [{ lineNumber: line, message: (e as any)?.message ?? String(e) }] };
+      }
     }
     case 'stylus': {
       const stylus = (await import('stylus')).default;
+      // stylus errors are unstructured; line extraction is best-effort/deferred.
       return await new Promise((resolve) =>
         stylus(code).render((err: Error | null, out: string) =>
-          resolve(err ? { code: '', errors: [{ lineNumber: 0, message: String(err) }] } : { code: out })));
+          resolve(err ? { code: '', errors: [{ lineNumber: 0, message: (err as any)?.message ?? String(err) }] } : { code: out })));
     }
     case 'acss': {
       const s = settings as { acssConfig?: string } | undefined;
@@ -37,7 +44,11 @@ export async function computeCss(code: string, mode: CssMode, settings: unknown)
       const Atomizer = (await import('atomizer')).default;
       const instance = new Atomizer();
       const found = instance.findClassNames(code);
-      const config = instance.getConfig(found, JSON.parse(s.acssConfig));
+      // Malformed acssConfig must degrade gracefully (legacy fell back to {}),
+      // not throw and leave the preview unstyled with an unhandled rejection.
+      let parsed: Parameters<typeof instance.getConfig>[1] = {};
+      try { parsed = JSON.parse(s.acssConfig); } catch { parsed = {}; }
+      const config = instance.getConfig(found, parsed);
       return { code: instance.getCss(config) };
     }
     default:
