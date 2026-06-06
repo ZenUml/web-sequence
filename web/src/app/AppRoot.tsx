@@ -4,6 +4,8 @@ import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
 import { useEditorStore } from '../state/editorStore';
 import { migrateToPages } from '../domain/item';
 import type { Item } from '../domain/types';
+import { Sidebar } from '../components/Sidebar';
+import { Layout } from '../components/Layout';
 
 const STARTER: Item = migrateToPages({
   id: 'starter', title: 'Untitled', js: 'A.SyncMessage\nA->B: AsyncMessage', css: '', html: '',
@@ -25,12 +27,11 @@ export function AppRoot() {
 
   return (
     <div className="flex h-full w-full">
-      <section data-testid="editor-region" className="w-1/2 border-r border-gray-200" aria-label="Editor">
-        <CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" />
-      </section>
-      <section data-testid="preview-region" className="w-1/2" aria-label="Preview">
-        <PreviewFrame ref={previewRef} code={item.js} css={item.css} stickyOffset={stickyOffset} onCodeChange={setDsl} />
-      </section>
+      <Sidebar />
+      <Layout
+        editor={<CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" />}
+        preview={<PreviewFrame ref={previewRef} code={item.js} css={item.css} stickyOffset={stickyOffset} onCodeChange={setDsl} />}
+      />
     </div>
   );
 }
