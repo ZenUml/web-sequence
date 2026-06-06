@@ -38,7 +38,13 @@ export function useFolders(): UseFoldersResult {
 
   const reload = useCallback(async (currentUid: string) => {
     const result = await getFolders(currentUid);
-    setFolders(result);
+    // Stale-uid guard: a folder mutation captures the uid it started under. If the
+    // user signed out (or switched accounts) while the create+reload round-trip was
+    // in flight, applying this result would leak the prior user's folders into the
+    // new session. Only apply when the live uid still matches (advisor fix #9).
+    if (useAuthStore.getState().user?.uid === currentUid) {
+      setFolders(result);
+    }
   }, []);
 
   const createFolder = useCallback(async (name: string): Promise<void> => {

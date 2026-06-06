@@ -101,6 +101,38 @@ describe('useFolders — signed in', () => {
   });
 });
 
+describe('useFolders — uid-change race (advisor fix #9)', () => {
+  it('does NOT apply a folder-mutation reload after the user signs out mid-flight', async () => {
+    // Repro: createFolder is invoked under uid=u1; the user signs out before the
+    // create + reload round-trip resolves. Without a stale-uid guard, the in-flight
+    // reload's setFolders(u1 folders) lands on the now signed-out view, leaking one
+    // user's folders into another's session.
+    useAuthStore.setState({ user: { uid: 'u1', email: 'a@b.c' }, authReady: true });
+    mockGetFolders.mockResolvedValue(FOLDERS);
+
+    // Gate svcCreate so we can sign out while it's pending.
+    let releaseCreate!: () => void;
+    mockCreateFolder.mockImplementation(
+      () => new Promise<void>((resolve) => { releaseCreate = () => resolve(); }),
+    );
+
+    const { result } = renderHook(() => useFolders());
+    await waitFor(() => expect(result.current.folders).toHaveLength(2));
+
+    // Start the mutation (captures uid=u1), then sign out before it resolves.
+    let createPromise!: Promise<void>;
+    act(() => { createPromise = result.current.createFolder('X'); });
+    act(() => { useAuthStore.setState({ user: null }); });
+    await waitFor(() => expect(result.current.folders).toEqual([]));
+
+    // Now let the create (and its reload) finish.
+    await act(async () => { releaseCreate(); await createPromise; });
+
+    // The signed-out view must stay empty — u1's folders must not reappear.
+    expect(result.current.folders).toEqual([]);
+  });
+});
+
 describe('useFolders — signed out', () => {
   beforeEach(() => {
     useAuthStore.setState({ user: null, authReady: true });
