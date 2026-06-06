@@ -227,26 +227,42 @@ git commit -m "feat(m03): folderService — folders-array CRUD (arrayUnion + run
 
 ---
 
-### Task 3: itemService — moveToFolder + stopSharing
+### Task 3: itemService — strip backend-owned sharing fields in setItem + moveToFolder(item) + stopSharing
 
 **Files:** Modify `web/src/services/itemService.ts`, extend `web/src/services/itemService.test.ts`
 
-> `moveToFolder(id, folderId)` re-saves the item with the new `folderId` (cloud merge when signed-in; local always) — reuse `setItem` semantics. `stopSharing(id)` is the client-side owner write (CQ-2): `setDoc(items/{id}, { isShared:false, shareToken: deleteField() }, {merge:true})` when signed-in (a no-op when signed-out — sharing requires sign-in).
+> Three changes (advisor fixes for the local-vs-cloud / backend-owned-field class):
+>
+> **(A) `setItem` must STRIP the backend-owned sharing fields from its cloud payload** — `isShared`, `shareToken`, `sharedAt` (same treatment as `imageBase64`). The contract says these are written only by `create_share` (set) and our `stopSharing` (clear). Without this, the *primary* stop-sharing flow breaks: open an already-shared item (so `currentItem` carries `isShared:true`+`shareToken` from the cloud read) → `stopSharing` clears them in the cloud → user edits → `save()`→`setItem` writes the stale `isShared:true`/`shareToken` straight back via merge → the revoked link works again. Strip them so only create_share/stopSharing ever touch them. (Strip from the CLOUD payload; the local copy may keep them for display — but stripping from both is simplest and safe.)
+>
+> **(B) `moveToFolder(item, folderId)` takes the held `Item` object — NOT a re-fetch from localStore.** A signed-in user on a fresh browser has items delivered by `onSnapshot` that were never written to *this* browser's localStorage, so `localStore.get(id)` returns null and the move would silently no-op. The library row already holds the full `Item` (from `useItems`) — pass it in (mirrors the M02 Task-16 "open from the held object" fix). Re-save via `setItem`.
+>
+> **(C) `stopSharing(id)`** is the client-side owner write (CQ-2): `setDoc(items/{id}, { isShared:false, shareToken: deleteField() }, {merge:true})` when signed-in (a no-op when signed-out — sharing requires sign-in).
 
 - [ ] **Step 1: Extend the test** (append; add `deleteField` to the `fs` hoisted mock as `vi.fn(() => '__DELETE__')`):
 ```ts
-describe('itemService.moveToFolder', () => {
-  it('signed-in: re-saves the item with the new folderId (merge)', async () => {
+describe('itemService.setItem — strips backend-owned sharing fields from the cloud payload (advisor fix A)', () => {
+  it('does NOT write isShared/shareToken/sharedAt to the cloud (so a stopped share stays revoked)', async () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
-    await localStore.set('item-1', baseItem({ id: 'item-1' }));
-    await svc.moveToFolder('item-1', 'folder-9');
+    await svc.setItem('item-1', baseItem({ isShared: true, shareToken: 'tok', sharedAt: 123 } as Partial<Item>));
+    const [, data] = fs.setDoc.mock.calls.at(-1)!;
+    expect('isShared' in data).toBe(false);
+    expect('shareToken' in data).toBe(false);
+    expect('sharedAt' in data).toBe(false);
+  });
+});
+
+describe('itemService.moveToFolder (takes the held Item — advisor fix B)', () => {
+  it('signed-in: re-saves the GIVEN item with the new folderId (no localStore re-fetch)', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    // NOTE: nothing in localStore — item came from onSnapshot (cloud-only). Must still work.
+    await svc.moveToFolder(baseItem({ id: 'item-1' }), 'folder-9');
     const [, data] = fs.setDoc.mock.calls.at(-1)!;
     expect(data.folderId).toBe('folder-9');
   });
-  it('moveToFolder(null) clears the folderId', async () => {
+  it('moveToFolder(item, null) clears the folderId', async () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
-    await localStore.set('item-1', baseItem({ id: 'item-1', folderId: 'folder-9' } as Partial<Item>));
-    await svc.moveToFolder('item-1', null);
+    await svc.moveToFolder(baseItem({ id: 'item-1', folderId: 'folder-9' } as Partial<Item>), null);
     const local = await localStore.get<any>('item-1', null);
     expect(local.folderId).toBeUndefined();
   });
@@ -272,15 +288,27 @@ describe('itemService.stopSharing', () => {
 
 - [ ] **Step 2: Run** → FAIL.
 
-- [ ] **Step 3: Implement** — add `deleteField` to the `firebase/firestore` import; add to `makeItemService`:
+- [ ] **Step 3: Implement** — add `deleteField` to the `firebase/firestore` import.
+
+(A) In the EXISTING `setItem`, after `migrateToPages` + the `imageBase64` strip on the cloud payload (`withMeta`), ALSO strip the backend-owned sharing fields from the cloud payload:
 ```ts
-  async function moveToFolder(id: string, folderId: string | null): Promise<void> {
-    const existing = await localStore.get<Item | null>(id, null);
-    if (!existing) return;
-    const next: Item = { ...existing };
-    if (folderId) (next as Item).folderId = folderId;
+    // Sharing fields are backend-owned (create_share sets; stopSharing clears).
+    // Never let a normal save re-assert a stale isShared/shareToken (advisor fix A).
+    delete (withMeta as Partial<Item>).isShared;
+    delete (withMeta as Partial<Item>).shareToken;
+    delete (withMeta as Partial<Item>).sharedAt;
+```
+(Place these right next to the existing `delete (withMeta as Partial<Item>).imageBase64;` for the cloud `setDoc`. Use `as any` casts if the `Item` type doesn't declare these — match the existing `as any` style for `imageBase64`.)
+
+(B)+(C) Add to `makeItemService`:
+```ts
+  async function moveToFolder(item: Item, folderId: string | null): Promise<void> {
+    // Take the held Item (from useItems) — do NOT re-fetch from localStore, which
+    // is empty for cloud-only items delivered by onSnapshot (advisor fix B).
+    const next: Item = { ...item };
+    if (folderId) next.folderId = folderId;
     else delete (next as Partial<Item>).folderId;
-    await setItem(id, next);  // reuses local-always + cloud-merge + stamping
+    await setItem(next.id, next);  // reuses local-always + cloud-merge + stamping
   }
 
   async function stopSharing(id: string): Promise<void> {
@@ -587,7 +615,7 @@ git commit -m "feat(m03): share UI — button, popover (create/copy/stop), error
 
 **Files:** Modify `web/src/app/AppRoot.tsx`; delete `web/src/components/library/ItemListStub.tsx` + `ItemListStub.test.tsx`
 
-> Replace the M02 `ItemListStub` in the `activePanel==='library'` slot with `<LibraryPanel>` fed by `useItems`, `useFolders`, `libraryStore`, and handlers: open → `loadItem(migrateToPages(item))` + switch panel; fork → `loadItem` then `forkCurrent`; delete → `removeItem` + `unsetItemForUser`; move → `itemService.moveToFolder`; export-all → build via `exportAllItemsJson` + download; import → `parseImportJson` + `itemService.saveItems` (+ membership for signed-in); export-html → `buildStandaloneHtml` + download; folder CRUD → `useFolders`. Add `<ShareButton>` to `AppHeader` (pass through props or render in AppRoot's header row), wired to `useShare` ({ getItemId: currentItem.id, createShare, stopSharing, onBeforeShare: save }). On boot, when a shared-link load FAILS (the M02 boot `getSharedItem` error path), show `<ShareErrorNotice>` (REQ-SHR-4) instead of silently going to a new item; when a shared read-only item is open, the header `Fork` already creates an editable copy (REQ-SHR-3 — verify it clears `isReadOnly`).
+> Replace the M02 `ItemListStub` in the `activePanel==='library'` slot with `<LibraryPanel>` fed by `useItems`, `useFolders`, `libraryStore`, and handlers: open → `loadItem(migrateToPages(item))` + switch panel; fork → `loadItem` then `forkCurrent`; delete → `removeItem` + `unsetItemForUser`; move → `itemService.moveToFolder(item, folderId)` (pass the held item, not just an id — advisor fix B); export-all → build via `exportAllItemsJson` + download; import → `parseImportJson` + `itemService.saveItems` (+ membership for signed-in); export-html → `buildStandaloneHtml` + download; folder CRUD → `useFolders`. Add `<ShareButton>` to `AppHeader` (pass through props or render in AppRoot's header row), wired to `useShare` ({ getItemId: currentItem.id, createShare, stopSharing, onBeforeShare: save }). On boot, when a shared-link load FAILS (the M02 boot `getSharedItem` error path), show `<ShareErrorNotice>` (REQ-SHR-4) instead of silently going to a new item; when a shared read-only item is open, the header `Fork` already creates an editable copy (REQ-SHR-3 — verify it clears `isReadOnly`).
 
 - [ ] **Step 1:** Update `useBootItem` (or AppRoot's boot handling) so a shared-link failure surfaces a flag AppRoot renders as `ShareErrorNotice` (don't just fall back to `new` silently for the shared branch). Keep the M02 decision table otherwise.
 - [ ] **Step 2:** Wire all handlers; ensure fork-from-shared produces an owned, editable (`isReadOnly` cleared) copy via `forkCurrent` (confirm `forkCurrent` strips `isReadOnly` — if not, clear it there or in the fork handler).
