@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { localStore } from './storage';
 import * as localItems from './localItems';
@@ -62,7 +62,37 @@ export function makeItemService(getAuth: AuthContextGetter) {
     await deleteDoc(doc(db, `items/${id}`));
   }
 
-  return { setItem, saveLastCode, getItem, removeItem };
+  function subscribeAllItems(uid: string, cb: (items: Item[]) => void): () => void {
+    const q = query(collection(db, 'items'), where('createdBy', '==', uid));
+    return onSnapshot(q, (snap: any) => {
+      const items: Item[] = [];
+      snap.forEach((d: any) => items.push(d.data() as Item));
+      cb(items);
+    }, () => cb([]));
+  }
+
+  async function saveItems(items: Record<string, Item>): Promise<void> {
+    const { uid } = getAuth();
+    const entries = Object.entries(items);
+    if (!uid) {
+      for (const [id, it] of entries) {
+        const c = { ...it }; delete (c as any).imageBase64;
+        await localStore.set(id, c);
+        await localItems.add(id);
+      }
+      return;
+    }
+    const batch = writeBatch(db);
+    for (const [id, it] of entries) {
+      const data: Item = { ...migrateToPages(it), createdBy: uid, updatedOn: it.updatedOn ?? Date.now() };
+      delete (data as any).imageBase64;
+      batch.set(doc(db, `items/${id}`), data);
+      batch.update(doc(db, `users/${uid}`), { [`items.${id}`]: true });
+    }
+    await batch.commit();
+  }
+
+  return { setItem, saveLastCode, getItem, removeItem, subscribeAllItems, saveItems };
 }
 
 export type ItemService = ReturnType<typeof makeItemService>;

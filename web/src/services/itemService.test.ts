@@ -5,6 +5,11 @@ const fs = vi.hoisted(() => ({
   getDoc: vi.fn(),
   setDoc: vi.fn(async () => {}),
   deleteDoc: vi.fn(async () => {}),
+  writeBatch: vi.fn(),
+  collection: vi.fn(() => ({})),
+  query: vi.fn((...a) => ({ a })),
+  where: vi.fn((...a) => ({ a })),
+  onSnapshot: vi.fn(),
 }));
 vi.mock('firebase/firestore', () => fs);
 vi.mock('./firebase', () => ({ db: {} }));
@@ -96,5 +101,33 @@ describe('itemService.removeItem', () => {
     const inn = makeItemService(() => ({ uid: 'u1', online: true }));
     await inn.removeItem('item-2');
     expect(fs.deleteDoc).toHaveBeenCalledWith(expect.objectContaining({ path: 'items/item-2' }));
+  });
+});
+
+describe('itemService.subscribeAllItems', () => {
+  it('subscribes to items where createdBy == uid and maps docs to an array', () => {
+    const unsub = vi.fn();
+    fs.onSnapshot.mockImplementationOnce((_q: any, onNext: any) => {
+      onNext({ forEach: (f: (d: any) => void) => { f({ data: () => ({ id: 'a', createdBy: 'u1' }) }); f({ data: () => ({ id: 'b', createdBy: 'u1' }) }); } });
+      return unsub;
+    });
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    const cb = vi.fn();
+    const stop = svc.subscribeAllItems('u1', cb);
+    expect(fs.where).toHaveBeenCalledWith('createdBy', '==', 'u1');
+    expect(cb).toHaveBeenCalledWith([{ id: 'a', createdBy: 'u1' }, { id: 'b', createdBy: 'u1' }]);
+    expect(stop).toBe(unsub);
+  });
+});
+
+describe('itemService.saveItems (import)', () => {
+  it('signed-in: batch sets each item + users.items.<id>; commits once', async () => {
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }) });
+    expect(batch.set).toHaveBeenCalledTimes(2);
+    expect(batch.update).toHaveBeenCalledTimes(2);
+    expect(batch.commit).toHaveBeenCalledTimes(1);
   });
 });
