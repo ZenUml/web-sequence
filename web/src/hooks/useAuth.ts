@@ -1,7 +1,8 @@
 import { useCallback, useEffect } from 'react';
 import { login as fbLogin, logout as fbLogout, onAuthChange } from '../services/firebase';
-import { ensureUser } from '../services/userService';
+import { ensureUser, getUserSettings } from '../services/userService';
 import { useAuthStore } from '../state/authStore';
+import { useSettingsStore } from '../state/settingsStore';
 import { localStore } from '../services/storage';
 import { LS_KEYS } from '../config/constants';
 import type { ProviderName } from '../services/types';
@@ -12,7 +13,10 @@ export function useAuth() {
   useEffect(() => {
     return onAuthChange((user) => {
       setUser(user);
-      if (user) void ensureUser(user.uid).catch(() => {});
+      if (user) {
+        void ensureUser(user.uid).catch(() => {});
+        void getUserSettings(user.uid).then((s) => useSettingsStore.getState().merge(s)).catch(() => {});
+      }
     });
   }, [setUser]);
 
