@@ -121,6 +121,16 @@ describe('resolveBootItem (pure resolver)', () => {
     expect(result.kind).toBe('new');
   });
 
+  // Branch 3: getLastCode throws → new (error fallback)
+  it('returns new when preserveLastCode is true but getLastCode throws', async () => {
+    const deps = makeBaseDeps({
+      preserveLastCode: true,
+      getLastCode: vi.fn(async () => { throw new Error('storage unavailable'); }),
+    });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('new');
+  });
+
   // Branch 4: no params, no lastCode → new
   it('returns new when no idParam, no shareToken, preserveLastCode false', async () => {
     const deps = makeBaseDeps();
