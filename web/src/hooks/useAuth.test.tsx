@@ -34,4 +34,9 @@ describe('useAuth', () => {
     await act(async () => { await result.current.login('github'); });
     expect(alertSpy).toHaveBeenCalled();
   });
+  it('login rethrows non-account-exists errors', async () => {
+    fb.login.mockRejectedValueOnce(new Error('network-failure'));
+    const { result } = renderHook(() => useAuth());
+    await expect(act(() => result.current.login('google'))).rejects.toThrow('network-failure');
+  });
 });
