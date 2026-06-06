@@ -23,14 +23,22 @@ const sizes: Record<Size, string> = {
   md: 'h-9 px-3.5 text-[13px]',
 };
 
-const variants: Record<Variant, string> = {
-  // The one filled, dominant action. Cobalt signal.
-  primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
-  // Quiet raised control on dark chrome.
-  subtle: 'bg-ink-700/70 text-ondark-strong hover:bg-ink-700 border border-ink-line/50',
-  // Borderless, for toolbars / dense rows.
-  ghost: 'bg-transparent text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
-  danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
+// Variants are surface-aware: the same intent reads correctly on the dark `ink`
+// chrome and on the light `paper` surface (modals/menus). `primary` (the cobalt
+// signal) is identical on both; the quiet variants flip their neutrals.
+const variants: Record<'dark' | 'light', Record<Variant, string>> = {
+  dark: {
+    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
+    subtle: 'bg-ink-700/70 text-ondark-strong hover:bg-ink-700 border border-ink-line/50',
+    ghost: 'bg-transparent text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
+    danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
+  },
+  light: {
+    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
+    subtle: 'bg-paper-100 text-onlight-strong hover:bg-paper-200 border border-paper-line',
+    ghost: 'bg-transparent text-onlight-muted hover:text-onlight-strong hover:bg-black/5',
+    danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
+  },
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -44,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={cn(
         base,
         sizes[size],
-        variants[variant],
+        variants[surface][variant],
         surface === 'light' ? 'ring-draft-light' : 'ring-draft',
         className,
       )}
