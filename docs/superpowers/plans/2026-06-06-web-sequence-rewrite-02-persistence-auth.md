@@ -43,6 +43,7 @@ Record these in roadmap §9 in Task 1.
 web/src/
   services/
     cloudFunctions.ts     # typed fetch wrappers (getSharedItem now; createShare/trackEvent later milestones)
+    localItems.ts         # the signed-out local items INDEX (LS_KEYS.items {id:true}) — list/add/remove
     itemService.ts        # ItemService impl (roadmap §4) over firebase.ts db
     userService.ts        # users/{uid}: ensureUser, item-membership, settings read/write, batch import
   state/
@@ -262,11 +263,69 @@ git commit -m "feat(m02): userService — ensureUser, item membership, settings 
 
 ---
 
-### Task 4: itemService — getItem / setItem / removeItem / saveLastCode
+### Task 4: localItems index + itemService — getItem / setItem / removeItem / saveLastCode
 
-**Files:** Create `web/src/services/itemService.ts`, Test `web/src/services/itemService.test.ts`
+**Files:** Create `web/src/services/localItems.ts`, `web/src/services/itemService.ts`; Test `web/src/services/localItems.test.ts`, `web/src/services/itemService.test.ts`
 
 > The core persistence contract (roadmap §4). Local-always; cloud merge when signed-in + online; strip `imageBase64`; ensure pages; stamp `createdBy`+`updatedOn`; `saveLastCode` → local `code` slot only. Tests mock `firebase/firestore`, `./firebase`, and use the M00 `localStore`. The signed-in/online state is injected (do NOT read `window.user`/globals — pass an auth context).
+>
+> **Signed-out items index (advisor fix).** The legacy app keeps a `LS_KEYS.items` map (`{<id>:true}`) of locally-owned items, mirroring `users/{uid}.items`. Readers exist (Task 10 signed-out list, Task 13 import-on-login) but there is **no writer** unless we add one: signed-out `setItem`/`saveItems` must `localItems.add(id)` and `removeItem` must `localItems.remove(id)`. We extract this into `localItems.ts` (list/add/remove over `LS_KEYS.items`). Symmetrically, **`getItem` must be local-aware**: when `uid` is null it reads `localStore` instead of unconditionally hitting `getDoc` + throwing on the ownership check (which would make every signed-out open fail).
+
+- [ ] **Step 1a: Write the failing test** `web/src/services/localItems.test.ts`:
+```ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import * as localItems from './localItems';
+
+beforeEach(() => window.localStorage.clear());
+
+describe('localItems index', () => {
+  it('starts empty', async () => {
+    expect(await localItems.list()).toEqual([]);
+  });
+  it('add then list returns the id; add is idempotent', async () => {
+    await localItems.add('a');
+    await localItems.add('a');
+    await localItems.add('b');
+    expect((await localItems.list()).sort()).toEqual(['a', 'b']);
+  });
+  it('remove drops the id', async () => {
+    await localItems.add('a');
+    await localItems.add('b');
+    await localItems.remove('a');
+    expect(await localItems.list()).toEqual(['b']);
+  });
+});
+```
+
+- [ ] **Step 1b: Run** `pnpm -C web test src/services/localItems.test.ts` → FAIL.
+
+- [ ] **Step 1c: Implement** `web/src/services/localItems.ts`:
+```ts
+import { localStore } from './storage';
+import { LS_KEYS } from '../config/constants';
+
+// The signed-out local items index — mirrors users/{uid}.items ({<id>:true}).
+// Maintained by itemService signed-out setItem/saveItems/removeItem; read by
+// useItems (signed-out) and import-on-login.
+type ItemIndex = Record<string, true>;
+
+export async function list(): Promise<string[]> {
+  const map = await localStore.get<ItemIndex>(LS_KEYS.items, {});
+  return Object.keys(map);
+}
+
+export async function add(id: string): Promise<void> {
+  const map = await localStore.get<ItemIndex>(LS_KEYS.items, {});
+  if (!map[id]) { map[id] = true; await localStore.set(LS_KEYS.items, map); }
+}
+
+export async function remove(id: string): Promise<void> {
+  const map = await localStore.get<ItemIndex>(LS_KEYS.items, {});
+  if (map[id]) { delete map[id]; await localStore.set(LS_KEYS.items, map); }
+}
+```
+
+- [ ] **Step 1d: Run** → PASS.
 
 - [ ] **Step 1: Write the failing test** `web/src/services/itemService.test.ts`:
 ```ts
@@ -282,6 +341,7 @@ vi.mock('firebase/firestore', () => fs);
 vi.mock('./firebase', () => ({ db: {} }));
 
 import { localStore } from './storage';
+import * as localItems from './localItems';
 import { makeItemService } from './itemService';
 import type { Item } from '../domain/types';
 
@@ -293,10 +353,11 @@ const baseItem = (over: Partial<Item> = {}): Item => ({
 beforeEach(() => { vi.clearAllMocks(); window.localStorage.clear(); });
 
 describe('itemService.setItem', () => {
-  it('always writes locally; signed-out → no cloud write', async () => {
+  it('always writes locally + adds to the local index; signed-out → no cloud write', async () => {
     const svc = makeItemService(() => ({ uid: null, online: true }));
     await svc.setItem('item-1', baseItem());
     expect(await localStore.get<Item | null>('item-1', null)).toMatchObject({ id: 'item-1' });
+    expect(await localItems.list()).toContain('item-1');   // index maintained (advisor fix)
     expect(fs.setDoc).not.toHaveBeenCalled();
   });
   it('signed-in + online → cloud setDoc(merge), stamps createdBy, ensures pages, strips imageBase64', async () => {
@@ -341,14 +402,27 @@ describe('itemService.getItem', () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
     await expect(svc.getItem('item-1')).rejects.toThrow();
   });
+  it('signed-out: reads from localStore, never calls getDoc (advisor fix)', async () => {
+    await localStore.set('item-1', baseItem({ id: 'item-1' }));
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    const it = await svc.getItem('item-1');
+    expect(it.id).toBe('item-1');
+    expect(fs.getDoc).not.toHaveBeenCalled();
+  });
+  it('signed-out + missing locally → throws', async () => {
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    await expect(svc.getItem('nope')).rejects.toThrow();
+    expect(fs.getDoc).not.toHaveBeenCalled();
+  });
 });
 
 describe('itemService.removeItem', () => {
-  it('signed-out removes local; signed-in deletes the doc', async () => {
-    await localStore.set('item-1', baseItem());
+  it('signed-out removes local + index; signed-in deletes the doc', async () => {
     const out = makeItemService(() => ({ uid: null, online: true }));
+    await out.setItem('item-1', baseItem());            // also populates the index
     await out.removeItem('item-1');
     expect(await localStore.get('item-1', null)).toBeNull();
+    expect(await localItems.list()).not.toContain('item-1');  // index maintained (advisor fix)
     const inn = makeItemService(() => ({ uid: 'u1', online: true }));
     await inn.removeItem('item-2');
     expect(fs.deleteDoc).toHaveBeenCalledWith(expect.objectContaining({ path: 'items/item-2' }));
@@ -363,6 +437,7 @@ describe('itemService.removeItem', () => {
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { localStore } from './storage';
+import * as localItems from './localItems';
 import { migrateToPages } from '../domain/item';
 import type { Item } from '../domain/types';
 
@@ -381,7 +456,9 @@ export function makeItemService(getAuth: AuthContextGetter) {
     await localStore.set(id, clean);
 
     const { uid, online } = getAuth();
-    if (!uid) return;
+    // Signed-out: keep the local index in sync (mirrors users/{uid}.items) so the
+    // signed-out list + import-on-login can find this item (advisor fix).
+    if (!uid) { await localItems.add(id); return; }
 
     const withMeta: Item = { ...migrateToPages(clean), createdBy: uid, updatedOn: Date.now() };
     delete (withMeta as Partial<Item>).imageBase64;
@@ -401,16 +478,23 @@ export function makeItemService(getAuth: AuthContextGetter) {
 
   async function getItem(id: string): Promise<Item> {
     const { uid } = getAuth();
+    // Signed-out: read the local copy; never hit Firestore (the ownership check
+    // below would always throw with a null uid) (advisor fix).
+    if (!uid) {
+      const local = await localStore.get<Item | null>(id, null);
+      if (!local) throw new Error('Item not found');
+      return migrateToPages(local);
+    }
     const snap = await getDoc(doc(db, `items/${id}`));
     if (!snap.exists()) throw new Error('Item not found');
     const item = snap.data() as Item;
-    if (!uid || item.createdBy !== uid) throw new Error('Unauthorized access to item');
+    if (item.createdBy !== uid) throw new Error('Unauthorized access to item');
     return migrateToPages(item);
   }
 
   async function removeItem(id: string): Promise<void> {
     const { uid } = getAuth();
-    if (!uid) { await localStore.remove(id); return; }
+    if (!uid) { await localStore.remove(id); await localItems.remove(id); return; }
     await deleteDoc(doc(db, `items/${id}`));
   }
 
@@ -422,8 +506,8 @@ export type ItemService = ReturnType<typeof makeItemService>;
 
 - [ ] **Step 4: Run** → PASS. **Step 5: Commit**
 ```bash
-git add web/src/services/itemService.ts web/src/services/itemService.test.ts
-git commit -m "feat(m02): itemService — local-always + cloud-merge persistence (roadmap §4)"
+git add web/src/services/localItems.ts web/src/services/localItems.test.ts web/src/services/itemService.ts web/src/services/itemService.test.ts
+git commit -m "feat(m02): localItems index + itemService local-always/cloud-merge persistence (roadmap §4)"
 ```
 
 ---
@@ -489,7 +573,11 @@ describe('itemService.saveItems (import)', () => {
     const { uid } = getAuth();
     const entries = Object.entries(items);
     if (!uid) {
-      for (const [id, it] of entries) { const c = { ...it }; delete (c as Partial<Item>).imageBase64; await localStore.set(id, c); }
+      for (const [id, it] of entries) {
+        const c = { ...it }; delete (c as Partial<Item>).imageBase64;
+        await localStore.set(id, c);
+        await localItems.add(id);   // keep the signed-out index in sync (advisor fix)
+      }
       return;
     }
     const batch = writeBatch(db);
@@ -811,11 +899,11 @@ git commit -m "feat(m02): editor save lifecycle — unsavedCount, newItem, forkC
 
 **Files:** Create `web/src/hooks/useItems.ts`, Test `web/src/hooks/useItems.test.tsx`
 
-> Signed-in: subscribe via `itemService.subscribeAllItems`, sort by `updatedOn` desc client-side (CQ-4 load-all). Signed-out: read local items. Expose `{ items, loading }`. (The list UI is M03; this hook is the data source + proves the subscription.)
+> Signed-in: subscribe via `itemService.subscribeAllItems`, sort by `updatedOn` desc client-side (CQ-4 load-all). Signed-out: read the **local index** via `localItems.list()` then load each slot from `localStore` (NOT the owned-items list, which `onSnapshot` replaces post-login). Expose `{ items, loading }`. (The list UI is M03; this hook is the data source + proves the subscription.)
 
-- [ ] **Step 1: Failing test** `web/src/hooks/useItems.test.tsx` — mock `../services/itemService` `subscribeAllItems` to invoke the cb with two items (different updatedOn) and assert the hook returns them sorted desc. Mock the signed-out path to read `localStore`. (Write a focused RTL `renderHook` test; provide a `makeItemService`-injected or module-mocked service.)
+- [ ] **Step 1: Failing test** `web/src/hooks/useItems.test.tsx` — mock `../services/itemService` `subscribeAllItems` to invoke the cb with two items (different updatedOn) and assert the hook returns them sorted desc. For the signed-out path, seed via `localItems.add(id)` + `localStore.set(id, item)` and assert the hook lists them. (Write a focused RTL `renderHook` test; provide a `makeItemService`-injected or module-mocked service.)
 
-- [ ] **Step 2–4:** Implement `useItems.ts`: read `useAuthStore.user`; if uid, `useEffect` subscribes and stores items in local state (sorted desc by `updatedOn ?? 0`), returns unsub on cleanup; if no uid, load local items map → items array. Return `{ items, loading }`. Run → PASS.
+- [ ] **Step 2–4:** Implement `useItems.ts`: read `useAuthStore.user`; if uid, `useEffect` subscribes and stores items in local state (sorted desc by `updatedOn ?? 0`), returns unsub on cleanup; if no uid, `localItems.list()` → for each id `localStore.get(id, null)` → filter out nulls → items array (sorted desc). Return `{ items, loading }`. Run → PASS.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -873,7 +961,7 @@ git commit -m "feat(m02): boot/restore + lifecycle wiring (last-code, shared/own
 
 - [ ] **Step 1:** Save flow (in AppRoot or a `useSaveItem` hook): on Save → set `saving`, stamp `updatedOn`/`sizes`/`mainSizes`, `itemService.setItem(id, item)`; if new item (first save), also `userService.setItemForUser(uid, id)` (when signed-in); `editorStore.markSaved()`; clear `saving`. Read-only items skip save. Leave a `// M04: enforce plan limit` + `// M04: trackEvent('fn','saved')` seam. Signed-out first-save shows the legacy "login & save" one-time notice (LS_KEYS.loginAndSaveMessageSeen) — implement as a ConfirmDialog, not window.confirm, in the tested path.
 
-- [ ] **Step 2:** `useImportOnLogin` (TDD): when a user becomes authenticated AND `LS_KEYS.askedToImportCreations` is unset AND local items exist → expose `{ pending, count, doImport, dismiss }`. `doImport` → `itemService.saveItems(localItems)` then set the flag; `dismiss` → set the flag. `AskToImportModal` shows the count + Import/Don't-ask buttons.
+- [ ] **Step 2:** `useImportOnLogin` (TDD): when a user becomes authenticated AND `LS_KEYS.askedToImportCreations` is unset AND local items exist → expose `{ pending, count, doImport, dismiss }`. Read the local set via `localItems.list()` specifically (NOT `useItems`, whose list `onSnapshot` has already replaced with the empty cloud set right after login). `doImport` → build `Record<id, Item>` by loading each id from `localStore`, `itemService.saveItems(map)`, then set the flag; `dismiss` → set the flag. `AskToImportModal` shows the count + Import/Don't-ask buttons.
 
 - [ ] **Step 3:** Wire AskToImportModal in AppRoot driven by `useImportOnLogin`. Run full suite + typecheck → green. Commit:
 ```bash
@@ -913,7 +1001,7 @@ git commit -m "feat(m02): auto-save loop (REQ-PST-2, AUTO_SAVE_INTERVAL)"
 
 **Files:** Modify `web/src/app/AppRoot.tsx`; small `web/src/components/library/ItemListStub.tsx` (minimal, M03 replaces)
 
-> M02 needs delete + a way to open a saved item to exercise the lifecycle; the full library is M03. Provide a minimal list (from `useItems`) in the sidebar's "library" panel slot: each row opens the item (`itemService.getItem` → `editorStore.loadItem`) and has a delete (`itemService.removeItem` + `userService.unsetItemForUser` + confirm). Mark the file `// M03: replace with full library panel`.
+> M02 needs delete + a way to open a saved item to exercise the lifecycle; the full library is M03. Provide a minimal list (from `useItems`) in the sidebar's "library" panel slot. Each `useItems` row already holds the full `Item` object (cloud snapshot when signed-in, `localStore` slot when signed-out), so **open via `editorStore.loadItem(migrateToPages(row))` directly** — no `getItem` round-trip (it would be redundant, and avoids relying on the signed-out local-read path for a second time). Delete = `itemService.removeItem(id)` + (signed-in) `userService.unsetItemForUser(uid, id)` + confirm. Mark the file `// M03: replace with full library panel`.
 
 - [ ] **Steps:** TDD the open + delete handlers (logic, with injected service fakes). Render the stub list in the `activePanel==='library'` slot (uiStore from M01). Run full suite + typecheck → green. Commit:
 ```bash
