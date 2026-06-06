@@ -15,10 +15,13 @@ describe('computeCss', () => {
     expect(typeof r.code).toBe('string');
   });
   it('reports a real (non-hardcoded) line + meaningful message for invalid SCSS', async () => {
+    // Error is on line 2 (1-based); sass span.start.line is 0-based → 1.
+    // > 0 discriminates against the old hardcoded `lineNumber: 0` without
+    // over-pinning the exact value.
     const r = await computeCss('.a {\n  color: ;\n}', 'scss', undefined);
     expect(r.errors).toBeTruthy();
     expect(typeof r.errors![0].lineNumber).toBe('number');
-    expect(r.errors![0].lineNumber).toBeGreaterThanOrEqual(0);
+    expect(r.errors![0].lineNumber).toBeGreaterThan(0);
     expect(r.errors![0].message.length).toBeGreaterThan(0);
   });
 });
