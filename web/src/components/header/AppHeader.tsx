@@ -48,6 +48,7 @@ export function AppHeader({
           value={title}
           data-testid="header-title"
           aria-label="Diagram title"
+          readOnly={readOnly}
           className="flex-1 min-w-0 font-sans"
           onChange={(e) => onTitleChange(e.target.value)}
         />
