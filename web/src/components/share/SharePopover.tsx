@@ -50,6 +50,14 @@ export function SharePopover({ url, sharing, error, onShare, onStop, onCopy }: S
               Stop sharing
             </Button>
           </div>
+          {/* A failed "Stop sharing" surfaces here so the user knows the link is
+              still live (advisor fix #7) — the error slot previously existed only
+              in the no-url branch. */}
+          {error ? (
+            <p data-testid="share-error-text" className="text-[13px] text-danger">
+              {error}
+            </p>
+          ) : null}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

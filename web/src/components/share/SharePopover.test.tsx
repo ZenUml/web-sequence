@@ -90,4 +90,15 @@ describe('SharePopover', () => {
     await userEvent.click(await screen.findByTestId('share-stop'));
     expect(onStop).toHaveBeenCalledTimes(1);
   });
+
+  it('shows the error text in the URL branch too (failed Stop sharing; advisor fix #7)', async () => {
+    // Previously the error slot lived only in the no-url branch, so a failed
+    // "Stop sharing" left the link shown with no feedback.
+    renderOpen({ ...base, url: 'https://app.zenuml.com/s/abc', error: 'Could not stop sharing' });
+    expect(await screen.findByTestId('share-error-text')).toHaveTextContent(
+      'Could not stop sharing',
+    );
+    // The link is still displayed (stop failed → diagram may still be public).
+    expect(screen.getByTestId('share-url')).toHaveValue('https://app.zenuml.com/s/abc');
+  });
 });

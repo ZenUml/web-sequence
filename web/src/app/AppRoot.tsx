@@ -130,6 +130,8 @@ export function AppRoot() {
 
   // State for the one-time "saved locally, sign in to sync" notice (signed-out first save)
   const [noticeOpen, setNoticeOpen] = useState(false);
+  // REQ-LIB-8: surface a parse/import failure instead of swallowing it (advisor fix #6).
+  const [importError, setImportError] = useState<string | null>(null);
 
   // ItemService — created once, injects auth/online context lazily via getState()
   const itemService = useMemo(
@@ -253,17 +255,25 @@ export function AppRoot() {
   }
 
   async function handleImport(text: string) {
-    const parsed = parseImportJson(text); // throws on invalid JSON
-    const map: Record<string, Item> = {};
-    for (const it of parsed) map[it.id] = it;
-    // saveItems already writes user-membership in its signed-in batch path, so no
-    // separate setItemForUser loop is needed (advisor note 7).
-    await itemService.saveItems(map);
+    // parseImportJson throws on invalid JSON / wrong shape. Catch it so a malformed
+    // file surfaces an error instead of a silent unhandled rejection (advisor fix #6).
+    try {
+      const parsed = parseImportJson(text);
+      const map: Record<string, Item> = {};
+      for (const it of parsed) map[it.id] = it;
+      // saveItems already writes user-membership in its signed-in batch path, so no
+      // separate setItemForUser loop is needed (advisor note 7).
+      await itemService.saveItems(map);
+    } catch (e: unknown) {
+      setImportError(e instanceof Error ? e.message : 'Could not import this file.');
+    }
   }
 
   // REQ-SHR-1/2/5: share the CURRENT item. Read the id via getState() so a fresh
   // save (which may rotate nothing but keeps the same id) is always reflected.
   const share = useShare({
+    // Reactive id so url/error reset when the user switches items (advisor fix #8).
+    itemId: item?.id ?? null,
     getItemId: () => useEditorStore.getState().currentItem?.id ?? null,
     createShare,
     stopSharing: itemService.stopSharing,
@@ -310,6 +320,16 @@ export function AppRoot() {
         confirmLabel="Sign in"
         cancelLabel="Not now"
         onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
+      />
+      {/* REQ-LIB-8: surface a malformed-import error (advisor fix #6). */}
+      <ConfirmDialog
+        open={importError != null}
+        onOpenChange={(o) => { if (!o) setImportError(null); }}
+        title="Import failed"
+        message={importError ?? ''}
+        confirmLabel="OK"
+        cancelLabel="Dismiss"
+        onConfirm={() => setImportError(null)}
       />
       {/* Import local diagrams after login (REQ-AC) */}
       <AskToImportModal

@@ -49,6 +49,16 @@ vi.mock('../services/userService', () => ({
   unsetItemForUser: vi.fn(async () => {}),
 }));
 
+// exportImport — parseImportJson throws on malformed JSON; the real one is exercised
+// in its own spec. Here we force the throw to assert AppRoot surfaces it (advisor fix #6).
+vi.mock('../services/exportImport', async (orig) => {
+  const actual = await orig<typeof import('../services/exportImport')>();
+  return {
+    ...actual,
+    parseImportJson: vi.fn(() => { throw new Error('Bad JSON at line 1'); }),
+  };
+});
+
 beforeEach(() => {
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();
@@ -125,5 +135,25 @@ describe('AppRoot', () => {
     await screen.findByTestId('header-title');
     useUiStore.getState().setActivePanel('library');
     expect(await screen.findByTestId('library-panel')).toBeInTheDocument();
+  });
+
+  it('surfaces an "Import failed" notice when the imported file is malformed (advisor fix #6)', async () => {
+    // parseImportJson is mocked to throw. Before the fix handleImport had no
+    // try/catch, so the throw became a swallowed unhandled rejection with no UI.
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    useUiStore.getState().setActivePanel('library');
+    await screen.findByTestId('library-panel');
+
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['not json'], 'broken.json', { type: 'application/json' });
+    await userEvent.upload(input, file);
+
+    // The error notice appears, showing the parser's message (queried by the unique
+    // message text, not the shared confirm-ok testid). The title also renders as a
+    // dialog heading.
+    expect(await screen.findByText('Bad JSON at line 1')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Import failed' })).toBeInTheDocument();
   });
 });
