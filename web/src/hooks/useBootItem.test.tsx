@@ -50,15 +50,16 @@ describe('resolveBootItem (pure resolver)', () => {
     expect(deps.getSharedItem).toHaveBeenCalledWith('shared-1', 'tok123');
   });
 
-  // Branch 1 error fallback → new
-  it('falls through to new when getSharedItem throws', async () => {
+  // Branch 1 error → share-error (REQ-SHR-4): a dead share link must NOT silently
+  // become a blank new diagram — it surfaces ShareErrorNotice instead.
+  it('returns share-error when getSharedItem throws', async () => {
     const deps = makeBaseDeps({
       idParam: 'shared-1',
       shareToken: 'tok123',
       getSharedItem: vi.fn(async () => { throw new Error('not found'); }),
     });
     const result = await resolveBootItem(deps);
-    expect(result.kind).toBe('new');
+    expect(result.kind).toBe('share-error');
   });
 
   // Branch 2: idParam only → owned item
@@ -235,6 +236,30 @@ describe('useBootItem hook', () => {
     // newItem() creates a fresh item with a generated id
     expect(state.currentItem).not.toBeNull();
     expect(state.currentItem?.js).toContain('SyncMessage');
+  });
+
+  it('on share-error: does NOT seed an item and exposes shareError=true (REQ-SHR-4)', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const deps = makeBaseDeps({
+      idParam: 'shared-x',
+      shareToken: 'dead-tok',
+      getSharedItem: vi.fn(async () => { throw new Error('not found'); }),
+    });
+
+    let view: ReturnType<typeof renderHook<{ shareError: boolean; clearShareError(): void }, unknown>>;
+    await act(async () => {
+      view = renderHook(() => useBootItem(deps, true));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    // No blank diagram seeded — the guard must surface ShareErrorNotice instead.
+    expect(useEditorStore.getState().currentItem).toBeNull();
+    // result.current is live — read it AFTER act flushes the setShareError re-render.
+    expect(view!.result.current.shareError).toBe(true);
   });
 
   it('runs only once (idempotent) even when deps change', async () => {

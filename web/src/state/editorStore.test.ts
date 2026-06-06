@@ -73,6 +73,15 @@ describe('editorStore', () => {
     expect(useEditorStore.getState().unsavedCount).toBe(1);
   });
 
+  it('forkCurrent clears isReadOnly so a fork of a shared item is editable (REQ-SHR-3)', () => {
+    useEditorStore.getState().loadItem(sample({ id: 'shared-1', title: 'Shared', isReadOnly: true }));
+    useEditorStore.getState().forkCurrent();
+    const it = useEditorStore.getState().currentItem!;
+    expect(it.isReadOnly).toBeFalsy();
+    // ...and it is unowned (createdBy stripped) — owned only on explicit save.
+    expect(it.createdBy).toBeUndefined();
+  });
+
   it('loadItem resets unsavedCount and saving to prevent stale auto-save (FIX 4)', () => {
     useEditorStore.getState().loadItem(sample());
     // Accumulate unsaved edits

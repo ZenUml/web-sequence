@@ -101,6 +101,9 @@ export const useEditorStore = create<EditorState>((set) => ({
     cloned.updatedOn = Date.now();
     // A fork is unowned until the user explicitly saves it.
     delete cloned.createdBy;
+    // REQ-SHR-3: fork-from-shared must yield an EDITABLE copy — clear the
+    // read-only flag (a shared item carries isReadOnly:true from boot).
+    delete cloned.isReadOnly;
     // FIX 3: a fork is a pending change — mark dirty so both manual and auto-save treat
     // it as unsaved. dirty:true + unsavedCount:1 ensures it is never silently discarded.
     return { currentItem: cloned, dirty: true, unsavedCount: 1, saving: false };

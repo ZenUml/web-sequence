@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button, TextInput, cn } from '../../ui';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
@@ -17,6 +17,9 @@ export interface AppHeaderProps {
   onFork(): void;
   onLogin(provider: ProviderName): void;
   onLogout(): void;
+  // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
+  // Kept optional so existing AppHeader tests render without it.
+  actions?: ReactNode;
 }
 
 export function AppHeader({
@@ -31,6 +34,7 @@ export function AppHeader({
   onFork,
   onLogin,
   onLogout,
+  actions,
 }: AppHeaderProps) {
   const [loginOpen, setLoginOpen] = useState(false);
 
@@ -55,6 +59,7 @@ export function AppHeader({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 shrink-0">
+          {actions}
           <Button
             variant="ghost"
             size="sm"

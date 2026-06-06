@@ -22,14 +22,20 @@ import { useBootItem } from '../hooks/useBootItem';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
-import { getSharedItem } from '../services/cloudFunctions';
+import { getSharedItem, createShare } from '../services/cloudFunctions';
 import { ensureUser, setItemForUser, unsetItemForUser } from '../services/userService';
 import { localStore } from '../services/storage';
 import { LS_KEYS } from '../config/constants';
 import type { ProviderName } from '../services/types';
 import { useItems } from '../hooks/useItems';
+import { useFolders } from '../hooks/useFolders';
+import { useShare } from '../hooks/useShare';
 import { migrateToPages } from '../domain/item';
-import { ItemListStub } from '../components/library/ItemListStub';
+import { LibraryPanel } from '../components/library/LibraryPanel';
+import { ShareButton } from '../components/share/ShareButton';
+import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
+import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
+import { downloadText } from '../services/download';
 
 const JS_MODES: { value: JsMode; label: string }[] = [
   { value: 'js', label: 'JavaScript' },
@@ -84,6 +90,8 @@ export function AppRoot() {
 
   // REQ-PST (M02 Task 16): library panel — items list from hook.
   const { items } = useItems();
+  // REQ-LIB-6: folders for the library panel (sign-in gated; [] + no-op when signed-out).
+  const { folders, createFolder, renameFolder, deleteFolder } = useFolders();
 
   // REQ-PRV-6: console entries accumulate across re-renders.
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
@@ -143,7 +151,7 @@ export function AppRoot() {
 
   // Boot: resolve the item to load (replaces the old STARTER seeding effect).
   // authReady gates resolution so a ?id= URL works for signed-in users (FIX 1 — boot race).
-  useBootItem({
+  const { shareError, clearShareError } = useBootItem({
     idParam,
     shareToken,
     preserveLastCode,
@@ -218,12 +226,76 @@ export function AppRoot() {
     }
   }
 
+  // M03 Task 14: remaining library handlers (open/delete are above).
+  function handleForkItem(it: Item) {
+    // Load the chosen item, then fork it into an owned, editable copy (forkCurrent
+    // clears createdBy + isReadOnly). Switch to the editor so the fork is visible.
+    useEditorStore.getState().loadItem(migrateToPages(it));
+    useEditorStore.getState().forkCurrent();
+    setActivePanel('editor');
+  }
+
+  // Move-to-folder passes the HELD item (advisor fix B) — never re-fetch from
+  // localStore, which is empty for cloud-only items delivered by onSnapshot.
+  async function handleMoveItem(it: Item, folderId: string | null) {
+    await itemService.moveToFolder(it, folderId);
+  }
+
+  function handleExportAll() {
+    const json = exportAllItemsJson(items);
+    downloadText('zenuml-diagrams.json', json, 'application/json');
+  }
+
+  function handleExportHtml(it: Item) {
+    const html = buildStandaloneHtml(it);
+    const safe = (it.title || 'diagram').replace(/[^a-z0-9-_]+/gi, '-').toLowerCase();
+    downloadText(`${safe}.html`, html, 'text/html');
+  }
+
+  async function handleImport(text: string) {
+    const parsed = parseImportJson(text); // throws on invalid JSON
+    const map: Record<string, Item> = {};
+    for (const it of parsed) map[it.id] = it;
+    // saveItems already writes user-membership in its signed-in batch path, so no
+    // separate setItemForUser loop is needed (advisor note 7).
+    await itemService.saveItems(map);
+  }
+
+  // REQ-SHR-1/2/5: share the CURRENT item. Read the id via getState() so a fresh
+  // save (which may rotate nothing but keeps the same id) is always reflected.
+  const share = useShare({
+    getItemId: () => useEditorStore.getState().currentItem?.id ?? null,
+    createShare,
+    stopSharing: itemService.stopSharing,
+    onBeforeShare: save, // createShare reads the cloud doc — item must be saved first.
+  });
+
+  // ShareButton disabled rule (advisor fix 4): read-only items, signed-out users
+  // (createShare needs a fresh ID token), and never-saved items (not yet in the
+  // live list) cannot be shared. Membership in `items` is the save signal — after a
+  // signed-in save, onSnapshot adds the item and the button enables.
+  const shareDisabled =
+    !!item?.isReadOnly || !user || !items.some((i) => i.id === item?.id);
+
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
   // real location; only the iframe is srcdoc). Read once from window.location.search
   // and pass into the render message. (M00's router also validates this param.)
   const stickyOffset = Number(params.get('stickyOffset') ?? 0) || 0;
 
-  if (!item) return null;
+  // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
+  // surface the error here at the guard instead of silently returning null. Start
+  // fresh clears the flag and seeds a blank diagram.
+  if (!item) {
+    return shareError ? (
+      <ShareErrorNotice
+        open
+        // Seed a fresh diagram on ANY close (Start-fresh, Escape, or overlay click)
+        // so dismissing the notice never strands the user on a blank null screen.
+        onOpenChange={(o) => { if (!o) { useEditorStore.getState().newItem(); clearShareError(); } }}
+        onStartFresh={() => { useEditorStore.getState().newItem(); clearShareError(); }}
+      />
+    ) : null;
+  }
 
   const previewCss = item.cssMode === 'css' ? item.css : transpiledCss;
 
@@ -259,16 +331,37 @@ export function AppRoot() {
         onSave={save}
         onLogin={login}
         onLogout={logout}
+        actions={
+          <ShareButton
+            disabled={shareDisabled}
+            url={share.url}
+            sharing={share.sharing}
+            error={share.error}
+            onShare={() => void share.share()}
+            onStop={() => void share.stop()}
+            onCopy={() => void share.copy()}
+          />
+        }
       />
       <div className="flex flex-1 min-h-0 w-full">
         <Sidebar />
         <Layout
           editor={
             activePanel === 'library' ? (
-              <ItemListStub
+              <LibraryPanel
                 items={items}
+                folders={folders}
                 onOpen={handleOpenItem}
+                onFork={handleForkItem}
                 onDelete={(id) => void handleDeleteItem(id)}
+                onMove={(it, folderId) => void handleMoveItem(it, folderId)}
+                onExportAll={handleExportAll}
+                onImport={(text) => void handleImport(text)}
+                onExportHtml={handleExportHtml}
+                onCreateFolder={(name) => void createFolder(name)}
+                onRenameFolder={(id, name) => void renameFolder(id, name)}
+                onDeleteFolder={(id) => void deleteFolder(id)}
+                readOnly={!user}
               />
             ) : (
             <div className="flex flex-col h-full">
