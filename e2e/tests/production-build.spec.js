@@ -1,69 +1,70 @@
 import { test, expect } from '@playwright/test';
+import { existsSync, readdirSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+import { PREVIEW_PORT } from '../../playwright.config.js';
 
-// Regression guard for a deploy-only class of bug: the @zenuml/core UMD bundle
-// was referenced from a Vite dev-only `/@fs/<abs path>` URL (see the
-// zenuml-core-asset-url-shim in vite.config.js). That URL works under `pnpm dev`
-// (the dev server serves /@fs/) but 404s in any deployed/static build, so the
-// diagram silently fails to render in production while every dev-server test
-// stays green.
+// Production-build asset proof (M00 shim build-path). Runs against the STATIC
+// built output (web/dist) served by `vite preview` on PREVIEW_PORT — NOT the dev
+// server. The dev server transparently serves Vite /@fs/<abs> URLs, which hides
+// the deploy-only bug where the @zenuml/core asset shim bakes a dev-only /@fs/
+// path: that URL works under `pnpm dev` but 404s once served statically (Firebase
+// Hosting / vite preview). So this spec verifies the BUILT bundle:
+//   (a) a hashed assets/zenuml-*.js exists on disk,
+//   (b) loading the built app renders the diagram (SVG) from that bundle,
+//   (c) no request goes to a dev-only /@fs/ URL, and the core asset returned 200.
 //
-// This suite must run against the STATIC production build, not the dev server:
-//
-//   pnpm build && PW_PROD_BUILD=1 pnpm exec playwright test production-build
-//
-// PW_PROD_BUILD=1 makes playwright.config serve `dist/` with a plain static
-// server, which 404s /@fs/ paths exactly like Firebase Hosting.
+// Requires `pnpm -C web build` first (the webServer preview entry serves web/dist).
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem('loginAndsaveMessageSeen', 'true');
-  });
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DIST_ASSETS = resolve(__dirname, '../../web/dist/assets');
+const PREVIEW_URL = `http://localhost:${PREVIEW_PORT}/`;
+
+test('built dist contains a hashed @zenuml/core asset on disk', async () => {
+  expect(
+    existsSync(DIST_ASSETS),
+    `web/dist/assets is missing — run "pnpm -C web build" before this spec.\n${DIST_ASSETS}`,
+  ).toBe(true);
+  const zenumlAssets = readdirSync(DIST_ASSETS).filter((f) => /^zenuml-.*\.js$/.test(f));
+  expect(
+    zenumlAssets.length,
+    `Expected a hashed assets/zenuml-*.js in the build output (the shim's emitFile).\nFound: ${readdirSync(DIST_ASSETS).join(', ')}`,
+  ).toBeGreaterThan(0);
 });
 
-test('built app requests no dev-only /@fs/ asset path', async ({ page }) => {
-  const fsFailures = [];
-  page.on('response', (r) => {
-    if (r.url().includes('/@fs/') && r.status() >= 400) {
-      fsFailures.push(`${r.status()} ${r.url()}`);
-    }
+test('built app renders the diagram with no dev-only /@fs/ URL and a 200 core asset', async ({
+  page,
+}) => {
+  const fsRequests = [];
+  let coreAssetStatus = null;
+
+  page.on('request', (r) => {
+    if (r.url().includes('/@fs/')) fsRequests.push(r.url());
   });
   page.on('requestfailed', (r) => {
-    if (r.url().includes('/@fs/')) fsFailures.push(`failed ${r.url()}`);
+    if (r.url().includes('/@fs/')) fsRequests.push(`failed ${r.url()}`);
+  });
+  page.on('response', (r) => {
+    if (/\/assets\/zenuml-.*\.js$/.test(r.url())) coreAssetStatus = r.status();
   });
 
-  await page.goto('/');
-  // Give the preview iframe time to request its bundle.
-  await page.waitForTimeout(3000);
+  await page.goto(PREVIEW_URL);
 
+  // The diagram must render from the BUILT bundle.
+  const mount = page
+    .frameLocator('[data-testid="preview-iframe"]')
+    .locator('#mounting-point svg')
+    .first();
+  await expect(mount).toBeVisible({ timeout: 15_000 });
+
+  // No dev-only /@fs/ asset URL may be requested (those 404 once deployed).
   expect(
-    fsFailures,
-    `Built app must not depend on dev-only /@fs/ paths (they 404 once deployed):\n${fsFailures.join('\n')}`,
+    fsRequests,
+    `Built app must not depend on dev-only /@fs/ URLs (they 404 when served statically):\n${fsRequests.join('\n')}`,
   ).toEqual([]);
-});
 
-test('built app renders the @zenuml/core diagram (SVG)', async ({ page }) => {
-  await page.goto('/');
-  await expect
-    .poll(
-      async () =>
-        page.evaluate(
-          () =>
-            !!document.getElementById('demo-frame')?.contentDocument?.querySelector('svg'),
-        ),
-      { timeout: 15_000 },
-    )
-    .toBe(true);
-});
-
-test('built app loads the @zenuml/core UMD bundle into the iframe', async ({ page }) => {
-  await page.goto('/');
-  await expect
-    .poll(
-      async () =>
-        page.evaluate(
-          () => typeof document.getElementById('demo-frame')?.contentWindow?.zenuml,
-        ),
-      { timeout: 15_000 },
-    )
-    .not.toBe('undefined');
+  // The @zenuml/core asset must have been served successfully (200), proving the
+  // built bundle references the emitted hashed asset rather than a broken path.
+  expect(coreAssetStatus, 'Expected the zenuml-*.js core asset to be requested').not.toBeNull();
+  expect(coreAssetStatus).toBe(200);
 });

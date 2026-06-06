@@ -64,6 +64,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
+    // Pin the port so Playwright's webServer URL is deterministic — without this,
+    // Vite silently falls back to the next free port and the E2E run never finds
+    // the dev server at :3000 (see repo-root playwright.config.js).
+    strictPort: true,
     proxy: {
       '/create-share': proxy('/create-share', 'create_share'),
       '/get-shared-item': proxy('/get-shared-item', 'get_shared_item'),

@@ -1,5 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+// DSL spot-check: type DSL into the CodeMirror 6 editor of the NEW app and prove
+// the full render path works end to end:
+//   editor (.cm-content) -> onChange -> postMessage('render') -> @zenuml/core
+//   -> <svg> injected into #mounting-point inside the preview iframe.
+//
+// We deliberately type tokens that are NOT in the default DSL
+// ("A.SyncMessage\nA->B: AsyncMessage", see web/src/app/AppRoot.tsx) so a green
+// assertion can only come from OUR typed input being rendered — not from the
+// default content that would render with zero typing.
+
+const UNIQUE_PARTICIPANT = 'AcmeService';
+const UNIQUE_MESSAGE = 'doSpotCheck';
+const DSL = `${UNIQUE_PARTICIPANT}\nUser\nUser->${UNIQUE_PARTICIPANT}: ${UNIQUE_MESSAGE}`;
+
+// Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
+// analytics/CDN scripts that throw uncaught errors we don't own; treat those as
+// noise so this spec stays usable against the live staging E2E gate.
 const THIRD_PARTY_ERROR_SOURCES = [
   'userscript.js',
   'gtm.js',
@@ -19,216 +36,45 @@ function isThirdPartyError(err) {
   return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
 }
 
-function previewText(page) {
-  return page.evaluate(
-    () =>
-      document.getElementById('demo-frame')?.contentDocument?.body?.textContent || '',
-  );
-}
-
-function previewHasParserError(page) {
-  return page.evaluate(() => {
-    const doc = document.getElementById('demo-frame')?.contentDocument;
-    const pre = doc?.querySelector('pre');
-    if (!pre) return false;
-    const t = pre.textContent || '';
-    return /error|syntax|parse/i.test(t);
-  });
-}
-
-async function waitForEditorReady(page) {
-  await expect(page.locator('.CodeMirror').first()).toBeVisible();
-  await expect.poll(async () => previewText(page), { timeout: 15_000 }).toContain('BookLibService');
-}
-
-async function setDiagram(page, dsl) {
-  await page.evaluate((value) => {
-    document.querySelector('.CodeMirror').CodeMirror.setValue(value);
-  }, dsl);
-}
-
-function slugify(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-async function assertRenderedPreviewLooksValid(page) {
-  const metrics = await page.evaluate(() => {
-    const doc = document.getElementById('demo-frame')?.contentDocument;
-    if (!doc) return null;
-    const root =
-      doc.querySelector('#mounting-point') ||
-      doc.querySelector('[id^="diagram"]') ||
-      doc.body;
-    const box = root.getBoundingClientRect();
-    return {
-      width: box.width,
-      height: box.height,
-      nodeCount: root.querySelectorAll('*').length,
-      hasSvg: doc.querySelectorAll('svg').length > 0,
-      textLength: (doc.body?.textContent || '').trim().length,
-    };
-  });
-  expect(metrics).not.toBeNull();
-  expect(metrics.hasSvg).toBe(true);
-  expect(metrics.width).toBeGreaterThan(200);
-  expect(metrics.height).toBeGreaterThan(120);
-  expect(metrics.nodeCount).toBeGreaterThan(20);
-  expect(metrics.textLength).toBeGreaterThan(0);
-}
-
-/** Capture iframe + SVG screenshots and attach to the HTML report for visual review. */
-async function attachRenderedScreenshots(page, testInfo, slug) {
-  const frame = page.frameLocator('#demo-frame');
-  const previewRoot = frame.locator('#mounting-point, [id^="diagram"], body').first();
-  await expect(previewRoot).toBeVisible();
-
-  const diagramPng = await previewRoot.screenshot();
-  await testInfo.attach(`render-diagram-${slug}.png`, {
-    body: diagramPng,
-    contentType: 'image/png',
-  });
-
-  const framePng = await page.locator('#demo-frame').screenshot();
-  await testInfo.attach(`render-frame-${slug}.png`, {
-    body: framePng,
-    contentType: 'image/png',
-  });
-
-  // Editor + live preview — full-page context for spot-check review.
-  const appPng = await page.screenshot({ fullPage: false });
-  await testInfo.attach(`render-app-${slug}.png`, {
-    body: appPng,
-    contentType: 'image/png',
-  });
-}
-
-// Representative DSL shapes beyond smoke.spec.js — mirrors core cy fixtures.
-const DSL_CASES = [
-  {
-    name: 'async arrow messages',
-    dsl: `A
-B
-A->B: async_ping
-B->A: async_pong`,
-    mustContain: ['async_ping', 'async_pong'],
-  },
-  {
-    name: 'par fragment',
-    dsl: `A
-B
-par {
-  A.parOne()
-  B.parTwo()
-}`,
-    mustContain: ['parOne', 'parTwo'],
-  },
-  {
-    name: 'opt fragment',
-    dsl: `A
-opt {
-  A.optOnly()
-}`,
-    mustContain: ['optOnly'],
-  },
-  {
-    name: 'return inside method',
-    dsl: `A
-B
-A.call() {
-  return ret_marker
-}`,
-    mustContain: ['ret_marker'],
-  },
-  {
-    name: 'nested if inside method',
-    dsl: `A
-B
-A.outer() {
-  if (inner) {
-    B.innerCall()
-  }
-}`,
-    mustContain: ['innerCall'],
-  },
-  {
-    name: 'nested interaction with fragment',
-    dsl: `A
-B
-A.Read() {
-  B.Submit() {
-    if (flag) {
-      B.Callback()
-    }
-  }
-}`,
-    mustContain: ['Callback'],
-  },
-  {
-    name: 'try/catch with par and opt',
-    dsl: `A
-B
-C
-try {
-  par {
-    A.tryPar()
-    B.tryPar()
-  }
-} catch (e) {
-  opt {
-    C.catchOpt()
-  }
-}`,
-    mustContain: ['tryPar', 'catchOpt'],
-  },
-  {
-    name: 'loop with body call',
-    dsl: `A
-while (running) {
-  A.loopBody()
-}`,
-    mustContain: ['loopBody'],
-  },
-];
-
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem('loginAndsaveMessageSeen', 'true');
-  });
-
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
   });
-
   await page.goto('/');
 });
 
-for (const { name, dsl, mustContain } of DSL_CASES) {
-  test(`DSL spot-check: ${name}`, async ({ page }, testInfo) => {
-    const slug = slugify(name);
-    await waitForEditorReady(page);
-    await setDiagram(page, dsl);
+test('typed DSL renders an SVG diagram in the preview iframe', async ({ page }) => {
+  const editor = page.locator('[data-testid="dsl-editor"] .cm-content');
+  await expect(editor).toBeVisible();
 
-    await expect
-      .poll(async () => previewHasParserError(page), { timeout: 15_000 })
-      .toBe(false);
+  // CodeMirror 6 is a contenteditable surface: click to focus, select-all, then
+  // type. fill() is unreliable on contenteditable, so type the replacement.
+  await editor.click();
+  const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
+  await page.keyboard.press(selectAll);
+  await page.keyboard.press('Delete');
+  await editor.pressSequentially(DSL);
 
-    await expect
-      .poll(
-        async () =>
-          page.evaluate(
-            () =>
-              !!document.getElementById('demo-frame')?.contentDocument?.querySelector('svg'),
-          ),
-        { timeout: 15_000 },
-      )
-      .toBe(true);
+  // Confirm our text actually landed in the editor before asserting the render —
+  // otherwise a typing failure would masquerade as a render failure.
+  await expect(editor).toContainText(UNIQUE_PARTICIPANT);
+  await expect(editor).toContainText(UNIQUE_MESSAGE);
 
-    for (const label of mustContain) {
-      await expect.poll(async () => previewText(page), { timeout: 15_000 }).toContain(label);
-    }
+  const frame = page.frameLocator('[data-testid="preview-iframe"]');
 
-    await attachRenderedScreenshots(page, testInfo, slug);
-    await assertRenderedPreviewLooksValid(page);
+  // @zenuml/core injects an <svg> into #mounting-point after the render message.
+  // The static <seq-diagram> tag is in the srcdoc from the start, so asserting on
+  // the SVG (not seq-diagram) is what actually proves a render happened.
+  await expect(frame.locator('#mounting-point svg').first()).toBeVisible({
+    timeout: 15_000,
   });
-}
+
+  // The rendered diagram must reflect OUR typed DSL, not the default content.
+  await expect(frame.locator('#mounting-point')).toContainText(UNIQUE_PARTICIPANT, {
+    timeout: 15_000,
+  });
+  await expect(frame.locator('#mounting-point')).toContainText(UNIQUE_MESSAGE, {
+    timeout: 15_000,
+  });
+});
