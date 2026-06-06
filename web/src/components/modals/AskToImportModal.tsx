@@ -26,7 +26,12 @@ export function AskToImportModal({
             variant="subtle"
             surface="light"
             data-testid="import-dismiss"
-            onClick={() => { onDismiss(); onOpenChange(false); }}
+            // Closing is driven by the controlled `open` (the hook flips `pending`
+            // in dismiss()/doImport()). Do NOT also call onOpenChange(false): that
+            // routes through the Dialog handler to onDismiss and would set the
+            // "don't ask again" flag BEFORE saveItems resolves — losing local
+            // items if the import fails (review fix).
+            onClick={onDismiss}
           >
             Don't ask again
           </Button>
@@ -34,7 +39,7 @@ export function AskToImportModal({
             variant="primary"
             surface="light"
             data-testid="import-confirm"
-            onClick={() => { onImport(); onOpenChange(false); }}
+            onClick={onImport}
           >
             Import {count}
           </Button>
