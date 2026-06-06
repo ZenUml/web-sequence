@@ -1,9 +1,10 @@
+import { createRef } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
-import { PreviewFrame } from './PreviewFrame';
+import { PreviewFrame, type PreviewHandle } from './PreviewFrame';
 
 describe('PreviewFrame', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -41,5 +42,38 @@ describe('PreviewFrame', () => {
     });
     expect(onCodeChange).toHaveBeenCalledWith('C.d');
     expect(onConsole).toHaveBeenCalledWith({ level: 'log', args: ['hi'] });
+  });
+
+  it('re-render after iframe reload uses the latest code, not the initial (stale-closure regression)', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css=".a{}" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    rerender(<PreviewFrame code="C.d" css=".a{}" stickyOffset={0} />); // code changed
+    post.mockClear();
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); }); // reload re-readies
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
+  });
+
+  it('getPng posts a getPng message and resolves on the matching png reply', async () => {
+    const ref = createRef<PreviewHandle>();
+    const { container } = render(<PreviewFrame ref={ref} code="A.b" css="" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    let sent: any = null;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: (m: any) => { sent = m; } }, configurable: true });
+    const p = ref.current!.getPng();
+    expect(sent).toEqual(expect.objectContaining({ type: 'getPng' }));
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'png', id: sent.id, dataUrl: 'data:image/png;base64,X' } })); });
+    await expect(p).resolves.toBe('data:image/png;base64,X');
+  });
+
+  it('routes error messages to onError', () => {
+    const onError = vi.fn();
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} onError={onError} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'error', message: 'boom' } })); });
+    expect(onError).toHaveBeenCalledWith('boom');
   });
 });

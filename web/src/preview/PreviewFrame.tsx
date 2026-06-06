@@ -25,10 +25,16 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const readyRef = useRef(false);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
   const pngId = useRef(0);
+  // Refs hold the latest values so the `[]`-deps message listener never reads
+  // a stale closure (e.g. after a css-driven iframe reload re-fires `ready`).
+  const codeRef = useRef(code); codeRef.current = code;
+  const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
+  const cbRef = useRef({ onCodeChange, onConsole, onError });
+  cbRef.current = { onCodeChange, onConsole, onError };
   // Build srcdoc once per CSS identity; DSL changes go via postMessage.
   const srcdoc = useMemo(() => getCompleteHtml({ css }), [css]);
 
-  const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset });
+  const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
 
   const post = (msg: unknown) => iframeRef.current?.contentWindow?.postMessage(msg, '*');
 
@@ -40,11 +46,11 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       switch (msg.type) {
         case 'ready':
           readyRef.current = true;
-          post({ type: 'render', code, options: renderOptions() });
+          post({ type: 'render', code: codeRef.current, options: renderOptions() });
           break;
-        case 'codeChange': onCodeChange?.(msg.code); break;
-        case 'console': onConsole?.({ level: msg.level, args: msg.args }); break;
-        case 'error': onError?.(msg.message); break;
+        case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
+        case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
+        case 'error': cbRef.current.onError?.(msg.message); break;
         case 'png': {
           const w = pngWaiters.current.get(msg.id);
           if (w) { w(msg.dataUrl); pngWaiters.current.delete(msg.id); }
@@ -60,7 +66,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // Debounced re-render on DSL change (only once ready + autoPreview on).
   useEffect(() => {
     if (!readyRef.current || !autoPreview) return;
-    const t = setTimeout(() => post({ type: 'render', code, options: renderOptions() }), PREVIEW_DEBOUNCE);
+    const t = setTimeout(() => post({ type: 'render', code: codeRef.current, options: renderOptions() }), PREVIEW_DEBOUNCE);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, stickyOffset, autoPreview]);
