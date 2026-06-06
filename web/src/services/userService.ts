@@ -8,14 +8,24 @@ interface UserDoc {
   [k: string]: unknown;
 }
 
+// FIX 6: memoize ensureUser per uid so repeated calls within a session skip getDoc/setDoc.
+// Only added to the Set after a successful ensure (so a thrown getDoc is retried next call).
+// Exported for test teardown only — do not call in production code.
+export const _ensuredUids = new Set<string>();
+
 export async function ensureUser(uid: string): Promise<UserDoc> {
+  if (_ensuredUids.has(uid)) return {};
   const ref = doc(db, `users/${uid}`);
   const snap = await getDoc(ref);
+  let result: UserDoc;
   if (!snap.exists()) {
     await setDoc(ref, {}, { merge: true });
-    return {};
+    result = {};
+  } else {
+    result = (snap.data() as UserDoc) ?? {};
   }
-  return (snap.data() as UserDoc) ?? {};
+  _ensuredUids.add(uid);
+  return result;
 }
 
 export async function getUserItemIds(uid: string): Promise<string[]> {

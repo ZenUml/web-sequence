@@ -11,9 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('firebase/firestore', () => mocks);
 vi.mock('./firebase', () => ({ db: {} }));
 
-import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds } from './userService';
+import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds, _ensuredUids } from './userService';
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => { vi.clearAllMocks(); _ensuredUids.clear(); });
 
 describe('userService', () => {
   it('ensureUser creates an empty doc (merge) when missing', async () => {
@@ -38,5 +38,11 @@ describe('userService', () => {
   it('getUserItemIds returns the items map keys', async () => {
     mocks.getDoc.mockResolvedValueOnce({ exists: () => true, data: () => ({ items: { a: true, b: true } }) });
     expect(await getUserItemIds('u1')).toEqual(['a', 'b']);
+  });
+  it('ensureUser does NOT call getDoc a second time for the same uid (FIX 6 memoize)', async () => {
+    mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ items: { i1: true } }) });
+    await ensureUser('u-memo');
+    await ensureUser('u-memo');
+    expect(mocks.getDoc).toHaveBeenCalledTimes(1);
   });
 });
