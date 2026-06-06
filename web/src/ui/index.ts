@@ -5,3 +5,12 @@ export { cn } from './cn';
 export { Button, type ButtonProps } from './Button';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { Dialog, DialogTrigger, DialogClose, DialogContent } from './Dialog';
+export { TextInput, type TextInputProps } from './TextInput';
+export {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+} from './Menu';
