@@ -82,6 +82,21 @@ describe('editorStore', () => {
     expect(it.createdBy).toBeUndefined();
   });
 
+  it('forkCurrent strips backend-owned sharing fields so a fork never carries a foreign share token (adversarial review)', () => {
+    // Sharing fields are backend-owned (contract §3.1). A fork of a shared item must
+    // not inherit the parent's isShared/shareToken/sharedAt under a new id —
+    // saveLastCode/setItem persist the local copy verbatim, so a stale token would
+    // leak into local storage / the `code` slot. Revert the strip → fields present → fails.
+    useEditorStore.getState().loadItem(
+      sample({ id: 'shared-1', title: 'Shared', isShared: true, shareToken: 'tok-abc', sharedAt: 123 } as Partial<Item>),
+    );
+    useEditorStore.getState().forkCurrent();
+    const it = useEditorStore.getState().currentItem!;
+    expect(it.isShared).toBeUndefined();
+    expect(it.shareToken).toBeUndefined();
+    expect(it.sharedAt).toBeUndefined();
+  });
+
   it('loadItem resets unsavedCount and saving to prevent stale auto-save (FIX 4)', () => {
     useEditorStore.getState().loadItem(sample());
     // Accumulate unsaved edits

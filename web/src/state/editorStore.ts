@@ -104,6 +104,15 @@ export const useEditorStore = create<EditorState>((set) => ({
     // REQ-SHR-3: fork-from-shared must yield an EDITABLE copy — clear the
     // read-only flag (a shared item carries isReadOnly:true from boot).
     delete cloned.isReadOnly;
+    // Sharing fields are backend-owned (contract §3.1: written only by create_share).
+    // A fork of a shared item must NOT carry the parent's isShared/shareToken/sharedAt
+    // under a new id — saveLastCode/setItem persist the LOCAL copy verbatim (they only
+    // strip imageBase64), so a forked-from-shared item would otherwise poison local
+    // storage / the `code` slot with a foreign share token. Strip here for parity with
+    // setItem and saveItems (adversarial review).
+    delete cloned.isShared;
+    delete cloned.shareToken;
+    delete cloned.sharedAt;
     // FIX 3: a fork is a pending change — mark dirty so both manual and auto-save treat
     // it as unsaved. dirty:true + unsavedCount:1 ensures it is never silently discarded.
     return { currentItem: cloned, dirty: true, unsavedCount: 1, saving: false };
