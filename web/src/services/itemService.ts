@@ -98,7 +98,17 @@ export function makeItemService(getAuth: AuthContextGetter) {
       delete (data as any).isShared;
       delete (data as any).shareToken;
       delete (data as any).sharedAt;
-      batch.set(doc(db, `items/${id}`), data);
+      // set(merge:true), NOT plain set: a re-import of one's own export (same ids)
+      // must not REPLACE the cloud doc. Plain set + the sharing-field strip above would
+      // wipe a live public share (and any cloud-only field absent from the export).
+      // merge:true makes the strip mean "don't re-assert" rather than "delete", matching
+      // setItem's contract and the comment's stated safety rationale (adversarial review).
+      // set(merge:true), NOT plain set: a re-import of one's own export (same ids)
+      // must not REPLACE the cloud doc. Plain set + the sharing-field strip above would
+      // wipe a live public share (and any cloud-only field absent from the export).
+      // merge:true makes the strip mean "don't re-assert" rather than "delete", matching
+      // setItem's contract and the comment's stated safety rationale (adversarial review).
+      batch.set(doc(db, `items/${id}`), data, { merge: true });
       // Use set(merge:true), NOT update(): Firestore's batch update() requires the
       // target doc to already exist and aborts the WHOLE batch if it doesn't.
       // users/{uid} is created fire-and-forget on login (useAuth.ensureUser, unawaited);

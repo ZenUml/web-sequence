@@ -151,6 +151,20 @@ describe('itemService.saveItems (import)', () => {
     expect(userSet![1]).toEqual({ items: { a: true } });
     expect(userSet![2]).toEqual({ merge: true });
   });
+  it('writes items/{id} via set(merge:true) so a re-import never wipes a live share (adversarial review)', async () => {
+    // saveItems strips isShared/shareToken/sharedAt. With plain set() that strip would
+    // REPLACE the cloud doc and silently revoke an active public share (and lose any
+    // cloud-only field absent from the export). merge:true makes the strip a no-write,
+    // not a deletion. Revert to `batch.set(doc(...), data)` (no opts) → 3rd arg is
+    // undefined → this fails.
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.saveItems({ a: baseItem({ id: 'a' }) });
+    const itemSet = batch.set.mock.calls.find((c: any[]) => c[0]?.path === 'items/a');
+    expect(itemSet).toBeDefined();
+    expect(itemSet![2]).toEqual({ merge: true });
+  });
   it('strips backend-owned sharing fields from every batch payload (advisor fix #2)', async () => {
     // Contract §3.1: isShared/shareToken/sharedAt are written by create_share only.
     // An imported export carrying a stale share token must NOT resurrect a public
