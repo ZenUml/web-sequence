@@ -22,7 +22,10 @@ export function makeItemService(getAuth: AuthContextGetter) {
     const { uid, online } = getAuth();
     // Signed-out: keep the local index in sync (mirrors users/{uid}.items) so the
     // signed-out list + import-on-login can find this item (advisor fix).
-    if (!uid) { await localItems.add(id); return; }
+    // Signal the signed-out list to refresh. Fire even when add() is a no-op (an
+    // existing id) so move-to-folder — which routes here via moveToFolder and never
+    // changes the index — still re-renders the list (adversarial review).
+    if (!uid) { await localItems.add(id); localItems.notifyChange(); return; }
 
     const withMeta: Item = { ...migrateToPages(clean as Item), createdBy: uid, updatedOn: Date.now() };
     delete (withMeta as any).imageBase64;
@@ -63,7 +66,7 @@ export function makeItemService(getAuth: AuthContextGetter) {
 
   async function removeItem(id: string): Promise<void> {
     const { uid } = getAuth();
-    if (!uid) { await localStore.remove(id); await localItems.remove(id); return; }
+    if (!uid) { await localStore.remove(id); await localItems.remove(id); localItems.notifyChange(); return; }
     await deleteDoc(doc(db, `items/${id}`));
   }
 
@@ -85,6 +88,7 @@ export function makeItemService(getAuth: AuthContextGetter) {
         await localStore.set(id, c);
         await localItems.add(id);
       }
+      localItems.notifyChange();
       return;
     }
     const batch = writeBatch(db);

@@ -99,3 +99,66 @@ describe('useItems — signed out', () => {
     expect(result.current.items).toEqual([]);
   });
 });
+
+// Reactivity regression: the signed-out list must refresh on local create/delete/move
+// WITHOUT a remount. We drive the changes through the REAL itemService (signed-out
+// branch) — not direct localStore pokes — so the test exercises the same emit path the
+// app uses. Revert the localItems.notifyChange() emits (or the useItems.subscribe) →
+// these fail because the one-shot effect never re-runs (adversarial review).
+describe('useItems — signed out reactivity', () => {
+  // The signed-in itemService import is mocked above, so build a real service here
+  // by importing the actual module under a separate path is not possible; instead we
+  // exercise the signed-out write paths directly via localItems + the service's own
+  // notify, mirroring what setItem/removeItem do.
+  it('create through itemService.setItem refreshes the list without remount', async () => {
+    const { makeItemService } = await vi.importActual<typeof import('../services/itemService')>(
+      '../services/itemService',
+    );
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+
+    useAuthStore.setState({ user: null, online: true });
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.items).toEqual([]);
+
+    await svc.setItem('new1', makeItem('new1', 3));
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['new1']));
+  });
+
+  it('delete through itemService.removeItem refreshes the list without remount', async () => {
+    const { makeItemService } = await vi.importActual<typeof import('../services/itemService')>(
+      '../services/itemService',
+    );
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+
+    useAuthStore.setState({ user: null, online: true });
+    await localItems.add('gone');
+    await localStore.set('gone', makeItem('gone', 1));
+
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['gone']));
+
+    await svc.removeItem('gone');
+    await waitFor(() => expect(result.current.items).toEqual([]));
+  });
+
+  it('move-to-folder through itemService.moveToFolder refreshes the list without remount', async () => {
+    const { makeItemService } = await vi.importActual<typeof import('../services/itemService')>(
+      '../services/itemService',
+    );
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+
+    useAuthStore.setState({ user: null, online: true });
+    const it = makeItem('m1', 1);
+    await svc.setItem('m1', it);
+
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['m1']));
+    expect(result.current.items[0].folderId).toBeUndefined();
+
+    // Move never changes the index (add() is a no-op for an existing id), so the only
+    // way the list reflects the new folderId is the notifyChange() emit (adversarial review).
+    await svc.moveToFolder(result.current.items[0], 'folder-x');
+    await waitFor(() => expect(result.current.items[0].folderId).toBe('folder-x'));
+  });
+});

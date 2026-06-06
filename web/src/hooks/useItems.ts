@@ -33,17 +33,23 @@ export function useItems(): { items: Item[]; loading: boolean } {
       });
       return unsub;
     } else {
-      // Signed-out: load from local storage index.
+      // Signed-out: load from the local storage index, and re-load on every local
+      // write (create/delete/move) so the list is reactive without a remount. The
+      // signed-in branch gets this for free from Firestore onSnapshot; the local
+      // branch needs an explicit same-tab subscription (adversarial review).
       let cancelled = false;
-      localItems.list().then(async (ids) => {
+      async function load() {
+        const ids = await localItems.list();
         const settled = await Promise.all(ids.map((id) => localStore.get<Item | null>(id, null)));
         const owned = settled.filter((it): it is Item => it !== null);
         if (!cancelled) {
           setItems(sortDescByUpdatedOn(owned));
           setLoading(false);
         }
-      });
-      return () => { cancelled = true; };
+      }
+      void load();
+      const unsub = localItems.subscribe(() => { void load(); });
+      return () => { cancelled = true; unsub(); };
     }
   }, [uid, svc]);
 
