@@ -27,4 +27,9 @@ describe('AppRoot', () => {
     const { container } = render(<AppRoot />);
     expect(container.querySelector('[data-testid="snippet-participant"]')).toBeTruthy();
   });
+
+  it('renders the console panel', () => {
+    const { container } = render(<AppRoot />);
+    expect(container.querySelector('[data-testid="console"]')).toBeTruthy();
+  });
 });

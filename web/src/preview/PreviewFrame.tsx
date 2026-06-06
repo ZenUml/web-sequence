@@ -5,6 +5,7 @@ import { PREVIEW_DEBOUNCE } from '../config/constants';
 
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
+  evalConsole(expr: string): Promise<{ ok: boolean; value: string }>;
 }
 
 export interface PreviewFrameProps {
@@ -25,6 +26,8 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const readyRef = useRef(false);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
   const pngId = useRef(0);
+  const evalWaiters = useRef(new Map<number, (r: { ok: boolean; value: string }) => void>());
+  const evalId = useRef(0);
   // Refs hold the latest values so the `[]`-deps message listener never reads
   // a stale closure (e.g. after a css-driven iframe reload re-fires `ready`).
   const codeRef = useRef(code); codeRef.current = code;
@@ -56,6 +59,11 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
         case 'png': {
           const w = pngWaiters.current.get(msg.id);
           if (w) { w(msg.dataUrl); pngWaiters.current.delete(msg.id); }
+          break;
+        }
+        case 'evalResult': {
+          const w = evalWaiters.current.get(msg.id);
+          if (w) { w({ ok: msg.ok, value: msg.value }); evalWaiters.current.delete(msg.id); }
           break;
         }
       }
@@ -92,6 +100,14 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
         pngWaiters.current.set(id, resolve);
         post({ type: 'getPng', id });
         setTimeout(() => { if (pngWaiters.current.delete(id)) resolve(null); }, 5000);
+      });
+    },
+    evalConsole(expr: string) {
+      return new Promise((resolve) => {
+        const id = ++evalId.current;
+        evalWaiters.current.set(id, resolve);
+        post({ type: 'evalConsole', id, expr });
+        setTimeout(() => { if (evalWaiters.current.delete(id)) resolve({ ok: false, value: 'timeout' }); }, 5000);
       });
     },
   }));

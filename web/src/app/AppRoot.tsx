@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
+import { Console, type ConsoleEntry } from '../preview/Console';
 import { useEditorStore } from '../state/editorStore';
+import { useUiStore } from '../state/uiStore';
 import { migrateToPages } from '../domain/item';
 import type { Item, JsMode, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
@@ -38,6 +40,19 @@ export function AppRoot() {
   const setJsMode = useEditorStore((s) => s.setJsMode);
   const setCssMode = useEditorStore((s) => s.setCssMode);
   const previewRef = useRef<PreviewHandle>(null);
+  const consoleOpen = useUiStore((s) => s.consoleOpen);
+  const toggleConsole = useUiStore((s) => s.toggleConsole);
+  // REQ-PRV-6: console entries accumulate across re-renders (preserveConsoleLogs treated as true).
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+
+  // §11: Ctrl+L clears the console.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); setConsoleEntries([]); }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // REQ-PRV-4 (lazy transpile): plain CSS stays synchronous; transpiled modes
   // (scss/sass/less/stylus/acss) compute asynchronously into local state. For ACSS
@@ -99,7 +114,27 @@ export function AppRoot() {
             <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
           </div>
         }
-        preview={<PreviewFrame ref={previewRef} code={item.js} css={previewCss} stickyOffset={stickyOffset} onCodeChange={setDsl} />}
+        preview={
+          <div className="flex flex-col h-full">
+            <div className="flex-1 min-h-0">
+              <PreviewFrame
+                ref={previewRef}
+                code={item.js}
+                css={previewCss}
+                stickyOffset={stickyOffset}
+                onCodeChange={setDsl}
+                onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
+              />
+            </div>
+            <Console
+              open={consoleOpen}
+              entries={consoleEntries}
+              onClear={() => setConsoleEntries([])}
+              onEval={(expr) => previewRef.current?.evalConsole(expr).then((r) => setConsoleEntries((p) => [...p, { level: r.ok ? 'log' : 'error', args: [String(r.value)] }]))}
+              onToggle={toggleConsole}
+            />
+          </div>
+        }
       />
     </div>
   );
