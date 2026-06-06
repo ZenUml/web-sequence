@@ -22,4 +22,9 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="js-mode-select"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="css-mode-select"]')).toBeTruthy();
   });
+
+  it('renders the snippet toolbox', () => {
+    const { container } = render(<AppRoot />);
+    expect(container.querySelector('[data-testid="snippet-participant"]')).toBeTruthy();
+  });
 });

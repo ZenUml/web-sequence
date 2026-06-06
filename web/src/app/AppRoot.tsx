@@ -7,6 +7,8 @@ import type { Item, JsMode, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
+import { Toolbox } from '../components/Toolbox';
+import { addCode } from '../editor/snippets';
 
 const JS_MODES: { value: JsMode; label: string }[] = [
   { value: 'js', label: 'JavaScript' },
@@ -90,6 +92,7 @@ export function AppRoot() {
                 </select>
               </label>
             </div>
+            <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
             <div className="flex-1 min-h-0"><CodeEditor value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
             <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} /></div>
           </div>
