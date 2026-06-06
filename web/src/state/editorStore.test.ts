@@ -61,12 +61,43 @@ describe('editorStore', () => {
     expect(useEditorStore.getState().unsavedCount).toBe(before);
   });
 
-  it('forkCurrent clears id, prefixes title, resets unsavedCount', () => {
+  it('forkCurrent clears id, prefixes title, marks dirty=true (FIX 3)', () => {
     useEditorStore.getState().loadItem(sample({ id: 'item-1', title: 'Orig' }));
     useEditorStore.getState().forkCurrent();
     const it = useEditorStore.getState().currentItem!;
     expect(it.id).toMatch(/^item-/);
     expect(it.id).not.toBe('item-1');
     expect(it.title).toBe('(Forked) Orig');
+    // A fork is a pending change — must be treated as unsaved.
+    expect(useEditorStore.getState().dirty).toBe(true);
+    expect(useEditorStore.getState().unsavedCount).toBe(1);
+  });
+
+  it('loadItem resets unsavedCount and saving to prevent stale auto-save (FIX 4)', () => {
+    useEditorStore.getState().loadItem(sample());
+    // Accumulate unsaved edits
+    useEditorStore.getState().setDsl('X');
+    useEditorStore.getState().setDsl('Y');
+    expect(useEditorStore.getState().unsavedCount).toBe(2);
+    // Loading a new item must clear all save counters
+    useEditorStore.getState().loadItem(sample({ id: 'i2', js: 'B.c' }));
+    expect(useEditorStore.getState().unsavedCount).toBe(0);
+    expect(useEditorStore.getState().dirty).toBe(false);
+    expect(useEditorStore.getState().saving).toBe(false);
+  });
+
+  it('setMainSizes stores sizes immutably and marks dirty (FIX 5)', () => {
+    useEditorStore.getState().loadItem(sample());
+    useEditorStore.getState().setMainSizes([30, 70]);
+    expect(useEditorStore.getState().currentItem?.mainSizes).toEqual([30, 70]);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it('switchPage marks dirty (FIX 8)', () => {
+    useEditorStore.getState().loadItem(sample());
+    const pageId = useEditorStore.getState().currentItem!.pages[0].id;
+    expect(useEditorStore.getState().dirty).toBe(false);
+    useEditorStore.getState().switchPage(pageId);
+    expect(useEditorStore.getState().dirty).toBe(true);
   });
 });

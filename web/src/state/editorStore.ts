@@ -39,6 +39,7 @@ interface EditorState {
   deletePage(pageId: string): void;
   switchPage(pageId: string): void;
   renamePage(pageId: string, title: string): void;
+  setMainSizes(sizes: number[]): void;
   reset(): void;
   markSaved(): void;
   setSaving(b: boolean): void;
@@ -53,7 +54,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   dirty: false,
   unsavedCount: 0,
   saving: false,
-  loadItem: (item) => set({ currentItem: migrateToPages(item), dirty: false }),
+  // FIX 4: loadItem resets all save counters so stale unsavedCount from a previous item
+  // doesn't cause auto-save to fire on the freshly-loaded item.
+  loadItem: (item) => set({ currentItem: migrateToPages(item), dirty: false, unsavedCount: 0, saving: false }),
   setDsl: (js) => set((s) => s.currentItem
     ? { currentItem: applyPageEdit(s.currentItem, s.currentItem.currentPageId, { js }), dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
   setCss: (css) => set((s) => s.currentItem
@@ -63,10 +66,16 @@ export const useEditorStore = create<EditorState>((set) => ({
   setHtmlMode: (htmlMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, htmlMode }, dirty: true } : s),
   addPage: (title) => set((s) => s.currentItem ? { currentItem: addPage(s.currentItem, title), dirty: true } : s),
   deletePage: (pageId) => set((s) => s.currentItem ? { currentItem: deletePage(s.currentItem, pageId), dirty: true } : s),
-  switchPage: (pageId) => set((s) => s.currentItem ? { currentItem: switchPage(s.currentItem, pageId) } : s),
+  // FIX 8: switchPage marks dirty so auto-save persists the page position change.
+  switchPage: (pageId) => set((s) => s.currentItem ? { currentItem: switchPage(s.currentItem, pageId), dirty: true } : s),
   // Rename is a metadata edit: dirty=true, unsavedCount unchanged (same pattern as setTitle).
   renamePage: (pageId, title) => set((s) => s.currentItem
     ? { currentItem: applyPageEdit(s.currentItem, pageId, { title }), dirty: true } : s),
+  // FIX 5: setMainSizes updates mainSizes immutably via the store (avoids stale closure
+  // mutation in Layout.tsx's onDragEnd; use getState() in the callback to avoid capture).
+  setMainSizes: (sizes) => set((s) => s.currentItem
+    ? { currentItem: { ...s.currentItem, mainSizes: sizes }, dirty: true }
+    : s),
   reset: () => set({ currentItem: null, dirty: false, unsavedCount: 0, saving: false }),
   markSaved: () => set({ dirty: false, unsavedCount: 0 }),
   setSaving: (saving) => set({ saving }),
@@ -92,6 +101,8 @@ export const useEditorStore = create<EditorState>((set) => ({
     cloned.updatedOn = Date.now();
     // A fork is unowned until the user explicitly saves it.
     delete cloned.createdBy;
-    return { currentItem: cloned, dirty: false, unsavedCount: 0, saving: false };
+    // FIX 3: a fork is a pending change — mark dirty so both manual and auto-save treat
+    // it as unsaved. dirty:true + unsavedCount:1 ensures it is never silently discarded.
+    return { currentItem: cloned, dirty: true, unsavedCount: 1, saving: false };
   }),
 }));
