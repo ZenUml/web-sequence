@@ -26,7 +26,12 @@ export function parseImportJson(text: string): Item[] {
     list = [raw];
   }
   return list
-    .filter((x): x is Item => !!x && typeof x === 'object')
+    // Require a real string id. A hand-edited or foreign file may carry id-less
+    // items; without this guard handleImport builds map["undefined"] and saveItems
+    // writes a doc literally at items/undefined, collapsing multiple id-less items
+    // into one. Legacy saveItems iterated the source object's own keys so it never
+    // synthesized an `undefined` key — this restores that parity (adversarial review).
+    .filter((x): x is Item => !!x && typeof x === 'object' && typeof (x as { id?: unknown }).id === 'string' && (x as { id: string }).id !== '')
     .map((it) => migrateToPages(it as Item));
 }
 

@@ -20,6 +20,17 @@ describe('exportImport', () => {
   it('parseImportJson throws on invalid JSON', () => {
     expect(() => parseImportJson('not json')).toThrow();
   });
+  it('parseImportJson drops id-less items so they never write items/undefined', () => {
+    // A foreign/hand-edited file: one valid item, one with no id, one with empty id.
+    const withId = item({ id: 'keep' });
+    const noId = { title: 'orphan', js: 'X.y' };
+    const emptyId = item({ id: '' });
+    const parsed = parseImportJson(JSON.stringify({ items: [withId, noId, emptyId] }));
+    expect(parsed.map((i) => i.id)).toEqual(['keep']);
+  });
+  it('parseImportJson returns nothing for an all-id-less file', () => {
+    expect(parseImportJson(JSON.stringify([{ title: 'a' }, { title: 'b' }]))).toEqual([]);
+  });
   it('buildStandaloneHtml embeds the DSL and is a full HTML document', () => {
     const html = buildStandaloneHtml(item({ js: 'Alice->Bob: Hi' }));
     expect(html).toMatch(/<!doctype html>/i);
