@@ -80,27 +80,39 @@ async function setTitle(page, title) {
  * The FIRST signed-out Save opens a one-time "Saved on this device" notice
  * (AppRoot: setNoticeOpen on first save when loginAndSaveMessageSeen is false).
  * It's a Radix Dialog whose overlay intercepts the next click, so dismiss it via
- * its "Not now" button (data-testid="confirm-cancel") if present.
+ * its "Not now" button (data-testid="confirm-cancel").
+ *
+ * The notice mounts several microtasks AFTER header-save.click() resolves (save()
+ * runs setItem → localStore writes → setNoticeOpen → React render → portal mount).
+ * A bare isVisible() check would race that mount. Because gotoFresh() clears
+ * localStorage, loginAndSaveMessageSeen is false, so the FIRST save in every test
+ * shows the notice with CERTAINTY — wait for it deterministically ({expected:true}).
+ * Later saves never re-show it (the flag is now set) → fast no-op path.
  */
-async function dismissSaveNoticeIfPresent(page) {
+async function dismissSaveNoticeIfPresent(page, { expected = false } = {}) {
   const cancel = page.locator('[data-testid="confirm-cancel"]');
-  if (await cancel.isVisible().catch(() => false)) {
-    await cancel.click();
-    await expect(cancel).toBeHidden();
+  if (expected) {
+    await expect(cancel).toBeVisible();
+  } else if (!(await cancel.isVisible().catch(() => false))) {
+    return;
   }
+  await cancel.click();
+  await expect(cancel).toBeHidden();
 }
 
 /**
  * Seed one local item: set a distinctive title + DSL, then Save. Signed-out
  * Save routes through itemService.setItem → localItems.add(id) (verified in
  * web/src/services/itemService.ts), so the id lands in the local index.
+ * Pass { firstSave: true } for the first seed after gotoFresh so the one-time
+ * notice is awaited deterministically rather than raced.
  */
-async function seedItem(page, { title, dsl }) {
+async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
   await page.locator('[data-testid="header-save"]').click();
-  await dismissSaveNoticeIfPresent(page);
+  await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
 
 /** Reload, then re-open the Library panel (uiStore.activePanel resets on reload). */
@@ -122,10 +134,11 @@ test('library lists local items and SearchInput filters them', async ({ page }) 
 
   await gotoFresh(page);
 
-  // Seed item 1.
+  // Seed item 1 — first save shows the one-time notice (await it deterministically).
   await seedItem(page, {
     title: 'AlphaDiagram',
     dsl: 'AlphaActor\nBetaActor\nAlphaActor->BetaActor: alphaCall',
+    firstSave: true,
   });
 
   // New diagram, then seed item 2 (distinct title so search can discriminate).
@@ -180,6 +193,7 @@ test('export-all triggers a JSON file download', async ({ page }) => {
   await seedItem(page, {
     title: 'ExportableDiagram',
     dsl: 'ExA\nExB\nExA->ExB: exportMe',
+    firstSave: true,
   });
 
   await reloadIntoLibrary(page);
@@ -209,6 +223,7 @@ test('importing a JSON file adds a new library row', async ({ page }) => {
   await seedItem(page, {
     title: 'PreexistingDiagram',
     dsl: 'PreA\nPreB\nPreA->PreB: existing',
+    firstSave: true,
   });
 
   await reloadIntoLibrary(page);
