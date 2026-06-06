@@ -143,6 +143,13 @@ export function makeItemService(getAuth: AuthContextGetter) {
   async function stopSharing(id: string): Promise<void> {
     const { uid } = getAuth();
     if (!uid) return; // sharing requires sign-in
+    // Deliberate client write of sharing fields — NOT a contradiction of the strip
+    // invariant above. Contract §3.1's "never by client" governs share *creation*
+    // (token minting via create_share). Owner *revocation* is a different op: it is
+    // permitted by firestore.rules (allow update if createdBy == uid) and the backend
+    // is FROZEN (NFR-1), so a direct client write is the only available path. setItem/
+    // saveItems still strip these fields so a normal save never re-asserts a stale share
+    // (adversarial review).
     await setDoc(doc(db, `items/${id}`), { isShared: false, shareToken: deleteField() }, { merge: true });
   }
 
