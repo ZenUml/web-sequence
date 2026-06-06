@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../state/authStore';
 import { localStore } from '../services/storage';
 import * as localItems from '../services/localItems';
@@ -13,6 +13,12 @@ export function useImportOnLogin(
 
   const [pending, setPending] = useState(false);
   const [count, setCount] = useState(0);
+  // In-flight guard: the modal stays open during the async import (driven solely by
+  // `pending`), and the Import button is not disabled, so a fast double-click can
+  // re-enter doImport → two concurrent saveItems batches + localStore writes. A ref
+  // (not state) gives a synchronous gate that the second click sees immediately
+  // (adversarial review).
+  const importing = useRef(false);
 
   useEffect(() => {
     if (!uid) return;
@@ -37,15 +43,21 @@ export function useImportOnLogin(
   }, [uid]);
 
   async function doImport() {
-    const ids = await localItems.list();
-    const map: Record<string, Item> = {};
-    for (const id of ids) {
-      const item = await localStore.get<Item | null>(id, null);
-      if (item) map[id] = item;
+    if (importing.current) return;
+    importing.current = true;
+    try {
+      const ids = await localItems.list();
+      const map: Record<string, Item> = {};
+      for (const id of ids) {
+        const item = await localStore.get<Item | null>(id, null);
+        if (item) map[id] = item;
+      }
+      await saveItems(map);
+      await localStore.set(LS_KEYS.askedToImportCreations, true);
+      setPending(false);
+    } finally {
+      importing.current = false;
     }
-    await saveItems(map);
-    await localStore.set(LS_KEYS.askedToImportCreations, true);
-    setPending(false);
   }
 
   async function dismiss() {

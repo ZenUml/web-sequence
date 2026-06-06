@@ -128,6 +128,36 @@ describe('useImportOnLogin', () => {
     expect(flag).toBe(true);
   });
 
+  it('doImport is re-entrancy-guarded: a concurrent second call is a no-op (adversarial review)', async () => {
+    // The modal stays open during the async import and the Import button is not
+    // disabled, so a fast double-click can re-enter doImport before the first
+    // resolves → two concurrent saveItems batches. Keep saveItems unresolved so the
+    // two calls genuinely overlap. Revert the in-flight ref guard → saveItems is
+    // called twice → this fails.
+    await localItems.add('item-a');
+    await localStore.set('item-a', makeItem('item-a'));
+
+    useAuthStore.setState({ user: SIGNED_IN_USER, online: true });
+
+    let release!: () => void;
+    const blocker = new Promise<void>((res) => { release = res; });
+    const mockSaveItems = vi.fn(() => blocker);
+    const { result } = renderHook(() => useImportOnLogin(mockSaveItems));
+
+    await waitFor(() => expect(result.current.pending).toBe(true));
+
+    await act(async () => {
+      // Fire both before either resolves (saveItems is still blocked).
+      const first = result.current.doImport();
+      const second = result.current.doImport();
+      release();
+      await Promise.all([first, second]);
+    });
+
+    // Only the first import ran; the second was a synchronous no-op.
+    expect(mockSaveItems).toHaveBeenCalledTimes(1);
+  });
+
   it('is not pending when there are no local items', async () => {
     // No local items seeded
     useAuthStore.setState({ user: SIGNED_IN_USER, online: true });
