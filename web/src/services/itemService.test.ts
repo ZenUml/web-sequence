@@ -137,7 +137,7 @@ describe('itemService.setItem — strips backend-owned sharing fields from the c
   it('does NOT write isShared/shareToken/sharedAt to the cloud (so a stopped share stays revoked)', async () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
     await svc.setItem('item-1', baseItem({ isShared: true, shareToken: 'tok', sharedAt: 123 } as Partial<Item>));
-    const [, data] = fs.setDoc.mock.calls.at(-1)!;
+    const data = (fs.setDoc.mock.calls.at(-1) as unknown as unknown[])[1] as any;
     expect('isShared' in data).toBe(false);
     expect('shareToken' in data).toBe(false);
     expect('sharedAt' in data).toBe(false);
@@ -148,7 +148,7 @@ describe('itemService.moveToFolder (takes the held Item — advisor fix B)', () 
   it('signed-in: re-saves the GIVEN item with the new folderId (no localStore re-fetch)', async () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: true }));
     await svc.moveToFolder(baseItem({ id: 'item-1' }), 'folder-9');
-    const [, data] = fs.setDoc.mock.calls.at(-1)!;
+    const data = (fs.setDoc.mock.calls.at(-1) as unknown as unknown[])[1] as any;
     expect(data.folderId).toBe('folder-9');
   });
   it('moveToFolder(item, null) clears the folderId', async () => {
