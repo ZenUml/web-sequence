@@ -82,13 +82,16 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       bindings.push({
         key: 'Mod-Shift-f',
         run: (view) => {
+          // A read-only (ACSS) editor must not be formatted/mutated.
+          if (view.state.readOnly) return false;
           const current = view.state.doc.toString();
           formatCss(current).then((formatted) => {
             if (formatted === current) return;
+            // The dispatched doc change fires @uiw's updateListener → onChange,
+            // so we must NOT call onChange again here (would double-fire).
             view.dispatch({
               changes: { from: 0, to: view.state.doc.length, insert: formatted },
             });
-            onChangeRef.current(formatted);
           });
           return true;
         },
