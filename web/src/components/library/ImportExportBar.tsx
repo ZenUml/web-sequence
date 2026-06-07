@@ -7,7 +7,9 @@ export interface ImportExportBarProps {
 }
 
 // Presentational toolbar for bulk library import/export. Lives on the dark `ink`
-// chrome, so Buttons use the default dark surface with quiet variants. The Import
+// chrome, so Buttons use the default dark surface with quiet variants. Import and
+// Export are peer actions, so they share the SAME quiet weight (both `ghost`) and
+// sit in one grouped cluster — no subtle/filled vs ghost mismatch. The Import
 // button proxies to a hidden file input; reading the file's text is local I/O
 // (no service calls) so it stays presentational and testable.
 export function ImportExportBar({ onExportAll, onImport }: ImportExportBarProps) {
@@ -23,8 +25,12 @@ export function ImportExportBar({ onExportAll, onImport }: ImportExportBarProps)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="subtle" size="sm" data-testid="lib-export-all" onClick={onExportAll}>
+    <div
+      className="flex items-center gap-0.5 rounded border border-ink-line/40 p-0.5"
+      role="group"
+      aria-label="Import and export"
+    >
+      <Button variant="ghost" size="sm" data-testid="lib-export-all" onClick={onExportAll}>
         Export all
       </Button>
       <Button

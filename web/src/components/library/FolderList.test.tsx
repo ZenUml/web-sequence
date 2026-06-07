@@ -81,6 +81,11 @@ describe('FolderList', () => {
     expect(onSelectFolder).toHaveBeenCalledWith('folder-a');
   });
 
+  it('the New folder control shows a visible text label (not a bare icon)', () => {
+    render(<FolderList {...baseProps} />);
+    expect(screen.getByTestId('folder-new')).toHaveTextContent(/New folder/i);
+  });
+
   it('new-folder flow: Enter commits onCreate(name)', async () => {
     const onCreate = vi.fn();
     render(<FolderList {...baseProps} onCreate={onCreate} />);

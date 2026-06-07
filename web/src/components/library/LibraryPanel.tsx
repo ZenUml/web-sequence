@@ -1,6 +1,15 @@
 import { useMemo, useRef } from 'react';
 import type { Item, Folder } from '../../domain/types';
-import { SearchInput, Button, cn } from '../../ui';
+import {
+  SearchInput,
+  Button,
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+  cn,
+} from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
 import { FolderList } from './FolderList';
 import { LibraryItemRow } from './LibraryItemRow';
@@ -19,6 +28,9 @@ export interface LibraryPanelProps {
   onCreateFolder(name: string): void;
   onRenameFolder(id: string, name: string): void;
   onDeleteFolder(id: string): void;
+  // Optional so the (out-of-scope) caller compiles even if it doesn't yet pass one.
+  // Drives the "No diagrams" empty-state CTA; the button is omitted when absent.
+  onNewDiagram?(): void;
   readOnly?: boolean;
 }
 
@@ -45,6 +57,7 @@ export function LibraryPanel({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onNewDiagram,
   readOnly = false,
 }: LibraryPanelProps) {
   const query = useLibraryStore((s) => s.query);
@@ -136,22 +149,31 @@ export function LibraryPanel({
         />
         <span
           data-testid="lib-total-count"
-          className="font-mono text-[11px] text-ondark-muted tabular-nums"
+          className="shrink-0 font-mono text-[11px] text-ondark-muted tabular-nums"
         >
-          {items.length}
+          {items.length} {items.length === 1 ? 'diagram' : 'diagrams'}
         </span>
       </div>
 
       <div className="flex items-center justify-between gap-2 px-3 pt-2">
         <ImportExportBar onExportAll={onExportAll} onImport={onImport} />
-        <Button
-          variant="ghost"
-          size="sm"
-          data-testid="lib-sort"
-          onClick={() => setSort(sort === 'updated' ? 'title' : 'updated')}
+        <Select
+          value={sort}
+          onValueChange={(v) => setSort(v as 'updated' | 'title')}
         >
-          {sort === 'updated' ? 'Sort: Recent' : 'Sort: Title'}
-        </Button>
+          <SelectTrigger
+            surface="dark"
+            data-testid="lib-sort"
+            aria-label="Sort diagrams"
+            className="shrink-0"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="updated">Recent</SelectItem>
+            <SelectItem value="title">Title</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-1 overflow-hidden pt-2">
@@ -177,8 +199,19 @@ export function LibraryPanel({
               {libraryEmpty ? 'No diagrams' : 'No matches'}
             </h2>
             <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-              {libraryEmpty ? 'Save a diagram to see it here' : 'Try a different search'}
+              {libraryEmpty ? 'Start your first diagram' : 'Try a different search'}
             </p>
+            {libraryEmpty && onNewDiagram && (
+              <Button
+                variant="primary"
+                size="md"
+                data-testid="lib-empty-new"
+                className="mt-2"
+                onClick={() => onNewDiagram()}
+              >
+                New diagram
+              </Button>
+            )}
           </div>
         ) : (
           <div

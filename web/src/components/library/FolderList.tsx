@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Folder } from '../../domain/types';
-import { IconButton, TextInput, cn } from '../../ui';
+import { Button, IconButton, TextInput, cn } from '../../ui';
 import { ConfirmDialog } from '../modals/ConfirmDialog';
 
 export interface FolderListProps {
@@ -237,7 +237,8 @@ export function FolderList({
             }}
           />
         ) : (
-          <IconButton
+          <Button
+            variant="ghost"
             size="sm"
             aria-label="New folder"
             data-testid="folder-new"
@@ -245,7 +246,8 @@ export function FolderList({
             onClick={() => setCreating(true)}
           >
             <PlusIcon />
-          </IconButton>
+            New folder
+          </Button>
         ))}
 
       <ConfirmDialog

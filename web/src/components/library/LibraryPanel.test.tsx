@@ -143,7 +143,7 @@ describe('LibraryPanel', () => {
     expect(within(screen.getByTestId('folder-unfiled')).getByText('2')).toBeInTheDocument();
   });
 
-  it('sort toggles row order between updated-desc and title', async () => {
+  it('sort dropdown exposes Recent + Title and picking Title reorders rows', async () => {
     renderPanel();
     // Match row containers only — exclude the per-row kebab (`lib-row-menu-*`).
     const ids = () =>
@@ -159,7 +159,20 @@ describe('LibraryPanel', () => {
       'lib-row-i-unfiled',
     ]);
 
-    await userEvent.click(screen.getByTestId('lib-sort'));
+    // The sort control is a real dropdown (combobox), not a silent cycle button.
+    const trigger = screen.getByTestId('lib-sort');
+    expect(trigger).toHaveAttribute('role', 'combobox');
+    // It reflects the active option before opening.
+    expect(trigger).toHaveTextContent('Recent');
+
+    // Open it — both options are exposed in the listbox (scope to options so the
+    // trigger's own "Recent" value text doesn't double-match).
+    await userEvent.click(trigger);
+    expect(await screen.findByRole('option', { name: 'Title' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Recent' })).toBeInTheDocument();
+
+    // Pick "Title" → rows reorder by title.
+    await userEvent.click(screen.getByRole('option', { name: 'Title' }));
 
     // Title sort → Alpha Login, Beta Flow, Ghost Note, Loose Sketch
     expect(ids()).toEqual([
@@ -206,6 +219,27 @@ describe('LibraryPanel', () => {
     const empty = screen.getByTestId('library-empty');
     expect(empty).toHaveTextContent(/No diagrams/i);
     expect(empty.querySelector('.font-serif')).not.toBeNull();
+  });
+
+  it('"No diagrams" empty state offers a primary New diagram CTA wired to onNewDiagram', async () => {
+    const handlers = baseHandlers();
+    const onNewDiagram = vi.fn();
+    render(
+      <LibraryPanel items={[]} folders={folders} {...handlers} onNewDiagram={onNewDiagram} />,
+    );
+    const cta = screen.getByTestId('lib-empty-new');
+    expect(cta).toHaveTextContent(/New diagram/i);
+    await userEvent.click(cta);
+    expect(onNewDiagram).toHaveBeenCalledTimes(1);
+  });
+
+  it('"No matches" empty state does NOT show the New diagram CTA', async () => {
+    // The CTA belongs to the genuinely-empty library, not a filtered-out view.
+    const onNewDiagram = vi.fn();
+    renderPanel({ onNewDiagram });
+    await userEvent.type(screen.getByTestId('lib-search'), 'zzzznomatch');
+    expect(screen.getByTestId('library-empty')).toHaveTextContent(/No matches/i);
+    expect(screen.queryByTestId('lib-empty-new')).not.toBeInTheDocument();
   });
 
   it('shows the "No matches" empty state when a query filters everything out', async () => {
