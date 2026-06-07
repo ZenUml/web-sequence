@@ -229,12 +229,13 @@ describe('LibraryItemRow', () => {
 
     const del = await screen.findByTestId('lib-action-delete-item-1');
     expect(del.className).toContain('data-[highlighted]:bg-danger/20');
-    expect(del.className).not.toContain('data-[highlighted]:bg-accent-tint');
+    expect(del.className).not.toContain('data-[highlighted]:bg-accent-soft');
 
-    // Positive control: a neutral action still uses the base accent-tint highlight, so
-    // the assertion above is about the conflict being removed, not the class vanishing.
+    // Positive control: a neutral action still uses the base accent-soft highlight (the
+    // dark-menu base highlight), so the assertion above is about the conflict being
+    // removed, not the class vanishing.
     const fork = await screen.findByTestId('lib-action-fork-item-1');
-    expect(fork.className).toContain('data-[highlighted]:bg-accent-tint');
+    expect(fork.className).toContain('data-[highlighted]:bg-accent-soft');
     expect(fork.className).not.toContain('data-[highlighted]:bg-danger/20');
   });
 

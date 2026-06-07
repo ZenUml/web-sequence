@@ -55,7 +55,7 @@ function Chevron({ className }: { className?: string }) {
 // A keyboard hint chip pinned to the right edge of a menu item (e.g. ⌘S on Save).
 function Hint({ children }: { children: ReactNode }) {
   return (
-    <span className="ml-auto pl-6 font-mono text-[11px] text-onlight-faint" aria-hidden="true">
+    <span className="ml-auto pl-6 font-mono text-[11px] text-ondark-faint" aria-hidden="true">
       {children}
     </span>
   );

@@ -60,9 +60,9 @@ export function ProfileMenu({
       </MenuTrigger>
       <MenuContent>
         <MenuLabel>
-          <span className="block text-onlight-strong">{displayName}</span>
+          <span className="block text-ondark-strong">{displayName}</span>
           {user.email && (
-            <span className="block text-[11px] font-normal text-onlight-muted normal-case tracking-normal">
+            <span className="block text-[11px] font-normal text-ondark-muted normal-case tracking-normal">
               {user.email}
             </span>
           )}
