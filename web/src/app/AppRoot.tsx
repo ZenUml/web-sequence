@@ -163,8 +163,18 @@ export function AppRoot() {
   // M04 one-time trigger: first-run Onboarding (REQ-MOD-3). Opens on boot when the
   // `onboarded` flag is unset; dismissing marks it (handled at the modal's onDismiss).
   useEffect(() => {
-    void localStore.get<boolean>(LS_KEYS.onboarded, false).then((seen) => {
-      if (!seen) {
+    void (async () => {
+      const seen = await localStore.get<boolean>(LS_KEYS.onboarded, false);
+      // Legacy parity (adversarial review, REQ-MOD-3): legacy gated onboarding ONLY
+      // on `!lastSeenVersion` (app.jsx:314) — it NEVER used a localStorage `onboarded`
+      // key (that name was a COOKIE used solely to dedupe the analytics event,
+      // app.jsx:318-320). A user migrating from the legacy app has lastSeenVersion set
+      // (in chrome.storage.sync → read via syncStore) but NO localStorage `onboarded`,
+      // so gating on `onboarded` alone re-onboards every existing user. Also suppress
+      // when a stored lastSeenVersion is present so a migrating user is treated as a
+      // returning user, not a first-timer.
+      const priorVersion = await syncStore.get<string>(LS_KEYS.lastSeenVersion, '');
+      if (!seen && !priorVersion) {
         openModal('onboarding');
         // Stamp lastSeenVersion for a brand-new user the moment onboarding is shown
         // (legacy parity: app.jsx:322 setUserLastSeenVersion(version) in the
@@ -176,12 +186,11 @@ export function AppRoot() {
         // effect would treat a first-time user as an "upgrade" on their NEXT boot
         // (semverCompare('0.0.0', APP_VERSION) < 0), showing them a version-upgrade
         // prompt they have no baseline for (wrong audience — REQ-MOD-3). The pledge
-        // effect additionally gates on a truthy lastSeenVersion (below).
-        void syncStore.get<string>(LS_KEYS.lastSeenVersion, '').then((v) => {
-          if (!v) void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
-        });
+        // effect additionally gates on a truthy lastSeenVersion (below). We are in
+        // the `!priorVersion` branch, so lastSeenVersion is known empty here.
+        void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
       }
-    });
+    })();
     // openModal is a stable zustand action.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

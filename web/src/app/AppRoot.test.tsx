@@ -449,9 +449,30 @@ describe('AppRoot — M04 modal reachability', () => {
 
 describe('AppRoot — M04 one-time triggers', () => {
   it('opens the Onboarding modal on boot when not yet onboarded', async () => {
+    // A genuine first-run user has NEITHER flag (the beforeEach pre-seeds both).
     window.localStorage.removeItem(LS_KEYS.onboarded);
+    window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
     render(<AppRoot />);
     expect(await screen.findByTestId('onboarding-modal')).toBeInTheDocument();
+  });
+
+  // Discriminating (adversarial review #2): a user MIGRATING from the legacy app has
+  // lastSeenVersion set (via chrome.storage.sync → syncStore) but NO localStorage
+  // `onboarded` key — legacy never wrote that key (it was a COOKIE, app.jsx:318-320),
+  // and there is no backfill. Legacy gated onboarding on `!lastSeenVersion` ONLY
+  // (app.jsx:314), so it would NOT re-onboard such a user. The rewrite must do the
+  // same: presence of lastSeenVersion suppresses onboarding. Reverting the fix (gating
+  // on `onboarded` alone) re-opens the onboarding modal here → fails.
+  it('does NOT re-onboard a migrating legacy user (lastSeenVersion set, no `onboarded` key)', async () => {
+    const { useUiStore } = await import('../state/uiStore');
+    window.localStorage.removeItem(LS_KEYS.onboarded); // legacy never set this key
+    window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION)); // returning user
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    // Let the async boot effects settle; onboarding must stay closed.
+    await waitFor(() => expect(screen.getByTestId('header-title')).toBeInTheDocument());
+    expect(useUiStore.getState().activeModal).not.toBe('onboarding');
+    expect(screen.queryByTestId('onboarding-modal')).not.toBeInTheDocument();
   });
 
   it('opens the SupportPledge modal when lastSeenVersion is behind APP_VERSION', async () => {
