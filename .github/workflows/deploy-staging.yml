@@ -5,7 +5,7 @@ name: Deploy to Stage
 
 on:
   push:
-    branches: [master]
+    branches: ['**']
   pull_request:
 
 concurrency:
@@ -81,15 +81,15 @@ jobs:
           cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
       - name: Setup Firebase service account
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
-      # Staging is a shared environment — only the master branch deploys to it.
-      # PRs build + package + upload artifacts for validation but never deploy.
+      # Every branch deploys to staging (conf-app parity). The staging-gate and
+      # draft-release jobs remain master-only so releases only cut from master.
       - name: Deploy functions config (staging)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           cd functions && npm install && pnpm deploy:config:staging
       - name: Deploy to staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           pnpm deploy:staging
