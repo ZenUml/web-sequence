@@ -112,8 +112,13 @@ the gulp pipeline are all retained, so rollback is a config-only operation.
 1. **Config revert** — restore `firebase.json` `hosting.public` to `"app"`;
    remove the `build:web` / `_cutover_note` additions from `package.json`. If the
    diff was applied as a commit, `git revert <cutover-commit>`.
-2. **Rebuild the legacy artifact** — `yarn release` (the gulp pipeline reassembles
-   `app/` from legacy `src/`).
+2. **Rebuild the legacy artifact** — do NOT use `yarn release`. Gulp `release` is
+   "incompatible with Node 20+" (deploy-prod.yml:33) AND only copies a pre-existing
+   `dist/` (gulpfile.cjs:78) without running the vite build, so post-cutover it
+   assembles `app/` from a stale/absent `dist/`. Instead mirror the CI assembly:
+   `pnpm install --no-frozen-lockfile && pnpm build` (legacy vite build → `dist/`)
+   FIRST, then replicate deploy-prod.yml's inline rsync/cp into `app/`. Full
+   command block in the Task 13 production-cutover runbook, Rollback Path (2).
 3. **Redeploy** — the USER runs `firebase deploy --only hosting --project <env>`
    (see Task 13 runbook; not run here).
 

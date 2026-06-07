@@ -216,9 +216,28 @@ one-off hosting rollback):
 git revert <cutover-commit-sha>      # the SHA recorded in §0
 grep '"public"' firebase.json        # confirm → "public": "app"
 
-# 2. Rebuild the legacy app/ artifact via the retained gulp pipeline
-yarn install                         # legacy toolchain (root, yarn)
-yarn release                         # === gulp --gulpfile gulpfile.cjs release → assembles app/
+# 2. Rebuild the legacy app/ artifact — MIRROR THE CI ASSEMBLY, NOT `yarn release`.
+#    `yarn release` (= gulp release) is BROKEN for this purpose on two counts:
+#      (a) the project's own CI declares gulp release "incompatible with Node 20+"
+#          (deploy-prod.yml:33 / deploy-staging.yml:48) — it errors on modern Node;
+#      (b) even on a compatible Node, gulp `copyFiles` only COPIES a pre-existing
+#          dist/ (gulpfile.cjs:78 `gulp.src('dist/**/*')`) — it never runs the vite
+#          build. Post-cutover the root dist/ is stale or absent (.gitignore'd), so
+#          `yarn release` would assemble app/ from empty/stale output.
+#    Instead replicate deploy-prod.yml's inline assembly (build FIRST, then copy):
+pnpm install --no-frozen-lockfile && pnpm build   # legacy vite build → dist/
+rm -rf app && mkdir -p app
+rsync -a --exclude='manifest.json' static/. app/static/
+for d in help privacy-policy End-User-License-Agreement; do
+  [ -d "$d" ] && cp -R "$d/." "app/$d/" || true
+done
+cp -R dist/. app/
+cp help.html app/ 2>/dev/null || true
+cp ZenUML_Sequence_Diagram_addon_help.html app/ 2>/dev/null || true
+cp src/detached-window.js app/ 2>/dev/null || true
+cp src/icon-*.png app/ 2>/dev/null || true
+cp static/manifest.json app/
+grep -q '"public": "app"' firebase.json && echo "OK: hosting root is app/"
 
 # 3. Redeploy hosting from the restored legacy root
 firebase deploy --only hosting --project prod
