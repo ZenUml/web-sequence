@@ -1,8 +1,16 @@
 import { useState, type ReactNode } from 'react';
-import { Button, TextInput, cn } from '../../ui';
+import {
+  Button,
+  TextInput,
+  cn,
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+} from '../../ui';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
-import type { AppUser } from '../../domain/types';
+import type { AppUser, PlanType } from '../../domain/types';
 import type { ProviderName } from '../../services/types';
 
 export interface AppHeaderProps {
@@ -17,6 +25,19 @@ export interface AppHeaderProps {
   onFork(): void;
   onLogin(provider: ProviderName): void;
   onLogout(): void;
+  // M04 modal triggers (optional so existing AppHeader tests render without them).
+  onOpenSettings?(): void;
+  onOpenCreateNew?(): void;
+  onOpenHelp?(): void;
+  onOpenPricing?(): void;
+  // M04 subscription/profile state (forwarded to ProfileMenu). All optional.
+  subscribed?: boolean;
+  planType?: PlanType;
+  paymentEnabled?: boolean;
+  onUpgrade?(): void;
+  onManagePlan?(): void;
+  // OAuth error surfaced inside the LoginModal (roadmap §9 carry-forward).
+  loginError?: string | null;
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
@@ -34,6 +55,16 @@ export function AppHeader({
   onFork,
   onLogin,
   onLogout,
+  onOpenSettings,
+  onOpenCreateNew,
+  onOpenHelp,
+  onOpenPricing,
+  subscribed = false,
+  planType = 'free',
+  paymentEnabled = false,
+  onUpgrade,
+  onManagePlan,
+  loginError,
   actions,
 }: AppHeaderProps) {
   const [loginOpen, setLoginOpen] = useState(false);
@@ -100,12 +131,50 @@ export function AppHeader({
               />
             )}
           </div>
+
+          {/* Overflow menu: less-frequent modal triggers (keeps the header calm). */}
+          <Menu>
+            <MenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="header-menu"
+                aria-label="More actions"
+              >
+                &#8943;
+              </Button>
+            </MenuTrigger>
+            <MenuContent>
+              <MenuItem data-testid="header-create-new" onSelect={() => onOpenCreateNew?.()}>
+                New from template…
+              </MenuItem>
+              <MenuItem data-testid="header-settings" onSelect={() => onOpenSettings?.()}>
+                Settings
+              </MenuItem>
+              {paymentEnabled && (
+                <MenuItem data-testid="header-pricing" onSelect={() => onOpenPricing?.()}>
+                  Pricing
+                </MenuItem>
+              )}
+              <MenuItem data-testid="header-help" onSelect={() => onOpenHelp?.()}>
+                Help
+              </MenuItem>
+            </MenuContent>
+          </Menu>
         </div>
 
         {/* Auth section */}
         <div className="ml-1 shrink-0">
           {user ? (
-            <ProfileMenu user={user} onLogout={onLogout} />
+            <ProfileMenu
+              user={user}
+              onLogout={onLogout}
+              subscribed={subscribed}
+              planType={planType}
+              paymentEnabled={paymentEnabled}
+              onUpgrade={onUpgrade}
+              onManagePlan={onManagePlan}
+            />
           ) : (
             <Button
               variant="primary"
@@ -124,6 +193,7 @@ export function AppHeader({
         onOpenChange={setLoginOpen}
         onLogin={onLogin}
         lastProvider={lastProvider}
+        error={loginError}
       />
     </>
   );

@@ -36,4 +36,16 @@ describe('LoginModal', () => {
     );
     expect(screen.queryByTestId('login-google')).not.toBeInTheDocument();
   });
+
+  it('surfaces an OAuth error notice when error is provided', () => {
+    render(
+      <LoginModal open onOpenChange={() => {}} onLogin={() => {}} error="Account exists with a different sign-in method." />,
+    );
+    expect(screen.getByTestId('login-error')).toHaveTextContent('Account exists');
+  });
+
+  it('renders no error notice when error is absent', () => {
+    render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} />);
+    expect(screen.queryByTestId('login-error')).not.toBeInTheDocument();
+  });
 });

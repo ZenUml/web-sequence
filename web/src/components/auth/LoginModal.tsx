@@ -13,15 +13,27 @@ export interface LoginModalProps {
   onOpenChange(o: boolean): void;
   onLogin(provider: ProviderName): void;
   lastProvider?: string | null;
+  // OAuth error surfaced as a design-system notice (roadmap §9 carry-forward —
+  // replaces the M02 console/window.alert stopgap, incl. account-exists).
+  error?: string | null;
 }
 
-export function LoginModal({ open, onOpenChange, onLogin, lastProvider }: LoginModalProps) {
+export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }: LoginModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Sign in to ZenUML"
         description="Save and sync your diagrams across devices."
       >
+        {error && (
+          <p
+            data-testid="login-error"
+            role="alert"
+            className="mb-3 rounded border border-signal-amber/40 bg-signal-amber/10 px-3 py-2 text-[13px] text-onlight-strong"
+          >
+            {error}
+          </p>
+        )}
         {lastProvider && (
           <p className="mb-3 font-mono text-[11px] text-onlight-muted uppercase tracking-[0.1em]">
             Last used: {lastProvider}

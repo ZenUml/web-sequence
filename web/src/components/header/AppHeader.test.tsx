@@ -112,4 +112,53 @@ describe('AppHeader', () => {
     await userEvent.click(await screen.findByTestId('login-github'));
     expect(onLogin).toHaveBeenCalledWith('github');
   });
+
+  it('overflow menu triggers call their injected handlers', async () => {
+    const onOpenSettings = vi.fn();
+    const onOpenCreateNew = vi.fn();
+    const onOpenHelp = vi.fn();
+    render(
+      <AppHeader
+        {...baseProps}
+        onOpenSettings={onOpenSettings}
+        onOpenCreateNew={onOpenCreateNew}
+        onOpenHelp={onOpenHelp}
+      />,
+    );
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-settings'));
+    expect(onOpenSettings).toHaveBeenCalled();
+
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-create-new'));
+    expect(onOpenCreateNew).toHaveBeenCalled();
+
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-help'));
+    expect(onOpenHelp).toHaveBeenCalled();
+  });
+
+  // REQ-SUB-6: the Pricing trigger only exists when payment is enabled.
+  it('shows header-pricing only when paymentEnabled', async () => {
+    const onOpenPricing = vi.fn();
+    const { rerender } = render(
+      <AppHeader {...baseProps} paymentEnabled={false} onOpenPricing={onOpenPricing} />,
+    );
+    await userEvent.click(screen.getByTestId('header-menu'));
+    expect(screen.queryByTestId('header-pricing')).not.toBeInTheDocument();
+    // Close the menu (its overlay leaves pointer-events:none on the page) before
+    // re-rendering, so the next trigger click isn't blocked by a stale portal.
+    await userEvent.keyboard('{Escape}');
+
+    rerender(<AppHeader {...baseProps} paymentEnabled onOpenPricing={onOpenPricing} />);
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-pricing'));
+    expect(onOpenPricing).toHaveBeenCalled();
+  });
+
+  it('forwards loginError into the LoginModal', async () => {
+    render(<AppHeader {...baseProps} user={null} loginError="Sign-in failed" />);
+    await userEvent.click(screen.getByTestId('header-login'));
+    expect(await screen.findByTestId('login-error')).toHaveTextContent('Sign-in failed');
+  });
 });

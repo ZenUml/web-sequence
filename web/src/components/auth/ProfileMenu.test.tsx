@@ -77,4 +77,67 @@ describe('ProfileMenu', () => {
     fireEvent.click(trigger);
     expect(await screen.findByText('test@example.com')).toBeInTheDocument();
   });
+
+  function open(trigger: HTMLElement) {
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(trigger);
+    fireEvent.pointerUp(trigger, { button: 0 });
+    fireEvent.click(trigger);
+  }
+
+  it('shows a Pro badge next to the avatar for subscribed users', () => {
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed planType="plus-monthly" paymentEnabled />,
+    );
+    expect(screen.getByTestId('pro-badge')).toBeInTheDocument();
+  });
+
+  it('shows no Pro badge for non-subscribed users', () => {
+    render(<ProfileMenu user={mockUser} onLogout={() => {}} subscribed={false} paymentEnabled />);
+    expect(screen.queryByTestId('pro-badge')).not.toBeInTheDocument();
+  });
+
+  it('shows "Upgrade plan" for a non-subscribed user and fires onUpgrade', async () => {
+    const onUpgrade = vi.fn();
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed={false} paymentEnabled onUpgrade={onUpgrade} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    const item = await screen.findByTestId('profile-upgrade');
+    fireEvent.click(item);
+    expect(onUpgrade).toHaveBeenCalled();
+    expect(screen.queryByTestId('profile-plan')).not.toBeInTheDocument();
+  });
+
+  it('shows "My Plan" for a subscribed user and fires onManagePlan', async () => {
+    const onManagePlan = vi.fn();
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed planType="plus-monthly" paymentEnabled onManagePlan={onManagePlan} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    const item = await screen.findByTestId('profile-plan');
+    expect(item).toHaveTextContent('plus-monthly');
+    fireEvent.click(item);
+    expect(onManagePlan).toHaveBeenCalled();
+    expect(screen.queryByTestId('profile-upgrade')).not.toBeInTheDocument();
+  });
+
+  // DISCRIMINATING (REQ-SUB-6): when payment is disabled (extension hosts), NO
+  // billing items appear regardless of subscription state.
+  it('hides ALL billing items when paymentEnabled is false', async () => {
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed={false} paymentEnabled={false} onUpgrade={vi.fn()} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    await screen.findByTestId('profile-logout');
+    expect(screen.queryByTestId('profile-upgrade')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('profile-plan')).not.toBeInTheDocument();
+  });
+
+  it('falls back to "Anonymous Creator" when displayName is absent', async () => {
+    const anon: AppUser = { ...mockUser, displayName: null };
+    render(<ProfileMenu user={anon} onLogout={() => {}} />);
+    open(screen.getByTestId('profile-trigger'));
+    expect(await screen.findByText('Anonymous Creator')).toBeInTheDocument();
+  });
 });
