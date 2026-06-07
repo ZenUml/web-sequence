@@ -48,15 +48,26 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
           <SegTab label="Edit" testid="layout-tab-edit" active={tab === 'edit'} onClick={() => setTab('edit')} />
           <SegTab label="Preview" testid="layout-tab-preview" active={tab === 'preview'} onClick={() => setTab('preview')} />
         </div>
-        {tab === 'edit' ? (
-          <div data-testid="editor-region" aria-label="Editor" className="min-h-0 flex-1 overflow-hidden">
-            {editor}
-          </div>
-        ) : (
-          <div data-testid="preview-region" aria-label="Preview" className="min-h-0 flex-1 overflow-hidden">
-            {preview}
-          </div>
-        )}
+        {/* BOTH panes stay MOUNTED on mobile; the inactive one is hidden via CSS.
+            Two reasons: (1) toggling Edit/Preview must NOT remount the PreviewFrame
+            iframe (that reloads the heavy @zenuml bundle + loses render state), and
+            (2) the fullscreen "Present" overlay lives inside the preview subtree —
+            if that subtree unmounted on the Edit tab, the header Present button would
+            be a dead control there. Keeping both mounted fixes both. */}
+        <div
+          data-testid="editor-region"
+          aria-label="Editor"
+          className={cn('min-h-0 flex-1 overflow-hidden', tab !== 'edit' && 'hidden')}
+        >
+          {editor}
+        </div>
+        <div
+          data-testid="preview-region"
+          aria-label="Preview"
+          className={cn('min-h-0 flex-1 overflow-hidden', tab !== 'preview' && 'hidden')}
+        >
+          {preview}
+        </div>
       </div>
     );
   }

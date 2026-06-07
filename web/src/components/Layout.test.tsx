@@ -50,22 +50,33 @@ describe('Layout', () => {
       expect(previewTab).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('mounts only the editor pane by default (preview is not in the tree)', () => {
+    it('keeps BOTH panes mounted, showing the editor and hiding the preview by default', () => {
+      // Both panes stay mounted on mobile (no remount of the PreviewFrame iframe / no
+      // dead Present control); the inactive pane is hidden via the `hidden` class.
       render(<Layout editor={editor} preview={preview} />);
-      expect(screen.getByTestId('editor-region')).toBeInTheDocument();
+      const editorRegion = screen.getByTestId('editor-region');
+      const previewRegion = screen.getByTestId('preview-region');
+      expect(editorRegion).toBeInTheDocument();
+      expect(previewRegion).toBeInTheDocument();
       expect(screen.getByTestId('editor-child')).toBeInTheDocument();
-      expect(screen.queryByTestId('preview-region')).toBeNull();
-      expect(screen.queryByTestId('preview-child')).toBeNull();
+      expect(screen.getByTestId('preview-child')).toBeInTheDocument();
+      // classList.contains = exact token match (className.includes would false-match the
+      // 'hidden' substring inside 'overflow-hidden').
+      expect(editorRegion.classList.contains('hidden')).toBe(false);
+      expect(previewRegion.classList.contains('hidden')).toBe(true);
     });
 
-    it('selecting Preview swaps to the preview pane and updates aria-pressed', async () => {
+    it('selecting Preview shows the preview pane, hides the editor, updates aria-pressed (no remount)', async () => {
       render(<Layout editor={editor} preview={preview} />);
       await userEvent.click(screen.getByTestId('layout-tab-preview'));
 
-      expect(screen.getByTestId('preview-region')).toBeInTheDocument();
-      expect(screen.getByTestId('preview-child')).toBeInTheDocument();
-      expect(screen.queryByTestId('editor-region')).toBeNull();
-      expect(screen.queryByTestId('editor-child')).toBeNull();
+      const editorRegion = screen.getByTestId('editor-region');
+      const previewRegion = screen.getByTestId('preview-region');
+      // Both still mounted — only visibility flips.
+      expect(previewRegion).toBeInTheDocument();
+      expect(editorRegion).toBeInTheDocument();
+      expect(previewRegion.classList.contains('hidden')).toBe(false);
+      expect(editorRegion.classList.contains('hidden')).toBe(true);
 
       expect(screen.getByTestId('layout-tab-preview')).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByTestId('layout-tab-edit')).toHaveAttribute('aria-pressed', 'false');

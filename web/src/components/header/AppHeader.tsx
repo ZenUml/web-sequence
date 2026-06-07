@@ -253,13 +253,17 @@ export function AppHeader({
             - readOnly: no save happens, so show a neutral "Read-only" (no dirty/saving).
             - signed-out: auto-save is local-only, so show neutral "Local only".
             - saving: "Saving…"; dirty: amber "Unsaved"; otherwise emerald "Saved". */}
-        <SaveState
-          readOnly={readOnly}
-          signedIn={!!user}
-          saving={saving}
-          dirty={dirty ?? unsavedCount > 0}
-          unsavedCount={unsavedCount}
-        />
+        {/* Hidden on the narrowest screens (< sm) so the save-state text doesn't crowd
+            the filename; the design's mobile header is intentionally minimal. */}
+        <div className="hidden sm:flex items-center">
+          <SaveState
+            readOnly={readOnly}
+            signedIn={!!user}
+            saving={saving}
+            dirty={dirty ?? unsavedCount > 0}
+            unsavedCount={unsavedCount}
+          />
+        </div>
 
         <div className="flex-1" />
 
