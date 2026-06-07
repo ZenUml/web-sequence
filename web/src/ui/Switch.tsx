@@ -13,7 +13,7 @@ export const Switch = forwardRef<
     <RadixSwitch.Root
       ref={ref}
       className={cn(
-        'inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-paper-line',
+        'inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-paper-line',
         'bg-paper-200 transition-colors duration-150 ease-draft ring-draft-light',
         'data-[state=checked]:bg-accent data-[state=checked]:border-accent',
         'disabled:cursor-not-allowed disabled:opacity-50',
@@ -23,9 +23,9 @@ export const Switch = forwardRef<
     >
       <RadixSwitch.Thumb
         className={cn(
-          'block h-4 w-4 translate-x-0.5 rounded-full bg-paper-50 shadow-pop',
+          'block h-5 w-5 translate-x-0.5 rounded-full bg-paper-50 shadow-pop',
           'transition-transform duration-150 ease-draft',
-          'data-[state=checked]:translate-x-[18px]',
+          'data-[state=checked]:translate-x-[20px]',
         )}
       />
     </RadixSwitch.Root>

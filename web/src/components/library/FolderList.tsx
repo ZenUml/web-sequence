@@ -107,8 +107,8 @@ export function FolderList({
     return cn(
       entryBase,
       active
-        ? 'bg-accent-soft text-ondark-strong border-l-2 border-accent'
-        : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5 border-l-2 border-transparent',
+        ? 'bg-accent-soft text-ondark-strong'
+        : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
     );
   }
 

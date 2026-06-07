@@ -26,7 +26,10 @@ export function ProBadge({ planType, className }: ProBadgeProps) {
       className={cn(
         'inline-flex items-center rounded px-1.5 py-0.5',
         'font-mono text-[10px] font-medium uppercase tracking-[0.12em]',
-        'bg-signal-amber/15 text-signal-amber',
+        // Solid amber pill with ink text (8.27:1) — a tinted amber/15 pill with
+        // amber text failed AA (~1.95:1). amber.strong text can't clear AA on any
+        // visible amber tint, so the legible, on-brand fix is to invert it.
+        'bg-signal-amber text-ink-950',
         className,
       )}
     >

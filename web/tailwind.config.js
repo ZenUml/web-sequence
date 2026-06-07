@@ -45,6 +45,12 @@ export default {
         signal: {
           amber: '#E59A2B',
           amberSoft: 'rgba(229,154,43,0.16)',
+          // amber.strong — AA-safe amber TEXT on the light paper surface. The base
+          // #E59A2B fails AA as text on paper (~2.2:1); this darker amber clears AA
+          // (~4.7:1 on paper-50). Use for amber-colored TEXT on light; keep `amber`
+          // for fills/markers (e.g. the solid ProBadge pill, unsaved dot). Mirrors
+          // the danger.DEFAULT/danger.strong split. (audit Theme 1 — amber pass)
+          amberStrong: '#9A6313',
         },
         // Text
         ondark: { strong: '#E8EEF7', muted: '#8A99AE', faint: '#5C6A80' },

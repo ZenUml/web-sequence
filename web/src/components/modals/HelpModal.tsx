@@ -43,7 +43,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
           <ul className="space-y-2">
             <li>
               <a
-                className="text-accent hover:text-accent-press underline underline-offset-2"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
                 href={DOCS_URL}
                 target="_blank"
                 rel="noreferrer noopener"
@@ -53,7 +53,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
             </li>
             <li>
               <a
-                className="text-accent hover:text-accent-press underline underline-offset-2"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
                 href={CONTACT_URL}
                 target="_blank"
                 rel="noreferrer noopener"
@@ -63,7 +63,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
             </li>
             <li>
               <a
-                className="text-accent hover:text-accent-press underline underline-offset-2"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noreferrer noopener"

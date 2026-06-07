@@ -45,7 +45,7 @@ export function SharePopover({
               data-testid="share-copy"
               variant="primary"
               surface="light"
-              size="sm"
+              size="md"
               onClick={onCopy}
             >
               {copied ? 'Copied ✓' : 'Copy'}

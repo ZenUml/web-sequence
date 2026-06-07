@@ -69,7 +69,7 @@ export function AtomicCssSettingsModal({
             onChange={(e) => setText(e.currentTarget.value)}
           />
           {error ? (
-            <p className="text-[12px] text-danger" data-testid="acss-error">
+            <p className="text-[12px] text-danger-strong" data-testid="acss-error">
               {error}
             </p>
           ) : null}
