@@ -1,6 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
 import { useShare } from './useShare';
+// REAL createShare (NOT a mock) — the through-useShare seam test drives the actual
+// share path to prove the extension origin override fires end-to-end (M05 Task 4).
+import { createShare } from '../services/cloudFunctions';
+
+// createShare → getIdToken; stub firebase so jsdom doesn't initialise it.
+vi.mock('../services/firebase', () => ({ getIdToken: vi.fn(async () => 'fresh-token') }));
+
+const server = setupServer();
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => {
+  server.resetHandlers();
+  // A leaked IS_EXTENSION would flip the createShare web-origin tests red elsewhere.
+  delete (window as { IS_EXTENSION?: boolean }).IS_EXTENSION;
+});
+afterAll(() => server.close());
 
 const createShareMock = vi.fn(async () => ({
   url: 'http://x?id=1&share-token=t&v=md5',
@@ -306,5 +323,28 @@ describe('useShare', () => {
     });
     rerender({ itemId: 'A' });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
+  });
+
+  // THROUGH-useShare SEAM (M05 Task 4): the REAL createShare passed by its BARE
+  // reference (exactly AppRoot.tsx:612) under the extension env must send the canonical
+  // app.zenuml.com origin — NOT chrome-extension://. UseShareOpts.createShare is typed
+  // `(id) => …` (no isExtension threaded), so the override depends ENTIRELY on
+  // createShare's lazy detectFromEnv() default resolving env at CALL time. A
+  // createShare-unit test can't catch a wiring regression; this drives share() end-to-end.
+  // Discriminating: revert createShare's lazy default (or resolve env at module load),
+  // or rewire useShare to drop the bare-ref pass-through → captured.origin becomes
+  // chrome-extension://… → FAILS.
+  it('extension env: share() through useShare with the REAL createShare sends app.zenuml.com (end-to-end seam)', async () => {
+    (window as { IS_EXTENSION?: boolean }).IS_EXTENSION = true; // detectFromEnv().isExtension === true
+    let captured: { origin: string } | undefined;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = (await request.json()) as { origin: string };
+      return HttpResponse.json({ page_share: 'https://app.zenuml.com?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ createShare /* REAL, bare ref — exactly AppRoot.tsx:612 */ })),
+    );
+    await act(async () => { await result.current.share(); });
+    expect(captured!.origin).toBe('https://app.zenuml.com');
   });
 });

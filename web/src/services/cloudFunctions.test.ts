@@ -8,7 +8,11 @@ vi.mock('./firebase', () => ({ getIdToken: vi.fn(async () => 'fresh-token') }));
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+  // M05: a leaked IS_EXTENSION would flip the web-origin tests red on the next run.
+  delete (window as { IS_EXTENSION?: boolean }).IS_EXTENSION;
+});
 afterAll(() => server.close());
 
 // jsdom resolves relative URLs to http://localhost:3000 (Vite's dev port in the
@@ -53,6 +57,55 @@ describe('createShare', () => {
   it('throws the server error on non-ok', async () => {
     server.use(http.post(`${window.location.origin}/create-share`, () => HttpResponse.json({ error: 'Forbidden' }, { status: 403 })));
     await expect(createShare('item-1')).rejects.toThrow(/Forbidden/);
+  });
+});
+
+describe('createShare — origin source (M05)', () => {
+  it('web app: sends window.location.origin', async () => {
+    let captured: { origin: string } | undefined;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = (await request.json()) as { origin: string };
+      return HttpResponse.json({ page_share: 'http://localhost?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    await createShare('item-1', { isExtension: false });
+    expect(captured!.origin).toBe(window.location.origin);
+  });
+
+  it('extension: sends the canonical app origin, NOT chrome-extension://', async () => {
+    let captured: { origin: string } | undefined;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = (await request.json()) as { origin: string };
+      return HttpResponse.json({ page_share: 'https://app.zenuml.com?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    await createShare('item-1', { isExtension: true });
+    expect(captured!.origin).toBe('https://app.zenuml.com');
+  });
+
+  // NO-OPTS DEFAULT (discriminating for the lazy default — the two tests above pass an
+  // EXPLICIT opts; this one passes NONE, exercising `opts.isExtension ?? detectFromEnv()
+  // .isExtension`). Stub the env via window.IS_EXTENSION (runtimeMode.detectFromEnv reads
+  // it) WITHOUT touching window.location — so the MSW handler keyed on
+  // window.location.origin keeps matching. Revert createShare's lazy default (hardcode
+  // origin / resolve env at module load) → this FAILS.
+  it('no-opts default: under the extension env, createShare(id) sends app.zenuml.com', async () => {
+    (window as { IS_EXTENSION?: boolean }).IS_EXTENSION = true;
+    let captured: { origin: string } | undefined;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = (await request.json()) as { origin: string };
+      return HttpResponse.json({ page_share: 'https://app.zenuml.com?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    await createShare('item-1'); // NO opts — exercises the detectFromEnv() default
+    expect(captured!.origin).toBe('https://app.zenuml.com');
+  });
+
+  it('body shape stays EXACTLY { id, token, origin } (no name/content/description added)', async () => {
+    let captured: Record<string, unknown> | undefined;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = (await request.json()) as Record<string, unknown>;
+      return HttpResponse.json({ page_share: 'http://localhost?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    await createShare('item-1', { isExtension: false });
+    expect(Object.keys(captured!).sort()).toEqual(['id', 'origin', 'token']);
   });
 });
 
