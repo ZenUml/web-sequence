@@ -40,4 +40,17 @@ describe('SupportPledgeModal', () => {
     fireEvent.click(screen.getByTestId('pledge-dismiss'));
     expect(p.onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  // Discriminating (a11y): the Sponsor control must be a SINGLE interactive element
+  // — an anchor — and must NOT nest a <button> inside it. The old markup rendered
+  // <a><button>…</button></a> (interactive-in-interactive, invalid HTML). Reverting
+  // to that structure fails this test because the anchor would contain a button.
+  it('Sponsor is a lone anchor with no nested interactive element', () => {
+    setup();
+    const sponsor = screen.getByTestId('pledge-sponsor');
+    expect(sponsor.tagName).toBe('A');
+    expect(sponsor.getAttribute('href')).toBe('https://github.com/sponsors/ZenUml');
+    // No <button> (or any nested interactive control) inside the anchor.
+    expect(sponsor.querySelector('button, a, input, select, textarea')).toBeNull();
+  });
 });

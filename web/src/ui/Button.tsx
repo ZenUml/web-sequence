@@ -41,6 +41,26 @@ const variants: Record<'dark' | 'light', Record<Variant, string>> = {
   },
 };
 
+// Shared class computation so non-button elements (e.g. an <a> that must LOOK like
+// a button) can adopt identical design-system styling WITHOUT nesting a <button>
+// inside another interactive element (invalid HTML / a11y defect). Used by the
+// Support-pledge "Sponsor" link, which is semantically an anchor, not a button.
+export function buttonClassName(opts?: {
+  variant?: Variant;
+  size?: Size;
+  surface?: 'dark' | 'light';
+  className?: string;
+}): string {
+  const { variant = 'subtle', size = 'md', surface = 'dark', className } = opts ?? {};
+  return cn(
+    base,
+    sizes[size],
+    variants[surface][variant],
+    surface === 'light' ? 'ring-draft-light' : 'ring-draft',
+    className,
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = 'subtle', size = 'md', surface = 'dark', className, type = 'button', ...rest },
   ref,
@@ -49,13 +69,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type={type}
-      className={cn(
-        base,
-        sizes[size],
-        variants[surface][variant],
-        surface === 'light' ? 'ring-draft-light' : 'ring-draft',
-        className,
-      )}
+      className={buttonClassName({ variant, size, surface, className })}
       {...rest}
     />
   );

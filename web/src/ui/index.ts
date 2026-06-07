@@ -2,7 +2,7 @@
 // here — do not hand-roll buttons/dialogs/styles. See
 // docs/superpowers/specs/2026-06-07-design-system.md.
 export { cn } from './cn';
-export { Button, type ButtonProps } from './Button';
+export { Button, buttonClassName, type ButtonProps } from './Button';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { Dialog, DialogTrigger, DialogClose, DialogContent } from './Dialog';
 export { TextInput, type TextInputProps } from './TextInput';

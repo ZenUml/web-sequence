@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, Button } from '../../ui';
+import { Dialog, DialogContent, Button, buttonClassName } from '../../ui';
 
 export interface SupportPledgeModalProps {
   open: boolean;
@@ -36,15 +36,17 @@ export function SupportPledgeModal({
             supporting the project so we can keep building it.
           </p>
           <div className="flex justify-end gap-2">
+            {/* Semantically an anchor — styled as a button via the shared class
+                helper so we do NOT nest a <button> inside the <a> (invalid HTML /
+                a11y defect: ambiguous focus + activation). */}
             <a
               href="https://github.com/sponsors/ZenUml"
               target="_blank"
               rel="noopener noreferrer"
               data-testid="pledge-sponsor"
+              className={buttonClassName({ variant: 'subtle', surface: 'light' })}
             >
-              <Button variant="subtle" surface="light">
-                Sponsor
-              </Button>
+              Sponsor
             </a>
             <Button
               variant="primary"
