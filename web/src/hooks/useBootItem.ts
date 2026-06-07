@@ -83,13 +83,17 @@ export interface UseBootItemResult {
  * authReady must be true before resolution begins — prevents a race where auth is null
  * at mount and a ?id= item silently falls back to 'new' before auth resolves.
  */
-export function useBootItem(deps: BootDeps, authReady: boolean): UseBootItemResult {
+export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): UseBootItemResult {
   const booted = useRef(false);
   const loadItem = useEditorStore((s) => s.loadItem);
   const newItem = useEditorStore((s) => s.newItem);
   const [shareError, setShareError] = useState(false);
 
   useEffect(() => {
+    // M05 (REQ-EMB-1): embed-by-value (?embed&code=) seeds the item from the inline DSL
+    // in AppRoot WITHOUT any Firestore/share read — skip the normal boot resolution so
+    // getItem/getSharedItem are never called for an embed-by-value URL.
+    if (skip) return;
     if (!authReady || booted.current) return;
     booted.current = true;
 

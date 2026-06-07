@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from './AppRoot';
@@ -130,6 +130,12 @@ beforeEach(async () => {
   // so the envelope assertions below observe real cloudTrackEvent calls.
   (window as { DEBUG?: boolean }).DEBUG = false;
   document.cookie = 'wmdebug=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+});
+
+afterEach(() => {
+  // M05: embed tests drive the URL via history.replaceState. A leaked ?embed= would
+  // boot the NEXT test in embed mode (suppressing the header) and fail it. Restore to /.
+  window.history.replaceState({}, '', '/');
 });
 
 
@@ -922,5 +928,124 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // Legacy passes the new VALUE as the label (prefs[settingName]); lineWrap
     // defaults to true, so toggling it sends false.
     expect(env!.label).toBe('false');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// M05 — embed mode (RM-2 / REQ-EMB-1).
+//
+// DISCRIMINATING-TESTID CONTRACT (verified against the code): AppHeader exposes
+// `header-title`/`header-menu`/`header-save` and Sidebar exposes `sidebar-editor`/
+// `sidebar-library` — these are PRESENT in normal mode (the CONTROL test pins them),
+// so their ABSENCE in embed is a genuine revert→fail signal (there is no `app-header`
+// / bare `sidebar` id that would pass vacuously). The URL is driven via
+// history.replaceState (NOT location.search =, which triggers jsdom navigation), and
+// the top-level afterEach restores it to '/'.
+// ───────────────────────────────────────────────────────────────────────────
+describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
+  it('CONTROL: normal (non-embed) mode renders the real header + a sidebar panel', async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('header-title')).toBeInTheDocument();
+    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
+    // At least one sidebar-<panel> node renders in normal mode.
+    expect(screen.getAllByTestId(/^sidebar-/).length).toBeGreaterThan(0);
+    // The embed shell is NOT present in normal mode.
+    expect(screen.queryByTestId('embed-header')).toBeNull();
+  });
+
+  it('?embed hides the real header + sidebar and shows the embed header', async () => {
+    window.history.replaceState({}, '', '/?embed&code=A.b&title=Demo');
+    render(<AppRoot />);
+    // Embed shell present.
+    expect(await screen.findByTestId('embed-header')).toBeInTheDocument();
+    // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
+    expect(screen.queryByTestId('header-title')).toBeNull();
+    expect(screen.queryByTestId('header-menu')).toBeNull();
+    expect(screen.queryAllByTestId(/^sidebar-/)).toHaveLength(0);
+    // No save/auth controls in embed.
+    expect(screen.queryByTestId('header-save')).toBeNull();
+    expect(screen.queryByTestId('header-login')).toBeNull();
+    // The open-in-app link points at the canonical app origin.
+    const link = screen.getByTestId('embed-open-link');
+    expect(link.getAttribute('href') ?? '').toMatch(/^https:\/\/app\.zenuml\.com\//);
+  });
+
+  it('?embed&code= renders by value without a Firestore read', async () => {
+    window.history.replaceState({}, '', '/?embed&code=A.method()&title=Demo');
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    // No id/share-token in the URL → getItem/getSharedItem must NOT be called for a
+    // by-value embed. (itemService.getItem is the Firestore read seam.)
+    expect(itemSvc.getItem).not.toHaveBeenCalled();
+    // The seeded item carries the inline DSL.
+    await waitFor(() =>
+      expect(useEditorStore.getState().currentItem?.js).toBe('A.method()'),
+    );
+    expect(useEditorStore.getState().currentItem?.isReadOnly).toBe(true);
+    // The open link reproduces the diagram by value at the canonical origin.
+    const href = screen.getByTestId('embed-open-link').getAttribute('href') ?? '';
+    expect(href).toContain('code=A.method');
+    expect(href).toContain('title=Demo');
+  });
+
+  it('?embed applies the inline title to the embed header', async () => {
+    window.history.replaceState({}, '', '/?embed&code=A.b&title=My%20Flow');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('embed-title')).toHaveTextContent('My Flow');
+  });
+
+  it('?embed disables global keyboard shortcuts (no modal opens)', async () => {
+    window.history.replaceState({}, '', '/?embed&code=A.b');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '?', ctrlKey: true, shiftKey: true }));
+    });
+    // Store-state check (discriminating): embed registers no listener, so activeModal
+    // stays null. (A DOM-absence check alone would pass vacuously — embed renders no
+    // modal components.) Reverting the `if (isEmbed) return` gate → activeModal='shortcuts'.
+    expect(useUiStore.getState().activeModal).toBeNull();
+    expect(screen.queryByTestId('shortcuts-modal')).toBeNull();
+  });
+
+  it('?embed does NOT open the onboarding/pledge one-time modals', async () => {
+    // A genuine first-run user (neither flag set) would normally trigger onboarding —
+    // embed must suppress it.
+    window.localStorage.removeItem(LS_KEYS.onboarded);
+    window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
+    window.history.replaceState({}, '', '/?embed&code=A.b');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    await waitFor(() => expect(screen.getByTestId('embed-header')).toBeInTheDocument());
+    expect(useUiStore.getState().activeModal).toBeNull();
+    expect(screen.queryByTestId('onboarding-modal')).toBeNull();
+  });
+
+  it('?embed&id=&share-token= composes embed + shared read-only (no by-value seed)', async () => {
+    // Shared embed: getSharedItem returns a read-only item, rendered inside the embed
+    // shell. The default cloudFunctions mock throws 'not found' → use a per-test resolve.
+    const { getSharedItem } = await import('../services/cloudFunctions');
+    vi.mocked(getSharedItem).mockResolvedValueOnce({
+      id: 'shared-1', title: 'Shared Diagram', js: 'S.a', css: '', html: '', isReadOnly: true,
+    } as never);
+    window.history.replaceState({}, '', '/?embed&id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    await act(async () => {
+      useAuthStore.setState({ user: null, authReady: true, online: true });
+    });
+    // Shared item loads read-only inside the embed shell; no save/auth UI.
+    await waitFor(() =>
+      expect(useEditorStore.getState().currentItem?.id).toBe('shared-1'),
+    );
+    expect(useEditorStore.getState().currentItem?.isReadOnly).toBe(true);
+    expect(screen.queryByTestId('header-save')).toBeNull();
+    // The open link carries id + share-token (reproduces the shared diagram).
+    const href = screen.getByTestId('embed-open-link').getAttribute('href') ?? '';
+    expect(href).toContain('id=shared-1');
+    expect(href).toContain('share-token=tok');
   });
 });

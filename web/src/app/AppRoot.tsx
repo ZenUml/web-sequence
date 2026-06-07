@@ -43,6 +43,8 @@ import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
 import { detectFromEnv } from './runtimeMode';
+import { CANONICAL_APP_ORIGIN } from '../config/shareOrigin';
+import { EmbedHeader } from '../components/embed/EmbedHeader';
 import { semverCompare } from '../domain/semver';
 import { config as appConfig } from '../config/firebaseConfig';
 import type { Settings, PlanType } from '../domain/types';
@@ -74,6 +76,12 @@ const CSS_MODES: { value: CssMode; label: string }[] = [
 ];
 
 export function AppRoot() {
+  // M05 (RM-2 / REQ-EMB-1): runtime mode drives the embed branch. Resolved ONCE here
+  // (not per-effect) so every effect + the render read the same value. detectFromEnv
+  // reads window.location.search/protocol + window.IS_EXTENSION/zenumlDesktop.
+  const runtime = detectFromEnv();
+  const isEmbed = runtime.isEmbed;
+
   // Auth + online status side-effects (no return value needed from useOnlineStatus)
   const { login, logout, loginError } = useAuth();
   useOnlineStatus();
@@ -150,6 +158,9 @@ export function AppRoot() {
   // §11 keyboard shortcuts: Ctrl+L clears the console; Ctrl/Cmd+Shift+? opens the
   // keyboard-shortcuts help (REQ-KB-1). '?' is Shift+'/', so match either key form.
   useEffect(() => {
+    // REQ-EMB-1: embed mode disables ALL global keyboard shortcuts. Don't register the
+    // listener at all in embed so a shortcut can't open a modal that embed never renders.
+    if (isEmbed) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); setConsoleEntries([]); return; }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/')) {
@@ -159,11 +170,13 @@ export function AppRoot() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [isEmbed]);
 
   // M04 one-time trigger: first-run Onboarding (REQ-MOD-3). Opens on boot when the
   // `onboarded` flag is unset; dismissing marks it (handled at the modal's onDismiss).
   useEffect(() => {
+    // REQ-EMB-1: embed mode shows NO modals — skip the first-run onboarding trigger.
+    if (isEmbed) return;
     void (async () => {
       const seen = await localStore.get<boolean>(LS_KEYS.onboarded, false);
       // Legacy parity (adversarial review, REQ-MOD-3): legacy gated onboarding ONLY
@@ -202,6 +215,8 @@ export function AppRoot() {
   // onboarding open above runs first; the pledge opens once onboarding is dismissed
   // on the next boot, matching legacy's at-most-one-per-session behavior).
   useEffect(() => {
+    // REQ-EMB-1: embed mode shows NO modals — skip the version-upgrade pledge trigger.
+    if (isEmbed) return;
     void (async () => {
       const seen = await syncStore.get<string>(LS_KEYS.lastSeenVersion, '');
       // pledgeModalSeen latch (legacy parity: app.jsx:331 `!window.localStorage.
@@ -311,6 +326,13 @@ export function AppRoot() {
   const idParam = params.get('id');
   const shareToken = params.get('share-token');
 
+  // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
+  // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
+  // the inline code; the normal boot resolution is skipped (skipBoot) so getItem/
+  // getSharedItem are never called. Shared embed (?embed&id=&share-token=) has no
+  // embedCode and still flows through useBootItem (read-only shared item).
+  const embedByValue = isEmbed && runtime.embedCode != null;
+
   // Boot: resolve the item to load (replaces the old STARTER seeding effect).
   // authReady gates resolution so a ?id= URL works for signed-in users (FIX 1 — boot race).
   const { shareError, clearShareError } = useBootItem({
@@ -320,7 +342,28 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
-  }, authReady);
+  }, authReady, embedByValue);
+
+  // M05 (REQ-EMB-1): seed the embed-by-value item from the inline DSL exactly once.
+  // The item is read-only (embed has no save/auth UI) and never persisted. Runs
+  // independently of authReady (no account needed to view an inline embed).
+  const embedSeeded = useRef(false);
+  useEffect(() => {
+    if (!embedByValue || embedSeeded.current) return;
+    embedSeeded.current = true;
+    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID() : `embed-${Date.now()}`;
+    useEditorStore.getState().loadItem(migrateToPages({
+      id,
+      title: runtime.embedTitle ?? 'Untitled',
+      js: runtime.embedCode ?? '',
+      css: '', html: '',
+      htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+      pages: [], currentPageId: '',
+      isReadOnly: true,
+    } as Item));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedByValue]);
 
   // Lifecycle: save last code on tab hide / window unload (REQ-PST)
   useEffect(() => {
@@ -625,6 +668,48 @@ export function AppRoot() {
   // real location; only the iframe is srcdoc). Read once from window.location.search
   // and pass into the render message. (M00's router also validates this param.)
   const stickyOffset = Number(params.get('stickyOffset') ?? 0) || 0;
+
+  // ─── M05 (RM-2 / REQ-EMB-1): embed branch ────────────────────────────────────
+  // A minimal, read-mostly view: NO main header, NO sidebar, NO modals, shortcuts off
+  // (gated above). Only the embed header + the preview render. The "Open in ZenUML"
+  // link reproduces the diagram in the full editor at the canonical app origin:
+  //  - by-value embed (?code/?title)  → ${origin}/?code=<dsl>&title=<title>
+  //  - shared embed   (?id/?share-token) → ${origin}/?id=<id>&share-token=<token>
+  // Placed BEFORE the `if (!item)` guard but AFTER all hooks ran, so hook order is
+  // stable (every useEffect/useShare/etc. is above this point).
+  if (isEmbed) {
+    const openUrl = (() => {
+      const q = new URLSearchParams();
+      if (embedByValue) {
+        q.set('code', runtime.embedCode ?? '');
+        if (runtime.embedTitle) q.set('title', runtime.embedTitle);
+      } else if (runtime.itemId && runtime.shareToken) {
+        q.set('id', runtime.itemId);
+        q.set('share-token', runtime.shareToken);
+      } else if (runtime.itemId) {
+        q.set('id', runtime.itemId);
+      }
+      const query = q.toString();
+      return query ? `${CANONICAL_APP_ORIGIN}/?${query}` : `${CANONICAL_APP_ORIGIN}/`;
+    })();
+
+    return (
+      <div data-testid="embed-root" className="flex flex-col h-full w-full bg-paper-50">
+        <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
+        <div className="flex-1 min-h-0">
+          {item ? (
+            <PreviewFrame
+              ref={previewRef}
+              code={item.js}
+              css={item.cssMode === 'css' ? item.css : transpiledCss}
+              stickyOffset={stickyOffset}
+            />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
   // surface the error here at the guard instead of silently returning null. Start
