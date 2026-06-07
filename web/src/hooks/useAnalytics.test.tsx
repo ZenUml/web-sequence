@@ -49,6 +49,25 @@ describe('useAnalytics', () => {
     });
   });
 
+  // Discriminating (REQ-ANL-1 single-fire parity): pageView must fire EXACTLY ONCE
+  // even across the auth-resolution transition (mount signed-out → user resolves).
+  // The bug fired it twice: once on mount (userId:null) and again when `track`
+  // re-memoized after userId became 'u1'. This test re-renders to cross that
+  // transition; reverting the ref-guard fix makes pageView fire twice → fails.
+  it('fires pageView exactly once across the auth-resolution transition', () => {
+    // Mount signed-out, then resolve auth and re-render (the real boot sequence).
+    const { rerender } = renderHook(() => useAnalytics());
+    act(() => {
+      useAuthStore.setState({ user: { uid: 'u1' }, online: true, authReady: true });
+    });
+    rerender();
+    const pageViews = an.emit.mock.calls.filter((c) => c[0] === 'pageView');
+    expect(pageViews).toHaveLength(1);
+    // And it carries the context bound at mount time (signed-out → null), matching
+    // legacy's mount-time fire that does not wait for auth.
+    expect(pageViews[0][2]).toEqual({ userId: null, debug: false, isExtension: false });
+  });
+
   it('routes through debug context when the wmdebug cookie is set', () => {
     document.cookie = 'wmdebug=1; path=/';
     const { result } = renderHook(() => useAnalytics());

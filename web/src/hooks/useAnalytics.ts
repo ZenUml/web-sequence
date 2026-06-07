@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { emit } from '../services/analytics';
 import { useAuthStore } from '../state/authStore';
 import { detectFromEnv } from '../app/runtimeMode';
@@ -33,11 +33,20 @@ export function useAnalytics(): UseAnalyticsResult {
     [userId],
   );
 
-  // Page-view on mount. Depends on `track` (which depends on userId) so the
-  // page-view carries the resolved userId once auth settles.
+  // Page-view fires EXACTLY ONCE per mount (legacy parity: app.jsx fires
+  // trackPageView() once in componentDidMount, independent of auth state). The
+  // effect must NOT depend on `track` — `track` re-memoizes when userId resolves
+  // (null → 'u1'), which would re-run the effect and emit a second, duplicate
+  // pageView (and a third on logout). We read `track` via a ref so the latest
+  // bound context is used, but the effect itself runs only on mount.
+  const trackRef = useRef(track);
+  trackRef.current = track;
+  const firedPageView = useRef(false);
   useEffect(() => {
-    track('pageView');
-  }, [track]);
+    if (firedPageView.current) return;
+    firedPageView.current = true;
+    trackRef.current('pageView');
+  }, []);
 
   return { track };
 }
