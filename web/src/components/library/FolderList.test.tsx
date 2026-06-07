@@ -128,7 +128,9 @@ describe('FolderList', () => {
     await userEvent.clear(input);
     await userEvent.type(input, 'ShouldNotCommit{Escape}');
     expect(onRename).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('folder-rename-folder-a')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('folder-rename-folder-a'),
+    ).not.toBeInTheDocument();
   });
 
   it('rename: F2 on the focused folder row opens the rename input (keyboard access)', () => {
@@ -145,7 +147,9 @@ describe('FolderList', () => {
     render(<FolderList {...baseProps} readOnly />);
     const row = screen.getByTestId('folder-folder-a');
     fireEvent.keyDown(row, { key: 'F2' });
-    expect(screen.queryByTestId('folder-rename-folder-a')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('folder-rename-folder-a'),
+    ).not.toBeInTheDocument();
   });
 
   it('delete: clicking delete then confirm calls onDelete(id)', async () => {
@@ -155,6 +159,24 @@ describe('FolderList', () => {
     const confirm = await screen.findByTestId('confirm-ok');
     await userEvent.click(confirm);
     expect(onDelete).toHaveBeenCalledWith('folder-a');
+  });
+
+  it('folder row does not nest focusable controls inside a role=button (valid ARIA; adversarial review)', () => {
+    // REQ-LIB-5: the select target must not be a role=button (or native <button>) that
+    // CONTAINS the focusable Delete button — a focusable interactive element inside
+    // another button is invalid ARIA and confuses AT. The select target is the element
+    // carrying data-testid="folder-${id}"; the Delete button must be a SIBLING, not a
+    // descendant. Revert to the old `<div role="button">` wrapper that nested the Delete
+    // IconButton → the delete button becomes a descendant of the select target → fails.
+    render(<FolderList {...baseProps} />);
+    const selectTarget = screen.getByTestId('folder-folder-a');
+    const del = screen.getByTestId('folder-delete-folder-a');
+
+    // The select target must not itself host nested focusable interactive descendants.
+    expect(selectTarget.getAttribute('role')).not.toBe('button');
+    expect(selectTarget.contains(del)).toBe(false);
+    // And the select target must contain no focusable control of its own.
+    expect(selectTarget.querySelector('button, input, [tabindex]')).toBeNull();
   });
 
   it('delete: Enter/Space on the focused Delete button must NOT select the folder (adversarial review)', () => {
@@ -176,13 +198,19 @@ describe('FolderList', () => {
 
   it('readOnly hides New/rename/delete controls but selection still works', async () => {
     const onSelectFolder = vi.fn();
-    render(<FolderList {...baseProps} readOnly onSelectFolder={onSelectFolder} />);
+    render(
+      <FolderList {...baseProps} readOnly onSelectFolder={onSelectFolder} />,
+    );
     expect(screen.queryByTestId('folder-new')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('folder-delete-folder-a')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('folder-delete-folder-a'),
+    ).not.toBeInTheDocument();
 
     // double-click should not open a rename input in readOnly mode
     await userEvent.dblClick(screen.getByText('Alpha'));
-    expect(screen.queryByTestId('folder-rename-folder-a')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('folder-rename-folder-a'),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId('folder-folder-a'));
     expect(onSelectFolder).toHaveBeenCalledWith('folder-a');

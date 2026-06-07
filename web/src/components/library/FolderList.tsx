@@ -15,13 +15,30 @@ export interface FolderListProps {
 }
 
 const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-    <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 14 14"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M7 2v10M2 7h10"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const TrashIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 14 14"
+    fill="none"
+    aria-hidden="true"
+  >
     <path
       d="M2.5 3.5h9M5.5 3.5V2.5h3v1M3.5 3.5l.5 8h6l.5-8"
       stroke="currentColor"
@@ -104,7 +121,9 @@ export function FolderList({
         onClick={() => onSelectFolder(null)}
       >
         <span className="flex-1 truncate">All</span>
-        <span className="font-mono text-[11px] text-ondark-faint">{counts['all'] ?? 0}</span>
+        <span className="font-mono text-[11px] text-ondark-faint">
+          {counts['all'] ?? 0}
+        </span>
       </button>
 
       <button
@@ -114,37 +133,25 @@ export function FolderList({
         onClick={() => onSelectFolder('unfiled')}
       >
         <span className="flex-1 truncate">Unfiled</span>
-        <span className="font-mono text-[11px] text-ondark-faint">{counts['unfiled'] ?? 0}</span>
+        <span className="font-mono text-[11px] text-ondark-faint">
+          {counts['unfiled'] ?? 0}
+        </span>
       </button>
 
       {folders.map((folder) => {
         const active = activeFolderId === folder.id;
         const isRenaming = renamingId === folder.id;
+        // The row container is a plain (non-interactive) <div>. It MUST NOT be
+        // role="button" because it hosts genuinely focusable controls — the rename
+        // TextInput and the Delete IconButton. A focusable interactive element nested
+        // inside a role=button is invalid ARIA and confuses assistive technology
+        // (REQ-LIB-5). Instead the select/label area is its own real <button> sibling to
+        // the Delete button, mirroring the clean All/Unfiled entries above. The
+        // `folder-${id}` testid stays on the focusable select button so click-to-select
+        // and F2-to-rename keep working, while Delete is no longer its descendant
+        // (adversarial review).
         return (
-          <div
-            key={folder.id}
-            data-testid={`folder-${folder.id}`}
-            className={entryClass(active)}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              if (!isRenaming) onSelectFolder(folder.id);
-            }}
-            onKeyDown={(e) => {
-              if (isRenaming) return;
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelectFolder(folder.id);
-              } else if (e.key === 'F2' && !readOnly) {
-                // Keyboard rename affordance — onDoubleClick is mouse-only, leaving
-                // keyboard/AT users with no path to rename (Delete is reachable via the
-                // focusable IconButton). F2 mirrors the platform rename convention and
-                // adds no nested interactive element (adversarial review).
-                e.preventDefault();
-                startRename(folder);
-              }
-            }}
-          >
+          <div key={folder.id} className={cn(entryClass(active), 'pr-2')}>
             {isRenaming ? (
               <TextInput
                 autoFocus
@@ -153,9 +160,7 @@ export function FolderList({
                 className="flex-1 h-6"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.currentTarget.value)}
-                onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
-                  e.stopPropagation();
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     commitRename();
@@ -167,41 +172,41 @@ export function FolderList({
                 onBlur={commitRename}
               />
             ) : (
-              <span
-                className="flex-1 truncate"
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  startRename(folder);
-                }}
-              >
-                {folder.name}
-              </span>
-            )}
+              <>
+                <button
+                  type="button"
+                  data-testid={`folder-${folder.id}`}
+                  className="flex flex-1 items-center gap-2 min-w-0 text-left ring-draft rounded"
+                  onClick={() => onSelectFolder(folder.id)}
+                  onDoubleClick={() => startRename(folder)}
+                  onKeyDown={(e) => {
+                    // F2 keyboard rename affordance — onDoubleClick is mouse-only.
+                    // Enter/Space are handled natively by the button (no preventDefault
+                    // needed); we only add F2 (adversarial review).
+                    if (e.key === 'F2' && !readOnly) {
+                      e.preventDefault();
+                      startRename(folder);
+                    }
+                  }}
+                >
+                  <span className="flex-1 truncate">{folder.name}</span>
+                  <span className="font-mono text-[11px] text-ondark-faint">
+                    {counts[folder.id] ?? 0}
+                  </span>
+                </button>
 
-            {!isRenaming && (
-              <span className="font-mono text-[11px] text-ondark-faint">
-                {counts[folder.id] ?? 0}
-              </span>
-            )}
-
-            {!readOnly && !isRenaming && (
-              <IconButton
-                size="sm"
-                aria-label={`Delete folder ${folder.name}`}
-                data-testid={`folder-delete-${folder.id}`}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteId(folder.id);
-                }}
-                // Stop the keydown from bubbling to the parent row's onKeyDown, which
-                // preventDefault()s Enter/Space and selects the folder — swallowing the
-                // button's own activation so the delete confirm never opens. Mirrors the
-                // kebab fix in LibraryItemRow.tsx (adversarial review).
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <TrashIcon />
-              </IconButton>
+                {!readOnly && (
+                  <IconButton
+                    size="sm"
+                    aria-label={`Delete folder ${folder.name}`}
+                    data-testid={`folder-delete-${folder.id}`}
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    onClick={() => setDeleteId(folder.id)}
+                  >
+                    <TrashIcon />
+                  </IconButton>
+                )}
+              </>
             )}
           </div>
         );
