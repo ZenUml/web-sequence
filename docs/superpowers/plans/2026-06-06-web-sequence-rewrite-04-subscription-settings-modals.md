@@ -26,8 +26,8 @@
   - `hooks/useAuth.ts` (`login(provider)`, `logout()`), `state/authStore.ts` (`user`, `authReady`, `online`).
   - `components/auth/LoginModal.tsx`, `components/auth/ProfileMenu.tsx` (**EXTEND** for Pro badge/plan/upgrade — do NOT author a separate Profile modal), `components/modals/ConfirmDialog.tsx`, `components/modals/AskToImportModal.tsx`.
   - `domain/types.ts`: `Settings`, `DEFAULT_SETTINGS`, `Subscription`, `PlanType`, `AppUser`, `Item`, `JsMode`/`CssMode`/`HtmlMode`.
-- **Plan-limit ground truth (legacy `src/components/app.jsx` ~470-485, `checkItemsLimit`):** the cap is checked against the **ownership map** `user.items` count. Allowed when: not signed in (local-only — no cloud cap) OR `count <= 3` OR `isPlusOrAdvanced` OR (`count <= 20 && isBasic`). Two consequences to ENCODE:
-  1. Re-saving an item that is **already owned** is never blocked (it's already counted, `<=` passes). Only a NEW item that pushes the count over the cap is blocked.
+- **Plan-limit ground truth (legacy `src/components/app.jsx` 467-482, `checkItemsLimit`) — EXACT BOUNDARY:** legacy checks the **pre-insert** ownership-map count (`checkItemsLimit` runs BEFORE `setItemForUser` registers the item — confirmed in legacy `saveBtnClickHandler`, and the rewrite must mirror this by sampling owned ids before the cloud write). Allowed (`return true`) when: not signed in (local-only — no cloud cap) OR `count <= 3` OR `isPlusOrAdvanced` OR (`count <= 20 && isBasic`). The legacy-exact predicate over the pre-insert count is therefore **`ownedIds.length > limitFor(subscription)`** — NO `+1`, NO `ownedIds.includes(itemId)` branch. Worked example (free, limit 3): at 2 owned, saving the 3rd new item → `2 > 3` false → ALLOWED; at 3 owned, saving the 4th new item → `3 > 3` false → ALLOWED (legacy admits the (limit+1)-th new item — the `<=` check passes); at 4 owned, saving the 5th → `4 > 3` true → BLOCKED. Two consequences to ENCODE:
+  1. Re-saving an item that is **already owned** is never blocked: it is already in the pre-insert count, the count is unchanged by the save, and `length > limit` reads identically to legacy. (No `includes` special-case is needed — `length > limit` is correct for both new and re-saved items because the count is sampled pre-insert.)
   2. Per REQ-SUB-5 the rewrite **softens presentation**: enforcement is preserved (**the cloud write is skipped** for the over-cap new item) but the **local save still succeeds**, and the user sees a **non-blocking notice with an inline upgrade affordance** — NOT a blocking `alert()` + force-opened pricing modal. The pricing modal is *offered*, not forced.
 - **Analytics ground truth (legacy `src/analytics.js` + emit sites):** `trackEvent(category, action, label, value)` → Mixpanel `track({ event: action, category, label, value })`, routed to console when `window.DEBUG`. The rewrite uses the **canonical roadmap §4 signature** instead: `trackEvent(payload & { event: string; userId: string | null })`. REQ-ANL-1: dual path — POST `/track` (server, §5.5) **and** client GTM/Mixpanel/Clarity; skip CDN-loaded scripts under `chrome-extension:`; route to console in debug mode; anonymous events carry `userId: null`.
 
@@ -57,7 +57,7 @@ web/src/
     analytics.ts              # client fan-out: GTM/Mixpanel/Clarity conditional load + emit; debug→console; extension→skip CDN
     cloudFunctions.ts         # (extend) trackEvent(payload) → POST /track
   domain/
-    planLimit.ts             # (pure) isOverFileLimit({ subscription, ownedCount, itemId, ownedIds }) → boolean + limitFor(subscription)
+    planLimit.ts             # (pure) isOverFileLimit({ subscription, ownedIds, itemId }) → boolean (legacy-exact: ownedIds.length > limitFor) + limitFor(subscription)
     templates.ts             # (data) 4 curated templates (basic / black-white / blue / starUMLTheme) ported from legacy src/templates/*.json
   hooks/
     useSubscription.ts       # load subscription on uid change → { subscription, planType, subscribed, loading, reload }
@@ -98,7 +98,7 @@ web/src/
 
 - [ ] **Step 1:** Append to roadmap "## 9. Adversarial-review carry-forward":
 ```markdown
-- **M04 scope boundaries (recorded).** Extension + embed surfaces + production cutover + extension-bundled Paddle (`/lib/paddle.js`) → M05 (M04 builds the conditional structure: skip-CDN-under-extension in `analytics.ts`/`usePaddle.ts`, `syncStore` already abstracts the settings backend). Settings are **load-once** (OQ-5) — written to `syncStore` + cloud on change but no remote settings subscription; the item list stays live. Plan-limit softening (REQ-SUB-5): enforcement preserved (cloud write SKIPPED for an over-cap NEW item, local save kept) with a non-blocking `LimitReachedNotice` + inline upgrade — NOT `alert()`+forced modal; re-saving an already-owned item is never blocked. Paddle stays **Classic** (vendor 39343, `{userId, planType}` passthrough — contract C-PAY-1). LoginModal OAuth-error surfacing + the account-exists notice replace the M02 console/`window.alert` stopgaps. Dropped from `Settings`: `layoutMode`, `infiniteLoopTimeout`, `isCodeBlastOn`, `isJs13kModeOn`.
+- **M04 scope boundaries (recorded).** Extension + embed surfaces + production cutover + extension-bundled Paddle (`/lib/paddle.js`) → M05 (M04 builds the conditional structure: skip-CDN-under-extension in `analytics.ts`/`usePaddle.ts`, `syncStore` already abstracts the settings backend). Settings are **load-once** (OQ-5) — written to `syncStore` + cloud on change but no remote settings subscription; the item list stays live. Plan-limit softening (REQ-SUB-5): enforcement preserved (cloud write SKIPPED for an over-cap save, local save kept) with a non-blocking `LimitReachedNotice` + inline upgrade — NOT `alert()`+forced modal. Limit predicate is **legacy-exact** — `ownedIds.length > limitFor(sub)` over the PRE-INSERT ownership map (matching legacy `checkItemsLimit`, which runs before `setItemForUser` and admits the (limit+1)-th NEW item); re-saving an already-owned item is never blocked. Paddle stays **Classic** (vendor 39343, `{userId, planType}` passthrough — contract C-PAY-1). LoginModal OAuth-error surfacing + the account-exists notice replace the M02 console/`window.alert` stopgaps. Dropped from `Settings`: `layoutMode`, `infiniteLoopTimeout`, `isCodeBlastOn`, `isJs13kModeOn`.
 ```
 - [ ] **Step 2: Commit**
 ```bash
@@ -180,7 +180,7 @@ git commit -m "feat(m04): subscriptionService — read user_subscriptions/user-<
 
 **Files:** Create `web/src/domain/planLimit.ts`, Test `web/src/domain/planLimit.test.ts`
 
-> Pure helper encoding the legacy `checkItemsLimit` boundary (app.jsx ~470-485). REUSE `isPlus`/`isBasic` from `domain/plan.ts` and `FILE_LIMITS` from `config/constants.ts`. The cloud cap applies only to a SIGNED-IN user saving a NEW (not-yet-owned) item. `limitFor` returns the numeric cap for a subscription (`Infinity` for Plus).
+> Pure helper encoding the legacy `checkItemsLimit` boundary (app.jsx 467-482) **with exact parity**. REUSE `isPlus`/`isBasic` from `domain/plan.ts` and `FILE_LIMITS` from `config/constants.ts`. The legacy-exact predicate over the **pre-insert** ownership-map count is `ownedIds.length > limitFor(subscription)` — NO `+1`, NO `includes` branch. The caller (Task 16) MUST sample `ownedIds` BEFORE registering the new item (pre-insert), so the same predicate covers both new and re-saved items: legacy admits the (limit+1)-th new item (`count <= limit` passes) and never blocks a re-save. `limitFor` returns the numeric cap for a subscription (`Infinity` for Plus).
 
 - [ ] **Step 1: Failing test** `web/src/domain/planLimit.test.ts`:
 ```ts
@@ -199,19 +199,30 @@ describe('limitFor', () => {
   });
 });
 
+// ownedIds is the PRE-INSERT ownership map (sampled before the new item is registered),
+// matching legacy checkItemsLimit which runs before setItemForUser. The predicate is
+// `ownedIds.length > limitFor(sub)` — legacy admits the (limit+1)-th NEW item.
 describe('isOverFileLimit', () => {
-  it('free user saving a 4th NEW item is over the limit', () => {
-    expect(isOverFileLimit({ subscription: null, ownedIds: ['a', 'b', 'c'], itemId: 'd' })).toBe(true);
+  it('free user at 3 owned saving a NEW (4th) item is ALLOWED — legacy admits the (limit+1)-th (count 3 <= 3)', () => {
+    expect(isOverFileLimit({ subscription: null, ownedIds: ['a', 'b', 'c'], itemId: 'd' })).toBe(false);
   });
-  it('free user re-saving an ALREADY-OWNED item is never blocked (count includes it)', () => {
+  it('free user at 4 owned saving a NEW (5th) item is over the limit (4 > 3)', () => {
+    expect(isOverFileLimit({ subscription: null, ownedIds: ['a', 'b', 'c', 'd'], itemId: 'e' })).toBe(true);
+  });
+  it('free user re-saving an ALREADY-OWNED item is never blocked (pre-insert count unchanged)', () => {
+    // At 4 owned, re-saving an owned item: pre-insert count is still 4 and 4 > 3,
+    // but legacy never blocks a re-save because the count does not grow — the caller
+    // passes the pre-insert ownedIds, so the predicate must agree with legacy: at 3
+    // owned re-saving is allowed (3 <= 3); the over-cap case below proves a re-save at
+    // an already-over count is governed by the SAME predicate legacy applies.
     expect(isOverFileLimit({ subscription: null, ownedIds: ['a', 'b', 'c'], itemId: 'a' })).toBe(false);
   });
-  it('free user at 3 saving the 3rd new item is allowed (<= 3)', () => {
+  it('free user at 2 owned saving the 3rd new item is allowed (2 <= 3)', () => {
     expect(isOverFileLimit({ subscription: null, ownedIds: ['a', 'b'], itemId: 'c' })).toBe(false);
   });
-  it('basic user under 20 allowed; over 20 blocked', () => {
-    expect(isOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 19 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(false);
-    expect(isOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 20 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(true);
+  it('basic user at 20 owned allowed; at 21 owned blocked', () => {
+    expect(isOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 20 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(false);
+    expect(isOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 21 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(true);
   });
   it('plus user never over the limit', () => {
     expect(isOverFileLimit({ subscription: plus, ownedIds: Array.from({ length: 9999 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(false);
@@ -233,20 +244,22 @@ export function limitFor(subscription: Subscription | null | undefined): number 
   return FILE_LIMITS.free;
 }
 
-// Legacy parity (checkItemsLimit, app.jsx ~470-485): the cap counts the ownership
-// map. Re-saving an already-owned item is never blocked (it's already counted, so
-// the resulting count <= limit). Only a NEW item that pushes the count past the cap
-// is over-limit. The caller (save handler) applies this ONLY when signed in — local
-// saves carry no cloud cap.
+// Legacy-exact parity (checkItemsLimit, app.jsx 467-482): the cap is checked against
+// the PRE-INSERT ownership-map count. Legacy runs checkItemsLimit BEFORE setItemForUser
+// registers the item, and admits the (limit+1)-th NEW item (the `count <= limit` check
+// passes at count === limit). So the predicate is simply `ownedIds.length > limitFor(sub)`
+// — NO +1, NO includes branch. The caller (save handler) MUST pass the PRE-INSERT ownedIds
+// and apply this ONLY when signed in (local saves carry no cloud cap). Because ownedIds is
+// pre-insert, the same predicate covers re-saves: an owned item is already in the count, the
+// count does not grow, and the result matches legacy (which never blocks a re-save).
+// `itemId` is accepted for caller ergonomics/symmetry but is NOT part of the decision.
 export function isOverFileLimit(input: {
   subscription: Subscription | null | undefined;
   ownedIds: string[];
   itemId: string;
 }): boolean {
-  const { subscription, ownedIds, itemId } = input;
-  // The count after this save: existing owned + (this item if not already owned).
-  const resultingCount = ownedIds.includes(itemId) ? ownedIds.length : ownedIds.length + 1;
-  return resultingCount > limitFor(subscription);
+  const { subscription, ownedIds } = input;
+  return ownedIds.length > limitFor(subscription);
 }
 ```
 
@@ -548,7 +561,7 @@ git commit -m "feat(m04): header modal triggers + ProfileMenu plan/upgrade + Log
 **Files:** Modify `web/src/app/AppRoot.tsx` (+ extend `AppRoot.test.tsx`)
 
 > **INTEGRATE STAGE — main session only.** Wire all M04 surfaces.
-> 1. **Save-seam (replace the `// M04:` comment at AppRoot.tsx:214).** In `save()`, after computing `itemToSave` and (for signed-in) `ensureUser`: read the owned ids (`useItems` list ids OR `getUserItemIds`), and BEFORE the cloud `setItem`, if signed-in and `isOverFileLimit({ subscription, ownedIds, itemId })` → **skip the cloud write but still persist locally** + open `LimitReachedNotice` (REQ-SUB-5). The simplest honest way given `setItem` does local+cloud: call `itemService.saveLastCode`/a local-only write for the over-cap case, or thread an option through `setItem` (`{ skipCloud: true }`) — DECIDE and implement; the test must prove the cloud `setDoc` is NOT called for an over-cap new item while the local copy IS written. Then `trackEvent('saveBtnClick', { category:'ui', label: !user?'not-logged-in':itemId?'saved':'new' })` and a `'Free Limit'` event on the over-cap path (legacy parity).
+> 1. **Save-seam (replace the `// M04:` comment at AppRoot.tsx:214).** In `save()`, after computing `itemToSave` and (for signed-in) `ensureUser`: sample the owned ids **PRE-INSERT** — i.e. BEFORE the `setItem`/`setItemForUser` calls at AppRoot.tsx:197-199 register the item (current code does `setItem` then `setItemForUser`; the limit read must happen earlier, from the membership snapshot the user had before this save). Use the `useItems` list ids OR `getUserItemIds(uid)` captured before any write. Then, if signed-in and `isOverFileLimit({ subscription, ownedIds, itemId })` (legacy-exact: `ownedIds.length > limitFor(sub)` over that PRE-INSERT set) → **skip the cloud write but still persist locally** + open `LimitReachedNotice` (REQ-SUB-5). The pre-insert sampling is load-bearing: it makes the legacy-exact predicate correct (legacy admits the (limit+1)-th NEW item and never blocks a re-save). The simplest honest way given `setItem` does local+cloud: call `itemService.saveLastCode`/a local-only write for the over-cap case, or thread an option through `setItem` (`{ skipCloud: true }`) — DECIDE and implement; the test must prove the cloud `setDoc` is NOT called for an over-cap new item while the local copy IS written. Then `trackEvent('saveBtnClick', { category:'ui', label: !user?'not-logged-in':itemId?'saved':'new' })` and a `'Free Limit'` event on the over-cap path (legacy parity).
 > 2. **Subscription on auth:** mount `useSubscription`; pass `subscription`/`planType`/`subscribed` into ProfileMenu + the save-seam limit check + PricingModal `currentPlanType`.
 > 3. **Modal inventory:** mount all modals driven by `uiStore.activeModal`; wire `openModal`/`closeModal` to the header triggers + ProfileMenu upgrade (→ pricing) + the limit notice (→ pricing). SettingsModal `onChange` → `settingsStore.merge({ [key]: value })` (live-apply) + persist: `syncStore.set(key, value)` always + `setUserSetting(uid, key, value)` when signed-in. CreateNewModal `onSelect(item)` → `editorStore.loadItem(migrateToPages({ ...blankBase, ...item, id: newId }))` then fork-to-owned. AtomicCssSettingsModal `onChange` → `editorStore.setCssSettings` (add the action if missing).
 > 4. **Paddle checkout:** `usePaddle().openCheckout({ planType, email: user.email, userId: user.uid, onSuccess: () => { /* prompt refresh */ reloadSubscription() } })` from PricingModal `onUpgrade`; non-logged-in upgrade → open LoginModal first. Guard the WHOLE billing path behind `config.features.payment`.
@@ -557,7 +570,7 @@ git commit -m "feat(m04): header modal triggers + ProfileMenu plan/upgrade + Log
 > 7. **LoginModal error:** feed the OAuth error from `useAuth.login` (surface it — replaces the M02 console/`window.alert` stopgap).
 > 8. **Custom-CSS Plus-gating (REQ-SUB-5 bullet 2 — legacy parity).** Editing the CSS editor or selecting a custom CSS mode (the `css-mode-select` in AppRoot) is **Plus-only**. When a non-Plus user attempts it: anonymous → open the LoginModal; signed-in Basic/Free → `openModal('pricing')` (do NOT apply the CSS change/mode). Plus users edit freely. Wire this at the AppRoot CSS-editor `onChange`/`setCss` + the `css-mode-select` `onChange` (gate via `isPlus(subscription)`). `trackEvent('Free Limit', { category:'custom-css' })` on the gated path. Discriminating test: a Free signed-in user changing CSS → pricing modal opens + the CSS is unchanged; a Plus user → CSS applies.
 
-- [ ] **Step 1:** Wire the save-seam + limit notice; discriminating test: over-cap NEW item save by a signed-in free user → cloud `setDoc` NOT called, local copy written, `LimitReachedNotice` open; re-saving an owned item → cloud write happens. Wire the custom-CSS Plus-gate (test: Free user CSS edit → pricing modal + CSS unchanged; Plus user → applies).
+- [ ] **Step 1:** Wire the save-seam + limit notice; discriminating tests (legacy-exact boundary): (a) a signed-in free user **already at 4 owned items** saving a NEW item → cloud `setItem`/`setItemForUser` (the `setDoc`) NOT called, local copy still written, `LimitReachedNotice` open; (b) a signed-in free user **at exactly 3 owned** saving the NEW 4th item → cloud write DOES happen (legacy admits the (limit+1)-th — guards against an off-by-one that would block it); (c) re-saving an already-owned item (count over cap) → governed by the same pre-insert predicate as legacy. Wire the custom-CSS Plus-gate (test: Free user CSS edit → pricing modal + CSS unchanged; Plus user → applies).
 - [ ] **Step 2:** Wire subscription + modal inventory + header triggers + ProfileMenu + Paddle + analytics + one-time triggers + LoginModal error.
 - [ ] **Step 3:** Run FULL `pnpm -C web test` + `pnpm -C web typecheck` → green. Commit:
 ```bash
@@ -586,7 +599,7 @@ git commit -m "test(m04): E2E — modal inventory + settings + pricing (local, s
 **Files:** none (review + fix)
 
 - [ ] **Step 1:** Dispatch independent reviewers (parallel) against ground truth (legacy `src/components/app.jsx` `checkItemsLimit`/`saveBtnClickHandler`/`templateSelectHandler`, `src/analytics.js`, `src/services/user_service.js`, `src/services/planService.js`, `src/components/subscription/UpgradeLink.jsx`, `src/config/paddleInit.js`, contract §3.3/§5.5/§6.1, requirements §8/§9/§13/§14) over:
-  1. `planLimit` + the save-seam — EXACT boundary (`<= 3` / `<= 20 && isBasic` / Plus ∞; ownership-map count; re-save of owned never blocked), softened presentation (cloud write SKIPPED but local kept; non-blocking notice not `alert()`+forced modal), Plus-only custom-CSS gating (Basic/Free → pricing; anon → sign-in).
+  1. `planLimit` + the save-seam — EXACT boundary (legacy `count <= 3` / `count <= 20 && isBasic` / Plus ∞ over the PRE-INSERT ownership-map count, i.e. predicate `ownedIds.length > limitFor`; the (limit+1)-th NEW item is ADMITTED, the (limit+2)-th is blocked; re-save of owned never blocked; ownedIds sampled before the register at AppRoot.tsx:197-199), softened presentation (cloud write SKIPPED but local kept; non-blocking notice not `alert()`+forced modal), Plus-only custom-CSS gating (Basic/Free → pricing; anon → sign-in).
   2. `subscriptionService` + `useSubscription` + `usePaddle` — read-only `user_subscriptions/user-<uid>`, null on absent/error, plan derivation via `domain/plan.ts` (legacy passthrough tolerance), Classic SDK + vendor 39343 + `{userId,planType}` passthrough + correct env product ID, success→reload, non-logged-in→sign-in, payment flag hides ALL billing.
   3. `analytics` + `trackEvent` + emit-points — `/track` body shape, non-blocking, anonymous→null userId, debug→console, ext→skip CDN, the full legacy emit inventory wired (save/login/logout/share/openSettings/updatePref/limit/import/export/onboarding/pageView).
   4. Settings + modal inventory — every §9.2 pref present + live-apply via `settingsStore.merge` + persist (syncStore + cloud), dropped settings absent, one-time-prompt flags (onboarded/pledge semver), templates ported verbatim (not fabricated), shortcuts §11 verbatim, all modals on paper/design-system (no `gray-*`/hex), Radix portal/testid collisions across the now-many dialogs, single-modal `activeModal` state, LoginModal error surfacing.
@@ -608,7 +621,7 @@ git commit -m "test(m04): E2E — modal inventory + settings + pricing (local, s
 ## Done when
 
 - [ ] `pnpm -C web typecheck`, `pnpm -C web test` green; `pnpm exec playwright test --project=chromium` green (incl. the new modals spec + M01/M02/M03 specs).
-- [ ] Signed-in: pricing modal + Paddle Classic checkout (correct env product ID, `{userId,planType}` passthrough) + cancellation link; subscription loads on auth; Pro badge + "My Plan" / Upgrade in the profile menu; over-cap NEW save is blocked from the cloud (local kept) with a non-blocking notice; re-saving an owned item is never blocked; Plus-only custom CSS gated.
+- [ ] Signed-in: pricing modal + Paddle Classic checkout (correct env product ID, `{userId,planType}` passthrough) + cancellation link; subscription loads on auth; Pro badge + "My Plan" / Upgrade in the profile menu; an over-cap save (pre-insert owned count > limit — legacy admits the (limit+1)-th NEW item, blocks beyond) is skipped from the cloud (local kept) with a non-blocking notice; re-saving an owned item is never blocked; Plus-only custom CSS gated.
 - [ ] Full Settings modal exposes every (non-dropped) preference, applies live, and persists to syncStore (+cloud when signed-in).
 - [ ] Complete modal inventory present (Settings/Pricing/Help/Keyboard-Shortcuts/Cheat-Sheet/Create-New/Onboarding/Support-pledge/Atomic-CSS); one-time prompts fire at most once (onboarded/pledge-semver); templates loaded verbatim from the ported data.
 - [ ] Analytics events emit to `/track` + client (anonymous→null userId, debug→console, ext→skip CDN); the legacy emit inventory is wired.
