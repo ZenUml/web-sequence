@@ -585,10 +585,19 @@ export function AppRoot() {
       // saveItems already writes user-membership in its signed-in batch path, so no
       // separate setItemForUser loop is needed (advisor note 7).
       await itemService.saveItems(map);
-      // REQ-ANL-1: legacy category is 'fn' (app.jsx:1300 trackEvent('fn',
-      // 'itemsImported', mergedItemCount)); the count is the label. Match the
-      // envelope so the itemsImported report keeps matching (adversarial review).
-      track('itemsImported', { category: 'fn', label: String(parsed.length) });
+      // REQ-ANL-1 (adversarial review, finding 4): legacy app.jsx:1280,1300 sends
+      // mergedItemCount — the count of NEWLY added items (total minus ids that already
+      // existed) — NOT the full parsed count, and fires the event ONLY when that count
+      // is > 0. Sending String(parsed.length) unconditionally inflated any saved
+      // Mixpanel report that reads itemsImported as a new-items-added metric whenever an
+      // imported file overlapped existing items, and emitted a spurious itemsImported=N
+      // for an all-duplicate import that added nothing new. Compute the newly-added
+      // count against the current item set and gate the event on it (legacy-exact).
+      const existingIds = new Set(items.map((i) => i.id));
+      const mergedItemCount = parsed.filter((p) => !existingIds.has(p.id)).length;
+      if (mergedItemCount > 0) {
+        track('itemsImported', { category: 'fn', label: String(mergedItemCount) });
+      }
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Could not import this file.');
     }

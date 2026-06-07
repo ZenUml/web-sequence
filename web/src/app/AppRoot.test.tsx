@@ -811,6 +811,78 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     expect(env.label).toBe('2'); // legacy sends the imported count as the label
   });
 
+  // DISCRIMINATING (adversarial review, finding 4): the label must be the NEWLY-ADDED
+  // count (parsed minus already-existing ids), NOT the full parsed count. With one of
+  // two parsed ids already in the list, legacy app.jsx:1280 sends mergedItemCount=1.
+  // The bug sent String(parsed.length)=2. Reverting to parsed.length → label '2' → fails.
+  it("'itemsImported' label is the newly-added count, not the total parsed count", async () => {
+    const { parseImportJson } = await import('../services/exportImport');
+    const { useUiStore } = await import('../state/uiStore');
+    // Seed the items list with an item whose id overlaps one of the parsed ids.
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => {
+      cb([{ id: 'existing-1', title: 'E', updatedOn: 1, pages: [] }]);
+      return () => {};
+    });
+    vi.mocked(parseImportJson).mockReturnValueOnce([
+      { id: 'existing-1' } as never, // already owned → not newly added
+      { id: 'brand-new' } as never,  // newly added
+    ]);
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
+        authReady: true, online: true,
+      });
+    });
+    // Wait for the seeded item to populate the live list.
+    useUiStore.getState().setActivePanel('library');
+    await screen.findByTestId('library-panel');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    const env = await waitFor(() => {
+      const e = lastEnvelope('itemsImported');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    expect(env.label).toBe('1'); // 2 parsed − 1 already existing = 1 newly added
+  });
+
+  // DISCRIMINATING (adversarial review, finding 4): legacy fires the event ONLY when
+  // mergedItemCount > 0 (app.jsx:1294). An import where every parsed id already exists
+  // adds nothing new → NO itemsImported event. The bug fired unconditionally. Reverting
+  // to an unconditional track makes an event appear here → fails.
+  it("'itemsImported' is NOT fired when the import adds no new items", async () => {
+    const { parseImportJson } = await import('../services/exportImport');
+    const { useUiStore } = await import('../state/uiStore');
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => {
+      cb([{ id: 'dup-1', title: 'D', updatedOn: 1, pages: [] }]);
+      return () => {};
+    });
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup-1' } as never]); // all duplicates
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
+        authReady: true, online: true,
+      });
+    });
+    useUiStore.getState().setActivePanel('library');
+    await screen.findByTestId('library-panel');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    // saveItems still runs (the write happens), but no new items → no analytics event.
+    await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
+    expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
   it("'loggedIn' uses legacy category 'fn' + provider label", async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
