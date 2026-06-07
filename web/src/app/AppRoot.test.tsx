@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from './AppRoot';
@@ -84,6 +84,20 @@ vi.mock('../services/exportImport', async (orig) => {
 
 import { LS_KEYS, APP_VERSION } from '../config/constants';
 import { localStore, syncStore } from '../services/storage';
+// The mocked cloud-function sink (vi.mock above). useAnalytics → emit → cloudTrackEvent
+// POSTs {event, userId, ...props} here, so asserting its calls verifies the exact
+// Mixpanel envelope (event name + category + label) the rewrite emits (REQ-ANL-1).
+import { trackEvent as mockTrackEvent } from '../services/cloudFunctions';
+const trackMock = vi.mocked(mockTrackEvent);
+
+// Radix Select (used by the Settings modal) drives pointer interaction through APIs
+// jsdom doesn't implement — same polyfill as SettingsModal.test.tsx.
+beforeAll(() => {
+  Element.prototype.hasPointerCapture = vi.fn();
+  Element.prototype.releasePointerCapture = vi.fn();
+  Element.prototype.setPointerCapture = vi.fn();
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 beforeEach(async () => {
   useAuthStore.setState({ user: null, online: true, authReady: false });
@@ -101,6 +115,9 @@ beforeEach(async () => {
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
   // Reset M04 spies + restore default subscription (free / resolved).
   itemSvc.setItem.mockClear();
+  // Restore default no-op subscription (a per-test override must not leak).
+  itemSvc.subscribeAllItems.mockReset();
+  itemSvc.subscribeAllItems.mockImplementation(() => () => {});
   userSvc.setItemForUser.mockClear();
   userSvc.getUserItemIds.mockClear();
   userSvc.getUserItemIds.mockResolvedValue([]);
@@ -108,6 +125,11 @@ beforeEach(async () => {
   subSvc.retrieveSubscription.mockReset();
   subSvc.retrieveSubscription.mockResolvedValue(null);
   paddle.openCheckout.mockClear();
+  trackMock.mockClear();
+  // Analytics must take the SERVER path (POST /track) — not the debug short-circuit —
+  // so the envelope assertions below observe real cloudTrackEvent calls.
+  (window as { DEBUG?: boolean }).DEBUG = false;
+  document.cookie = 'wmdebug=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
 });
 
 
@@ -666,5 +688,168 @@ describe('AppRoot — signed-out settings persistence (adversarial review #3)', 
     await waitFor(() => expect(useSettingsStore.getState().settings.fontSize).toBe(13));
     expect(useSettingsStore.getState().settings.editorTheme).toBe('dracula');
     expect(useSettingsStore.getState().settings.preserveLastCode).toBe(false);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Analytics-envelope parity (adversarial review #3 + #4 — REQ-ANL-1).
+//
+// Legacy emitted each event with a SPECIFIC {category, label} envelope; the legacy
+// Mixpanel backend forwards `category` as a real property (contract §5.5), and saved
+// reports/funnels filter by it. Re-implementing an event with a different category/
+// label silently routes it to a different segment, so the existing report goes to
+// zero after cutover. These tests pin the exact envelope per legacy ground truth.
+// Each finds the LAST cloudTrackEvent call for the named event and asserts its
+// {category,label}. Reverting any category/label fix in AppRoot.tsx → fails.
+// ───────────────────────────────────────────────────────────────────────────
+describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)', () => {
+  const signedInUser = { uid: 'u1', email: 'u1@test.com', displayName: 'U', photoURL: null };
+
+  // The payload POSTed to /track is {event, userId, ...props}. Return the props of
+  // the most-recent call for `event`, or undefined if it never fired.
+  function lastEnvelope(event: string): Record<string, unknown> | undefined {
+    const calls = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p && p.event === event);
+    return calls.at(-1);
+  }
+
+  it("'Free Limit' (over-cap save) uses legacy category '3 diagrams limit' + label 'Save'", async () => {
+    userSvc.getUserItemIds.mockResolvedValue(['a', 'b', 'c', 'd']); // over free cap
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: signedInUser, authReady: true, online: true });
+    });
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    await act(async () => { await userEvent.click(screen.getByTestId('header-save')); });
+    await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
+    const env = lastEnvelope('Free Limit');
+    expect(env).toBeDefined();
+    // Legacy app.jsx:496-500 — the exact envelope the save-path funnel filters on.
+    expect(env!.category).toBe('3 diagrams limit');
+    expect(env!.label).toBe('Save');
+    // And it must NOT carry the divergent 'storage' category the bug emitted.
+    expect(env!.category).not.toBe('storage');
+  });
+
+  it("custom-CSS gate emits NO 'Free Limit' event (no legacy analog)", async () => {
+    // Signed-out user editing CSS → login modal opens, but NO analytics event:
+    // legacy has no event on the custom-CSS gate, so inventing 'Free Limit' here
+    // pollutes the storage-cap segment. Reverting the fix re-adds the call → fails.
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cmContent);
+      await userEvent.keyboard('x');
+    });
+    expect(lastEnvelope('Free Limit')).toBeUndefined();
+  });
+
+  it("'shareLink' uses legacy category 'ui'", async () => {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    // Share is enabled only when the current item is in the items list (cloud
+    // membership). Drive subscribeAllItems to emit the current item so the gate opens.
+    const current = store.getState().currentItem!;
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => { cb([current]); return () => {}; });
+    await act(async () => {
+      useAuthStore.setState({ user: signedInUser, authReady: true, online: true });
+    });
+    const shareBtn = await screen.findByTestId('share-button');
+    await waitFor(() => expect(shareBtn).not.toBeDisabled());
+    // share-button is the Popover TRIGGER; the onShare action lives in the popover
+    // body (share-create). Open the popover (portal), then click Create.
+    await act(async () => { await userEvent.click(shareBtn); });
+    const createBtn = await screen.findByTestId('share-create');
+    await act(async () => { await userEvent.click(createBtn); });
+    const env = lastEnvelope('shareLink');
+    expect(env).toBeDefined();
+    expect(env!.category).toBe('ui'); // legacy app.jsx:1041 trackEvent('ui','shareLink')
+    expect(env!.category).not.toBe('share');
+  });
+
+  it("'exportItems' uses legacy category 'fn'", async () => {
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    useUiStore.getState().setActivePanel('library');
+    const exportBtn = await screen.findByTestId('lib-export-all');
+    await act(async () => { await userEvent.click(exportBtn); });
+    const env = lastEnvelope('exportItems');
+    expect(env).toBeDefined();
+    expect(env!.category).toBe('fn'); // legacy app.jsx:1211 trackEvent('fn','exportItems')
+    expect(env!.category).not.toBe('library');
+  });
+
+  it("'itemsImported' uses legacy category 'fn' + count label", async () => {
+    // parseImportJson is module-mocked to throw; override it to succeed for this case
+    // so handleImport reaches the itemsImported track call.
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([
+      { id: 'i1' } as never,
+      { id: 'i2' } as never,
+    ]);
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    useUiStore.getState().setActivePanel('library');
+    await screen.findByTestId('library-panel');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    const env = await waitFor(() => {
+      const e = lastEnvelope('itemsImported');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    expect(env.category).toBe('fn'); // legacy app.jsx:1300 trackEvent('fn','itemsImported',count)
+    expect(env.category).not.toBe('library');
+    expect(env.label).toBe('2'); // legacy sends the imported count as the label
+  });
+
+  it("'loggedIn' uses legacy category 'fn' + provider label", async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    // Open the login menu/affordance and click a provider. The header exposes login
+    // controls; drive the documented onLogin path via the Google sign-in button.
+    const loginBtn = await screen.findByTestId('header-login');
+    await act(async () => { await userEvent.click(loginBtn); });
+    const googleBtn = await screen.findByTestId('login-google');
+    await act(async () => { await userEvent.click(googleBtn); });
+    const env = lastEnvelope('loggedIn');
+    expect(env).toBeDefined();
+    expect(env!.category).toBe('fn'); // legacy auth.js:26 trackEvent('fn','loggedIn',provider)
+    expect(env!.category).not.toBe('auth');
+  });
+
+  it("'updatePref-*' uses legacy category 'ui' + value label", async () => {
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    useUiStore.getState().openModal('settings');
+    // Wait for the Settings dialog (portal) to be present before interacting.
+    await screen.findByTestId('settings-modal');
+    // Toggle the lineWrap boolean switch (role=switch button) — a reliable control
+    // that fires handleSettingChange → track('updatePref-lineWrap', ...). (We use the
+    // switch rather than a Radix Select to avoid the Select-in-Dialog jsdom flake;
+    // handleSettingChange is the SAME code path for every setting, so the envelope it
+    // emits is identical regardless of which control triggers it.)
+    await act(async () => { await userEvent.click(screen.getByTestId('setting-lineWrap')); });
+    const env = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p && typeof p.event === 'string' && (p.event as string).startsWith('updatePref-'))
+      .at(-1);
+    expect(env).toBeDefined();
+    expect(env!.event).toBe('updatePref-lineWrap');
+    expect(env!.category).toBe('ui'); // legacy app.jsx:989 trackEvent('ui','updatePref-'+name,value)
+    expect(env!.category).not.toBe('settings');
+    // Legacy passes the new VALUE as the label (prefs[settingName]); lineWrap
+    // defaults to true, so toggling it sends false.
+    expect(env!.label).toBe('false');
   });
 });

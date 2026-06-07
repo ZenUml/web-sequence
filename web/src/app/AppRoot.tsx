@@ -396,7 +396,13 @@ export function AppRoot() {
         await itemService.setItem(itemToSave.id, itemToSave, { skipCloud: true });
         if (overLimit) {
           setLimitNoticeOpen(true);
-          track('Free Limit', { category: 'storage', label: planType });
+          // REQ-ANL-1: preserve the legacy 'Free Limit' envelope EXACTLY so the
+          // existing limit-reached Mixpanel funnel keeps matching. Legacy
+          // (app.jsx:496-500) fires {event:'Free Limit', category:'3 diagrams
+          // limit', label:'Save'} on the save-cap hit. Diverging the category/label
+          // (the prior 'storage'/planType) silently sends this to a different
+          // segment, zeroing out the existing save-path report (adversarial review).
+          track('Free Limit', { category: '3 diagrams limit', label: 'Save' });
         }
         // DO NOT markSaved() here (adversarial review): the cloud write was
         // deliberately withheld, so the diagram is NOT synced. Calling markSaved
@@ -435,13 +441,18 @@ export function AppRoot() {
     const currentUser = useAuthStore.getState().user;
     if (!currentUser) {
       setLoginModalOpen(true); // anonymous → open sign-in (plan §8)
-      track('Free Limit', { category: 'custom-css' });
+      // NOTE (adversarial review, REQ-ANL-1): no analytics emitted here. Legacy has
+      // NO 'Free Limit' (or any) event on the custom-CSS gate — that envelope is
+      // reserved for the '3 diagrams limit' storage cap. Emitting a custom-css
+      // 'Free Limit' invented a payload with no legacy analog, polluting the
+      // existing limit-reached segment. A dedicated custom-css gate event would be a
+      // NEW analytics requirement (out of M04 scope) — deferred, not faked here.
       return true;
     }
     if (subLoading) return false; // unresolved → not gated (race guard)
     if (isPlus(subscription)) return false;
     openModal('pricing');
-    track('Free Limit', { category: 'custom-css' });
+    // See note above: no legacy 'Free Limit' analog for the custom-CSS gate.
     return true;
   }
 
@@ -463,7 +474,10 @@ export function AppRoot() {
     void syncStore.set(key, value);
     const uid = useAuthStore.getState().user?.uid;
     if (uid) void setUserSetting(uid, key, value).catch(() => {});
-    track('updatePref-' + key, { category: 'settings', label: String(value) });
+    // REQ-ANL-1: legacy category is 'ui' (app.jsx:989 trackEvent('ui',
+    // 'updatePref-'+settingName, value)); the value is the label. Match the
+    // envelope so updatePref-* reports keep matching after cutover (adversarial review).
+    track('updatePref-' + key, { category: 'ui', label: String(value) });
   }
 
   // M04: Paddle checkout from the pricing modal. Non-logged-in upgrade → sign-in
@@ -536,7 +550,10 @@ export function AppRoot() {
   }
 
   function handleExportAll() {
-    track('exportItems', { category: 'library', label: String(items.length) });
+    // REQ-ANL-1: legacy category is 'fn' (app.jsx:1211 trackEvent('fn','exportItems'))
+    // and legacy sent NO label. Match the envelope so saved Mixpanel views filtering
+    // exportItems by category='fn' keep matching after cutover (adversarial review).
+    track('exportItems', { category: 'fn' });
     const json = exportAllItemsJson(items);
     downloadText('zenuml-diagrams.json', json, 'application/json');
   }
@@ -557,7 +574,10 @@ export function AppRoot() {
       // saveItems already writes user-membership in its signed-in batch path, so no
       // separate setItemForUser loop is needed (advisor note 7).
       await itemService.saveItems(map);
-      track('itemsImported', { category: 'library', label: String(parsed.length) });
+      // REQ-ANL-1: legacy category is 'fn' (app.jsx:1300 trackEvent('fn',
+      // 'itemsImported', mergedItemCount)); the count is the label. Match the
+      // envelope so the itemsImported report keeps matching (adversarial review).
+      track('itemsImported', { category: 'fn', label: String(parsed.length) });
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Could not import this file.');
     }
@@ -718,8 +738,8 @@ export function AppRoot() {
         onNew={() => useEditorStore.getState().newItem()}
         onFork={() => useEditorStore.getState().forkCurrent()}
         onSave={save}
-        onLogin={(provider) => { track('loggedIn', { category: 'auth', label: provider }); login(provider); }}
-        onLogout={() => { track('loggedOut', { category: 'auth' }); logout(); }}
+        onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); login(provider); }}
+        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
         loginError={loginError}
         loginOpen={loginModalOpen}
         onLoginOpenChange={setLoginModalOpen}
@@ -740,7 +760,7 @@ export function AppRoot() {
             url={share.url}
             sharing={share.sharing}
             error={share.error}
-            onShare={() => { track('shareLink', { category: 'share' }); void share.share(); }}
+            onShare={() => { track('shareLink', { category: 'ui' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}
           />
