@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { readFileSync } from 'fs';
+import { assetsInlineLimit } from './src/preview/assetInlining';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -62,16 +63,10 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     assetsDir: 'assets',
-    // CSP-CRITICAL (roadmap §9 M05 finding #1): the preview-iframe bootstrap is
-    // imported as `?url` and loaded via `<script src=...>`. Vite inlines small
-    // assets (< default 4 KB) as `data:` URLs — but a `data:` script URL is NOT
-    // `'self'` under the packaged MV3 extension's `script-src 'self'` CSP, so an
-    // inlined bootstrap would be CSP-blocked exactly like the old inline block and
-    // the preview would stay blank. Force the bootstrap to emit as a REAL
-    // same-origin `./assets/*.js` file (which IS `'self'`). Other assets keep the
-    // default inlining behavior.
-    assetsInlineLimit: (filePath: string) =>
-      filePath.includes('previewBootstrap.runtime') ? false : undefined,
+    // CSP-CRITICAL (roadmap §9 M05 finding #1): keep the preview bootstrap a real
+    // emitted asset (never an inlined data: URL) so it is `'self'` under MV3 CSP.
+    // Policy + rationale live in src/preview/assetInlining.ts (unit-tested).
+    assetsInlineLimit,
   },
   define: { __COMMITHASH__: JSON.stringify(getCommitHash()) },
   css: { postcss: './postcss.config.js' },
