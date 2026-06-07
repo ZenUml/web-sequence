@@ -99,6 +99,23 @@ mutate cloud resources** — they are safe for the agent or the user to run.
       produces `web/extension.zip` with a version-stamped MV3 manifest. (Chrome
       Web Store publish is a separate MANUAL step — `yarn upload` + `yarn pub` —
       per ADR §8; not part of the hosting cutover.)
+- [ ] **Auxiliary legacy same-origin static routes are confirmed or intentionally retired.**
+      The legacy gulp pipeline served same-origin static URLs that `web/dist` (only
+      `index.html` + `assets/`) does NOT serve: `/privacy-policy/privacy-policy.html`,
+      `/End-User-License-Agreement/**`, `/help.html` + `/help/**`, `/manifest.json`,
+      `/templates/**`, `/animation/**`, `/lib/**`, `/detached-window.js`,
+      `/preview.html`, fonts. After the cutover every one of these 404s. The rewrite
+      app does NOT link them same-origin (`grep -rni 'privacy-policy\|eula\|help\.html\|/manifest\.json' web/src` is clean — Help points at cross-origin `https://www.zenuml.com/help.html`, templates are bundled), so the app's own UX is unaffected. The RISK is **external** references that 404 post-cutover:
+      - **Chrome Web Store listing privacy-policy URL** — if it points at
+        `https://app.zenuml.com/privacy-policy/…` it will silently break. Verify the
+        listing's privacy-policy URL resolves post-cutover; repoint it to the canonical
+        marketing-site URL (`https://www.zenuml.com/…`) if needed.
+      - **EULA + privacy-policy legal links** anywhere they are externally referenced.
+      - **`/manifest.json`** if any external integration fetches it from `app.zenuml.com`.
+      Decide per route: add a Firebase Hosting redirect to the canonical cross-origin
+      page, OR document the route as intentionally retired. (`firebase.json` is FROZEN
+      under NFR-1 for the parallel-agent rewrite, so any redirect is applied by the USER
+      alongside the cutover commit, not by an agent.)
 
 If any box is red, **stop**. Do not deploy.
 
