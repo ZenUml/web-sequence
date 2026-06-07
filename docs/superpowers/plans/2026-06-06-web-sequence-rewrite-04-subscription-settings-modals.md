@@ -79,6 +79,8 @@ web/src/
       OnboardingModal.tsx    # first-run welcome (presentational) (REQ-MOD-3)
       SupportPledgeModal.tsx # version-upgrade pledge (presentational) (REQ-MOD-3)
       AtomicCssSettingsModal.tsx  # edits cssSettings when cssMode=acss (REQ-ED-2)
+  ui/
+    Select.tsx / Switch.tsx / Textarea.tsx  # (add) form primitives for settings/pricing/acss modals (Task 8b — SEQUENTIAL, edits ui/index.ts)
   app/
     AppRoot.tsx              # (modify) mount modal inventory; wire save-seam (plan limit + trackEvent); subscription-on-auth; one-time triggers; settings persist/live-apply
   components/auth/
@@ -421,6 +423,22 @@ git commit -m "feat(m04): uiStore modal enum + useAnalytics (single-modal state,
 
 ---
 
+### Task 8b: Form primitives — Select / Switch / Textarea (design-system)
+
+**Files:** Create `web/src/ui/Select.tsx`, `web/src/ui/Switch.tsx`, `web/src/ui/Textarea.tsx`; modify `web/src/ui/index.ts`; Tests
+
+> **MUST run BEFORE the modal wave (Tasks 9–14) and is SEQUENTIAL** — it edits the shared barrel `web/src/ui/index.ts`, so it cannot run concurrently with the modal tasks (they import these primitives but must NOT touch `index.ts`). SettingsModal/AtomicCssSettingsModal/PricingModal need form controls that don't exist yet: a styled `Select` (wrap `@radix-ui/react-select`; install if missing: `pnpm -C web add --ignore-workspace @radix-ui/react-select`), a `Switch` (wrap `@radix-ui/react-switch`; install if missing), and a `Textarea` (design-system styling over a native `<textarea>`, mirroring `TextInput`). All on the paper surface (light) with `ring-draft-light`, `font-sans`, semantic tokens (no `gray-*`/hex). Each accepts/forwards `data-testid` and `aria-label`.
+
+- [ ] **Step 1:** TDD each primitive (RTL; Radix Select/Switch render trigger + portal content): `Select` renders options + fires `onValueChange`; `Switch` toggles + fires `onCheckedChange`; `Textarea` is a controlled field. Keep design-system tokens.
+- [ ] **Step 2:** Export all three from `web/src/ui/index.ts`. Run unit tests + typecheck → green.
+- [ ] **Step 3: Commit**
+```bash
+git add web/src/ui/Select.tsx web/src/ui/Switch.tsx web/src/ui/Textarea.tsx web/src/ui/index.ts web/src/ui/*.test.tsx
+git commit -m "feat(m04): Select/Switch/Textarea design-system primitives (for settings/pricing/acss modals)"
+```
+
+---
+
 ### Task 9: SettingsModal (full preference list — presentational)
 
 **Files:** Create `web/src/components/modals/SettingsModal.tsx`, Test `…/SettingsModal.test.tsx`
@@ -515,7 +533,7 @@ git commit -m "feat(m04): AtomicCssSettingsModal — edit cssSettings (REQ-ED-2,
 
 > **This is an integrate-adjacent task touching EXISTING files — do in the main session, not a fresh parallel agent.**
 > - **AppHeader:** add trigger affordances (a "+" New → CreateNew, a Settings `IconButton`, a Help/Pricing entry — fold less-frequent ones into an overflow `Menu` to keep the header calm). Inject the open handlers as props (e.g. `onOpenSettings`, `onOpenCreateNew`, `onOpenHelp`, `onOpenPricing`). Keep existing props/testids. New `data-testid`s: `header-settings`, `header-help`, `header-pricing` (Create-New may reuse/replace the existing `header-new` flow — decide in integrate).
-> - **ProfileMenu (REQ-SUB-7):** add a `ProBadge` next to the avatar for subscribed users; a "My Plan (planType)" `MenuItem` when subscribed (links to `cancel_url` / "Cancel subscription"); an "Upgrade plan" `MenuItem` → `onUpgrade()` for non-subscribed. New props: `{ subscribed, planType, onUpgrade, onManagePlan }`. Hide ALL of this when `payment` is off (extension) — pass a `paymentEnabled` prop. Keep `profile-logout`. New `data-testid`s: `profile-upgrade`, `profile-plan`, `pro-badge`.
+> - **ProfileMenu (REQ-SUB-7 + REQ-AC-3):** add a `ProBadge` next to the avatar for subscribed users; a "My Plan (planType)" `MenuItem` when subscribed (links to `cancel_url` / "Cancel subscription"); an "Upgrade plan" `MenuItem` → `onUpgrade()` for non-subscribed. Also surface REQ-AC-3 profile data: displayName (fallback "Anonymous Creator") + email + current plan. New props: `{ subscribed, planType, onUpgrade, onManagePlan }`. Hide ALL billing items when `payment` is off (extension) — pass a `paymentEnabled` prop. Keep `profile-logout`. New `data-testid`s: `profile-upgrade`, `profile-plan`, `pro-badge`.
 > - **LoginModal (roadmap §9 carry-forward):** accept an `error?: string` prop and render it as a design-system notice; the integrate stage feeds it the OAuth error (replacing the M02 console/`window.alert` stopgap, incl. account-exists). New `data-testid="login-error"`.
 
 - [ ] **Steps:** TDD each behavior (RTL; Menu in portal): header buttons call their injected handlers; ProfileMenu shows ProBadge+plan for subscribed, Upgrade for non-subscribed, nothing billing-related when `paymentEnabled=false`; LoginModal renders `error` when present. Commit:
@@ -537,8 +555,9 @@ git commit -m "feat(m04): header modal triggers + ProfileMenu plan/upgrade + Log
 > 5. **Analytics emit-points (REQ-ANL-1 — enumerate from legacy):** wire `useAnalytics().track(...)` at: save (above), login/logout (`'loggedIn'`/`'loggedOut'` + provider), share-link create (`'shareLink'`), open-settings (`'openSettingsModal'`), each setting change (`'updatePref-'+key`), limit-reached (`'Free Limit'`), import (`'itemsImported'`), export (`'exportItems'`), onboarding-seen (`'onboardModalSeen'`+version), page-view on mount. Anonymous → null userId (the hook handles it).
 > 6. **One-time triggers (REQ-MOD-3):** on boot, if `!localStore.get(onboarded)` → open Onboarding (mark `onboarded` on dismiss). On auth-ready, semver-compare `lastSeenVersion` vs the current app version; if behind → open SupportPledge (mark `pledgeModalSeen`/update `lastSeenVersion` on dismiss). Reuse the existing `loginAndSaveMessageSeen`/`askedToImportCreations` flows (M02/M03 already wired).
 > 7. **LoginModal error:** feed the OAuth error from `useAuth.login` (surface it — replaces the M02 console/`window.alert` stopgap).
+> 8. **Custom-CSS Plus-gating (REQ-SUB-5 bullet 2 — legacy parity).** Editing the CSS editor or selecting a custom CSS mode (the `css-mode-select` in AppRoot) is **Plus-only**. When a non-Plus user attempts it: anonymous → open the LoginModal; signed-in Basic/Free → `openModal('pricing')` (do NOT apply the CSS change/mode). Plus users edit freely. Wire this at the AppRoot CSS-editor `onChange`/`setCss` + the `css-mode-select` `onChange` (gate via `isPlus(subscription)`). `trackEvent('Free Limit', { category:'custom-css' })` on the gated path. Discriminating test: a Free signed-in user changing CSS → pricing modal opens + the CSS is unchanged; a Plus user → CSS applies.
 
-- [ ] **Step 1:** Wire the save-seam + limit notice; discriminating test: over-cap NEW item save by a signed-in free user → cloud `setDoc` NOT called, local copy written, `LimitReachedNotice` open; re-saving an owned item → cloud write happens.
+- [ ] **Step 1:** Wire the save-seam + limit notice; discriminating test: over-cap NEW item save by a signed-in free user → cloud `setDoc` NOT called, local copy written, `LimitReachedNotice` open; re-saving an owned item → cloud write happens. Wire the custom-CSS Plus-gate (test: Free user CSS edit → pricing modal + CSS unchanged; Plus user → applies).
 - [ ] **Step 2:** Wire subscription + modal inventory + header triggers + ProfileMenu + Paddle + analytics + one-time triggers + LoginModal error.
 - [ ] **Step 3:** Run FULL `pnpm -C web test` + `pnpm -C web typecheck` → green. Commit:
 ```bash
