@@ -117,10 +117,22 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
       <DialogContent
         title="Settings"
         description="Editor, behavior, and rendering preferences. Changes apply immediately."
-        className="w-[min(560px,calc(100vw-2rem))] max-h-[85vh] overflow-y-auto"
+        // The header (DialogTitle + DialogDescription, rendered by DialogContent
+        // above `children`) stays fixed: the outer Content is capped at the viewport
+        // and does NOT scroll. Only the inner rows wrapper below scrolls, so the
+        // "Settings" title and its caption remain visible while the 18-row body moves.
+        className="w-[min(560px,calc(100vw-2rem))] max-h-[85vh] overflow-hidden"
       >
-        <div data-testid="settings-modal" className="text-onlight-strong">
-          <Section>Editor</Section>
+        {/* Scroll container for the control rows only. A bottom fade hints that more
+            rows exist below the fold. max-h reserves ~9rem for the sticky header
+            (title + description + the DialogContent paddings/margins above us). */}
+        <div className="relative">
+          <div
+            data-testid="settings-scroll"
+            className="max-h-[calc(85vh-9rem)] overflow-y-auto pr-1"
+          >
+            <div data-testid="settings-modal" className="text-onlight-strong">
+              <Section>Editor</Section>
           <SelectRow
             label="Theme"
             testid="setting-editorTheme"
@@ -267,6 +279,14 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
             value={settings.cssMode}
             options={opts(CSS_MODES)}
             onValueChange={(v) => onChange('cssMode', v as Settings['cssMode'])}
+              />
+            </div>
+          </div>
+          {/* Bottom fade: the scroll area sits on the paper surface, so fade to
+              paper-50 (not transparent) to keep the overflow edge discoverable. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-paper-50 to-transparent"
           />
         </div>
       </DialogContent>

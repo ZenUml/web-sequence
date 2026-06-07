@@ -128,4 +128,26 @@ describe('SettingsModal', () => {
     setup({ autoSave: true });
     expect(screen.getByTestId('setting-autoSave')).toHaveAttribute('aria-checked', 'true');
   });
+
+  // DISCRIMINATING (settings-scroll fix): the 18-row body must live inside a
+  // scrollable inner container, while the modal title ("Settings") stays OUTSIDE
+  // it so the header is sticky and the rows alone scroll. If the scroll wrapper is
+  // removed (rows put back directly under DialogContent), or the title is moved
+  // inside the scroll area, this fails.
+  it('puts the control rows in a scroll container that the title is NOT inside', () => {
+    setup();
+    const scroll = screen.getByTestId('settings-scroll');
+    // The inner container is the scroll surface (own max-height + overflow-y-auto).
+    expect(scroll.className).toMatch(/overflow-y-auto/);
+    expect(scroll.className).toMatch(/max-h-/);
+    // Every control row lives inside the scroll container.
+    expect(scroll).toContainElement(screen.getByTestId('setting-editorTheme'));
+    expect(scroll).toContainElement(screen.getByTestId('setting-cssMode'));
+    // The title stays outside the scroll container (sticky header).
+    const title = screen.getByText('Settings');
+    expect(scroll).not.toContainElement(title);
+    // Sanity: title and scroll body share a common ancestor (same dialog), so the
+    // "outside" assertion is about hierarchy, not a different tree.
+    expect(title.compareDocumentPosition(scroll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
