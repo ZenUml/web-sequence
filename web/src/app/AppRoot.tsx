@@ -360,28 +360,38 @@ export function AppRoot() {
     // only enforce when signed-in AND the subscription read has RESOLVED (!subLoading)
     // — an unresolved subscription transiently derives to 'free', so enforcing would
     // falsely block a paying user and silently skip their cloud write.
-    // Two DISTINCT withhold-the-cloud-write conditions (adversarial review):
-    //  - overLimit: a GENUINE plan-cap hit (owned-count read succeeded and exceeds
+    // The owned-id read drives ONE withhold-the-cloud-write condition:
+    //  - overLimit: a GENUINE plan-cap hit (owned-count read SUCCEEDED and exceeds
     //    the cap). This is the only case that shows LimitReachedNotice + fires the
     //    'Free Limit' analytics event.
-    //  - readFailed: the owned-count read THREW (offline blip / Firestore error) so
-    //    we cannot prove the save is within a non-Plus cap. We FAIL CLOSED — withhold
-    //    the cloud write to avoid silently admitting a cap-bypassing write (the rules
-    //    do not enforce the count; this is the only enforcement point). But we must
-    //    NOT tell the user they hit a limit they may not have hit, and must NOT
-    //    inflate the 'Free Limit' metric on a non-limit condition. A Plus user is
-    //    unaffected either way (isOverFileLimit is false for Plus regardless of count).
+    //
+    // FAIL OPEN on a read error (adversarial review, finding 1): if getUserItemIds
+    // THROWS (offline blip / Firestore permission error / an uncached users-doc read
+    // — the persistent cache only serves docs it has already cached, so a first save
+    // after login while offline rejects), we DO NOT withhold the cloud write. Legacy
+    // checkItemsLimit (src/components/app.jsx:467-482) derives the count from the
+    // in-memory state.user.items loaded at auth time and performs NO I/O read at save,
+    // so a save is NEVER blocked by a read error there. Failing CLOSED here was a NEW
+    // failure surface with no legacy analog: an under-cap free/basic user whose read
+    // blips would have their cloud write + ownership-membership silently dropped with
+    // NO user signal (no notice, no analytics) — they believe the diagram is synced
+    // across devices when it lives only in localStorage. Crucially the firestore rules
+    // do NOT enforce the 3/20 count (C-RULES-1), so proceeding cannot "bypass" any
+    // real server enforcement: at worst a free user momentarily holds a limit+1 cloud
+    // diagram during an offline blip — exactly what legacy already permits (stale
+    // in-memory count admits the limit+1 item) and which self-corrects on next load.
+    // Withholding a confirmed-under-cap user's data is the strictly worse outcome.
     let overLimit = false;
-    let readFailed = false;
     if (uid && !subLoading) {
       try {
         const ownedIds = await getUserItemIds(uid);
         overLimit = isOverFileLimit({ subscription, ownedIds, itemId: itemToSave.id });
       } catch {
-        readFailed = !isPlus(subscription);
+        // Fail open: read error → do NOT withhold (legacy never blocks a save on a
+        // read; rules don't enforce the count). overLimit stays false.
       }
     }
-    const withholdCloud = overLimit || readFailed;
+    const withholdCloud = overLimit;
 
     useEditorStore.getState().setSaving(true);
     try {

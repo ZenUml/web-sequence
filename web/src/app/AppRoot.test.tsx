@@ -332,38 +332,37 @@ describe('AppRoot — M04 save-seam plan limit', () => {
     expect(store.getState().unsavedCount).toBeGreaterThan(0);
   });
 
-  // Discriminating (adversarial review #2): a transient getUserItemIds error must
-  // FAIL CLOSED for a non-Plus user — withhold the cloud write rather than admit a
-  // cap-bypassing write. The old code swallowed the error to [] (length 0 > cap =
-  // false) and proceeded with the full cloud write. CRUCIALLY, a read FAILURE is NOT
-  // a confirmed limit hit: it must NOT show the "you hit your limit, upgrade" notice
-  // (false claim to a possibly-under-cap user) and must NOT fire the 'Free Limit'
-  // analytics (metric inflation on a non-limit condition). So: cloud skipped, no
-  // membership write, but NO limit-notice. Reverting the fail-closed write makes
-  // skipCloud falsy / setItemForUser called → fails; coupling the notice to the
-  // read-error case makes limit-notice appear → also fails.
-  it('(f) FAIL CLOSED — getUserItemIds throws for a free user → cloud SKIPPED, NO limit notice', async () => {
+  // Discriminating (adversarial review, finding 1): a transient getUserItemIds error
+  // must FAIL OPEN for a non-Plus user — the cloud write PROCEEDS, membership IS
+  // written, and the editor's clean-save state is set, exactly as a normal under-cap
+  // save. Legacy checkItemsLimit (app.jsx:467-482) does NO I/O read at save (it reads
+  // the in-memory state.user.items), so a read error NEVER blocks a save there; the
+  // firestore rules do not enforce the count (C-RULES-1) so proceeding bypasses no
+  // real enforcement. Failing CLOSED here silently stranded a confirmed-under-cap
+  // user's data in localStorage with no signal — the worse outcome. Reverting to the
+  // fail-closed write (skipCloud:true / no membership write) makes this test fail.
+  it('(f) FAIL OPEN — getUserItemIds throws for a free user → cloud write PROCEEDS, membership written, NO notice', async () => {
     const { useEditorStore: store } = await import('../state/editorStore');
     userSvc.getUserItemIds.mockRejectedValue(new Error('Firestore offline'));
     await bootSignedIn();
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
-    // Edit so we can assert dirty stays true (no false clean-save) after withholding.
+    // Edit so we can assert the clean-save state IS set after the write proceeds.
     act(() => { store.getState().setDsl('A.x'); });
+    expect(store.getState().dirty).toBe(true);
     await clickSave();
     await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
     const call = itemSvc.setItem.mock.calls.at(-1)!;
-    expect(call[2]).toEqual({ skipCloud: true }); // write withheld → no cap bypass
-    expect(userSvc.setItemForUser).not.toHaveBeenCalled();
+    expect(call[2]?.skipCloud).toBeFalsy(); // write NOT withheld → user's data synced
+    expect(userSvc.setItemForUser).toHaveBeenCalled(); // ownership-membership written
     // A read FAILURE is not a confirmed limit hit → no misleading limit notice.
     expect(screen.queryByTestId('limit-notice')).not.toBeInTheDocument();
-    // Dirty state preserved (the write did not land) so the user retries honestly.
-    expect(store.getState().dirty).toBe(true);
+    // Write landed → clean-save state set (no silent local-only stranding).
+    await waitFor(() => expect(store.getState().dirty).toBe(false));
   });
 
-  // Discriminating (adversarial review #2 complement): a Plus user is unaffected by
-  // the read error — isOverFileLimit is false for Plus regardless of count, so the
-  // fail-closed branch must NOT withhold their cloud write.
-  it('(g) FAIL CLOSED does not penalize a PLUS user when getUserItemIds throws', async () => {
+  // Complement: a Plus user is likewise unaffected by the read error — the write
+  // proceeds (isOverFileLimit is false for Plus regardless of count anyway).
+  it('(g) FAIL OPEN does not penalize a PLUS user when getUserItemIds throws', async () => {
     subSvc.retrieveSubscription.mockResolvedValue(
       { status: 'active', passthrough: '{"planType":"plus-monthly"}' } as never,
     );
