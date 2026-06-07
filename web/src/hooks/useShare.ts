@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
+import { useEditorStore } from '../state/editorStore';
+import { shareOrigin } from '../config/shareOrigin';
+import { detectFromEnv } from '../app/runtimeMode';
+import type { Item } from '../domain/types';
 
 // How long the Copy button shows its "Copied ✓" confirmation before reverting.
 const COPIED_RESET_MS = 1500;
+
+// Reconstruct the public page_share URL for an already-shared item so the popover
+// can open straight into the "shared — Copy / Stop sharing" state on reload/boot
+// (the backend only returns the URL at create_share time; on a fresh load we have
+// only the persisted isShared/shareToken fields). Mirrors the page_share host
+// resolution: shareOrigin() returns the canonical app origin under the extension
+// and the real window origin on the web (no trailing slash → `origin?id=…`). The
+// `v=<md5>` cache-buster is intentionally omitted — md5 is not persisted on the
+// item, and the share page tolerates its absence.
+function reconstructShareUrl(item: Item): string | null {
+  if (!item.isShared || !item.shareToken) return null;
+  const origin = shareOrigin({ isExtension: detectFromEnv().isExtension });
+  return `${origin}?id=${item.id}&share-token=${item.shareToken}`;
+}
 
 export interface UseShareOpts {
   // The current item's id (reactive). When it changes, url/error reset so the
@@ -41,12 +59,24 @@ export function useShare(opts: UseShareOpts): UseShareResult {
     };
   }, []);
 
-  // Reset url/error when the active item changes. Without this, opening item B after
-  // sharing item A leaves A's url/error in state, so Copy would copy A's link and
-  // Stop would target the wrong item via getItemId() (advisor fix #8).
+  // Reset url/error when the active item changes, THEN hydrate the url from the
+  // newly-active item if it is already shared. Two jobs:
+  //  - Without the reset, opening item B after sharing item A leaves A's url/error in
+  //    state, so Copy would copy A's link and Stop would target the wrong item via
+  //    getItemId() (advisor fix #8).
+  //  - Hydration: a diagram shared in a previous session carries isShared+shareToken
+  //    when re-loaded/booted. Reconstruct its page_share URL so the popover opens into
+  //    the "shared — Copy / Stop sharing" state instead of "Create share link" (which
+  //    would wrongly imply the diagram is private). Read the current item from the
+  //    editor store at effect time (getState() is runtime, not module-scope — testable
+  //    and SSR-safe). Known limitation: an IN-SESSION share() does not write isShared/
+  //    shareToken onto the local item (those are backend-owned, written only by
+  //    create_share), so switching away and back within the same session won't
+  //    re-hydrate until a reload re-reads the item from the backend.
   useEffect(() => {
-    setUrl(null);
     setError(null);
+    const item = useEditorStore.getState().currentItem;
+    setUrl(item ? reconstructShareUrl(item) : null);
   }, [itemId]);
 
   async function share(): Promise<void> {

@@ -65,8 +65,10 @@ export function SharePopover({
           {/* A failed "Stop sharing" surfaces here so the user knows the link is
               still live (advisor fix #7) — the error slot previously existed only
               in the no-url branch. */}
+          {/* Danger TEXT on the light paper popover uses the AA-contrast `strong`
+              shade (danger-contrast fix); the base #E0524A fails AA as small text. */}
           {error ? (
-            <p data-testid="share-error-text" className="text-[13px] text-danger">
+            <p data-testid="share-error-text" className="text-[13px] text-danger-strong">
               {error}
             </p>
           ) : null}
@@ -86,7 +88,7 @@ export function SharePopover({
             {sharing ? 'Creating…' : 'Create share link'}
           </Button>
           {error ? (
-            <p data-testid="share-error-text" className="text-[13px] text-danger">
+            <p data-testid="share-error-text" className="text-[13px] text-danger-strong">
               {error}
             </p>
           ) : null}

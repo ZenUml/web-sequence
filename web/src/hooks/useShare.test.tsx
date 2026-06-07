@@ -3,6 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { useShare } from './useShare';
+import { useEditorStore } from '../state/editorStore';
+import type { Item } from '../domain/types';
 // REAL createShare (NOT a mock) — the through-useShare seam test drives the actual
 // share path to prove the extension origin override fires end-to-end (M05 Task 4).
 import { createShare } from '../services/cloudFunctions';
@@ -16,7 +18,31 @@ afterEach(() => {
   server.resetHandlers();
   // A leaked IS_EXTENSION would flip the createShare web-origin tests red elsewhere.
   delete (window as { IS_EXTENSION?: boolean }).IS_EXTENSION;
+  // The hydration effect reads the real zustand singleton on itemId change. A leaked
+  // shared currentItem would hydrate a url in the OTHER tests that assume an empty
+  // store (e.g. "resets url + error when itemId changes" expects url=null after switch).
+  useEditorStore.getState().reset();
 });
+
+// Minimal already-shared item for the hydration tests. loadItem migrates it to pages
+// and clears dirty/save counters; isShared/shareToken survive (they're item fields).
+function sharedItem(overrides?: Partial<Item>): Item {
+  return {
+    id: 'item-1',
+    title: 'Shared',
+    js: 'A->B: hi',
+    css: '',
+    html: '',
+    htmlMode: 'html',
+    cssMode: 'css',
+    jsMode: 'js',
+    pages: [],
+    currentPageId: '',
+    isShared: true,
+    shareToken: 'tok-xyz',
+    ...overrides,
+  };
+}
 afterAll(() => server.close());
 
 const createShareMock = vi.fn(async () => ({
@@ -370,6 +396,66 @@ describe('useShare', () => {
     });
     rerender({ itemId: 'A' });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
+  });
+
+  it('hydrates the url from an already-shared item on mount so the popover opens in the shared state (not Create link)', async () => {
+    // A diagram shared in a PRIOR session carries isShared+shareToken when re-loaded.
+    // The hook must reconstruct its page_share URL at mount so SharePopover shows the
+    // Copy / Stop-sharing state — NOT the "Create share link" state (which would wrongly
+    // imply the diagram is private). Discriminating: revert the hydration branch in the
+    // itemId effect (back to setUrl(null)) → url stays null → this fails.
+    useEditorStore.getState().loadItem(sharedItem());
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ itemId: 'item-1' })),
+    );
+    expect(result.current.url).toBe(
+      `${window.location.origin}?id=item-1&share-token=tok-xyz`,
+    );
+  });
+
+  it('re-hydrates when switching FROM an unshared item TO an already-shared one', async () => {
+    // Start on an unshared item → Create-link state (url null). Switch to a shared item
+    // (store currentItem swapped, itemId prop changes) → the effect must hydrate the
+    // shared url. Guards the reload/item-switch path the task calls out.
+    useEditorStore.getState().loadItem(sharedItem({ id: 'plain', isShared: false, shareToken: undefined }));
+    const { result, rerender } = renderHook(
+      ({ itemId }) => useShare(makeOpts({ itemId })),
+      { initialProps: { itemId: 'plain' } },
+    );
+    expect(result.current.url).toBeNull();
+
+    useEditorStore.getState().loadItem(sharedItem({ id: 'item-1' }));
+    rerender({ itemId: 'item-1' });
+    expect(result.current.url).toBe(
+      `${window.location.origin}?id=item-1&share-token=tok-xyz`,
+    );
+  });
+
+  it('does NOT hydrate a url for an item that is isShared but missing its shareToken', async () => {
+    // Defensive: a half-written item (isShared true, no token) cannot form a valid
+    // share link, so the popover must fall back to the Create-link state, not emit a
+    // tokenless URL. Discriminating: drop the `!item.shareToken` guard in
+    // reconstructShareUrl → url becomes `...&share-token=undefined` → this fails.
+    useEditorStore.getState().loadItem(sharedItem({ shareToken: undefined }));
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ itemId: 'item-1' })),
+    );
+    expect(result.current.url).toBeNull();
+  });
+
+  it('extension env: hydrated share url uses the canonical app origin, not chrome-extension://', async () => {
+    // Under the extension window.location.origin is chrome-extension://… (unreachable as
+    // a share host). Hydration must route through shareOrigin() just like create_share.
+    // Discriminating: replace shareOrigin(...) with window.location.origin in
+    // reconstructShareUrl → url starts chrome-extension:// → this fails.
+    (window as { IS_EXTENSION?: boolean }).IS_EXTENSION = true;
+    useEditorStore.getState().loadItem(sharedItem());
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ itemId: 'item-1' })),
+    );
+    expect(result.current.url).toBe(
+      'https://app.zenuml.com?id=item-1&share-token=tok-xyz',
+    );
   });
 
   // THROUGH-useShare SEAM (M05 Task 4): the REAL createShare passed by its BARE

@@ -37,7 +37,12 @@ const variants: Record<'dark' | 'light', Record<Variant, string>> = {
     primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
     subtle: 'bg-paper-100 text-onlight-strong hover:bg-paper-200 border border-paper-line',
     ghost: 'bg-transparent text-onlight-muted hover:text-onlight-strong hover:bg-black/5',
-    danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
+    // On the light paper surface the DEFAULT danger red (#E0524A) is only ~3.6:1 on
+    // paper-50 — fails WCAG AA for button TEXT. Use danger-strong (#B23A33, ~5.5:1)
+    // for the label/border so the quiet outlined style still reads accessibly.
+    // (dark.danger keeps DEFAULT: it sits on ink and passes AA.)
+    danger:
+      'bg-transparent text-danger-strong hover:bg-danger/10 border border-danger-strong/40',
   },
 };
 

@@ -50,7 +50,12 @@ export default {
         ondark: { strong: '#E8EEF7', muted: '#8A99AE', faint: '#5C6A80' },
         onlight: { strong: '#1B2330', muted: '#5A6473', faint: '#8A93A1' },
         ok: '#2FA56B',
-        danger: '#E0524A',
+        // Danger — destructive intent. DEFAULT (#E0524A) is tuned for DARK surfaces
+        // (text on ink) and for FILLS/rings; it computes ~3.6:1 on paper-50, FAILING
+        // WCAG AA for danger TEXT on the light paper surface. `strong` (#B23A33) is a
+        // darker red that clears AA on paper (~5.5:1 on paper-50, ~5.9:1 white-on-it);
+        // use it for danger-colored TEXT/icons on LIGHT surfaces. (danger-contrast fix)
+        danger: { DEFAULT: '#E0524A', strong: '#B23A33' },
       },
       fontFamily: {
         sans: ['"Hanken Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
