@@ -39,11 +39,11 @@ jobs:
       # needs its own install. The legacy `pnpm build` above still produces the
       # extension's dist/app/ assembly (retained for rollback).
       - name: Build web/dist (cutover hosting artifact)
-        # working-directory ensures Vite resolves node_modules from web/ (not the
-        # workspace root), preventing the @vitejs/plugin-react ERR_MODULE_NOT_FOUND
-        # that occurs when Vite places its .vite-temp in the root node_modules.
+        # --ignore-workspace forces pnpm to create a local web/node_modules instead of
+        # hoisting into the root (pnpm-workspace.yaml exists at repo root). Without it,
+        # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
         working-directory: web
-        run: pnpm install --no-frozen-lockfile && pnpm build
+        run: pnpm install --no-frozen-lockfile --ignore-workspace && pnpm build
       # Pre-deploy guard: serve the built dist statically and verify the diagram
       # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
       # path) that the dev-server suite can't see, BEFORE anything ships to
