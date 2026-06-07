@@ -23,6 +23,15 @@ describe('LoginModal', () => {
     expect(onLogin).toHaveBeenCalledWith('google');
   });
 
+  it('clicking the elevated last-used provider fires onLogin with its id', async () => {
+    const onLogin = vi.fn();
+    render(
+      <LoginModal open onOpenChange={() => {}} onLogin={onLogin} lastProvider="GitHub" />,
+    );
+    await userEvent.click(screen.getByTestId('login-github'));
+    expect(onLogin).toHaveBeenCalledWith('github');
+  });
+
   it('floats the last-used provider under "Pick up where you left off" with a Last-used chip', () => {
     render(
       <LoginModal open onOpenChange={() => {}} onLogin={() => {}} lastProvider="GitHub" />,

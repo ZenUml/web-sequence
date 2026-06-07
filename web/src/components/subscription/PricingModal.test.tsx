@@ -40,6 +40,22 @@ describe('PricingModal', () => {
     expect(p.onPeriodChange).toHaveBeenCalledWith('monthly');
   });
 
+  // §05: on yearly, paid tiers prove the discount with a struck monthly price;
+  // Free/Enterprise (no $ price) show none, and monthly shows none anywhere.
+  it('shows the struck monthly price on yearly for paid tiers only', () => {
+    setup({ billingPeriod: 'yearly' });
+    expect(screen.getByTestId('pricing-struck-basic')).toHaveTextContent('$4.99');
+    expect(screen.getByTestId('pricing-struck-plus')).toHaveTextContent('$7.99');
+    expect(screen.queryByTestId('pricing-struck-free')).toBeNull();
+    expect(screen.queryByTestId('pricing-struck-enterprise')).toBeNull();
+  });
+
+  it('shows no struck price on monthly', () => {
+    setup({ billingPeriod: 'monthly' });
+    expect(screen.queryByTestId('pricing-struck-basic')).toBeNull();
+    expect(screen.queryByTestId('pricing-struck-plus')).toBeNull();
+  });
+
   it('Basic upgrade composes the planType with the current period (monthly)', () => {
     const p = setup({ billingPeriod: 'monthly' });
     fireEvent.click(screen.getByTestId('pricing-upgrade-basic'));

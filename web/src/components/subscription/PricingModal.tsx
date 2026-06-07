@@ -173,7 +173,10 @@ export function PricingModal({
                       tier.price.monthly !== tier.price.yearly && (
                         <span
                           data-testid={`pricing-struck-${tier.key}`}
-                          className="font-serif text-[15px] text-onlight-faint line-through"
+                          // onlight-muted (not faint): the struck "was" price is
+                          // load-bearing (it proves the discount), so it must clear AA
+                          // on paper. The line-through + smaller size de-emphasize it.
+                          className="font-serif text-[15px] text-onlight-muted line-through"
                         >
                           {tier.price.monthly}
                         </span>
