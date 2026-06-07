@@ -5,6 +5,8 @@ export interface RuntimeMode {
   isDesktop: boolean;
   itemId: string | null;
   shareToken: string | null;
+  embedCode: string | null;
+  embedTitle: string | null;
 }
 
 export interface RuntimeInput {
@@ -24,6 +26,8 @@ export function detectRuntimeMode(input: RuntimeInput): RuntimeMode {
     isDesktop: input.isDesktop,
     itemId,
     shareToken,
+    embedCode: p.get('code'),
+    embedTitle: p.get('title'),
   };
 }
 
