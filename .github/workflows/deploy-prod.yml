@@ -34,7 +34,8 @@ jobs:
       # needs its own install. The legacy `pnpm build` above still produces the
       # extension's dist/app/ assembly (retained for rollback).
       - name: Build web/dist (cutover hosting artifact)
-        run: pnpm -C web install --no-frozen-lockfile && pnpm -C web build
+        working-directory: web
+        run: pnpm install --no-frozen-lockfile && pnpm build
       - name: Package Chrome extension
         # gulp release is incompatible with Node 20+; replicate its steps directly.
         run: |
