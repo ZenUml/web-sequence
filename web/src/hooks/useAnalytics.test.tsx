@@ -42,11 +42,23 @@ describe('useAnalytics', () => {
   it('fires a pageView on mount carrying the current userId', () => {
     useAuthStore.setState({ user: { uid: 'u9' }, online: true, authReady: true });
     renderHook(() => useAnalytics());
-    expect(an.emit).toHaveBeenCalledWith('pageView', {}, {
-      userId: 'u9',
-      debug: false,
-      isExtension: false,
-    });
+    expect(an.emit).toHaveBeenCalledWith(
+      'pageView',
+      { category: 'navigation', label: null },
+      { userId: 'u9', debug: false, isExtension: false },
+    );
+  });
+
+  // Discriminating (REQ-ANL-1 envelope parity): legacy trackPageView POSTed
+  // {category:'navigation', label:null} to /track (src/analytics.js:24-34, called
+  // with no arg at app.jsx:695). The mount-time pageView must carry that exact
+  // envelope, not empty props. Reverting the fix (back to trackRef.current('pageView'))
+  // makes the props arg `{}` → this assertion fails.
+  it('mount pageView carries the legacy category/label envelope', () => {
+    renderHook(() => useAnalytics());
+    const pageView = an.emit.mock.calls.find((c) => c[0] === 'pageView');
+    expect(pageView).toBeDefined();
+    expect(pageView![1]).toEqual({ category: 'navigation', label: null });
   });
 
   // Discriminating (REQ-ANL-1 single-fire parity): pageView must fire EXACTLY ONCE
@@ -66,6 +78,8 @@ describe('useAnalytics', () => {
     // And it carries the context bound at mount time (signed-out → null), matching
     // legacy's mount-time fire that does not wait for auth.
     expect(pageViews[0][2]).toEqual({ userId: null, debug: false, isExtension: false });
+    // ...with the legacy property envelope intact.
+    expect(pageViews[0][1]).toEqual({ category: 'navigation', label: null });
   });
 
   it('routes through debug context when the wmdebug cookie is set', () => {

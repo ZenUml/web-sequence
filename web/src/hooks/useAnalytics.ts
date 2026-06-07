@@ -45,7 +45,14 @@ export function useAnalytics(): UseAnalyticsResult {
   useEffect(() => {
     if (firedPageView.current) return;
     firedPageView.current = true;
-    trackRef.current('pageView');
+    // Preserve the legacy pageView property envelope (REQ-ANL-1: emit the existing
+    // events under the same conditions). Legacy trackPageView (src/analytics.js:24-34)
+    // POSTed {event:'pageView', category:'navigation', label:pageName} to /track, and
+    // its sole call site `trackPageView()` (app.jsx:695) passes no arg → pageName
+    // defaults to null. Dropping category='navigation' would silently break any
+    // Mixpanel report that filters pageView by that category. label is null to match
+    // legacy exactly — we do NOT invent a page-name value legacy never sent.
+    trackRef.current('pageView', { category: 'navigation', label: null });
   }, []);
 
   return { track };
