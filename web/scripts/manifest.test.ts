@@ -19,6 +19,25 @@ describe('extension manifest (MV3)', () => {
     expect(manifest.version).toBe(APP_VERSION);
   });
 
+  // The Chrome Web Store compares versions as dot-separated INTEGER tuples and
+  // rejects any upload whose version is not strictly greater than the published
+  // one. The legacy extension published 2026.6.4 (static/manifest.json), so the
+  // rewrite's APP_VERSION must be a strictly-greater tuple or `yarn pub` fails.
+  it('APP_VERSION is strictly greater than the published store version 2026.6.4', () => {
+    const PUBLISHED = [2026, 6, 4];
+    const current = APP_VERSION.split('.').map(Number);
+    expect(current.every((n) => Number.isInteger(n))).toBe(true);
+    const cmp = (a: number[], b: number[]): number => {
+      const len = Math.max(a.length, b.length);
+      for (let i = 0; i < len; i++) {
+        const d = (a[i] ?? 0) - (b[i] ?? 0);
+        if (d !== 0) return d < 0 ? -1 : 1;
+      }
+      return 0;
+    };
+    expect(cmp(current, PUBLISHED)).toBe(1);
+  });
+
   it('action icons and top-level icons reference the build-copied icon files', () => {
     const iconFiles = ['icon-16.png', 'icon-48.png', 'favicon-128x128.png'];
     expect(Object.values(manifest.icons)).toEqual(iconFiles);
