@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { detectRuntimeMode, detectFromEnv } from './runtimeMode';
+import { detectRuntimeMode, detectFromEnv, parseEmbedCode } from './runtimeMode';
 
 describe('detectRuntimeMode', () => {
   it('embed when ?embed present', () => {
@@ -38,6 +38,41 @@ describe('detectRuntimeMode — embed inline params (contract §8)', () => {
     expect(m.isEmbed).toBe(true);
     expect(m.isShared).toBe(true);
     expect(m.itemId).toBe('x');
+  });
+});
+
+// M05 adversarial review (finding 3): legacy minted embed links as
+// `?code=${JSON.stringify(currentItem)}` — a JSON item, NOT raw DSL. parseEmbedCode
+// must keep rendering those in-the-wild links while still honoring contract §8 raw DSL.
+describe('parseEmbedCode — legacy JSON-item vs raw-DSL backward compat', () => {
+  it('extracts js/css/html/title from a legacy JSON-encoded item', () => {
+    const legacy = JSON.stringify({
+      id: 'x', js: 'A.method()', css: '.foo{}', html: '<b/>', title: 'Saved Title',
+    });
+    const p = parseEmbedCode(legacy, 'fallback');
+    expect(p.js).toBe('A.method()');
+    expect(p.css).toBe('.foo{}');
+    expect(p.html).toBe('<b/>');
+    expect(p.title).toBe('Saved Title');
+  });
+
+  it('treats a raw DSL string as the source (contract §8 form)', () => {
+    const p = parseEmbedCode('A.method()', 'Demo');
+    expect(p.js).toBe('A.method()');
+    expect(p.css).toBe('');
+    expect(p.html).toBe('');
+    expect(p.title).toBe('Demo');
+  });
+
+  it('uses the ?title fallback when a legacy item has no title', () => {
+    const legacy = JSON.stringify({ js: 'A.b' });
+    expect(parseEmbedCode(legacy, 'FromUrl').title).toBe('FromUrl');
+  });
+
+  it('does NOT misread a JSON array/quoted-string as an item (falls back to raw DSL)', () => {
+    // These parse as JSON but have no string `.js`, so they must be treated verbatim.
+    expect(parseEmbedCode('"A.b"').js).toBe('"A.b"');
+    expect(parseEmbedCode('[1,2,3]').js).toBe('[1,2,3]');
   });
 });
 

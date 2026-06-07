@@ -989,6 +989,20 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(href).toContain('title=Demo');
   });
 
+  it('?embed&code=<legacy JSON item> renders the item.js (backward compat, finding 3)', async () => {
+    // Legacy ZenUML minted embed links as ?code=${JSON.stringify(currentItem)}.
+    // After cutover those in-the-wild links must still render the diagram, not the
+    // raw JSON blob. Reverting the parseEmbedCode call → js becomes the JSON string.
+    const legacy = encodeURIComponent(JSON.stringify({ id: 'old', js: 'Alice.greet()', title: 'Legacy' }));
+    window.history.replaceState({}, '', `/?embed&code=${legacy}`);
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    await waitFor(() =>
+      expect(useEditorStore.getState().currentItem?.js).toBe('Alice.greet()'),
+    );
+    expect(useEditorStore.getState().currentItem?.title).toBe('Legacy');
+  });
+
   it('?embed applies the inline title to the embed header', async () => {
     window.history.replaceState({}, '', '/?embed&code=A.b&title=My%20Flow');
     render(<AppRoot />);

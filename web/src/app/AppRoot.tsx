@@ -42,7 +42,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
-import { detectFromEnv } from './runtimeMode';
+import { detectFromEnv, parseEmbedCode } from './runtimeMode';
 import { CANONICAL_APP_ORIGIN } from '../config/shareOrigin';
 import { EmbedHeader } from '../components/embed/EmbedHeader';
 import { semverCompare } from '../domain/semver';
@@ -353,11 +353,14 @@ export function AppRoot() {
     embedSeeded.current = true;
     const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID() : `embed-${Date.now()}`;
+    // Backward compat (adversarial review finding 3): legacy embed links carry a
+    // JSON-encoded item in ?code=, not raw DSL. parseEmbedCode accepts both shapes.
+    const payload = parseEmbedCode(runtime.embedCode ?? '', runtime.embedTitle ?? null);
     useEditorStore.getState().loadItem(migrateToPages({
       id,
-      title: runtime.embedTitle ?? 'Untitled',
-      js: runtime.embedCode ?? '',
-      css: '', html: '',
+      title: payload.title ?? 'Untitled',
+      js: payload.js,
+      css: payload.css, html: payload.html,
       htmlMode: 'html', cssMode: 'css', jsMode: 'js',
       pages: [], currentPageId: '',
       isReadOnly: true,
