@@ -98,6 +98,34 @@ test('Help modal opens from the header menu and shows the version', async ({ pag
   await expect(page.locator('[data-testid="help-modal"]')).toBeHidden();
 });
 
+test('Cheat-Sheet modal opens from the header menu and shows DSL examples', async ({ page }) => {
+  await gotoFresh(page);
+  await openViaHeaderMenu(page, 'header-cheatsheet');
+  const modal = page.locator('[data-testid="cheatsheet-modal"]');
+  await expect(modal).toBeVisible();
+  // The cheat sheet shows the async-message DSL example.
+  await expect(modal).toContainText('->');
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+});
+
+test('Keyboard-Shortcuts modal opens via the header menu AND via Ctrl/Cmd+Shift+?', async ({ page }) => {
+  await gotoFresh(page);
+
+  // Via the header overflow menu.
+  await openViaHeaderMenu(page, 'header-shortcuts');
+  const modal = page.locator('[data-testid="shortcuts-modal"]');
+  await expect(modal).toBeVisible();
+  await expect(modal).toContainText('Ctrl');
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+
+  // REQ-KB-1: the keybinding itself opens it. '?' is Shift+'/'.
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${mod}+Shift+?`);
+  await expect(modal).toBeVisible();
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Test 4: Pricing modal opens (web host → payment ON) and the period toggles.
 // ──────────────────────────────────────────────────────────────────────────────

@@ -352,6 +352,32 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
   });
 });
 
+describe('AppRoot — M04 modal reachability', () => {
+  it('Ctrl/Cmd+Shift+? opens the Keyboard-Shortcuts modal (REQ-KB-1)', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      // '?' is Shift+'/'; dispatch the key with the modifier combo.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '?', ctrlKey: true, shiftKey: true }));
+    });
+    expect(await screen.findByTestId('shortcuts-modal')).toBeInTheDocument();
+  });
+
+  it('ACSS-config button appears in acss mode and opens the AtomicCss modal (REQ-ED-2)', async () => {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    // Switch the current item to acss mode (signed-out → CSS-gate does not apply to
+    // setCssMode via the store directly; we drive the store to set up the affordance).
+    await act(async () => {
+      store.setState((s) => (s.currentItem ? { currentItem: { ...s.currentItem, cssMode: 'acss' } } : s));
+    });
+    const openBtn = await screen.findByTestId('acss-settings-open');
+    await act(async () => { await userEvent.click(openBtn); });
+    expect(await screen.findByTestId('acss-modal')).toBeInTheDocument();
+  });
+});
+
 describe('AppRoot — M04 one-time triggers', () => {
   it('opens the Onboarding modal on boot when not yet onboarded', async () => {
     window.localStorage.removeItem(LS_KEYS.onboarded);

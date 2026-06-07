@@ -145,10 +145,15 @@ export function AppRoot() {
     void localStore.get<string | null>(LS_KEYS.lastAuthProvider, null).then(setLastProvider);
   }, []);
 
-  // §11: Ctrl+L clears the console.
+  // §11 keyboard shortcuts: Ctrl+L clears the console; Ctrl/Cmd+Shift+? opens the
+  // keyboard-shortcuts help (REQ-KB-1). '?' is Shift+'/', so match either key form.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); setConsoleEntries([]); }
+      if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); setConsoleEntries([]); return; }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/')) {
+        e.preventDefault();
+        useUiStore.getState().openModal('shortcuts');
+      }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -613,6 +618,8 @@ export function AppRoot() {
         onOpenCreateNew={() => openModal('createNew')}
         onOpenHelp={() => openModal('help')}
         onOpenPricing={() => openModal('pricing')}
+        onOpenCheatSheet={() => openModal('cheatsheet')}
+        onOpenShortcuts={() => openModal('shortcuts')}
         actions={
           <ShareButton
             disabled={shareDisabled}
@@ -679,6 +686,18 @@ export function AppRoot() {
                     {CSS_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                   </select>
                 </label>
+                {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
+                    Atomizer config is edited via this affordance (REQ-ED-2). */}
+                {item.cssMode === 'acss' && (
+                  <button
+                    type="button"
+                    data-testid="acss-settings-open"
+                    onClick={() => openModal('acss')}
+                    className="border border-gray-300 rounded px-2 py-0.5 hover:bg-gray-50"
+                  >
+                    Atomic CSS config
+                  </button>
+                )}
               </div>
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>

@@ -138,6 +138,21 @@ describe('AppHeader', () => {
     expect(onOpenHelp).toHaveBeenCalled();
   });
 
+  it('overflow menu opens the cheat-sheet and shortcuts modals', async () => {
+    const onOpenCheatSheet = vi.fn();
+    const onOpenShortcuts = vi.fn();
+    render(
+      <AppHeader {...baseProps} onOpenCheatSheet={onOpenCheatSheet} onOpenShortcuts={onOpenShortcuts} />,
+    );
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-cheatsheet'));
+    expect(onOpenCheatSheet).toHaveBeenCalled();
+
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-shortcuts'));
+    expect(onOpenShortcuts).toHaveBeenCalled();
+  });
+
   // REQ-SUB-6: the Pricing trigger only exists when payment is enabled.
   it('shows header-pricing only when paymentEnabled', async () => {
     const onOpenPricing = vi.fn();

@@ -30,6 +30,8 @@ export interface AppHeaderProps {
   onOpenCreateNew?(): void;
   onOpenHelp?(): void;
   onOpenPricing?(): void;
+  onOpenCheatSheet?(): void;
+  onOpenShortcuts?(): void;
   // M04 subscription/profile state (forwarded to ProfileMenu). All optional.
   subscribed?: boolean;
   planType?: PlanType;
@@ -64,6 +66,8 @@ export function AppHeader({
   onOpenCreateNew,
   onOpenHelp,
   onOpenPricing,
+  onOpenCheatSheet,
+  onOpenShortcuts,
   subscribed = false,
   planType = 'free',
   paymentEnabled = false,
@@ -169,6 +173,12 @@ export function AppHeader({
                   Pricing
                 </MenuItem>
               )}
+              <MenuItem data-testid="header-cheatsheet" onSelect={() => onOpenCheatSheet?.()}>
+                DSL cheat sheet
+              </MenuItem>
+              <MenuItem data-testid="header-shortcuts" onSelect={() => onOpenShortcuts?.()}>
+                Keyboard shortcuts
+              </MenuItem>
               <MenuItem data-testid="header-help" onSelect={() => onOpenHelp?.()}>
                 Help
               </MenuItem>
