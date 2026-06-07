@@ -58,7 +58,21 @@ export default defineConfig({
   // publicDir defaults to web/public (created when static assets — favicons,
   // fonts — are migrated from the legacy ../static in a later milestone).
   publicDir: 'public',
-  build: { outDir: 'dist', emptyOutDir: true, assetsDir: 'assets' },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    assetsDir: 'assets',
+    // CSP-CRITICAL (roadmap §9 M05 finding #1): the preview-iframe bootstrap is
+    // imported as `?url` and loaded via `<script src=...>`. Vite inlines small
+    // assets (< default 4 KB) as `data:` URLs — but a `data:` script URL is NOT
+    // `'self'` under the packaged MV3 extension's `script-src 'self'` CSP, so an
+    // inlined bootstrap would be CSP-blocked exactly like the old inline block and
+    // the preview would stay blank. Force the bootstrap to emit as a REAL
+    // same-origin `./assets/*.js` file (which IS `'self'`). Other assets keep the
+    // default inlining behavior.
+    assetsInlineLimit: (filePath: string) =>
+      filePath.includes('previewBootstrap.runtime') ? false : undefined,
+  },
   define: { __COMMITHASH__: JSON.stringify(getCommitHash()) },
   css: { postcss: './postcss.config.js' },
   server: {

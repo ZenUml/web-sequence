@@ -1,8 +1,19 @@
-// Runs INSIDE the srcdoc iframe (plain ES5-ish string, no bundler). Speaks the
-// typed protocol in previewProtocol.ts. `window.zenuml` is provided by the
-// injected @zenuml/core bundle. stickyOffset comes from the render message
-// (the srcdoc iframe has no useful window.location.search — trap #1).
-export const PREVIEW_BOOTSTRAP = `
+// Source of truth for the preview-iframe bootstrap.
+//
+// CSP-CRITICAL: this is a REAL `.js` file (not a TS template string) so Vite emits
+// it as a hashed asset and previewHtml.ts can reference it via `<script src=...>`.
+// An INLINE `<script>${...}</script>` block is blocked under the packaged MV3
+// extension's default `script-src 'self'` CSP (which MV3 forbids relaxing with
+// 'unsafe-inline'), leaving the preview blank — see roadmap §9 M05 finding #1.
+// Loading the bootstrap as a same-origin asset (the SAME rail as the @zenuml/core
+// `?url` script next to it) keeps it `'self'`-compliant in both web and extension.
+//
+// Runs INSIDE the srcdoc iframe. Speaks the typed protocol in previewProtocol.ts.
+// `window.zenuml` is provided by the @zenuml/core bundle (loaded by the prior
+// classic <script src>; classic scripts run in document order, so this executes
+// after the lib). stickyOffset comes from the render message (the srcdoc iframe
+// has no useful location query string — trap #1). MUST stay a classic script
+// (no type=module / no defer) so it sees the window.zenuml global and runs in order.
 (function () {
   var app = null;
   function post(msg) { parent.postMessage(msg, '*'); }
@@ -75,4 +86,3 @@ export const PREVIEW_BOOTSTRAP = `
     }
   }, false);
 })();
-`;

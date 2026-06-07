@@ -1,5 +1,12 @@
 import zenumlUrl from '@zenuml/core/dist/zenuml?url';
-import { PREVIEW_BOOTSTRAP } from './previewBootstrap';
+// CSP-CRITICAL (roadmap §9 M05 finding #1): load the bootstrap as a same-origin
+// emitted asset, NEVER as an inline <script> block. Under the packaged MV3
+// extension the default extension-page CSP is `script-src 'self'` (MV3 forbids
+// 'unsafe-inline'), and a no-sandbox srcDoc iframe inherits the embedder CSP — so
+// an inline bootstrap is blocked and the preview stays blank. An external
+// <script src=...> on the same `?url` rail as zenumlUrl is `'self'`-compliant in
+// both web and extension contexts.
+import bootstrapUrl from './previewBootstrap.runtime.js?url';
 
 // The fixed ZenUML mount structure (ported from legacy computes.js). The DSL is
 // NOT inlined — it arrives via `render` postMessages, so the iframe is built
@@ -24,9 +31,7 @@ export function getCompleteHtml(_parts: PreviewParts = {}): string {
 <body>
 ${MOUNT_HTML}
 <script src="${zenumlUrl}"></script>
-<script>
-${PREVIEW_BOOTSTRAP}
-</script>
+<script src="${bootstrapUrl}"></script>
 </body>
 </html>`;
 }
