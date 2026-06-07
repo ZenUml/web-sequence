@@ -55,6 +55,15 @@ describe('itemService.setItem', () => {
     await svc.setItem('item-1', baseItem());
     expect(await localStore.get<Item | null>('item-1', null)).not.toBeNull();
   });
+
+  // REQ-SUB-5 softened plan-limit: skipCloud keeps the local write but withholds
+  // the Firestore write even for a signed-in user.
+  it('signed-in + skipCloud → local write kept, NO cloud setDoc (over-cap save)', async () => {
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    await svc.setItem('item-1', baseItem(), { skipCloud: true });
+    expect(await localStore.get<Item | null>('item-1', null)).toMatchObject({ id: 'item-1' });
+    expect(fs.setDoc).not.toHaveBeenCalled();
+  });
 });
 
 describe('itemService.saveLastCode', () => {

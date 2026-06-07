@@ -33,6 +33,12 @@ describe('editorStore', () => {
     useEditorStore.getState().setJsMode('typescript');
     expect(useEditorStore.getState().currentItem!.jsMode).toBe('typescript');
   });
+  it('setCssSettings stores the ACSS config on the item and marks dirty', () => {
+    useEditorStore.getState().loadItem(sample());
+    useEditorStore.getState().setCssSettings({ acssConfig: '{"custom":{}}' });
+    expect(useEditorStore.getState().currentItem!.cssSettings).toEqual({ acssConfig: '{"custom":{}}' });
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
   it('edits increment unsavedCount; markSaved resets it', () => {
     useEditorStore.getState().loadItem(sample());
     useEditorStore.getState().setDsl('X');

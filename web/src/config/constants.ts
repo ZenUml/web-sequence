@@ -1,3 +1,9 @@
+// App version surfaced in the Help modal + used by the support-pledge semver
+// trigger. Tracks the legacy app version (root package.json) until the rewrite
+// owns its own release versioning (M05). The exact value is not load-bearing —
+// the semver-compare against lastSeenVersion is what matters.
+export const APP_VERSION = '1.0.25';
+
 export const AUTO_SAVE_INTERVAL = 15000;     // ms (REQ-PST-2)
 export const UNSAVED_WARNING_COUNT = 15;     // edits before save-button nudge (REQ-PST-3)
 export const PREVIEW_DEBOUNCE = 500;         // ms (REQ-PRV-1)

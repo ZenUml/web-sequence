@@ -35,6 +35,9 @@ interface EditorState {
   setJsMode(m: JsMode): void;
   setCssMode(m: CssMode): void;
   setHtmlMode(m: HtmlMode): void;
+  // ACSS (Atomizer) config edited via AtomicCssSettingsModal (REQ-ED-2). Stored on
+  // the item; the CSS transpile effect re-runs when cssSettings changes.
+  setCssSettings(settings: unknown): void;
   addPage(title?: string): void;
   deletePage(pageId: string): void;
   switchPage(pageId: string): void;
@@ -64,6 +67,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setJsMode: (jsMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, jsMode }, dirty: true } : s),
   setCssMode: (cssMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, cssMode }, dirty: true } : s),
   setHtmlMode: (htmlMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, htmlMode }, dirty: true } : s),
+  setCssSettings: (cssSettings) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, cssSettings }, dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
   addPage: (title) => set((s) => s.currentItem ? { currentItem: addPage(s.currentItem, title), dirty: true } : s),
   deletePage: (pageId) => set((s) => s.currentItem ? { currentItem: deletePage(s.currentItem, pageId), dirty: true } : s),
   // FIX 8: switchPage marks dirty so auto-save persists the page position change.

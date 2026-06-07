@@ -11,13 +11,19 @@ export type AuthContextGetter = () => AuthContext;
 // Factory so tests/hooks inject the auth/online context instead of reading globals
 // (NFR-3: no window.* as the integration mechanism).
 export function makeItemService(getAuth: AuthContextGetter) {
-  async function setItem(id: string, item: Item): Promise<void> {
+  // `skipCloud` (REQ-SUB-5 softened plan-limit): keep the local write but DO NOT
+  // touch Firestore. The save-seam uses this for an over-cap save so the user's
+  // diagram is preserved on-device while the cloud copy is withheld — enforcement
+  // without a blocking alert. The signed-out path is already local-only.
+  async function setItem(id: string, item: Item, opts?: { skipCloud?: boolean }): Promise<void> {
     // imageBase64 can blow the localStorage quota — never persist it.
     const clean: any = { ...item };
     delete clean.imageBase64;
 
     // Local write always (sync, fast feedback). The `code` slot is handled by saveLastCode.
     await localStore.set(id, clean);
+
+    if (opts?.skipCloud) return; // over-cap save: local kept, cloud withheld.
 
     const { uid, online } = getAuth();
     // Signed-out: keep the local index in sync (mirrors users/{uid}.items) so the
