@@ -19,7 +19,7 @@
   - `config/firebaseConfig.ts` — extension hosts (Chrome `kcpganeflmhffnlofpdmcjklmdpbbmef`-style id host + two Edge ids) all map to the **prod** project with `features.payment:false`. **DO NOT change these.**
   - `services/analytics.ts` — `emit(ctx)` where `ctx.isExtension` skips the CDN client push and `ctx.debug` routes to console; `loadClientAnalytics({isExtension})` is a documented stub (the M04 deferral). M05 does NOT un-stub it.
   - `services/storage.ts` — `syncStore` (settings) auto-backs to `chrome.storage.sync` when `chrome.storage.sync` exists, else `localStorage`. `localStore` (item cache / flags) is always `localStorage`.
-  - `services/cloudFunctions.ts` — `createShare(id)` POSTs `{ id, token, origin: window.location.origin }` and returns `{ url, md5 }`. **M05 changes ONLY the origin source** (Task 4).
+  - `services/cloudFunctions.ts` — `createShare(id)` POSTs EXACTLY `{ id, token, origin: window.location.origin }` (verified ground truth — three fields, nothing else) and returns `{ url, md5 }`. **M05 changes ONLY the `origin` SOURCE** (Task 4). **M05 MUST NOT add `name`/`content`/`description` to the body.** (Contract §5.1 lists a richer body, but shipped M03 sends only `{ id, token, origin }`. That M03-vs-§5.1 divergence is an EXISTING, OUT-OF-SCOPE finding — record it in roadmap §9 in Task 1, do NOT "fix" it here. Adding fields in M05 would be unverified scope creep and a silent body-shape mutation.)
   - `components/header/*`, `components/modals/*`, `components/library/*`, `components/share/*`, `Layout.tsx`, `PreviewFrame` (consumes `code`, `stickyOffset`), `AppRoot.tsx` (boot, runtime detection via `detectFromEnv().isExtension`, stickyOffset via `params.get`).
   - `config/constants.ts` — `APP_VERSION = '1.0.25'` (the version the extension manifest + options page surface; M05 owns release versioning per the M04 §9 note).
 - **Legacy ground truth for parity (READ-ONLY):**
@@ -87,6 +87,7 @@ docs/superpowers/runbooks/2026-06-06-web-sequence-production-cutover.md   # (add
 - [ ] **Step 1:** Append to roadmap "## 9. Adversarial-review carry-forward":
 ```markdown
 - **M05 scope boundaries (recorded).** Embed mode (RM-2/REQ-EMB-1) + MV3 extension (RM-4/REQ-EXT-1) + share-link origin override (resolves the prior "M05 — extension share-link origin" deferral) + production cutover (config-only repoint of `firebase.json hosting.public` → `web/dist`, delivered as a reversible manual runbook — NO deploy performed). DEFERRED beyond M05: Desktop host RM-5 injected item service (no desktop product in scope — `isDesktop` is detected + hides the header, but no injected service ships). `loadClientAnalytics` un-stub + GTM-local-for-extension (contract §6.3) stays the M04 deferral — the extension runs with the analytics stub (server-side `/track` still fires). `lastSeenVersion` Firestore `users/{uid}` mirror stays deferred (legacy `db.js` write, not required for extension parity; `chrome.storage.sync` covers cross-device prefs). Legacy `src/` deletion + old-config retirement is a follow-up AFTER the user confirms the cutover is live — NOT performed in M05.
+- **createShare body: §5.1-vs-shipped divergence (recorded, OUT OF SCOPE for M05).** Contract §5.1 describes a `/create-share` body of `{ token, id, name, content, description, origin }`, but the shipped M03 client (`web/src/services/cloudFunctions.ts`) sends ONLY `{ id, token, origin }`. M05 changes ONLY the `origin` SOURCE (canonical-origin override for the extension) and intentionally does NOT add `name`/`content`/`description` — adding them would be unverified scope creep and a silent body-shape mutation. Whether the client should grow to match §5.1 (or §5.1 should be corrected to the shipped shape) is a SEPARATE client-vs-contract reconciliation, deferred. Flagged here so a later implementer does not "fix" it inside M05.
 ```
 - [ ] **Step 2: Commit**
 ```bash
@@ -188,9 +189,9 @@ git commit -m "feat(m05): runtimeMode exposes embed ?code/?title inline params (
 
 ### Task 4: createShare — use shareOrigin (extension origin override)
 
-**Files:** Modify `web/src/services/cloudFunctions.ts`, extend `web/src/services/cloudFunctions.test.ts`
+**Files:** Modify `web/src/services/cloudFunctions.ts`, extend `web/src/services/cloudFunctions.test.ts`, extend `web/src/hooks/useShare.test.tsx` (the through-`useShare` seam test)
 
-> `createShare` currently hardcodes `origin: window.location.origin`. Change it to derive the origin from `shareOrigin({ isExtension })` so the extension sends the canonical web origin. Keep the body shape EXACT (contract §5.1: `{ token, id, name, content, description, origin }` — match whatever fields M03 already sends; only the `origin` SOURCE changes). Inject `isExtension` (default `detectFromEnv().isExtension`) so the test can drive both branches without touching `window.location.protocol`.
+> `createShare` currently hardcodes `origin: window.location.origin`. Change it to derive the origin from `shareOrigin({ isExtension })` so the extension sends the canonical web origin. **Keep the body shape EXACT — the shipped M03 body is `{ id, token, origin }` and ONLY those three fields. M05 changes ONLY the `origin` SOURCE; it MUST NOT add `name`/`content`/`description`.** (The contract §5.1 body is richer than what M03 ships — that is a pre-existing client-vs-contract divergence; it is OUT OF SCOPE for M05 and recorded as a finding in roadmap §9 (Task 1), NOT silently introduced here. Do not let §5.1's field list tempt a body-shape mutation.) Inject `isExtension` (default `detectFromEnv().isExtension`) so the test can drive both branches without touching `window.location.protocol`.
 
 - [ ] **Step 1: Extend the test** `web/src/services/cloudFunctions.test.ts` (append; reuse the existing MSW `server` + `${window.location.origin}/create-share` handler convention):
 ```ts
@@ -213,16 +214,53 @@ describe('createShare — origin source (M05)', () => {
     await createShare('item-1', { isExtension: true });
     expect(captured.origin).toBe('https://app.zenuml.com');
   });
+
+  // NO-OPTS DEFAULT (discriminating for the lazy default — the two tests above pass an
+  // EXPLICIT opts; this one passes NONE, exercising `opts.isExtension ?? detectFromEnv()
+  // .isExtension`). Stub env so detectFromEnv().isExtension === true WITHOUT passing opts
+  // (match however existing tests stub runtime — e.g. window.location.protocol =
+  // 'chrome-extension:' via the test's location mock, or vi.mock('../app/runtimeMode', …)).
+  it('no-opts default: under the extension env, createShare(id) sends app.zenuml.com', async () => {
+    let captured: any;
+    server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+      captured = await request.json();
+      return HttpResponse.json({ page_share: 'https://app.zenuml.com?id=item-1&share-token=tok', md5: 'abc' });
+    }));
+    await createShare('item-1'); // NO opts — exercises the detectFromEnv() default
+    expect(captured.origin).toBe('https://app.zenuml.com');
+    // Revert (hardcode origin back / resolve env at module load) → this FAILS.
+  });
 });
 ```
-(If `createShare`'s existing signature is `createShare(id)`, change it to `createShare(id, opts: { isExtension?: boolean } = {})` with the default deriving from `detectFromEnv().isExtension` — keep every existing call site working by leaving `opts` optional. Update existing M03 tests only if they assert the old `origin` field VALUE; do NOT weaken them.)
+**THROUGH-`useShare` SEAM TEST (REQUIRED — this is the one the critique demanded; the no-opts test above does NOT traverse the seam).** The exact gap is: `UseShareOpts.createShare` is typed `(id: string) => Promise<…>` and AppRoot.tsx:612 passes the BARE `createShare` reference — no `{ isExtension }` is threaded — so the real share path resolves env ONLY via `createShare`'s lazy default. A `createShare`-only test cannot catch a regression in the *wiring*. Add a test that drives `share()` through `useShare` with the **real** `createShare` injected and the extension env stubbed. Put it in `web/src/hooks/useShare.test.tsx` (it already pins at :36 that `useShare` calls `createShare` with a bare id) — or in `AppRoot.test.tsx`:
+```ts
+// web/src/hooks/useShare.test.tsx — REAL createShare through the useShare seam (M05)
+import { createShare } from '../services/cloudFunctions';
+// + the project's MSW `server` import/setup used by cloudFunctions.test
+it('extension env: share() through useShare with the REAL createShare sends app.zenuml.com (end-to-end seam)', async () => {
+  // Stub env so detectFromEnv().isExtension === true (same mechanism as the no-opts test).
+  let captured: any;
+  server.use(http.post(`${window.location.origin}/create-share`, async ({ request }) => {
+    captured = await request.json();
+    return HttpResponse.json({ page_share: 'https://app.zenuml.com?id=item-1&share-token=tok', md5: 'abc' });
+  }));
+  const { result } = renderHook(() =>
+    useShare(makeOpts({ createShare /* REAL, bare ref — exactly AppRoot.tsx:612 */ })),
+  );
+  await act(async () => { await result.current.share(); });
+  expect(captured.origin).toBe('https://app.zenuml.com');
+  // Discriminating: revert createShare's lazy default, OR rewire useShare to drop the
+  // bare-ref pass-through → captured.origin becomes chrome-extension://… → FAILS.
+});
+```
+(If `createShare`'s existing signature is `createShare(id)`, change it to `createShare(id, opts: { isExtension?: boolean } = {})` with the default deriving from `detectFromEnv().isExtension` — keep every existing call site working by leaving `opts` optional. **DO NOT change `UseShareOpts.createShare`'s type (`(id: string) => Promise<…>`) or thread `isExtension` through `useShare`** — AppRoot.tsx:612 passes the bare `createShare` reference, and the extension override flows through the LAZY `detectFromEnv()` default at call time, which the through-`useShare` seam test above guards end-to-end. Document this lazy-default reliance in a `createShare` comment (env is resolved at CALL time, not module load, precisely so the bare reference works under the extension). Update existing M03 tests only if they assert the old `origin` field VALUE; do NOT weaken them.)
 
 - [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement** — import `shareOrigin` + `detectFromEnv`; replace `origin: window.location.origin` with `origin: shareOrigin({ isExtension: opts.isExtension ?? detectFromEnv().isExtension })`. Keep all other body fields and the md5 cache-buster URL assembly unchanged.
-- [ ] **Step 4: Run** → PASS (incl. the M03 createShare tests). **Step 5: Commit**
+- [ ] **Step 3: Implement** — import `shareOrigin` + `detectFromEnv`; replace `origin: window.location.origin` with `origin: shareOrigin({ isExtension: opts.isExtension ?? detectFromEnv().isExtension })`. The `?? detectFromEnv().isExtension` MUST be evaluated INSIDE the function body (call time), NOT captured at module load — AppRoot passes the bare `createShare` reference through `useShare`, so the lazy default is the only thing making the extension override work end-to-end. Add a comment saying exactly that. Keep the body shape EXACTLY `{ id, token, origin }` (do NOT add fields) and the md5 cache-buster URL assembly unchanged.
+- [ ] **Step 4: Run** → PASS (incl. the M03 createShare tests AND the through-`useShare` seam test). **Step 5: Commit**
 ```bash
-git add web/src/services/cloudFunctions.ts web/src/services/cloudFunctions.test.ts
-git commit -m "feat(m05): createShare uses shareOrigin so extension links point at app.zenuml.com (REQ-EXT-1, §5.1)"
+git add web/src/services/cloudFunctions.ts web/src/services/cloudFunctions.test.ts web/src/hooks/useShare.test.tsx
+git commit -m "feat(m05): createShare uses shareOrigin so extension links point at app.zenuml.com (REQ-EXT-1)"
 ```
 
 ---
@@ -252,10 +290,34 @@ git commit -m "feat(m05): EmbedHeader — minimal embed header + open-in-app lin
 - [ ] **Step 1: Extend the test** `web/src/app/AppRoot.test.tsx`:
 ```ts
 describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
-  it('?embed hides the main header + sidebar and shows the embed header', () => {
+  // DISCRIMINATING-TESTID CONTRACT (ground truth — verified against the code, do NOT
+  // invent ids). AppHeader exposes `header-title`/`header-menu`/`header-new`/`header-save`
+  // (there is NO `app-header` id). Sidebar exposes `sidebar-${panel}` (e.g. `sidebar-files`;
+  // there is NO bare `sidebar` id). A test that queries a non-existent id returns null
+  // whether or not the chrome renders — it CANNOT fail if embed suppression breaks
+  // (revert→still-green = vacuous). The embed assertions therefore MUST use REAL ids that
+  // are PRESENT in normal mode so their ABSENCE in embed is a genuine signal.
+  //
+  // First, PIN the discriminator with a control assertion in NORMAL (non-embed) mode so a
+  // reviewer (and revert→fail) can see the id actually exists when chrome renders:
+  it('CONTROL: normal (non-embed) mode renders the real header + a sidebar panel', () => {
+    // render AppRoot with search '' (or runtime { isEmbed:false }); these MUST be present:
+    // getByTestId('header-title'); getByTestId('header-menu');
+    // getByTestId(/^sidebar-/)  (at least one sidebar-<panel> node, e.g. 'sidebar-files')
+    // — if any of these is already null in normal mode, the discriminator below is broken;
+    //   STOP and pick a different real id rather than weakening the embed test.
+  });
+  it('?embed hides the real header + sidebar and shows the embed header', () => {
     // render AppRoot with window.location.search = '?embed&code=A.b&title=Demo' (or inject runtime)
-    // assert: queryByTestId('app-header') === null, queryByTestId('sidebar') === null,
-    //         getByTestId('embed-header') present, getByTestId('embed-open-link') href starts with CANONICAL_APP_ORIGIN
+    // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
+    //   expect(queryByTestId('header-title')).toBeNull();
+    //   expect(queryByTestId('header-menu')).toBeNull();
+    //   expect(queryAllByTestId(/^sidebar-/)).toHaveLength(0);  // no sidebar-<panel> rendered
+    // Presence of the embed shell:
+    //   getByTestId('embed-header') present;
+    //   getByTestId('embed-open-link') href starts with CANONICAL_APP_ORIGIN.
+    // (Revert the embed branch → header-title/header-menu/sidebar-* reappear → this FAILS.
+    //  That is the integrity guarantee the old `app-header`/`sidebar` ids could not give.)
   });
   it('?embed&code= renders by value without a Firestore read', () => {
     // assert getItem / subscribeAllItems NOT called; preview receives the inline code
@@ -455,7 +517,7 @@ git commit -m "docs(m05): production cutover runbook — manual deploy, smoke, d
 
 > Embed E2E needs no emulator: `?embed&code=…` renders by value, hides the main header/sidebar, shows the embed header + open-in-app link, and shortcuts are off. The production-build asset spec (the M01-greened guard for the `@zenuml/core` asset URL) must pass against the cutover artifact `web/dist`.
 
-- [ ] **Step 1:** `embed.spec.js`: navigate to `/?embed&code=A.method()&title=Demo`; assert `embed-header` visible, `app-header`/`sidebar` absent, the preview renders the inline diagram (`#demo-frame` / preview testid shows content), the `embed-open-link` href starts with `https://app.zenuml.com`. Add a shortcut-off check (a global shortcut that opens a modal in normal mode does nothing in embed). Note auth-gated combos (`?embed&id=&share-token=`) deferred to the staging gate.
+- [ ] **Step 1:** `embed.spec.js`: navigate to `/?embed&code=A.method()&title=Demo`; assert `embed-header` visible; assert the REAL chrome ids are absent — `getByTestId('header-title')`, `getByTestId('header-menu')` and every `sidebar-<panel>` (`page.getByTestId(/^sidebar-/)`) resolve to **0 matches** (these ids EXIST in normal mode, so their absence is a genuine signal; do NOT assert against `app-header`/`sidebar` — those ids do not exist and the assertion would pass vacuously). To pin the discriminator, FIRST navigate to `/` (normal mode) in a sibling `test()` and assert `header-title`/`header-menu`/at-least-one `sidebar-<panel>` ARE present, so revert→fail is observable. Then assert the preview renders the inline diagram (`#demo-frame` / preview testid shows content) and the `embed-open-link` href starts with `https://app.zenuml.com`. Add a shortcut-off check (a global shortcut that opens a modal in normal mode does nothing in embed). Note auth-gated combos (`?embed&id=&share-token=`) deferred to the staging gate.
 - [ ] **Step 2:** Production-build asset check: `pnpm -C web build` then run the existing asset spec against the built `web/dist` (the spec that guards the `@zenuml/core` hashed-asset URL — confirm it points at `web/dist`, adjust the path if it still references the legacy `app/`/`dist`). Green.
 - [ ] **Step 3:** Full gate: `pnpm -C web typecheck && pnpm -C web test` green; `pnpm exec playwright test --project=chromium` green (incl. embed + M01–M04 specs). **Step 4: Commit**
 ```bash
@@ -471,9 +533,10 @@ git commit -m "test(m05): E2E embed-by-value (local) + production-build asset ch
 - [ ] **Step 1:** Dispatch independent reviewers (parallel) against ground truth (legacy `src/extension/{eventPage.js,options.*,manifest}`, `static/manifest.json`, `gulpfile.cjs` release, `firebase.json`, `src/components/app.jsx` embed handling, contract §5.1/§7/§8/§10, roadmap §1.1/§9) over:
   1. **Embed surface** — header/sidebar/modal suppression complete (no leaked save/auth/library control); shortcuts genuinely off (not just visually); `?code` renders by value with NO Firestore read; `openUrl` reproduces the diagram at the canonical origin; embed composes with shared read-only; `?title` applied.
   2. **Extension build** — manifest MV3 correctness (storage-only perm, worker, options, icons present in the zip); service worker parity (open-on-click, new-tab override gated on `replaceNewTab`, on-install, uninstall URL); options page writes the exact `syncStore` keys; packaged SPA uses RELATIVE asset paths (loads under `chrome-extension://`); version stamped from `APP_VERSION`; CDN scripts skipped + payment off (confirm the existing seams still fire under the packaged protocol).
-  3. **Share origin** — extension `createShare` sends `https://app.zenuml.com`, web sends real origin; the body shape still matches contract §5.1 EXACTLY (no field dropped/renamed); md5 cache-buster URL unchanged.
+  3. **Share origin** — extension `createShare` sends `https://app.zenuml.com`, web sends real origin; the body is STILL EXACTLY `{ id, token, origin }` (the shipped M03 shape — confirm NO field was added/dropped/renamed, in particular NO `name`/`content`/`description` crept in from §5.1); md5 cache-buster URL unchanged. **Additionally verify the END-TO-END seam (see review-item 6): a share minted THROUGH `useShare`/`AppRoot` under the extension actually sends `app.zenuml.com` — not just the `createShare` unit.**
   4. **Cutover** — `firebase.json` keeps all 6 rewrites; `hosting.public` points at the asset-spec-verified `web/dist`; rollback paths are real and reversible; NO cloud resource was mutated by any task; legacy `src/`/`app/`/gulp untouched and retained.
   5. **Cross-cutting** — NFR-1 (no backend/legacy-`src/` change), design-system compliance in EmbedHeader, NFR-3 (embed reads params from typed `runtimeMode`, not ad-hoc `window.location.search`), no listener/subscription leaks introduced by the embed branch.
+  6. **Share-origin END-TO-END seam** — confirm `createShare`'s extension override actually fires on the REAL path: AppRoot.tsx:612 passes the bare `createShare` through `useShare` with `UseShareOpts.createShare` typed `(id: string) => …` (NO `isExtension` threaded), so the override depends ENTIRELY on `createShare`'s lazy `detectFromEnv().isExtension` default being read at CALL time. Verify (a) the no-opts seam test exists and is discriminating (revert the lazy default → it fails), and (b) env is NOT resolved at module load anywhere in the `shareOrigin`/`createShare`/`detectFromEnv` chain (which would silently break the bare-reference path while keeping the explicit-opts unit tests green).
 - [ ] **Step 2:** Triage; fix real findings with discriminating regression tests (revert→fail). Record deferrals in roadmap §9.
 - [ ] **Step 3:** Commit fixes (one per fix, message references the review).
 
@@ -485,7 +548,7 @@ git commit -m "test(m05): E2E embed-by-value (local) + production-build asset ch
 
 **Placeholders:** pure/service/config tasks (2/3/4/7/8/9/11) carry full code + tests; UI tasks (5/6) specify exact props/testids/TDD targets without dumping every line (presentational + an AppRoot branch — acceptable). The cutover (12/13) is intentionally a config diff + runbook, NOT executable deploy code (Safety Rules). No "TBD".
 
-**Type consistency:** reuses canonical `Item`/`RuntimeMode`; `createShare` keeps its contract §5.1 body shape (only the `origin` source changes via `shareOrigin`); extension reads the same `syncStore` keys (`preserveLastCode`/`replaceNewTab`) the app already owns; manifest version derives from `config/constants.ts APP_VERSION`. No backend/legacy-`src/` mutation; cutover is reversible.
+**Type consistency:** reuses canonical `Item`/`RuntimeMode`; `createShare` keeps its EXACT shipped M03 body shape `{ id, token, origin }` — only the `origin` SOURCE changes via `shareOrigin` (NO `name`/`content`/`description` added; the §5.1-vs-M03 divergence is recorded as an out-of-scope finding in roadmap §9, not fixed here); the share-origin override flows through the `useShare` seam — `UseShareOpts.createShare` stays typed `(id: string) => Promise<…>` and AppRoot passes the bare `createShare` reference (AppRoot.tsx:612), so the extension override relies on `createShare`'s LAZY `detectFromEnv().isExtension` default resolving env at CALL time (Task 4 documents this + adds an end-to-end seam test); extension reads the same `syncStore` keys (`preserveLastCode`/`replaceNewTab`) the app already owns; manifest version derives from `config/constants.ts APP_VERSION`. No backend/legacy-`src/` mutation; cutover is reversible.
 
 ---
 
