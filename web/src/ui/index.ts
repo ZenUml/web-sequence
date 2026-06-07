@@ -6,6 +6,15 @@ export { Button, type ButtonProps } from './Button';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { Dialog, DialogTrigger, DialogClose, DialogContent } from './Dialog';
 export { TextInput, type TextInputProps } from './TextInput';
+export { Textarea, type TextareaProps } from './Textarea';
+export { Switch } from './Switch';
+export {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from './Select';
 export { SearchInput, type SearchInputProps } from './SearchInput';
 export { Popover, PopoverTrigger, PopoverContent } from './Popover';
 export {
