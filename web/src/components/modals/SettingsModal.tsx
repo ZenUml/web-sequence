@@ -35,7 +35,7 @@ export interface SettingsModalProps {
 }
 
 const META_LABEL =
-  'font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-faint';
+  'font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted';
 const SECTION_LABEL = `${META_LABEL} mt-5 mb-2 first:mt-0`;
 const ROW = 'flex items-center justify-between gap-4 py-1.5';
 const ROW_LABEL = 'text-[13px] text-onlight-strong';

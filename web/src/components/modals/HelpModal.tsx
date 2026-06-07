@@ -28,7 +28,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
           {version ? (
             <p
               data-testid="help-version"
-              className="font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-faint"
+              className="font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted"
             >
               Version {version}
             </p>

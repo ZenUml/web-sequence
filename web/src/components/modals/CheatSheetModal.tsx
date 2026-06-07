@@ -45,10 +45,10 @@ export function CheatSheetModal({ open, onOpenChange }: CheatSheetModalProps) {
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-paper-line">
-                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-faint">
+                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
                   Feature
                 </th>
-                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-faint">
+                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
                   Example
                 </th>
               </tr>

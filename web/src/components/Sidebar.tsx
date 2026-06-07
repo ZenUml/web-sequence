@@ -11,7 +11,7 @@ export function Sidebar() {
       className={`relative px-2 py-2 rounded text-[11px] font-mono uppercase tracking-[0.12em] transition-colors duration-150 ease-draft ring-draft ${
         active === panel
           ? 'text-ondark-strong bg-accent-soft before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[2px] before:rounded-full before:bg-accent'
-          : 'text-ondark-faint hover:text-ondark-strong hover:bg-white/5'
+          : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5'
       }`}
     >{label}</button>
   );

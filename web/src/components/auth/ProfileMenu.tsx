@@ -62,7 +62,7 @@ export function ProfileMenu({
         <MenuLabel>
           <span className="block text-onlight-strong">{displayName}</span>
           {user.email && (
-            <span className="block text-[11px] font-normal text-onlight-faint normal-case tracking-normal">
+            <span className="block text-[11px] font-normal text-onlight-muted normal-case tracking-normal">
               {user.email}
             </span>
           )}

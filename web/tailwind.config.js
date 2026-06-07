@@ -33,6 +33,13 @@ export default {
           press: '#1E50D8',
           soft: 'rgba(47,107,255,0.16)', // tint on dark
           tint: 'rgba(47,107,255,0.10)', // tint on light
+          // On-dark accent for text/icons that must read as the cobalt signal on the
+          // ink chrome. The DEFAULT (#2F6BFF) is a 3.x:1 foreground on ink-900 — fails
+          // WCAG AA for text. This lighter cobalt computes to ~7.4:1 on ink-900
+          // (#10141B) and ~6.4:1 on ink-800 (#1A2130), clearing AA (≥4.5:1) on every
+          // ink surface. Use for ACCENT-COLORED TEXT/ICONS on dark; keep DEFAULT for
+          // fills/rings/tints where contrast is not a text-legibility concern. (#7)
+          onDark: '#7AA2FF',
         },
         // Amber — used sparingly: active markers, unsaved dot
         signal: {

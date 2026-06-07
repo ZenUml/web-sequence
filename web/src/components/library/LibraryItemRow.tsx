@@ -72,7 +72,7 @@ export function LibraryItemRow({
           <span className="font-sans text-[13px] text-ondark-strong truncate">
             {item.title || 'Untitled'}
           </span>
-          <span className="font-mono text-[11px] text-ondark-faint truncate">
+          <span className="font-mono text-[11px] text-ondark-muted truncate">
             {item.updatedOn != null && formatDate(item.updatedOn)}
             {item.updatedOn != null && currentFolder && ' · '}
             {currentFolder && currentFolder.name}

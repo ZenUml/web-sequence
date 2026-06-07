@@ -38,7 +38,7 @@ const EDITOR: Shortcut[] = [
 function Section({ title, items }: { title: string; items: Shortcut[] }) {
   return (
     <div>
-      <h3 className="mb-2 font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-faint">
+      <h3 className="mb-2 font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
         {title}
       </h3>
       <table className="w-full border-collapse text-[13px]">

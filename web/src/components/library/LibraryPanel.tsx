@@ -136,7 +136,7 @@ export function LibraryPanel({
         />
         <span
           data-testid="lib-total-count"
-          className="font-mono text-[11px] text-ondark-faint tabular-nums"
+          className="font-mono text-[11px] text-ondark-muted tabular-nums"
         >
           {items.length}
         </span>
@@ -176,7 +176,7 @@ export function LibraryPanel({
             <h2 className="font-serif text-[28px] leading-tight tracking-tight text-ondark-strong">
               {libraryEmpty ? 'No diagrams' : 'No matches'}
             </h2>
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-faint">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
               {libraryEmpty ? 'Save a diagram to see it here' : 'Try a different search'}
             </p>
           </div>

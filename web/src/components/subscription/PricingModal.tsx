@@ -174,7 +174,7 @@ export function PricingModal({
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 min-h-[16px] text-[11px] text-onlight-faint">
+                  <p className="mt-0.5 min-h-[16px] text-[11px] text-onlight-muted">
                     {tier.priceNote[billingPeriod]}
                   </p>
                   {billingPeriod === 'yearly' && tier.savings && (
@@ -204,12 +204,12 @@ export function PricingModal({
                     {isCurrent ? (
                       <p
                         data-testid={`pricing-current-${tier.key}`}
-                        className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-faint"
+                        className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-muted"
                       >
                         Current plan
                       </p>
                     ) : tier.key === 'free' ? (
-                      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-faint">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-muted">
                         Included
                       </p>
                     ) : tier.key === 'enterprise' ? (

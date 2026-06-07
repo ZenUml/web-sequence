@@ -121,7 +121,7 @@ export function FolderList({
         onClick={() => onSelectFolder(null)}
       >
         <span className="flex-1 truncate">All</span>
-        <span className="font-mono text-[11px] text-ondark-faint">
+        <span className="font-mono text-[11px] text-ondark-muted">
           {counts['all'] ?? 0}
         </span>
       </button>
@@ -133,7 +133,7 @@ export function FolderList({
         onClick={() => onSelectFolder('unfiled')}
       >
         <span className="flex-1 truncate">Unfiled</span>
-        <span className="font-mono text-[11px] text-ondark-faint">
+        <span className="font-mono text-[11px] text-ondark-muted">
           {counts['unfiled'] ?? 0}
         </span>
       </button>
@@ -190,7 +190,7 @@ export function FolderList({
                   }}
                 >
                   <span className="flex-1 truncate">{folder.name}</span>
-                  <span className="font-mono text-[11px] text-ondark-faint">
+                  <span className="font-mono text-[11px] text-ondark-muted">
                     {counts[folder.id] ?? 0}
                   </span>
                 </button>

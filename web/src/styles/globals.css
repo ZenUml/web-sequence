@@ -85,6 +85,29 @@ body {
   }
 }
 
+/* Design rule 6 — respect prefers-reduced-motion. The "Drafting Table" entrance
+   animations (rise-in / pop-in / overlay-in) are non-essential motion: when the
+   user has asked the OS to minimise motion, neutralise them so menus, popovers,
+   selects, dialogs and overlays appear instantly rather than sliding/scaling in.
+   We collapse the animation to a zero-duration end-state (not `animation:none`,
+   which would replay the keyframes' 0% start frame and flash the pre-animation
+   transform). The `both` fill already holds the 100% frame, so a near-zero
+   duration lands on the final state with no perceptible motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in,
+  .animate-pop-in,
+  .animate-overlay-in {
+    animation-duration: 0.01ms !important;
+    animation-timing-function: linear !important;
+  }
+  /* Also neutralise any incidental transitions so nothing eases on reduced-motion. */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* split.js gutter — a thin drafting seam between editor and preview. */
 .gutter {
   background: var(--ink-900);
