@@ -138,6 +138,15 @@ afterEach(() => {
   window.history.replaceState({}, '', '/');
 });
 
+// The CSS pane is now a collapsible CssPanel (redesign §02·7) that defaults COLLAPSED
+// when the CSS source is empty — so `css-editor` / `css-mode-select` / `acss-settings-open`
+// only render once expanded. Tests that drive CSS first expand the strip. Toggling the
+// strip is pure UI (it does NOT call onCssChange) so it never trips the custom-CSS gate.
+async function expandCss() {
+  const strip = screen.queryByTestId('css-panel-strip');
+  if (strip) await userEvent.click(strip);
+}
+
 
 describe('AppRoot', () => {
   it('renders editor and preview regions', async () => {
@@ -157,6 +166,7 @@ describe('AppRoot', () => {
   it('renders the css mode select and no js mode select (the JS pre-processor has no render effect)', async () => {
     const { container } = render(<AppRoot />);
     await screen.findByTestId('editor-region');
+    await expandCss();
     expect(container.querySelector('[data-testid="css-mode-select"]')).toBeTruthy();
     // The diagram DSL is rendered by @zenuml/core; computeJs is never called, so the
     // JS pre-processor Select was dead UI and has been removed.
@@ -175,19 +185,21 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="console"]')).toBeTruthy();
   });
 
-  it('fullscreen button toggles the fullscreen ui state', async () => {
+  it('Present enters fullscreen (Present is the header entry point now)', async () => {
     const { getByTestId } = render(<AppRoot />);
-    await screen.findByTestId('preview-fullscreen');
+    await screen.findByTestId('header-present');
     const { useUiStore } = await import('../state/uiStore');
-    await userEvent.click(getByTestId('preview-fullscreen'));
+    await userEvent.click(getByTestId('header-present'));
     expect(useUiStore.getState().fullscreen).toBe(true);
   });
 
-  it('renders the AppHeader with title input', async () => {
+  it('renders the AppHeader with title input + save-state indicator', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
-    expect(screen.getByTestId('header-save')).toBeInTheDocument();
-    expect(screen.getByTestId('header-new')).toBeInTheDocument();
+    // Save retired into the app menu; the passive save-state indicator + the app
+    // menu trigger are the header's new persistent affordances.
+    expect(screen.getByTestId('header-savestate')).toBeInTheDocument();
+    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
   });
 
   it('renders the ShareButton in the header (M03 wiring)', async () => {
@@ -262,8 +274,11 @@ describe('AppRoot — M04 save-seam plan limit', () => {
   }
 
   async function clickSave() {
+    // Save retired from a top-level button into the app menu (logo ▾). Manual save
+    // now: open the app menu, click its Save item.
     await act(async () => {
-      await userEvent.click(screen.getByTestId('header-save'));
+      await userEvent.click(screen.getByTestId('app-menu-trigger'));
+      await userEvent.click(await screen.findByTestId('app-menu-save'));
     });
   }
 
@@ -403,6 +418,7 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
     });
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
     const before = store.getState().currentItem?.css ?? '';
+    await expandCss();
     const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
     await act(async () => {
       await userEvent.click(cmContent);
@@ -419,6 +435,7 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
     render(<AppRoot />); // signed-out by default
     await screen.findByTestId('header-title');
     const before = store.getState().currentItem?.css ?? '';
+    await expandCss();
     const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
     await act(async () => {
       await userEvent.click(cmContent);
@@ -444,6 +461,7 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
     });
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
     const before = store.getState().currentItem?.css ?? '';
+    await expandCss();
     const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
     await act(async () => {
       await userEvent.click(cmContent);
@@ -476,6 +494,7 @@ describe('AppRoot — M04 modal reachability', () => {
     await act(async () => {
       store.setState((s) => (s.currentItem ? { currentItem: { ...s.currentItem, cssMode: 'acss' } } : s));
     });
+    await expandCss();
     const openBtn = await screen.findByTestId('acss-settings-open');
     await act(async () => { await userEvent.click(openBtn); });
     expect(await screen.findByTestId('acss-modal')).toBeInTheDocument();
@@ -735,7 +754,10 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       useAuthStore.setState({ user: signedInUser, authReady: true, online: true });
     });
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
-    await act(async () => { await userEvent.click(screen.getByTestId('header-save')); });
+    await act(async () => {
+      await userEvent.click(screen.getByTestId('app-menu-trigger'));
+      await userEvent.click(await screen.findByTestId('app-menu-save'));
+    });
     await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
     const env = lastEnvelope('Free Limit');
     expect(env).toBeDefined();
@@ -752,6 +774,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // pollutes the storage-cap segment. Reverting the fix re-adds the call → fails.
     render(<AppRoot />); // signed-out by default
     await screen.findByTestId('header-title');
+    await expandCss();
     const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
     await act(async () => {
       await userEvent.click(cmContent);
@@ -943,7 +966,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // M05 — embed mode (RM-2 / REQ-EMB-1).
 //
 // DISCRIMINATING-TESTID CONTRACT (verified against the code): AppHeader exposes
-// `header-title`/`header-menu`/`header-save` and Sidebar exposes `sidebar-editor`/
+// `header-title`/`app-menu-trigger`/`header-savestate` and Sidebar exposes `sidebar-editor`/
 // `sidebar-library` — these are PRESENT in normal mode (the CONTROL test pins them),
 // so their ABSENCE in embed is a genuine revert→fail signal (there is no `app-header`
 // / bare `sidebar` id that would pass vacuously). The URL is driven via
@@ -955,7 +978,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     window.history.replaceState({}, '', '/');
     render(<AppRoot />);
     expect(await screen.findByTestId('header-title')).toBeInTheDocument();
-    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
+    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
     // At least one sidebar-<panel> node renders in normal mode.
     expect(screen.getAllByTestId(/^sidebar-/).length).toBeGreaterThan(0);
     // The embed shell is NOT present in normal mode.
@@ -969,10 +992,10 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(await screen.findByTestId('embed-header')).toBeInTheDocument();
     // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
     expect(screen.queryByTestId('header-title')).toBeNull();
-    expect(screen.queryByTestId('header-menu')).toBeNull();
+    expect(screen.queryByTestId('app-menu-trigger')).toBeNull();
     expect(screen.queryAllByTestId(/^sidebar-/)).toHaveLength(0);
     // No save/auth controls in embed.
-    expect(screen.queryByTestId('header-save')).toBeNull();
+    expect(screen.queryByTestId('header-savestate')).toBeNull();
     expect(screen.queryByTestId('header-login')).toBeNull();
     // The open-in-app link points at the canonical app origin.
     const link = screen.getByTestId('embed-open-link');
@@ -1084,7 +1107,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
       expect(useEditorStore.getState().currentItem?.id).toBe('shared-1'),
     );
     expect(useEditorStore.getState().currentItem?.isReadOnly).toBe(true);
-    expect(screen.queryByTestId('header-save')).toBeNull();
+    expect(screen.queryByTestId('header-savestate')).toBeNull();
     // The open link carries id + share-token (reproduces the shared diagram).
     const href = screen.getByTestId('embed-open-link').getAttribute('href') ?? '';
     expect(href).toContain('id=shared-1');

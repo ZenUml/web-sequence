@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppHeader } from './AppHeader';
 import type { AppUser } from '../../domain/types';
 
-// Pointer capture stubs for Radix dropdown (ProfileMenu inside AppHeader).
+// Pointer capture stubs for Radix dropdown (AppMenu / document menu / ProfileMenu).
 beforeAll(() => {
   if (!Element.prototype.hasPointerCapture) {
     Element.prototype.hasPointerCapture = () => false;
@@ -33,6 +33,7 @@ const baseProps = {
   onFork: vi.fn(),
   onLogin: vi.fn(),
   onLogout: vi.fn(),
+  onPresent: vi.fn(),
 };
 
 const mockUser: AppUser = {
@@ -42,11 +43,25 @@ const mockUser: AppUser = {
   photoURL: null,
 };
 
+// Radix leaves pointer-events:none on the page while a menu's overlay is mounted.
+// Press Escape between successive menu opens so the next trigger click isn't
+// blocked by a stale portal.
+const closeMenu = () => userEvent.keyboard('{Escape}');
+
 describe('AppHeader', () => {
   it('shows header-login when user is null', () => {
     render(<AppHeader {...baseProps} user={null} />);
     expect(screen.getByTestId('header-login')).toBeInTheDocument();
     expect(screen.queryByTestId('profile-trigger')).not.toBeInTheDocument();
+  });
+
+  // Spec: signed-out shows a *subtle* "Sign in" button (not ghost). `subtle` emits
+  // the ink-700 fill on the dark surface; `ghost` is transparent.
+  it('header-login uses the subtle button variant', () => {
+    render(<AppHeader {...baseProps} user={null} />);
+    const login = screen.getByTestId('header-login');
+    expect(login.className).toContain('bg-ink-700/70');
+    expect(login.className).not.toContain('bg-transparent');
   });
 
   it('shows profile-trigger when user is set', () => {
@@ -55,137 +70,63 @@ describe('AppHeader', () => {
     expect(screen.queryByTestId('header-login')).not.toBeInTheDocument();
   });
 
-  it('header-save calls onSave', async () => {
+  // The standalone New/Duplicate/Save top-level buttons are gone — they retired
+  // into the app menu (logo ▾) and document menu (filename ▾).
+  it('no longer renders the retired top-level New/Duplicate/Save buttons', () => {
+    render(<AppHeader {...baseProps} />);
+    expect(screen.queryByTestId('header-new')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('header-fork')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('header-save')).not.toBeInTheDocument();
+  });
+
+  // ---- App menu (logo brand ▾) ----
+
+  it('app menu Save item calls onSave', async () => {
     const onSave = vi.fn();
     render(<AppHeader {...baseProps} onSave={onSave} />);
-    await userEvent.click(screen.getByTestId('header-save'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-save'));
     expect(onSave).toHaveBeenCalled();
   });
 
-  it('header-new fires onNew immediately when there are no unsaved changes', async () => {
+  it('app menu New fires onNew immediately when there are no unsaved changes', async () => {
     const onNew = vi.fn();
     render(<AppHeader {...baseProps} unsavedCount={0} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-new'));
     expect(onNew).toHaveBeenCalled();
-    // No confirm dialog should appear for a clean diagram.
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument();
   });
 
   // #8: guard "New" against data loss when there are unsaved edits.
-  it('header-new opens a discard-confirm (not onNew) when unsavedCount > 0', async () => {
+  it('app menu New opens a discard-confirm (not onNew) when unsavedCount > 0', async () => {
     const onNew = vi.fn();
     render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('header-new'));
-    // onNew must NOT fire yet — the confirm dialog gates it.
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-new'));
     expect(onNew).not.toHaveBeenCalled();
-    // The discard-confirm dialog appears (heading + its confirm action). Title text
-    // is rendered twice by Radix (visible Title + sr-only Description), so assert via
-    // the dialog role + the unique confirm-ok testid rather than findByText.
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Discard unsaved changes?');
     expect(screen.getByTestId('confirm-ok')).toBeInTheDocument();
   });
 
-  it('header-new confirm fires onNew; cancel does not', async () => {
+  it('app menu New confirm fires onNew; cancel does not', async () => {
     const onNew = vi.fn();
     const { rerender } = render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
 
-    // Open then cancel — onNew stays un-called.
-    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-new'));
     await userEvent.click(await screen.findByTestId('confirm-cancel'));
     expect(onNew).not.toHaveBeenCalled();
 
-    // Re-open and confirm — now onNew fires exactly once.
     rerender(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-new'));
     await userEvent.click(await screen.findByTestId('confirm-ok'));
     expect(onNew).toHaveBeenCalledTimes(1);
   });
 
-  it('header-fork calls onFork', async () => {
-    const onFork = vi.fn();
-    render(<AppHeader {...baseProps} onFork={onFork} />);
-    await userEvent.click(screen.getByTestId('header-fork'));
-    expect(onFork).toHaveBeenCalled();
-  });
-
-  // New + Duplicate must share the SAME variant so the creation/copy pair reads as
-  // one calm cluster (Save is the sole primary). The `subtle` variant carries the
-  // raised-control border class; the previously-used `ghost` variant does not. We
-  // assert New now matches Duplicate's variant by a class only `subtle` emits, so
-  // reverting New back to `ghost` fails this test.
-  it('header-new and header-fork use the same (subtle) button variant', () => {
-    render(<AppHeader {...baseProps} />);
-    const newBtn = screen.getByTestId('header-new');
-    const forkBtn = screen.getByTestId('header-fork');
-    // `subtle` on the dark surface emits the ink-700 fill; `ghost` is transparent.
-    expect(newBtn.className).toContain('bg-ink-700/70');
-    expect(forkBtn.className).toContain('bg-ink-700/70');
-    // And neither carries the transparent ghost fill that `ghost` would emit.
-    expect(newBtn.className).not.toContain('bg-transparent');
-  });
-
-  // A separator splits the creation action (New from template…) from the
-  // help/config items in the overflow menu.
-  it('overflow menu renders a separator between the creation and utility items', async () => {
-    render(<AppHeader {...baseProps} />);
-    await userEvent.click(screen.getByTestId('header-menu'));
-    expect(await screen.findByTestId('header-menu-separator')).toBeInTheDocument();
-  });
-
-  // The account zone is divided from the document-action cluster.
-  it('renders a divider separating the account zone from document actions', () => {
-    render(<AppHeader {...baseProps} />);
-    expect(screen.getByTestId('header-account-divider')).toBeInTheDocument();
-  });
-
-  // The unsaved signal is reinforced beyond the bare dot with explicit "Unsaved"
-  // text, so it can't be missed (and the in-flow chip can't clip off the edge).
-  it('unsaved signal shows an explicit "Unsaved" label, not just a dot', () => {
-    render(<AppHeader {...baseProps} unsavedCount={2} />);
-    const chip = screen.getByTestId('header-unsaved-dot');
-    expect(chip).toHaveTextContent(/unsaved/i);
-    expect(chip).toHaveAttribute('aria-label', '2 unsaved changes');
-  });
-
-  it('unsaved dot appears only when unsavedCount > 0', () => {
-    const { rerender } = render(<AppHeader {...baseProps} unsavedCount={0} />);
-    expect(screen.queryByTestId('header-unsaved-dot')).not.toBeInTheDocument();
-
-    rerender(<AppHeader {...baseProps} unsavedCount={3} />);
-    expect(screen.getByTestId('header-unsaved-dot')).toBeInTheDocument();
-  });
-
-  it('editing header-title calls onTitleChange', async () => {
-    const onTitleChange = vi.fn();
-    render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
-    const input = screen.getByTestId('header-title');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'New Title');
-    expect(onTitleChange).toHaveBeenCalled();
-  });
-
-  it('clicking header-login opens the login modal', async () => {
-    render(<AppHeader {...baseProps} user={null} />);
-    await userEvent.click(screen.getByTestId('header-login'));
-    // The modal should appear with provider buttons
-    expect(await screen.findByTestId('login-google')).toBeInTheDocument();
-  });
-
-  it('save button is disabled when readOnly is true', () => {
-    render(<AppHeader {...baseProps} readOnly />);
-    expect(screen.getByTestId('header-save')).toBeDisabled();
-  });
-
-  it('clicking login-github inside open modal calls onLogin with github', async () => {
-    const onLogin = vi.fn();
-    render(<AppHeader {...baseProps} user={null} onLogin={onLogin} />);
-    await userEvent.click(screen.getByTestId('header-login'));
-    await userEvent.click(await screen.findByTestId('login-github'));
-    expect(onLogin).toHaveBeenCalledWith('github');
-  });
-
-  it('overflow menu triggers call their injected handlers', async () => {
+  it('app menu triggers call their injected modal handlers', async () => {
     const onOpenSettings = vi.fn();
     const onOpenCreateNew = vi.fn();
     const onOpenHelp = vi.fn();
@@ -197,50 +138,153 @@ describe('AppHeader', () => {
         onOpenHelp={onOpenHelp}
       />,
     );
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-settings'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-settings'));
     expect(onOpenSettings).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-create-new'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-create-new'));
     expect(onOpenCreateNew).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-help'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-help'));
     expect(onOpenHelp).toHaveBeenCalled();
   });
 
-  it('overflow menu opens the cheat-sheet and shortcuts modals', async () => {
+  it('app menu opens the cheat-sheet and shortcuts modals', async () => {
     const onOpenCheatSheet = vi.fn();
     const onOpenShortcuts = vi.fn();
     render(
       <AppHeader {...baseProps} onOpenCheatSheet={onOpenCheatSheet} onOpenShortcuts={onOpenShortcuts} />,
     );
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-cheatsheet'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-cheatsheet'));
     expect(onOpenCheatSheet).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-shortcuts'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-shortcuts'));
     expect(onOpenShortcuts).toHaveBeenCalled();
   });
 
   // REQ-SUB-6: the Pricing trigger only exists when payment is enabled.
-  it('shows header-pricing only when paymentEnabled', async () => {
+  it('shows app-menu Pricing only when paymentEnabled', async () => {
     const onOpenPricing = vi.fn();
     const { rerender } = render(
       <AppHeader {...baseProps} paymentEnabled={false} onOpenPricing={onOpenPricing} />,
     );
-    await userEvent.click(screen.getByTestId('header-menu'));
-    expect(screen.queryByTestId('header-pricing')).not.toBeInTheDocument();
-    // Close the menu (its overlay leaves pointer-events:none on the page) before
-    // re-rendering, so the next trigger click isn't blocked by a stale portal.
-    await userEvent.keyboard('{Escape}');
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    expect(screen.queryByTestId('app-menu-pricing')).not.toBeInTheDocument();
+    await closeMenu();
 
     rerender(<AppHeader {...baseProps} paymentEnabled onOpenPricing={onOpenPricing} />);
-    await userEvent.click(screen.getByTestId('header-menu'));
-    await userEvent.click(await screen.findByTestId('header-pricing'));
+    await userEvent.click(screen.getByTestId('app-menu-trigger'));
+    await userEvent.click(await screen.findByTestId('app-menu-pricing'));
     expect(onOpenPricing).toHaveBeenCalled();
+  });
+
+  // ---- Document menu (filename ▾) ----
+
+  it('document menu Duplicate calls onFork', async () => {
+    const onFork = vi.fn();
+    render(<AppHeader {...baseProps} onFork={onFork} />);
+    await userEvent.click(screen.getByTestId('filemenu-trigger'));
+    await userEvent.click(await screen.findByTestId('filemenu-duplicate'));
+    expect(onFork).toHaveBeenCalled();
+  });
+
+  it('document menu Rename focuses the title field', async () => {
+    render(<AppHeader {...baseProps} />);
+    await userEvent.click(screen.getByTestId('filemenu-trigger'));
+    await userEvent.click(await screen.findByTestId('filemenu-rename'));
+    // Focus is deferred past the menu's close (Radix restores focus to its
+    // trigger on close), so wait for the title to receive it.
+    await waitFor(() => expect(screen.getByTestId('header-title')).toHaveFocus());
+  });
+
+  it('editing header-title calls onTitleChange', async () => {
+    const onTitleChange = vi.fn();
+    render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
+    const input = screen.getByTestId('header-title');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'New Title');
+    expect(onTitleChange).toHaveBeenCalled();
+  });
+
+  // ---- Save-state indicator (replaces the Save button) ----
+
+  it('shows "Saved" when clean and signed in', () => {
+    render(<AppHeader {...baseProps} user={mockUser} unsavedCount={0} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'saved');
+    expect(el).toHaveTextContent(/saved/i);
+  });
+
+  it('shows "Saving…" when saving is true (signed in)', () => {
+    render(<AppHeader {...baseProps} user={mockUser} saving unsavedCount={3} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'saving');
+    expect(el).toHaveTextContent(/saving/i);
+  });
+
+  it('shows amber "Unsaved" when there are unsaved changes', () => {
+    render(<AppHeader {...baseProps} user={mockUser} unsavedCount={2} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'dirty');
+    expect(el).toHaveTextContent(/unsaved/i);
+    expect(el).toHaveAttribute('aria-label', '2 unsaved changes');
+  });
+
+  // Signed-out: auto-save is local-only — never claim a misleading "Saved".
+  it('shows neutral "Local only" (not "Saved") when signed out and clean', () => {
+    render(<AppHeader {...baseProps} user={null} unsavedCount={0} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'local');
+    expect(el).toHaveTextContent(/local only/i);
+    expect(el).not.toHaveTextContent(/saved/i);
+  });
+
+  // readOnly: no save happens — never show Saving/Unsaved.
+  it('never shows Unsaved or Saving when readOnly (even with unsaved/saving)', () => {
+    render(<AppHeader {...baseProps} user={mockUser} readOnly unsavedCount={5} saving />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'readonly');
+    expect(el).not.toHaveTextContent(/saving/i);
+    expect(el).not.toHaveTextContent(/unsaved/i);
+  });
+
+  // ---- Right group: Present + account ----
+
+  it('Present button calls onPresent', async () => {
+    const onPresent = vi.fn();
+    render(<AppHeader {...baseProps} onPresent={onPresent} />);
+    await userEvent.click(screen.getByTestId('header-present'));
+    expect(onPresent).toHaveBeenCalled();
+  });
+
+  it('renders a divider separating the account zone from the action group', () => {
+    render(<AppHeader {...baseProps} />);
+    expect(screen.getByTestId('header-account-divider')).toBeInTheDocument();
+  });
+
+  it('renders injected actions (e.g. Share) in the right group', () => {
+    render(<AppHeader {...baseProps} actions={<button data-testid="share-btn">Share</button>} />);
+    expect(screen.getByTestId('share-btn')).toBeInTheDocument();
+  });
+
+  // ---- Login modal ----
+
+  it('clicking header-login opens the login modal', async () => {
+    render(<AppHeader {...baseProps} user={null} />);
+    await userEvent.click(screen.getByTestId('header-login'));
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument();
+  });
+
+  it('clicking login-github inside open modal calls onLogin with github', async () => {
+    const onLogin = vi.fn();
+    render(<AppHeader {...baseProps} user={null} onLogin={onLogin} />);
+    await userEvent.click(screen.getByTestId('header-login'));
+    await userEvent.click(await screen.findByTestId('login-github'));
+    expect(onLogin).toHaveBeenCalledWith('github');
   });
 
   it('forwards loginError into the LoginModal', async () => {

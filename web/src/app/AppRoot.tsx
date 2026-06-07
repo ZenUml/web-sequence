@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
 import { Console, type ConsoleEntry } from '../preview/Console';
+import { filterStarterNoise } from '../preview/consoleFilter';
 import { useEditorStore } from '../state/editorStore';
 import { useAuthStore } from '../state/authStore';
 import { useSettingsStore } from '../state/settingsStore';
@@ -13,6 +14,8 @@ import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
 import { PageTabs } from '../components/pages/PageTabs';
+import { RendererHeader } from '../components/preview/RendererHeader';
+import { CssPanel } from '../components/editor/CssPanel';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
 import { AskToImportModal } from '../components/modals/AskToImportModal';
@@ -91,6 +94,8 @@ export function AppRoot() {
   const switchPageAction = useEditorStore((s) => s.switchPage);
   const renamePageAction = useEditorStore((s) => s.renamePage);
   const unsavedCount = useEditorStore((s) => s.unsavedCount);
+  // Drives the header's "Saving…" auto-save indicator (set around save()'s cloud write).
+  const saving = useEditorStore((s) => s.saving);
 
   const user = useAuthStore((s) => s.user);
   const authReady = useAuthStore((s) => s.authReady);
@@ -895,6 +900,8 @@ export function AppRoot() {
       <AppHeader
         title={item.title ?? ''}
         unsavedCount={unsavedCount}
+        saving={saving}
+        onPresent={toggleFullscreen}
         user={user}
         lastProvider={lastProvider}
         readOnly={!!item.isReadOnly}
@@ -935,7 +942,10 @@ export function AppRoot() {
         }
       />
       <div className="flex flex-1 min-h-0 w-full">
-        <Sidebar />
+        <Sidebar
+          onOpenTemplates={() => openModal('createNew')}
+          onOpenHelp={() => openModal('help')}
+        />
         <Layout
           editor={
             activePanel === 'library' ? (
@@ -956,23 +966,16 @@ export function AppRoot() {
               />
             ) : (
             <div className="flex flex-col h-full">
-              <PageTabs
-                pages={item.pages ?? []}
-                currentPageId={item.currentPageId ?? ''}
-                onSwitch={switchPageAction}
-                onAdd={addPageAction}
-                onDelete={deletePageAction}
-                onRename={renamePageAction}
-                readOnly={!!item.isReadOnly}
-              />
+              {/* Page tabs now live on the RENDERER side (preview slot), above the
+                  diagram — pages are a property of the rendered document, not the DSL
+                  (per design §02). The editor pane just edits whichever page is active. */}
               {/* #6 / IA fix: each editor pane carries its OWN header so the two
                   stacked CodeMirror surfaces are unambiguous. The DSL pane is the
-                  PRIMARY surface (mono "DSL" label leading, accent rule). Only the CSS
-                  pane carries a pre-processor Select: CSS modes are live (computeCss
-                  feeds previewCss), whereas the diagram DSL is rendered by @zenuml/core
-                  and has no JS pre-processor — so no js-mode Select is shown. The CSS
-                  <select> uses the design-system Select primitive on the ink chrome;
-                  testid css-mode-select stays on its SelectTrigger. */}
+                  PRIMARY surface (mono "DSL" label leading, accent rule). The CSS pane
+                  is a collapsible CssPanel: collapsed to a thin "Custom CSS ▸" strip
+                  when empty, expanding to the editor + its pre-processor Select. CSS
+                  modes are live (computeCss feeds previewCss); the DSL is rendered by
+                  @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex flex-1 min-h-0 flex-col">
                 {/* DSL pane header — primary surface marker */}
@@ -984,13 +987,15 @@ export function AppRoot() {
                 </div>
                 <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
-              <div className="flex flex-1 min-h-0 flex-col border-t border-ink-line/40">
-                {/* CSS pane header — secondary surface marker */}
-                <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-                    CSS
-                  </span>
-                  <div className="flex items-center gap-2">
+              {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
+                  default re-derives from the new page's CSS emptiness (matches the
+                  DSL editor's per-page remount). The pre-processor Select + acss
+                  config button are passed as headerControls — untouched, still live. */}
+              <CssPanel
+                key={`css-panel-${item.currentPageId}`}
+                isEmpty={!item.css || item.css.trim().length === 0}
+                headerControls={
+                  <>
                     {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
                         Atomizer config is edited via this affordance (REQ-ED-2). */}
                     {item.cssMode === 'acss' && (
@@ -1018,25 +1023,46 @@ export function AppRoot() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
-              </div>
+                  </>
+                }
+              >
+                <CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} />
+              </CssPanel>
             </div>
             )
           }
           preview={
             <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'relative h-full flex flex-col'}>
-              <Button
-                data-testid="preview-fullscreen"
-                onClick={toggleFullscreen}
-                surface="light"
-                variant="subtle"
-                size="sm"
-                className="absolute right-2 top-2 z-10"
-              >
-                {fullscreen ? 'Exit' : 'Fullscreen'}
-              </Button>
+              {/* Renderer header (diagram side): page tabs + zoom/Fit/Present controls.
+                  In Present (fullscreen) mode the chrome is hidden — only an Exit
+                  affordance remains so the diagram presents clean. */}
+              {fullscreen ? (
+                <Button
+                  data-testid="preview-fullscreen"
+                  onClick={toggleFullscreen}
+                  surface="light"
+                  variant="subtle"
+                  size="sm"
+                  className="absolute right-2 top-2 z-10"
+                >
+                  Exit
+                </Button>
+              ) : (
+                <RendererHeader
+                  onPresent={toggleFullscreen}
+                  pageTabs={
+                    <PageTabs
+                      pages={item.pages ?? []}
+                      currentPageId={item.currentPageId ?? ''}
+                      onSwitch={switchPageAction}
+                      onAdd={addPageAction}
+                      onDelete={deletePageAction}
+                      onRename={renamePageAction}
+                      readOnly={!!item.isReadOnly}
+                    />
+                  }
+                />
+              )}
               {/* Center the rendered diagram with breathing room instead of clinging
                   to the top-left of the pane. */}
               <div className="flex-1 min-h-0 flex items-center justify-center p-4">
@@ -1050,13 +1076,18 @@ export function AppRoot() {
                   onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
                 />
               </div>
-              <Console
-                open={consoleOpen}
-                entries={consoleEntries}
-                onClear={() => setConsoleEntries([])}
-                onEval={(expr) => previewRef.current?.evalConsole(expr).then((r) => setConsoleEntries((p) => [...p, { level: r.ok ? 'log' : 'error', args: [String(r.value)] }]))}
-                onToggle={toggleConsole}
-              />
+              {/* Fix 2 (partial): hide the debug console in fullscreen — fullscreen is a
+                  presentation surface, and the docked console band leaks low-contrast
+                  debug chrome into it (audit Fix 2 / remediation board). */}
+              {!fullscreen && (
+                <Console
+                  open={consoleOpen}
+                  entries={filterStarterNoise(consoleEntries)}
+                  onClear={() => setConsoleEntries([])}
+                  onEval={(expr) => previewRef.current?.evalConsole(expr).then((r) => setConsoleEntries((p) => [...p, { level: r.ok ? 'log' : 'error', args: [String(r.value)] }]))}
+                  onToggle={toggleConsole}
+                />
+              )}
             </div>
           }
         />

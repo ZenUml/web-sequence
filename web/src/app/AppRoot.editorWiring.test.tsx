@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useAuthStore } from '../state/authStore';
 import { useEditorStore } from '../state/editorStore';
 import { useSettingsStore } from '../state/settingsStore';
@@ -108,6 +108,9 @@ describe('AppRoot — editor settings wiring (editor-wiring fix)', () => {
     });
     render(<AppRoot />);
     await screen.findByTestId('dsl-editor');
+    // CSS pane is a collapsible CssPanel, collapsed when CSS is empty — expand it so
+    // its (mocked) CodeEditor mounts and records props.
+    fireEvent.click(await screen.findByTestId('css-panel-strip'));
     await waitFor(() => expect(captured.dsl).toBeDefined());
     await waitFor(() => expect(captured.css).toBeDefined());
 
@@ -127,7 +130,9 @@ describe('AppRoot — editor settings wiring (editor-wiring fix)', () => {
     });
     render(<AppRoot />);
     await screen.findByTestId('dsl-editor');
+    fireEvent.click(await screen.findByTestId('css-panel-strip'));
     await waitFor(() => expect(captured.dsl).toBeDefined());
+    await waitFor(() => expect(captured.css).toBeDefined());
     expect(captured.dsl.fontFamily).toBe('Comic Mono');
     expect(captured.css.fontFamily).toBe('Comic Mono');
   });

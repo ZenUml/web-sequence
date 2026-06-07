@@ -103,6 +103,10 @@ export const DEFAULT_SETTINGS: Settings = {
   editorFont: 'FiraCode', editorCustomFont: '',
   indentWith: 'spaces', indentSize: 2,
   lineWrap: true, autoCloseTags: true, autoComplete: true,
-  autoPreview: true, autoSave: false, preserveConsoleLogs: true,
+  // autoSave defaults ON: the redesign retires the explicit Save button for a
+  // passive Saved/Saving…/Unsaved indicator, so auto-save must be on by default
+  // or the indicator would read "Unsaved" forever. Manual save stays on ⌘S +
+  // the app menu. (Anonymous/read-only saves are still guarded inside save().)
+  autoPreview: true, autoSave: true, preserveConsoleLogs: true,
   refreshOnResize: false, lightVersion: false,
 };

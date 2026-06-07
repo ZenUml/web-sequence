@@ -1,17 +1,41 @@
 export const NEW_PARTICIPANT = 'NewParticipant';
 
-export interface Snippet { id: string; label: string; code: string; }
+// `group` clusters the toolbar into two `.igroup` rows (redesign.css): message-level
+// constructs vs. structural/block constructs. `icon` is a key into the icon registry
+// in Toolbox.tsx (kept out of this .ts data module so the file stays JSX-free).
+export type SnippetGroup = 'message' | 'structure';
+export type SnippetIcon =
+  | 'participant'
+  | 'sync'
+  | 'async'
+  | 'return'
+  | 'self'
+  | 'instance'
+  | 'if'
+  | 'while'
+  | 'comment';
+
+export interface Snippet {
+  id: string;
+  /** Full descriptive label — feeds `title`/`aria-label`. */
+  label: string;
+  /** Short single-token display label for the compact `.ibtn` grid (redesign.css). */
+  short: string;
+  code: string;
+  group: SnippetGroup;
+  icon: SnippetIcon;
+}
 
 export const SNIPPETS: Snippet[] = [
-  { id: 'participant', label: 'New participant', code: NEW_PARTICIPANT },
-  { id: 'async', label: 'Async message', code: 'A->B:message' },
-  { id: 'sync', label: 'Sync message', code: 'A.message {\n}' },
-  { id: 'return', label: 'Return value', code: 'result = A.message {\n}' },
-  { id: 'self', label: 'Self message', code: 'A.message() {\n  selfMessage()\n}' },
-  { id: 'instance', label: 'New instance', code: 'a = new A()' },
-  { id: 'if', label: 'Conditional', code: 'if(condition) {\n  A.method()\n}' },
-  { id: 'while', label: 'Loop', code: 'while(condition) {\n  A.method()\n}' },
-  { id: 'comment', label: 'Comment + message', code: '//Note\nA.message()' },
+  { id: 'participant', label: 'New participant', short: 'Participant', code: NEW_PARTICIPANT, group: 'message', icon: 'participant' },
+  { id: 'async', label: 'Async message', short: 'Async', code: 'A->B:message', group: 'message', icon: 'async' },
+  { id: 'sync', label: 'Sync message', short: 'Sync', code: 'A.message {\n}', group: 'message', icon: 'sync' },
+  { id: 'return', label: 'Return value', short: 'Return', code: 'result = A.message {\n}', group: 'message', icon: 'return' },
+  { id: 'self', label: 'Self message', short: 'Self', code: 'A.message() {\n  selfMessage()\n}', group: 'message', icon: 'self' },
+  { id: 'instance', label: 'New instance', short: 'Instance', code: 'a = new A()', group: 'structure', icon: 'instance' },
+  { id: 'if', label: 'Conditional', short: 'Alt', code: 'if(condition) {\n  A.method()\n}', group: 'structure', icon: 'if' },
+  { id: 'while', label: 'Loop', short: 'Loop', code: 'while(condition) {\n  A.method()\n}', group: 'structure', icon: 'while' },
+  { id: 'comment', label: 'Comment + message', short: 'Note', code: '//Note\nA.message()', group: 'structure', icon: 'comment' },
 ];
 
 const isComment = (line: string) => line.trimStart().startsWith('//');
