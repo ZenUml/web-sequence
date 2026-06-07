@@ -10,7 +10,11 @@ verbatim. The deploy itself is the USER's (see the companion runbook
 
 The cutover repoints Firebase Hosting from the legacy gulp-assembled `app/`
 directory to the new React build output `web/dist`, **keeping all 6 same-origin
-function rewrites verbatim**. Contract §10 invariants preserved: the 6 rewrites,
+function rewrites verbatim**. It is THREE diffs applied atomically: Diff 1
+(`firebase.json` hosting root), Diff 2 (root `package.json` `build:web` helper),
+and Diff 3 (the CI workflows that must build `web/dist` so the deploy has an
+artifact). Diff 3 is NOT optional — applying Diff 1 without it breaks the next
+automated deploy (see Diff 3). Contract §10 invariants preserved: the 6 rewrites,
 storage keys / one-time-prompt flags / URL-parameter contract (already preserved
 by the app code — no config change needed), and `@zenuml/core` asset-URL
 correctness (guarded by the production-build asset spec, run against `web/dist` in
@@ -101,6 +105,58 @@ the only operational change is that the artifact built before deploy is `web/dis
 
 `deploy:staging` (`firebase deploy --project staging`) and `deploy:prod`
 (`firebase deploy --project prod`) stay byte-for-byte unchanged.
+
+---
+
+## Diff 3 — `.github/workflows/{deploy-staging,deploy-prod}.yml` (REQUIRED, atomic with Diff 1)
+
+**Why this is mandatory.** Diff 1 repoints `hosting.public` to `web/dist`, but
+both deploy workflows currently build the **legacy** `app/` artifact via
+`pnpm install --no-frozen-lockfile && pnpm build` (legacy vite → `dist/` → gulp
+assembly → `app/`). They never build `web/dist`, and `web/dist` is `.gitignore`d
+(`git check-ignore web/dist` → exit 0), so a fresh CI checkout has no `web/dist`.
+
+`deploy-staging.yml` fires on every push to `master`; `deploy-prod.yml` fires on
+every published release. Both end in `firebase deploy`, which after Diff 1 reads
+`hosting.public: "web/dist"`. If CI never produced that directory, the deploy job
+errors red — and because staging deploys without any human action, **merging Diff
+1 alone silently breaks the next automated deploy and every release after it.**
+
+Therefore Diff 3 MUST be applied in the SAME commit as Diff 1. It adds the
+rewrite build (`web/` has its own `pnpm-lock.yaml`, so it needs its own install)
+BEFORE the `firebase deploy` step. The legacy `pnpm build` + extension packaging
+stay — the Chrome-extension zip is still assembled from the legacy `dist/`/`app/`
+flow (NFR-1: legacy retained for rollback). The only added obligation is that
+`web/dist` exists at deploy time.
+
+Add this step to BOTH `deploy-staging.yml` and `deploy-prod.yml`, immediately
+AFTER the existing `- run: pnpm install --no-frozen-lockfile && pnpm build` line
+and BEFORE the `Deploy to staging` / `pnpm deploy:prod` step:
+
+```diff
+       - run: pnpm install --no-frozen-lockfile && pnpm build
++      # Cutover (M05): build the React rewrite artifact that firebase.json now
++      # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
++      # needs its own install. The legacy `pnpm build` above still produces the
++      # extension's dist//app/ assembly (retained for rollback).
++      - name: Build web/dist (cutover hosting artifact)
++        run: pnpm -C web install --no-frozen-lockfile && pnpm -C web build
+```
+
+### Verify post-apply
+
+```bash
+# Both workflows build web/dist before deploying
+grep -c 'pnpm -C web build' .github/workflows/deploy-staging.yml   # → 1
+grep -c 'pnpm -C web build' .github/workflows/deploy-prod.yml      # → 1
+```
+
+> **Scope note.** This diff doc is the M05 deliverable; correcting it here is in
+> bounds. The workflow files themselves are NOT edited by any agent — they live
+> outside the rewrite's `web/**` scope and editing them in this branch would
+> decouple the CI change from the user-applied hosting repoint (defeating the
+> atomic-cutover design, since `deploy-staging.yml` fires on every master push).
+> The USER applies Diffs 1+2+3 together as the single Task-12 cutover commit.
 
 ---
 

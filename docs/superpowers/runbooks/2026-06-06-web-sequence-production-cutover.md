@@ -23,9 +23,21 @@
 Cross-reference: [`docs/adr/0001-release-pipeline-imitating-conf-app.md`](../../adr/0001-release-pipeline-imitating-conf-app.md)
 — the established release pipeline (staging E2E gate → auto-draft release →
 publish → `deploy-prod` → `@smoke`). This runbook describes the **one-time
-cutover** of the hosting root; the ADR pipeline governs ongoing releases. After
-the cutover, ongoing releases follow the ADR pipeline unchanged (it already
-builds the artifact that `firebase.json` serves).
+cutover** of the hosting root; the ADR pipeline governs ongoing releases.
+
+> **CI MUST change WITH the hosting repoint — they are one atomic unit.** Today
+> both `deploy-staging.yml` and `deploy-prod.yml` run `pnpm install && pnpm build`,
+> which builds the **legacy** `app/` artifact — correct *only while*
+> `firebase.json hosting.public` is still `"app"`. The moment the Task-12 commit
+> flips `hosting.public` to `"web/dist"`, those workflows must ALSO build
+> `web/dist` (`pnpm -C web build`), or the very next automated deploy (staging
+> fires on every master push; prod on every published release) runs
+> `firebase deploy` against a directory CI never created — a red deploy with no
+> human action. The required workflow edit ships as **Diff 3** in the companion
+> config-diff doc
+> (`2026-06-06-web-sequence-cutover-config-diff.md`); apply Diffs 1, 2, AND 3 in
+> the SAME commit as the hosting repoint. Do not merge the hosting flip without
+> the CI change.
 
 ---
 
@@ -46,10 +58,15 @@ git log --oneline -- firebase.json | head -5
 git show --stat HEAD          # confirm firebase.json hosting.public is "web/dist"
 ```
 
-If the cutover commit is NOT yet present, apply Task 12 first (edit
-`firebase.json` `hosting.public` `"app" → "web/dist"`, leave the 6 rewrites /
-ignore / firestore / emulators / functions untouched, commit with the message
-above). Do not hand-edit during deploy.
+If the cutover commit is NOT yet present, apply Task 12 first — all THREE diffs
+from `2026-06-06-web-sequence-cutover-config-diff.md` in ONE commit: Diff 1
+(`firebase.json` `hosting.public` `"app" → "web/dist"`, leaving the 6 rewrites /
+ignore / firestore / emulators / functions untouched), Diff 2 (root
+`package.json` `build:web` helper), and **Diff 3 (the `deploy-staging.yml` +
+`deploy-prod.yml` step that builds `web/dist`)**. Diff 3 is mandatory: without it
+CI never produces the `web/dist` directory the repointed `firebase.json` serves,
+so the next automated deploy fails red. Commit with the message above. Do not
+hand-edit during deploy.
 
 ---
 
@@ -282,5 +299,5 @@ rollback path (2) stays viable. Legacy deletion is its own PR with its own revie
 | Deploy prod | `firebase deploy --only hosting --project prod` | **USER** | yes (prod) |
 | Smoke prod | `PW_BASE_URL=https://app.zenuml.com playwright test --grep @smoke` | user | no |
 | Rollback (fast) | `firebase hosting:rollback --project prod` | **USER** | yes (prod) |
-| Rollback (durable) | `git revert <sha>` → `yarn release` → `firebase deploy --only hosting --project prod` | **USER** | yes (prod) |
+| Rollback (durable) | `git revert <sha>` → rebuild legacy `app/` via the CI inline assembly (`pnpm build` then rsync/cp — NOT `yarn release`; see §4 Path (2)) → `firebase deploy --only hosting --project prod` | **USER** | yes (prod) |
 | Legacy deletion | separate follow-up PR, AFTER confirmed live | user | no |
