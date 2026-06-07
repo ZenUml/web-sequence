@@ -11,6 +11,10 @@ export interface PageTabsProps {
   onDelete(id: string): void;
   onRename(id: string, title: string): void;
   readOnly?: boolean;
+  // Which chrome the tabs sit on. 'dark' = the ink editor side (legacy default).
+  // 'light' = the white renderer header (.pv-head) — page tabs now live there
+  // (redesign §02), so they must wear the light .rtab tokens instead of dark ink.
+  surface?: 'dark' | 'light';
 }
 
 export function PageTabs({
@@ -21,7 +25,9 @@ export function PageTabs({
   onDelete,
   onRename,
   readOnly = false,
+  surface = 'dark',
 }: PageTabsProps) {
+  const light = surface === 'light';
   // editingId: which tab is currently being renamed (null = none)
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -71,7 +77,12 @@ export function PageTabs({
     <div
       role="tablist"
       aria-label="Pages"
-      className="flex items-center gap-0.5 px-2 py-1 bg-ink-900 border-b border-ink-line"
+      className={cn(
+        'flex items-center gap-0.5',
+        // Light: the white RendererHeader (.pv-head) owns the surface + border, so the
+        // tablist adds neither — only its tab pills. Dark: legacy ink strip.
+        light ? 'min-w-0' : 'px-2 py-1 bg-ink-900 border-b border-ink-line',
+      )}
     >
       {pages.map((page) => {
         const isActive = page.id === currentPageId;
@@ -83,7 +94,7 @@ export function PageTabs({
             {isRenaming ? (
               <TextInput
                 ref={inputRef}
-                surface="dark"
+                surface={surface}
                 data-testid={`page-rename-${page.id}`}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -109,16 +120,22 @@ export function PageTabs({
                   if (e.key === ' ') { e.preventDefault(); onSwitch(page.id); }
                 }}
                 className={cn(
-                  'relative flex items-center gap-1 h-7 px-2.5 rounded-t text-[11px] font-mono uppercase tracking-[0.1em]',
+                  'relative flex items-center gap-1 h-7 px-2.5 text-[11px] font-mono uppercase tracking-[0.1em]',
                   'transition-colors duration-150 ease-draft select-none whitespace-nowrap cursor-pointer',
                   'focus-visible:outline-none ring-draft',
+                  // Light (.rtab): a filled paper-100 pill when active, onlight tokens —
+                  // no accent underline. Dark (legacy): accent-soft tab + accent underline.
+                  light ? 'rounded-lg' : 'rounded-t',
                   isActive
-                    ? [
-                        'bg-accent-soft text-ondark-strong',
-                        // accent underline at bottom of tab
-                        'after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-accent after:rounded-t',
-                      ]
-                    : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
+                    ? light
+                      ? 'bg-paper-100 text-onlight-strong font-semibold'
+                      : [
+                          'bg-accent-soft text-ondark-strong',
+                          'after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-accent after:rounded-t',
+                        ]
+                    : light
+                      ? 'text-onlight-muted hover:text-onlight-strong hover:bg-paper-100/60'
+                      : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
                 )}
               >
                 {page.title}
@@ -126,7 +143,7 @@ export function PageTabs({
                   // Fix 1: IconButton is a sibling to the label text, not nested in a <button>
                   <IconButton
                     size="sm"
-                    surface="dark"
+                    surface={surface}
                     aria-label="Delete page"
                     data-testid={`page-delete-${page.id}`}
                     className="ml-0.5 h-4 w-4"
@@ -147,7 +164,7 @@ export function PageTabs({
       {!readOnly && (
         <IconButton
           size="sm"
-          surface="dark"
+          surface={surface}
           aria-label="Add page"
           data-testid="page-add"
           // Wrap so the click event is NOT forwarded as onAdd's first arg — onAdd

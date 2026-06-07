@@ -33,7 +33,12 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
           aria-expanded={open}
           aria-label={open ? 'Collapse console' : 'Expand console'}
           onClick={onToggle}
-          className="flex-1 flex items-center gap-1 rounded px-1 py-1 text-left font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted hover:text-ondark-strong ring-draft"
+          className={cn(
+            'flex-1 flex items-center gap-1 rounded px-1 py-1 text-left font-mono text-[11px] uppercase tracking-[0.12em] ring-draft',
+            // Design (.console.clean/.err .lbl): tint the whole label by state —
+            // emerald when clean, danger when errors.
+            clean ? 'text-ok hover:text-ok/80' : 'text-danger hover:text-danger/80',
+          )}
         >
           <span aria-hidden="true" className="text-ondark-faint">{open ? '▾' : '▸'}</span>
           <span>Console (<span data-testid="console-count">{entries.length}</span>)</span>
@@ -44,7 +49,7 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
           className={cn(
             'mr-2 select-none rounded-[5px] px-[7px] py-0.5 font-mono text-[10px] font-semibold tracking-wide',
             clean
-              ? 'bg-emerald-500/10 text-emerald-300'
+              ? 'bg-ok/10 text-ok'
               : 'bg-danger/15 text-danger',
           )}
         >

@@ -202,6 +202,17 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
   });
 
+  // The Save button is gone; ⌘S is the advertised manual-save accelerator (app menu
+  // shows the ⌘S hint). It must actually save, not fall through to the browser.
+  it('Cmd/Ctrl+S triggers a save', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      await userEvent.keyboard('{Meta>}s{/Meta}');
+    });
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
+  });
+
   it('renders the ShareButton in the header (M03 wiring)', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');

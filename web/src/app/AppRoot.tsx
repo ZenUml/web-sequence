@@ -94,6 +94,11 @@ export function AppRoot() {
   const switchPageAction = useEditorStore((s) => s.switchPage);
   const renamePageAction = useEditorStore((s) => s.renamePage);
   const unsavedCount = useEditorStore((s) => s.unsavedCount);
+  // `dirty` is the union of content edits (unsavedCount) AND metadata edits (title /
+  // page add/delete/switch/rename) which do NOT bump unsavedCount. With the Save button
+  // retired for a passive indicator, BOTH the indicator and auto-save key off `dirty` so
+  // a rename/page-op is reflected as "Unsaved" and actually gets persisted.
+  const dirty = useEditorStore((s) => s.dirty);
   // Drives the header's "Saving…" auto-save indicator (set around save()'s cloud write).
   const saving = useEditorStore((s) => s.saving);
 
@@ -106,7 +111,14 @@ export function AppRoot() {
   // REQ-PST-2: auto-save loop — fires every AUTO_SAVE_INTERVAL when enabled + unsaved edits exist.
   // `save` is defined later in this function; useAutoSave reads it via ref so no stale closure
   // (same pattern as PreviewFrame's cbRef — interval keyed only on `enabled`).
-  useAutoSave({ enabled: autoSave, hasUnsaved: unsavedCount > 0, onSave: () => void save() });
+  useAutoSave({ enabled: autoSave, hasUnsaved: dirty, onSave: () => void save() });
+
+  // ⌘S / Ctrl+S manual save. `save` is defined later and re-created each render, so the
+  // keydown listener (registered once, keyed on [isEmbed]) calls it through a ref kept
+  // fresh every render — no stale closure, and the accelerator advertised by the app
+  // menu (Save ⌘S) actually works now that the explicit Save button is gone.
+  const saveRef = useRef(save);
+  saveRef.current = save;
 
   const previewRef = useRef<PreviewHandle>(null);
   const consoleOpen = useUiStore((s) => s.consoleOpen);
@@ -138,6 +150,12 @@ export function AppRoot() {
 
   // M04: plan-limit notice + pricing billing-period state.
   const [limitNoticeOpen, setLimitNoticeOpen] = useState(false);
+  // Which item id has already triggered the over-cap notice + 'Free Limit' analytics.
+  // With auto-save ON, save() runs every 15s; without this guard the over-limit branch
+  // (which intentionally never markSaved()s, so dirty stays true) would re-pop the
+  // dismissed LimitReachedNotice and re-fire the analytics envelope on every tick.
+  // We notify once per cap-hit episode; it resets when a save actually succeeds.
+  const limitNotifiedRef = useRef<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   // REQ-PST (M02 Task 16): library panel — items list from hook.
@@ -162,6 +180,11 @@ export function AppRoot() {
     if (isEmbed) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); setConsoleEntries([]); return; }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        void saveRef.current();
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/')) {
         e.preventDefault();
         useUiStore.getState().openModal('shortcuts');
@@ -461,7 +484,10 @@ export function AppRoot() {
         // membership. The notice + 'Free Limit' analytics fire ONLY for a genuine
         // cap hit (overLimit), never for a transient read failure (readFailed).
         await itemService.setItem(itemToSave.id, itemToSave, { skipCloud: true });
-        if (overLimit) {
+        // Fire the notice + analytics ONCE per cap-hit episode (not on every 15s
+        // auto-save tick): only when this item id hasn't already been notified.
+        if (overLimit && limitNotifiedRef.current !== itemToSave.id) {
+          limitNotifiedRef.current = itemToSave.id;
           setLimitNoticeOpen(true);
           // REQ-ANL-1: preserve the legacy 'Free Limit' envelope EXACTLY so the
           // existing limit-reached Mixpanel funnel keeps matching. Legacy
@@ -483,6 +509,9 @@ export function AppRoot() {
         if (uid) {
           try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
         }
+        // A genuine save succeeded → clear the cap-hit latch so if the user later goes
+        // back over the limit on this item they get notified again.
+        limitNotifiedRef.current = null;
         useEditorStore.getState().markSaved();
       }
     } finally {
@@ -900,6 +929,7 @@ export function AppRoot() {
       <AppHeader
         title={item.title ?? ''}
         unsavedCount={unsavedCount}
+        dirty={dirty}
         saving={saving}
         onPresent={toggleFullscreen}
         user={user}
@@ -1052,6 +1082,7 @@ export function AppRoot() {
                   onPresent={toggleFullscreen}
                   pageTabs={
                     <PageTabs
+                      surface="light"
                       pages={item.pages ?? []}
                       currentPageId={item.currentPageId ?? ''}
                       onSwitch={switchPageAction}

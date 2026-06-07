@@ -30,7 +30,10 @@ export interface AppHeaderProps {
   onLogout(): void;
   // Auto-save state. Save is now a pure indicator (the Save button is gone, ⌘S +
   // the app-menu Save item remain). `saving` is true while a save is in flight;
-  // `unsavedCount > 0` is the dirty state; clean + signed-in is "Saved".
+  // `dirty` is the unsaved state (covers content AND metadata edits like rename/page
+  // ops, which `unsavedCount` does not); clean + signed-in is "Saved". `unsavedCount`
+  // is kept only for the precise count in the indicator's aria-label.
+  dirty?: boolean;
   saving?: boolean;
   // Present mode (the old Fullscreen) now lives top-right next to Share.
   onPresent(): void;
@@ -106,6 +109,7 @@ function PlayIcon() {
 export function AppHeader({
   title,
   unsavedCount,
+  dirty,
   user,
   lastProvider,
   readOnly = false,
@@ -253,6 +257,7 @@ export function AppHeader({
           readOnly={readOnly}
           signedIn={!!user}
           saving={saving}
+          dirty={dirty ?? unsavedCount > 0}
           unsavedCount={unsavedCount}
         />
 
@@ -334,23 +339,29 @@ function SaveState({
   readOnly,
   signedIn,
   saving,
+  dirty,
   unsavedCount,
 }: {
   readOnly: boolean;
   signedIn: boolean;
   saving: boolean;
+  dirty: boolean;
   unsavedCount: number;
 }) {
-  // readOnly wins: no save attempts happen, so never show Saving/Unsaved.
+  // Precedence (no false claims when there's no real save target):
+  // - readOnly: no save happens → neutral "Read-only".
+  // - signed-out: auto-save is local-only → neutral "Local only" (no Saving…/Unsaved
+  //   flash, since there's no cloud sync to report).
+  // - signed-in: Saving… → Unsaved (dirty) → Saved.
   const state: 'readonly' | 'local' | 'saving' | 'dirty' | 'saved' = readOnly
     ? 'readonly'
-    : saving
-      ? 'saving'
-      : unsavedCount > 0
-        ? 'dirty'
-        : signedIn
-          ? 'saved'
-          : 'local';
+    : !signedIn
+      ? 'local'
+      : saving
+        ? 'saving'
+        : dirty
+          ? 'dirty'
+          : 'saved';
 
   const base =
     'inline-flex items-center gap-1.5 shrink-0 select-none font-mono ' +
@@ -367,7 +378,11 @@ function SaveState({
   if (state === 'dirty') {
     return (
       <span data-testid="header-savestate" data-state="dirty" className={cn(base, 'text-signal-amber')}
-        aria-label={`${unsavedCount} unsaved change${unsavedCount === 1 ? '' : 's'}`}
+        aria-label={
+          unsavedCount > 0
+            ? `${unsavedCount} unsaved change${unsavedCount === 1 ? '' : 's'}`
+            : 'Unsaved changes'
+        }
       >
         <span className="h-1.5 w-1.5 rounded-full bg-signal-amber" aria-hidden="true" />
         Unsaved

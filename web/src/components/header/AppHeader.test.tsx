@@ -252,6 +252,25 @@ describe('AppHeader', () => {
     expect(el).not.toHaveTextContent(/unsaved/i);
   });
 
+  // Signed-out auto-save is local-only — it must NOT flash "Saving…" (there is no
+  // cloud sync to report). Signed-out always reads "Local only".
+  it('shows "Local only" (not "Saving…") when signed out even while saving', () => {
+    render(<AppHeader {...baseProps} user={null} saving dirty unsavedCount={1} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'local');
+    expect(el).not.toHaveTextContent(/saving/i);
+  });
+
+  // Metadata edits (rename / page ops) set `dirty` but not `unsavedCount`. The
+  // indicator must still read "Unsaved" off `dirty`, not a false "Saved".
+  it('shows "Unsaved" for a metadata edit (dirty but unsavedCount === 0)', () => {
+    render(<AppHeader {...baseProps} user={mockUser} dirty unsavedCount={0} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'dirty');
+    expect(el).toHaveTextContent(/unsaved/i);
+    expect(el).toHaveAttribute('aria-label', 'Unsaved changes');
+  });
+
   // ---- Right group: Present + account ----
 
   it('Present button calls onPresent', async () => {

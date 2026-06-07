@@ -43,6 +43,13 @@ describe('filterStarterNoise', () => {
     expect(filterStarterNoise(entries)).toEqual([kept1, kept2]);
   });
 
+  it('KEEPS a genuine error even if its message contains the marker', () => {
+    // A real error must never be silently dropped (it would vanish from the log AND
+    // the error count/pill) just because its text happens to include _STARTER_.
+    const err: ConsoleEntry = { level: 'error', args: ['Participant _STARTER_ not found'] };
+    expect(filterStarterNoise([err])).toEqual([err]);
+  });
+
   it('returns an empty array for empty input', () => {
     expect(filterStarterNoise([])).toEqual([]);
   });

@@ -11,7 +11,12 @@ function renderMessage(entry: ConsoleEntry): string {
 }
 
 export function filterStarterNoise(entries: ConsoleEntry[]): ConsoleEntry[] {
-  return entries.filter((entry) => !renderMessage(entry).includes(STARTER_MARKER));
+  // Only suppress NON-error starter noise (internal seed logs/warnings). A genuine
+  // error must never be silently dropped — even if its message happens to contain the
+  // marker — or it would vanish from the log AND from the error count/pill.
+  return entries.filter(
+    (entry) => entry.level === 'error' || !renderMessage(entry).includes(STARTER_MARKER),
+  );
 }
 
 export function countErrors(entries: ConsoleEntry[]): number {
