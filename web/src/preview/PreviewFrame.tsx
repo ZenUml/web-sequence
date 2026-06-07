@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getCompleteHtml } from './previewHtml';
 import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
@@ -21,13 +21,22 @@ export interface PreviewFrameProps {
    * may override explicitly (e.g. `embed={isEmbed}` in AppRoot if preferred).
    */
   embed?: boolean;
+  /**
+   * Present (fullscreen) fit. When `true` AND the iframe has reported its natural
+   * `contentSize`, the iframe is sized to that natural size and CSS-`transform:
+   * scale()`d to fit — and centred within — its wrapper. Self-contained: the
+   * controller only needs `fit={fullscreen}`; the scale is computed here from a
+   * ResizeObserver on the wrapper (feature-detected — absent in jsdom → scale 1).
+   * Has no effect in embed mode (embed sizing stays byte-identical). Default false.
+   */
+  fit?: boolean;
   onCodeChange?: (code: string) => void;
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, autoPreview = true, embed, onCodeChange, onConsole, onError },
+  { code, css, stickyOffset, autoPreview = true, embed, fit = false, onCodeChange, onConsole, onError },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
@@ -35,10 +44,17 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // `embed` prop overrides.
   const embedMode = embed ?? detectFromEnv().isEmbed;
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(false);
-  // Embed-only: iframe natural content size reported via 'contentSize' message.
+  // Iframe natural content size reported via 'contentSize' message, in ALL modes.
   // null = no report yet (iframe uses h-full / default width during initial load).
-  const [embedContentSize, setEmbedContentSize] = useState<{ width: number; height: number } | null>(null);
+  // - embed: drives the explicit shrink-wrap px style (byte-identical to before).
+  // - fit (present): drives the scale-to-fit transform.
+  // - editor (neither): stored but not applied (stays h-full w-full).
+  const [contentSize, setContentSize] = useState<{ width: number; height: number } | null>(null);
+  // Present-mode fit scale. 1 = no down-scale (also the safe fallback when the
+  // wrapper has no measurable size or ResizeObserver is unavailable).
+  const [fitScale, setFitScale] = useState(1);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
   const pngId = useRef(0);
   const evalWaiters = useRef(new Map<number, (r: { ok: boolean; value: string }) => void>());
@@ -88,10 +104,11 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
           break;
         }
         case 'contentSize':
-          // Embed-only: shrink-wrap the iframe to the diagram's natural content size
-          // (width × height). The card wrapper in AppRoot supplies max-w / max-h +
-          // overflow-auto, so a diagram larger than the viewport cap scrolls.
-          if (embedMode) setEmbedContentSize({ width: msg.width, height: msg.height });
+          // Store the diagram's natural content size (width × height) in ALL modes.
+          // embed: shrink-wraps the iframe (card wrapper in AppRoot supplies max-w /
+          // max-h + overflow-auto so an oversized diagram scrolls). fit: feeds the
+          // scale-to-fit transform. editor: stored but never applied to the iframe.
+          setContentSize({ width: msg.width, height: msg.height });
           break;
       }
     }
@@ -120,6 +137,32 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // kept as a safety net should the iframe ever reload and re-fire `ready`.
   useEffect(() => { readyRef.current = false; }, [srcdoc]);
 
+  // Present-mode fit: compute scale = min(containerW/contentW, containerH/contentH, 1)
+  // and keep it current as the wrapper resizes (window resize / orientation change).
+  // Self-contained so the controller only passes `fit`. Guards:
+  //  - only runs when `fit` AND a contentSize is known (else nothing to fit against);
+  //  - ResizeObserver may be absent (jsdom / old browsers) → feature-detect, the
+  //    one-shot measure below still computes an initial scale;
+  //  - a 0/non-finite wrapper size (jsdom has no layout) → fall back to scale 1, so
+  //    we never apply scale(0) or NaN. Deps are [fit, contentSize] only (NOT fitScale,
+  //    which would loop).
+  useEffect(() => {
+    if (!fit || contentSize === null) { setFitScale(1); return; }
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const measure = () => {
+      const cw = wrapper.clientWidth;
+      const ch = wrapper.clientHeight;
+      const s = Math.min(cw / contentSize.width, ch / contentSize.height, 1);
+      setFitScale(Number.isFinite(s) && s > 0 ? s : 1);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, [fit, contentSize]);
+
   useImperativeHandle(ref, () => ({
     getPng() {
       return new Promise((resolve) => {
@@ -139,25 +182,51 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     },
   }));
 
-  // In embed mode: once the bootstrap reports contentSize, set explicit pixel
-  // width and height so the iframe shrinks to its content on both axes. Before the
-  // first report, fall back to h-full (editor-style fill) so the card is not a 0-px
-  // collapsed box during initial load.
-  // In editor mode: always h-full w-full (fills the split-pane right panel).
-  const iframeStyle =
-    embedMode && embedContentSize !== null
-      ? { width: `${embedContentSize.width}px`, height: `${embedContentSize.height}px` }
-      : undefined;
-
-  return (
+  const iframeEl = (className: string, style?: CSSProperties) => (
     <iframe
       ref={iframeRef}
       data-testid="preview-iframe"
       title="ZenUML preview"
       srcDoc={srcdoc}
-      className={embedMode && embedContentSize !== null ? 'border-0' : 'h-full w-full border-0'}
-      style={iframeStyle}
+      className={className}
+      style={style}
       allowFullScreen
     />
+  );
+
+  // EMBED (byte-identical to before): a BARE iframe — no wrapper. Once the bootstrap
+  // reports contentSize, set explicit pixel width+height so the iframe shrinks to its
+  // content on both axes; before the first report fall back to h-full (so the card is
+  // not a 0-px collapsed box during load). embed never enters fit, so it short-circuits
+  // first and its DOM stays exactly what it was prior to Phase 2.
+  if (embedMode) {
+    return contentSize !== null
+      ? iframeEl('border-0', { width: `${contentSize.width}px`, height: `${contentSize.height}px` })
+      : iframeEl('h-full w-full border-0');
+  }
+
+  // NON-EMBED: keep a STABLE DOM shape (wrapper > iframe) across the editor↔present
+  // transition so toggling `fit` never remounts the iframe (which would reload the
+  // heavy @zenuml bundle and lose render state). The wrapper is what the
+  // ResizeObserver measures in fit mode.
+  //  - present fit (fit && contentSize known): iframe sized to natural px + scaled to
+  //    fit, centred. overflow-hidden clips any sub-pixel rounding.
+  //  - editor (else): iframe fills the wrapper h-full w-full; contentSize, if
+  //    reported, is stored but intentionally not applied.
+  const presenting = fit && contentSize !== null;
+  return (
+    <div
+      ref={wrapperRef}
+      className={presenting ? 'h-full w-full flex items-center justify-center overflow-hidden' : 'h-full w-full'}
+    >
+      {presenting
+        ? iframeEl('border-0', {
+            width: `${contentSize.width}px`,
+            height: `${contentSize.height}px`,
+            transform: `scale(${fitScale})`,
+            transformOrigin: 'center center',
+          })
+        : iframeEl('h-full w-full border-0')}
+    </div>
   );
 });

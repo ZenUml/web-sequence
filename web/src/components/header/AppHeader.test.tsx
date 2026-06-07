@@ -280,6 +280,35 @@ describe('AppHeader', () => {
     expect(onPresent).toHaveBeenCalled();
   });
 
+  // ---- Responsive (CSS-only, RHm) ----
+  // jsdom has no real CSS, so we can't assert the label is visually hidden at a
+  // given viewport. Instead assert the structure that makes it CSS-collapsible:
+  // the label span carries `hidden md:inline`, and the button keeps an accessible
+  // name (aria-label) + its icon so it's never an unlabelled icon below md.
+  it('Present label is responsive (hidden md:inline) and keeps an accessible name + icon', () => {
+    render(<AppHeader {...baseProps} />);
+    const present = screen.getByTestId('header-present');
+    // Accessible name persists even when the visible text collapses below md.
+    expect(present).toHaveAttribute('aria-label', 'Present');
+    // The play icon (svg) stays regardless of width.
+    expect(present.querySelector('svg')).toBeInTheDocument();
+    // The visible "Present" text lives in a span gated by Tailwind `hidden md:inline`.
+    const label = screen.getByText('Present');
+    expect(label.className).toContain('hidden');
+    expect(label.className).toContain('md:inline');
+  });
+
+  // The Phase-1 essentials must never be gated behind a responsive class — they
+  // stay in the tree at every width (the condense only touches Share/Present labels).
+  it('keeps logo + filename + savestate + account in the tree (not responsively removed)', () => {
+    render(<AppHeader {...baseProps} user={mockUser} />);
+    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('filemenu-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('header-title')).toBeInTheDocument();
+    expect(screen.getByTestId('header-savestate')).toBeInTheDocument();
+    expect(screen.getByTestId('profile-trigger')).toBeInTheDocument();
+  });
+
   it('renders a divider separating the account zone from the action group', () => {
     render(<AppHeader {...baseProps} />);
     expect(screen.getByTestId('header-account-divider')).toBeInTheDocument();

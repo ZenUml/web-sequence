@@ -972,10 +972,14 @@ export function AppRoot() {
         }
       />
       <div className="flex flex-1 min-h-0 w-full">
-        <Sidebar
-          onOpenTemplates={() => openModal('createNew')}
-          onOpenHelp={() => openModal('help')}
-        />
+        {/* Icon rail is desktop-only — the mobile layout (§03) is a single tabbed pane
+            with no rail (matches the design's phone mock). */}
+        <div className="hidden md:flex">
+          <Sidebar
+            onOpenTemplates={() => openModal('createNew')}
+            onOpenHelp={() => openModal('help')}
+          />
+        </div>
         <Layout
           editor={
             activePanel === 'library' ? (
@@ -1101,6 +1105,9 @@ export function AppRoot() {
                   ref={previewRef}
                   code={item.js}
                   css={previewCss}
+                  // Present (fullscreen) mode: scale-to-fit + center the diagram
+                  // (CSS transform; @zenuml/core untouched).
+                  fit={fullscreen}
                   stickyOffset={stickyOffset}
                   onCodeChange={setDsl}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}

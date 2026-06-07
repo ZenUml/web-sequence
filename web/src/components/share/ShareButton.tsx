@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { Popover, PopoverTrigger, Button } from '../../ui';
 import { SharePopover, type SharePopoverProps } from './SharePopover';
 
+// Design §01 share glyph (three connected nodes). Decorative — the button carries
+// an explicit aria-label so the icon-only mobile state stays accessible.
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+      className="h-[15px] w-[15px]" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+      <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+    </svg>
+  );
+}
+
 export interface ShareButtonProps extends SharePopoverProps {
   // Disabled ONLY for read-only items (a shared/embed copy can't be re-shared).
   // Signed-out and never-saved cases are handled as actions, not dead disable (#4).
@@ -45,8 +57,9 @@ export function ShareButton({
   if (disabled) {
     return (
       <span title={disabledReason} className="inline-flex">
-        <Button data-testid="share-button" variant="subtle" disabled>
-          Share
+        <Button data-testid="share-button" variant="subtle" aria-label="Share" disabled>
+          <ShareIcon />
+          <span className="hidden md:inline">Share</span>
         </Button>
       </span>
     );
@@ -58,9 +71,11 @@ export function ShareButton({
         <Button
           data-testid="share-button"
           variant="subtle"
+          aria-label="Share"
           title="Create a read-only link to share this diagram"
         >
-          Share
+          <ShareIcon />
+          <span className="hidden md:inline">Share</span>
         </Button>
       </PopoverTrigger>
       <SharePopover {...popoverProps} />

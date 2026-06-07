@@ -175,7 +175,7 @@ export function AppHeader({
 
   return (
     <>
-      <header className="bg-blueprint border-b border-ink-line/40 h-14 px-4 flex items-center gap-3.5">
+      <header className="bg-blueprint border-b border-ink-line/40 h-14 px-3 md:px-4 flex items-center gap-2 md:gap-3.5">
         {/* App menu — the logo brand button (▾). Holds New / New from template /
             Settings / Keyboard shortcuts / DSL cheat sheet / Help / Pricing / Save. */}
         <AppMenu
@@ -265,17 +265,22 @@ export function AppHeader({
 
         {/* Top-right: the only shared verbs. Share (via actions) · Present · divider ·
             account. Three jobs, clear order. */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           {actions}
           <Tooltip label="Present this diagram full-screen">
+            {/* Below md the label collapses to icon-only to avoid clipping. The
+                accessible name persists via aria-label so the control is never
+                an unlabelled icon. This is CSS-only (Tailwind responsive); no JS
+                media query touches the header. */}
             <Button
               variant="subtle"
               size="md"
               data-testid="header-present"
+              aria-label="Present"
               onClick={onPresent}
             >
               <PlayIcon />
-              Present
+              <span className="hidden md:inline">Present</span>
             </Button>
           </Tooltip>
 

@@ -58,11 +58,14 @@
             stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
           });
           post({ type: 'rendered' });
-          // Embed-only: report the diagram's natural content size (width × height) so
-          // the host can shrink-wrap the iframe card to the diagram content rather than
-          // leaving a vast empty box. Gated on the embed-suppress style element (present
-          // only when getCompleteHtml({ embed: true }) was used) so the editor path is
-          // untouched.
+          // Report the diagram's natural content size (width × height) in ALL modes
+          // (spec Phase 2 §PF: "report + store … in ALL modes"). Consumers decide what
+          // to do with it: embed shrink-wraps the iframe card; present/fit scales the
+          // iframe to fit + center; editor stores-but-ignores. Previously gated on the
+          // embed-suppress style element — that left present/fit dead in production
+          // because fit mode is non-embed, so the post never fired. The receiver
+          // (PreviewFrame) already gates application by mode, so an unconditional post
+          // is safe: editor mode stores it without applying (GATING CANARY test).
           //
           // HEIGHT: #diagram.scrollHeight — unconstrained axis, already validated
           // in round-4. +24px bottom buffer so lifeline dashes at the foot of each
@@ -77,7 +80,11 @@
           //   #diagram.scrollWidth = 750 (= iframe width — useless)
           //   .bg-skin-canvas.scrollWidth = 249 (= natural content — correct)
           // +16px right buffer so lifeline/edge chrome on the right side is not clipped.
-          if (document.getElementById('zenuml-embed-suppress')) {
+          // NOTE: width was probed only in embed mode (core chrome suppressed). Present
+          // mode keeps core chrome — the .bg-skin-canvas measurement should still be the
+          // inline-block content width, but this needs the Phase 2 fullscreen screenshot
+          // to confirm there is no clipping/over-shrink. See done-criteria.
+          {
             var diagramEl = document.getElementById('diagram') || document.getElementById('mounting-point');
             var contentH = (diagramEl ? diagramEl.scrollHeight : document.documentElement.scrollHeight) + 24;
             var frameRootEl = document.querySelector('.bg-skin-canvas');

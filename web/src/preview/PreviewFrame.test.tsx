@@ -141,15 +141,105 @@ describe('PreviewFrame', () => {
     expect(iframe.style.height).toBe('344px');
   });
 
-  it('in non-embed mode: contentSize message is ignored (style stays unset)', () => {
+  // GATING CANARY: storing contentSize in ALL modes (Phase 2 ungate) must NOT leak
+  // into the editor (non-embed, non-fit) iframe. The message is stored in state but
+  // intentionally not applied — the iframe keeps h-full w-full with no inline px. If
+  // this goes red, the mode gating regressed and the editor pane is being sized wrong.
+  it('in non-embed non-fit mode: contentSize is stored but NOT applied (style stays unset)', () => {
     const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
     const iframe = container.querySelector('iframe') as HTMLIFrameElement;
     Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
     act(() => {
       window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 265, height: 344 } }));
     });
-    // Non-embed ignores the message: no explicit pixel style, h-full w-full class kept.
     expect(iframe.style.width).toBe('');
     expect(iframe.style.height).toBe('');
+    expect(iframe.style.transform).toBe('');
+    expect(iframe.className).toContain('h-full');
+  });
+
+  // PHASE 2 fit: when `fit` AND a contentSize arrives, the iframe is sized to its
+  // natural px and gets a `transform: scale(...)`. In jsdom ResizeObserver is an
+  // inert stub and the wrapper has no layout (clientWidth 0) → the guarded measure
+  // falls back to scale(1). Proves the message is HONORED in non-embed fit mode.
+  it('in fit mode: contentSize sizes the iframe to natural px + applies a centered transform (RO-absent fallback = scale 1)', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} fit />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 400, height: 300 } }));
+    });
+    expect(iframe.style.width).toBe('400px');
+    expect(iframe.style.height).toBe('300px');
+    expect(iframe.style.transform).toBe('scale(1)');
+    expect(iframe.style.transformOrigin).toBe('center center');
+  });
+
+  // DISCRIMINATING: proves the fit MATH, not just that some transform got applied.
+  // Mock a real ResizeObserver that fires synchronously on observe(), with a wrapper
+  // measuring 200×150 against a 400×300 diagram → scale = min(200/400, 150/300, 1)
+  // = min(0.5, 0.5, 1) = 0.5. A broken min() (e.g. dropping a term or the cap) yields
+  // a different number and fails here.
+  it('in fit mode: computes scale < 1 when the wrapper is smaller than the content', () => {
+    const observed: Element[] = [];
+    class FakeRO {
+      constructor(private cb: ResizeObserverCallback) {}
+      observe(el: Element) {
+        observed.push(el);
+        // Make the wrapper report a measurable size smaller than the diagram.
+        Object.defineProperty(el, 'clientWidth', { value: 200, configurable: true });
+        Object.defineProperty(el, 'clientHeight', { value: 150, configurable: true });
+        this.cb([{ target: el } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    const prev = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeRO as unknown as typeof ResizeObserver;
+    try {
+      const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} fit />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+      act(() => {
+        window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 400, height: 300 } }));
+      });
+      expect(observed.length).toBeGreaterThan(0);
+      expect(iframe.style.transform).toBe('scale(0.5)');
+    } finally {
+      globalThis.ResizeObserver = prev;
+    }
+  });
+
+  // GUARD: a missing ResizeObserver must not crash and must leave scale at 1.
+  it('in fit mode: missing ResizeObserver does not crash (scale stays 1)', () => {
+    const prev = globalThis.ResizeObserver;
+    // @ts-expect-error intentionally remove for the feature-detect path
+    delete globalThis.ResizeObserver;
+    try {
+      const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} fit />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+      act(() => {
+        window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 400, height: 300 } }));
+      });
+      expect(iframe.style.width).toBe('400px');
+      expect(iframe.style.transform).toBe('scale(1)');
+    } finally {
+      globalThis.ResizeObserver = prev;
+    }
+  });
+
+  // Embed must stay byte-identical even if `fit` is somehow also set: embed wins.
+  it('embed sizing is unchanged when fit is also true (embed branch wins)', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} embed fit />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 265, height: 344 } }));
+    });
+    expect(iframe.style.width).toBe('265px');
+    expect(iframe.style.height).toBe('344px');
+    expect(iframe.style.transform).toBe('');
+    expect(iframe.className).toBe('border-0');
   });
 });
