@@ -712,16 +712,21 @@ export function AppRoot() {
     })();
 
     return (
-      <div data-testid="embed-root" className="flex flex-col h-full w-full bg-paper-50">
+      <div data-testid="embed-root" className="flex flex-col h-full w-full surface-paper">
         <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
-        <div className="flex-1 min-h-0">
+        {/* Render the diagram directly on paper, centered with breathing room and a
+            hairline + shadow so the embed reads as an intentional framed surface
+            rather than an unstyled white box on cream. */}
+        <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <PreviewFrame
-              ref={previewRef}
-              code={item.js}
-              css={item.cssMode === 'css' ? item.css : transpiledCss}
-              stickyOffset={stickyOffset}
-            />
+            <div className="h-full w-full rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-hidden flex items-center justify-center">
+              <PreviewFrame
+                ref={previewRef}
+                code={item.js}
+                css={item.cssMode === 'css' ? item.css : transpiledCss}
+                stickyOffset={stickyOffset}
+              />
+            </div>
           ) : null}
         </div>
       </div>
@@ -928,80 +933,100 @@ export function AppRoot() {
                 onRename={renamePageAction}
                 readOnly={!!item.isReadOnly}
               />
-              {/* #6: pre-processor mode strip — rebuilt on the design-system Select
-                  primitive (was native <select> with off-palette gray-*). Labels use
-                  text-ondark-muted (AA-passing) on the ink chrome. testids
-                  js-mode-select / css-mode-select stay on the SelectTrigger. */}
-              <div className="flex items-center gap-3 px-2 py-1.5 border-b border-ink-line/40 text-xs">
-                <label className="flex items-center gap-1.5">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-                    JS
+              {/* #6 / IA fix: each editor pane carries its OWN header so the two
+                  stacked CodeMirror surfaces are unambiguous. The DSL pane is the
+                  PRIMARY surface (mono "DSL" label leading, accent rule) and its JS
+                  pre-processor Select sits in its header; the CSS pane header carries
+                  the CSS-mode Select. Mode <select>s use the design-system Select
+                  primitive on the ink chrome; testids js-mode-select / css-mode-select
+                  stay on the SelectTrigger. */}
+              <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
+              <div className="flex flex-1 min-h-0 flex-col">
+                {/* DSL pane header — primary surface marker */}
+                <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
+                  <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-accent-onDark">
+                    <span className="h-3 w-0.5 rounded-full bg-accent-onDark/70" aria-hidden="true" />
+                    DSL
                   </span>
-                  <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
-                    <SelectTrigger
-                      data-testid="js-mode-select"
-                      aria-label="JavaScript pre-processor mode"
-                      surface="dark"
-                      className="h-7"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {JS_MODES.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="flex items-center gap-1.5">
+                  <label className="flex items-center gap-1.5">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-faint">
+                      JS
+                    </span>
+                    <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
+                      <SelectTrigger
+                        data-testid="js-mode-select"
+                        aria-label="JavaScript pre-processor mode"
+                        surface="dark"
+                        className="h-7"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JS_MODES.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                </div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
+              </div>
+              <div className="flex flex-1 min-h-0 flex-col border-t border-ink-line/40">
+                {/* CSS pane header — secondary surface marker */}
+                <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
                   <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
                     CSS
                   </span>
-                  <Select value={item.cssMode} onValueChange={(v) => handleSetCssMode(v as CssMode)}>
-                    <SelectTrigger
-                      data-testid="css-mode-select"
-                      aria-label="CSS pre-processor mode"
-                      surface="dark"
-                      className="h-7"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CSS_MODES.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
-                    Atomizer config is edited via this affordance (REQ-ED-2). */}
-                {item.cssMode === 'acss' && (
-                  <Button
-                    size="sm"
-                    variant="subtle"
-                    data-testid="acss-settings-open"
-                    onClick={() => openModal('acss')}
-                  >
-                    Atomic CSS config
-                  </Button>
-                )}
+                  <div className="flex items-center gap-2">
+                    {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
+                        Atomizer config is edited via this affordance (REQ-ED-2). */}
+                    {item.cssMode === 'acss' && (
+                      <Button
+                        size="sm"
+                        variant="subtle"
+                        data-testid="acss-settings-open"
+                        onClick={() => openModal('acss')}
+                      >
+                        Atomic CSS config
+                      </Button>
+                    )}
+                    <Select value={item.cssMode} onValueChange={(v) => handleSetCssMode(v as CssMode)}>
+                      <SelectTrigger
+                        data-testid="css-mode-select"
+                        aria-label="CSS pre-processor mode"
+                        surface="dark"
+                        className="h-7"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CSS_MODES.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
               </div>
-              <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
-              <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
-              <div className="flex-1 min-h-0 border-t border-ink-line/40"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
             </div>
             )
           }
           preview={
-            <div className={fullscreen ? 'fixed inset-0 z-50 bg-white flex flex-col' : 'relative h-full flex flex-col'}>
-              <button
+            <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'relative h-full flex flex-col'}>
+              <Button
                 data-testid="preview-fullscreen"
                 onClick={toggleFullscreen}
-                className="absolute right-2 top-2 z-10 rounded bg-gray-800/70 px-2 py-1 text-xs text-white"
+                surface="light"
+                variant="subtle"
+                size="sm"
+                className="absolute right-2 top-2 z-10"
               >
                 {fullscreen ? 'Exit' : 'Fullscreen'}
-              </button>
-              <div className="flex-1 min-h-0">
+              </Button>
+              {/* Center the rendered diagram with breathing room instead of clinging
+                  to the top-left of the pane. */}
+              <div className="flex-1 min-h-0 flex items-center justify-center p-4">
                 <PreviewFrame
                   ref={previewRef}
                   code={item.js}

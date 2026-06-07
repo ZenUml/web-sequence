@@ -54,6 +54,32 @@ describe('LoginModal', () => {
     expect(other.className).not.toContain('bg-accent');
   });
 
+  it('chips the multicolor Google glyph on a white background when elevated', () => {
+    // Google keeps fixed brand fills; on the cobalt primary button it must sit on
+    // a white chip so it doesn't clash/vanish. Discriminating: dropping the chip
+    // treatment fails here.
+    render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} lastProvider="google" />);
+    const glyph = screen.getByTestId('login-google-glyph');
+    expect(glyph).toHaveAttribute('data-chip', 'true');
+    expect(glyph.className).toContain('bg-white');
+  });
+
+  it('does not chip the Google glyph at rest (no lastProvider)', () => {
+    render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} />);
+    const glyph = screen.getByTestId('login-google-glyph');
+    expect(glyph).not.toHaveAttribute('data-chip');
+    expect(glyph.className).not.toContain('bg-white');
+  });
+
+  it('does not chip a currentColor glyph when it is the elevated provider', () => {
+    // GitHub is currentColor and inherits the cobalt button's white text — no chip
+    // needed. Only the multicolor Google exception gets a chip.
+    render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} lastProvider="github" />);
+    const glyph = screen.getByTestId('login-github-glyph');
+    expect(glyph).not.toHaveAttribute('data-chip');
+    expect(glyph.className).not.toContain('bg-white');
+  });
+
   it('lists the lastProvider button first', () => {
     render(
       <LoginModal open onOpenChange={() => {}} onLogin={() => {}} lastProvider="facebook" />,
@@ -83,6 +109,17 @@ describe('LoginModal', () => {
       <LoginModal open onOpenChange={() => {}} onLogin={() => {}} error="Account exists with a different sign-in method." />,
     );
     expect(screen.getByTestId('login-error')).toHaveTextContent('Account exists');
+  });
+
+  it('styles the error notice with the danger token, not caution amber', () => {
+    // An auth failure is danger, not caution. Discriminating: reverting to
+    // signal-amber fails both assertions.
+    render(
+      <LoginModal open onOpenChange={() => {}} onLogin={() => {}} error="Sign-in failed." />,
+    );
+    const notice = screen.getByTestId('login-error');
+    expect(notice.className).toContain('danger');
+    expect(notice.className).not.toContain('signal-amber');
   });
 
   it('renders no error notice when error is absent', () => {

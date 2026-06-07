@@ -2,8 +2,10 @@ import { Dialog, DialogContent, Button } from '../../ui';
 import type { ProviderName } from '../../services/types';
 
 // Decorative provider glyphs (aria-hidden — the button's text label carries the
-// accessible name). Simplified single-color marks so they read on the light
-// paper surface without importing brand asset packs.
+// accessible name). Single-color `currentColor` marks so they inherit the
+// button's text color: dark on the at-rest subtle button, white on the elevated
+// cobalt primary button. Google is the deliberate brand-multicolor exception
+// (see GLYPH_NEEDS_CHIP below — its fixed fills require a white chip on cobalt).
 const GLYPHS: Record<ProviderName, React.ReactNode> = {
   google: (
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -24,7 +26,7 @@ const GLYPHS: Record<ProviderName, React.ReactNode> = {
   facebook: (
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <path
-        fill="#1877F2"
+        fill="currentColor"
         d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8v8.44C19.61 23.08 24 18.09 24 12.07z"
       />
     </svg>
@@ -38,6 +40,12 @@ const GLYPHS: Record<ProviderName, React.ReactNode> = {
     </svg>
   ),
 };
+
+// Google keeps its fixed brand-multicolor fills (the deliberate exception), so on
+// the elevated cobalt primary button it would clash/vanish against `bg-accent`.
+// Sit it on a small white chip there. Every other glyph is `currentColor` and
+// inherits the button's `text-white` on cobalt, so it needs no chip.
+const GLYPH_NEEDS_CHIP: Partial<Record<ProviderName, true>> = { google: true };
 
 const PROVIDERS: { id: ProviderName; label: string }[] = [
   { id: 'google', label: 'Continue with Google' },
@@ -76,7 +84,7 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
           <p
             data-testid="login-error"
             role="alert"
-            className="mb-3 rounded border border-signal-amber/40 bg-signal-amber/10 px-3 py-2 text-[13px] text-onlight-strong"
+            className="mb-3 rounded border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger"
           >
             {error}
           </p>
@@ -89,17 +97,33 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
         <div className="flex flex-col gap-2">
           {ordered.map(({ id, label }) => {
             const elevated = matched?.id === id;
+            const chip = elevated && GLYPH_NEEDS_CHIP[id];
             return (
               <Button
                 key={id}
                 variant={elevated ? 'primary' : 'subtle'}
                 surface="light"
-                className="w-full justify-start"
+                // Button base forces `justify-center` and cn (clsx, no
+                // tailwind-merge) can't override it; left-align via a full-width
+                // inner flex (defaults to flex-start) instead — OAuth convention.
+                className="w-full"
                 data-testid={`login-${id}`}
                 onClick={() => onLogin(id)}
               >
-                <span className="shrink-0">{GLYPHS[id]}</span>
-                {label}
+                <span className="flex w-full items-center gap-1.5">
+                  <span
+                    data-testid={`login-${id}-glyph`}
+                    data-chip={chip ? 'true' : undefined}
+                    className={
+                      chip
+                        ? 'flex shrink-0 items-center justify-center rounded-[3px] bg-white p-0.5 text-onlight-strong'
+                        : 'shrink-0'
+                    }
+                  >
+                    {GLYPHS[id]}
+                  </span>
+                  {label}
+                </span>
               </Button>
             );
           })}
