@@ -154,11 +154,13 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="preview-iframe"]')).toBeTruthy();
   });
 
-  it('renders js and css mode selects', async () => {
+  it('renders the css mode select and no js mode select (the JS pre-processor has no render effect)', async () => {
     const { container } = render(<AppRoot />);
     await screen.findByTestId('editor-region');
-    expect(container.querySelector('[data-testid="js-mode-select"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="css-mode-select"]')).toBeTruthy();
+    // The diagram DSL is rendered by @zenuml/core; computeJs is never called, so the
+    // JS pre-processor Select was dead UI and has been removed.
+    expect(container.querySelector('[data-testid="js-mode-select"]')).toBeNull();
   });
 
   it('renders the snippet toolbox', async () => {

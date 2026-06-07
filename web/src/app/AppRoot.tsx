@@ -6,9 +6,9 @@ import { useEditorStore } from '../state/editorStore';
 import { useAuthStore } from '../state/authStore';
 import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore } from '../state/uiStore';
-import type { Item, JsMode, CssMode } from '../domain/types';
+import type { Item, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
-import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue, Tooltip } from '../ui';
+import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
@@ -61,12 +61,6 @@ import { AtomicCssSettingsModal, type CssSettings } from '../components/modals/A
 import { PricingModal, type BillingPeriod } from '../components/subscription/PricingModal';
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
 
-const JS_MODES: { value: JsMode; label: string }[] = [
-  { value: 'js', label: 'JavaScript' },
-  { value: 'es6', label: 'ES6 (Babel)' },
-  { value: 'coffeescript', label: 'CoffeeScript' },
-  { value: 'typescript', label: 'TypeScript' },
-];
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
   { value: 'scss', label: 'SCSS' },
@@ -90,7 +84,6 @@ export function AppRoot() {
   const item = useEditorStore((s) => s.currentItem);
   const setDsl = useEditorStore((s) => s.setDsl);
   const setCss = useEditorStore((s) => s.setCss);
-  const setJsMode = useEditorStore((s) => s.setJsMode);
   const setCssMode = useEditorStore((s) => s.setCssMode);
   const setTitle = useEditorStore((s) => s.setTitle);
   const addPageAction = useEditorStore((s) => s.addPage);
@@ -974,11 +967,12 @@ export function AppRoot() {
               />
               {/* #6 / IA fix: each editor pane carries its OWN header so the two
                   stacked CodeMirror surfaces are unambiguous. The DSL pane is the
-                  PRIMARY surface (mono "DSL" label leading, accent rule) and its JS
-                  pre-processor Select sits in its header; the CSS pane header carries
-                  the CSS-mode Select. Mode <select>s use the design-system Select
-                  primitive on the ink chrome; testids js-mode-select / css-mode-select
-                  stay on the SelectTrigger. */}
+                  PRIMARY surface (mono "DSL" label leading, accent rule). Only the CSS
+                  pane carries a pre-processor Select: CSS modes are live (computeCss
+                  feeds previewCss), whereas the diagram DSL is rendered by @zenuml/core
+                  and has no JS pre-processor — so no js-mode Select is shown. The CSS
+                  <select> uses the design-system Select primitive on the ink chrome;
+                  testid css-mode-select stays on its SelectTrigger. */}
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex flex-1 min-h-0 flex-col">
                 {/* DSL pane header — primary surface marker */}
@@ -987,34 +981,6 @@ export function AppRoot() {
                     <span className="h-3 w-0.5 rounded-full bg-accent-onDark/70" aria-hidden="true" />
                     DSL
                   </span>
-                  {/* #LOW (editor-wiring): the DSL pane holds ZenUML DSL, not JS — so a bare
-                      "JS" Select here reads as "what language is the DSL?". It actually
-                      controls the pre-processor for the item's embedded <script> (the preview
-                      runs item.js through this pipeline). A Tooltip disambiguates without
-                      removing the control (keeping the js-mode-select testid + the existing
-                      "renders js and css mode selects" coverage). */}
-                  <Tooltip label="Pre-processor for the diagram's embedded <script> code — not the ZenUML DSL above.">
-                    <label className="flex items-center gap-1.5">
-                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-faint">
-                        JS
-                      </span>
-                      <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
-                        <SelectTrigger
-                          data-testid="js-mode-select"
-                          aria-label="JavaScript pre-processor mode"
-                          surface="dark"
-                          className="h-7"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {JS_MODES.map((m) => (
-                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                  </Tooltip>
                 </div>
                 <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
