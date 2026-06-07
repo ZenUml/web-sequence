@@ -63,9 +63,15 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
       js: payload.js,
       css: payload.css,
       html: payload.html,
-      htmlMode: 'html',
-      cssMode: 'css',
-      jsMode: 'js',
+      // Finding 1 (adversarial review): honour the legacy item's pre-processor modes.
+      // This is the destination of the embed "Open in ZenUML" round-trip — the link
+      // forwards ?code=<JSON item> WITHOUT ?embed, landing here. Hardcoding cssMode:'css'
+      // rendered an scss/less embed's source raw in the full editor (the preview only
+      // transpiles when the real mode survives).
+      htmlMode: payload.htmlMode,
+      cssMode: payload.cssMode,
+      jsMode: payload.jsMode,
+      cssSettings: payload.cssSettings,
       pages: [],
       currentPageId: '',
       isReadOnly: false,

@@ -165,6 +165,24 @@ describe('resolveBootItem (pure resolver)', () => {
     }
   });
 
+  // Finding 1 (adversarial review): the embed "Open in ZenUML" link forwards
+  // ?code=<JSON item> WITHOUT ?embed, landing on THIS full-app code path. A legacy
+  // scss item must keep its cssMode here too, or the full editor renders raw scss.
+  // DISCRIMINATING: revert useBootItem's seed back to cssMode:'css' → this fails.
+  it('preserves the legacy item cssMode on the full-app ?code= round-trip (finding 1)', async () => {
+    const legacy = JSON.stringify({
+      js: 'A.b()', css: '$c: red;', cssMode: 'scss', html: '# H', htmlMode: 'markdown', jsMode: 'typescript',
+    });
+    const deps = makeBaseDeps({ codeParam: legacy, codeTitle: null });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('code');
+    if (result.kind === 'code') {
+      expect(result.item.cssMode).toBe('scss');
+      expect(result.item.htmlMode).toBe('markdown');
+      expect(result.item.jsMode).toBe('typescript');
+    }
+  });
+
   // Precedence: an explicit ?code= wins over stale last-code (legacy: urlCode || result.code).
   it('codeParam takes precedence over preserveLastCode (finding 1)', async () => {
     const deps = makeBaseDeps({
