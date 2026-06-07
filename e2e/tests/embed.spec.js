@@ -120,6 +120,39 @@ test('?embed open-in-app link targets the canonical app origin in a new tab', as
   expect(href).toContain('title=Demo');
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Finding 1 (adversarial review, 2026-06-07): the "Open in ZenUML" link forwards
+// the embed's diagram to the FULL app as `?code=<dsl>&title=<title>` WITHOUT
+// `?embed`. The full-app boot MUST seed that diagram (legacy app.jsx read ?code=
+// unconditionally at boot). This is the END-TO-END proof of the unit-level
+// useBootItem `{kind:'code'}` branch: it follows the affordance's destination and
+// asserts the diagram actually renders (not last-code, not a blank new diagram).
+//
+// DISCRIMINATING: reverting the `?code=` boot branch makes the full app ignore the
+// param → the preview shows the default new-diagram SVG (or nothing), and the editor
+// no longer contains `A.fromEmbedLink()`, failing this test.
+// ──────────────────────────────────────────────────────────────────────────────
+test('full app honours ?code= (Open-in-ZenUML destination seeds the diagram)', async ({ page }) => {
+  await suppressOneTimeModals(page);
+  // Same shape the embed open-link mints, but pointed at THIS app (no ?embed).
+  await page.goto('/?code=A.fromEmbedLink()&title=From%20Embed');
+
+  // Full-app chrome is present (this is the editable editor, not the embed shell).
+  await expect(page.getByTestId('dsl-editor')).toBeVisible();
+  await expect(page.getByTestId('embed-header')).toHaveCount(0);
+
+  // The forwarded DSL renders in the preview — proves the boot seeded ?code=.
+  const svg = page
+    .frameLocator('[data-testid="preview-iframe"]')
+    .locator('#mounting-point svg')
+    .first();
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+
+  // The seeded DSL is in the editor (discriminating: a blank/new or last-code boot
+  // would NOT contain this string). CodeMirror renders the source as text.
+  await expect(page.getByTestId('dsl-editor')).toContainText('fromEmbedLink');
+});
+
 // NOTE: the auth-gated embed combination `?embed&id=&share-token=` (embed composed
 // with a shared read-only item, RM-3) needs Firebase auth/emulator to load the
 // shared item, so it is DEFERRED to the staging gate — not exercised here.
