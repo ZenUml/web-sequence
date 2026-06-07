@@ -17,6 +17,7 @@ export {
 } from './Select';
 export { SearchInput, type SearchInputProps } from './SearchInput';
 export { Popover, PopoverTrigger, PopoverContent } from './Popover';
+export { Tooltip, TooltipProvider, type TooltipProps } from './Tooltip';
 export {
   Menu,
   MenuTrigger,

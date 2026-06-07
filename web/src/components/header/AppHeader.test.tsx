@@ -109,6 +109,45 @@ describe('AppHeader', () => {
     expect(onFork).toHaveBeenCalled();
   });
 
+  // New + Duplicate must share the SAME variant so the creation/copy pair reads as
+  // one calm cluster (Save is the sole primary). The `subtle` variant carries the
+  // raised-control border class; the previously-used `ghost` variant does not. We
+  // assert New now matches Duplicate's variant by a class only `subtle` emits, so
+  // reverting New back to `ghost` fails this test.
+  it('header-new and header-fork use the same (subtle) button variant', () => {
+    render(<AppHeader {...baseProps} />);
+    const newBtn = screen.getByTestId('header-new');
+    const forkBtn = screen.getByTestId('header-fork');
+    // `subtle` on the dark surface emits the ink-700 fill; `ghost` is transparent.
+    expect(newBtn.className).toContain('bg-ink-700/70');
+    expect(forkBtn.className).toContain('bg-ink-700/70');
+    // And neither carries the transparent ghost fill that `ghost` would emit.
+    expect(newBtn.className).not.toContain('bg-transparent');
+  });
+
+  // A separator splits the creation action (New from template…) from the
+  // help/config items in the overflow menu.
+  it('overflow menu renders a separator between the creation and utility items', async () => {
+    render(<AppHeader {...baseProps} />);
+    await userEvent.click(screen.getByTestId('header-menu'));
+    expect(await screen.findByTestId('header-menu-separator')).toBeInTheDocument();
+  });
+
+  // The account zone is divided from the document-action cluster.
+  it('renders a divider separating the account zone from document actions', () => {
+    render(<AppHeader {...baseProps} />);
+    expect(screen.getByTestId('header-account-divider')).toBeInTheDocument();
+  });
+
+  // The unsaved signal is reinforced beyond the bare dot with explicit "Unsaved"
+  // text, so it can't be missed (and the in-flow chip can't clip off the edge).
+  it('unsaved signal shows an explicit "Unsaved" label, not just a dot', () => {
+    render(<AppHeader {...baseProps} unsavedCount={2} />);
+    const chip = screen.getByTestId('header-unsaved-dot');
+    expect(chip).toHaveTextContent(/unsaved/i);
+    expect(chip).toHaveAttribute('aria-label', '2 unsaved changes');
+  });
+
   it('unsaved dot appears only when unsavedCount > 0', () => {
     const { rerender } = render(<AppHeader {...baseProps} unsavedCount={0} />);
     expect(screen.queryByTestId('header-unsaved-dot')).not.toBeInTheDocument();

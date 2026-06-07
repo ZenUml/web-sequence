@@ -7,6 +7,8 @@ import {
   MenuTrigger,
   MenuContent,
   MenuItem,
+  MenuSeparator,
+  Tooltip,
 } from '../../ui';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
@@ -115,58 +117,83 @@ export function AppHeader({
           onChange={(e) => onTitleChange(e.target.value)}
         />
 
-        {/* Action buttons */}
+        {/* Action buttons. New + Duplicate share the SAME `subtle` variant so the
+            creation/copy pair reads as one quiet cluster; Save is the SOLE primary
+            (the one cobalt signal). Explanatory microcopy moves from native title=""
+            to the design-system Tooltip so it is keyboard-reachable + consistent. */}
         <div className="flex items-center gap-1 shrink-0">
           {actions}
-          <Button
-            variant="ghost"
-            size="sm"
-            data-testid="header-new"
-            title="Start a new blank diagram"
-            onClick={handleNewClick}
-          >
-            New
-          </Button>
-
-          <Button
-            variant="subtle"
-            size="sm"
-            data-testid="header-fork"
-            title="Make an editable copy of this diagram"
-            onClick={onFork}
-          >
-            Duplicate
-          </Button>
-
-          {/* Save with optional unsaved dot. When readOnly the button is disabled,
-              and a disabled button has pointer-events:none so its own `title` never
-              fires — carry the explanation on the wrapping span (which keeps pointer
-              events) so a read-only Save isn't a silent dead control. */}
-          <div
-            className="relative inline-flex"
-            title={readOnly ? 'This is a read-only diagram — duplicate it to make edits you can save' : undefined}
-          >
+          <Tooltip label="Start a new blank diagram">
             <Button
-              variant="primary"
+              variant="subtle"
               size="sm"
-              data-testid="header-save"
-              title={readOnly ? undefined : 'Save this diagram'}
-              onClick={onSave}
-              disabled={readOnly}
+              data-testid="header-new"
+              onClick={handleNewClick}
             >
-              Save
+              New
             </Button>
-            {unsavedCount > 0 && (
-              <span
-                data-testid="header-unsaved-dot"
-                className={cn(
-                  'absolute -top-1 -right-1 h-2 w-2 rounded-full bg-signal-amber',
-                  'pointer-events-none',
-                )}
-                aria-label={`${unsavedCount} unsaved change${unsavedCount === 1 ? '' : 's'}`}
-              />
-            )}
-          </div>
+          </Tooltip>
+
+          <Tooltip label="Make an editable copy of this diagram">
+            <Button
+              variant="subtle"
+              size="sm"
+              data-testid="header-fork"
+              onClick={onFork}
+            >
+              Duplicate
+            </Button>
+          </Tooltip>
+
+          {/* Save + unsaved signal. The 8px dot alone was easy to miss and could clip
+              past the header edge, so the unsaved state is reinforced with an explicit
+              "Unsaved" mono chip to the LEFT of Save (inside the flow, never clipped).
+              When readOnly, Save is disabled and a disabled button has
+              pointer-events:none, so the Tooltip's explanation rides the enabled
+              wrapping span instead of the dead button — a read-only Save is never a
+              silent dead control. */}
+          {unsavedCount > 0 && !readOnly && (
+            <span
+              data-testid="header-unsaved-dot"
+              className={cn(
+                'inline-flex items-center gap-1 px-1.5 h-7 rounded',
+                'font-mono text-[10px] uppercase tracking-[0.08em]',
+                'text-signal-amber select-none',
+              )}
+              aria-label={`${unsavedCount} unsaved change${unsavedCount === 1 ? '' : 's'}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-signal-amber" aria-hidden="true" />
+              Unsaved
+            </span>
+          )}
+          {readOnly ? (
+            <Tooltip label="This is a read-only diagram — duplicate it to make edits you can save">
+              {/* Wrapping span keeps pointer/focus events for the tooltip even though
+                  the inner Save button is disabled (pointer-events:none). */}
+              <span className="inline-flex" tabIndex={0} data-testid="header-save-readonly">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  data-testid="header-save"
+                  onClick={onSave}
+                  disabled
+                >
+                  Save
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
+            <Tooltip label="Save this diagram">
+              <Button
+                variant="primary"
+                size="sm"
+                data-testid="header-save"
+                onClick={onSave}
+              >
+                Save
+              </Button>
+            </Tooltip>
+          )}
 
           {/* Overflow menu: less-frequent modal triggers (keeps the header calm). */}
           <Menu>
@@ -181,9 +208,13 @@ export function AppHeader({
               </Button>
             </MenuTrigger>
             <MenuContent>
+              {/* Creation action sits above a separator; help/config items below it,
+                  so the menu's one "make something new" action reads apart from the
+                  utility cluster. */}
               <MenuItem data-testid="header-create-new" onSelect={() => onOpenCreateNew?.()}>
                 New from template…
               </MenuItem>
+              <MenuSeparator data-testid="header-menu-separator" />
               <MenuItem data-testid="header-settings" onSelect={() => onOpenSettings?.()}>
                 Settings
               </MenuItem>
@@ -205,8 +236,15 @@ export function AppHeader({
           </Menu>
         </div>
 
-        {/* Auth section */}
-        <div className="ml-1 shrink-0">
+        {/* Account zone — separated from the document-action cluster by a thin
+            vertical divider + extra gap so "who am I" reads apart from "what I can
+            do to this document". */}
+        <div
+          aria-hidden="true"
+          data-testid="header-account-divider"
+          className="mx-1 h-5 w-px bg-ink-line/50 shrink-0"
+        />
+        <div className="shrink-0">
           {user ? (
             <ProfileMenu
               user={user}
@@ -218,18 +256,19 @@ export function AppHeader({
               onManagePlan={onManagePlan}
             />
           ) : (
-            <Button
-              // #3: Save is the single cobalt primary in the header. Sign in stays
-              // clearly clickable but quiet (subtle) so only one accent signal competes
-              // for attention.
-              variant="subtle"
-              size="sm"
-              data-testid="header-login"
-              title="Sign in to save and sync across devices"
-              onClick={() => setLoginOpen(true)}
-            >
-              Sign in
-            </Button>
+            <Tooltip label="Sign in to save and sync across devices">
+              <Button
+                // #3: Save is the single cobalt primary in the header. Sign in stays
+                // clearly clickable but quiet (subtle) so only one accent signal
+                // competes for attention.
+                variant="subtle"
+                size="sm"
+                data-testid="header-login"
+                onClick={() => setLoginOpen(true)}
+              >
+                Sign in
+              </Button>
+            </Tooltip>
           )}
         </div>
       </header>

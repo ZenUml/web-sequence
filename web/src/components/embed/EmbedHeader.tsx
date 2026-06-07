@@ -1,4 +1,4 @@
-import { buttonClassName } from '../../ui';
+import { cn } from '../../ui';
 
 // Minimal presentational embed header (REQ-EMB-1). Embed mode strips all app
 // chrome — no save/auth/library/share controls — leaving only the diagram title
@@ -24,7 +24,11 @@ export function EmbedHeader({ title, openUrl }: EmbedHeaderProps) {
     >
       <span
         data-testid="embed-title"
-        className="font-serif text-[14px] text-ondark-strong flex-1 min-w-0 truncate select-none"
+        // Chrome-bar title uses the UI grotesque (font-sans / Hanken Grotesk), NOT
+        // the serif display face (#11): Instrument Serif is for large editorial
+        // moments (modal titles, empty states), and reads thin/wrong at 14px in a
+        // dense control bar.
+        className="font-sans text-[14px] font-medium text-ondark-strong flex-1 min-w-0 truncate select-none"
         title={shownTitle}
       >
         {shownTitle}
@@ -35,12 +39,19 @@ export function EmbedHeader({ title, openUrl }: EmbedHeaderProps) {
         href={openUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={buttonClassName({
-          variant: 'primary',
-          size: 'sm',
-          surface: 'dark',
-          className: 'shrink-0',
-        })}
+        // Primary-CTA look (rounded, focus-ringed, inset accent fill) but the
+        // RESTING fill is `accent-press` (#1E50D8, ~6.6:1 on white), not `accent`
+        // (#2F6BFF, exactly 4.5:1) — the embed CTA is the diagram's only escape
+        // hatch, so it gets a comfortable contrast margin rather than sitting on
+        // the WCAG-AA floor (#12). NOTE: `cn` is plain clsx (no tailwind-merge), so
+        // the accent-press fill must be authored here directly, not layered over
+        // the Button `primary` variant's `bg-accent`.
+        className={cn(
+          'inline-flex items-center justify-center gap-1.5 font-medium select-none',
+          'rounded transition-colors duration-150 ease-draft whitespace-nowrap',
+          'h-7 px-2.5 text-[12px] shadow-inset ring-draft shrink-0',
+          'bg-accent-press text-white hover:bg-accent active:bg-accent',
+        )}
       >
         Edit in ZenUML
       </a>
