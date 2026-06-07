@@ -168,13 +168,17 @@ export function AppRoot() {
         openModal('onboarding');
         // Stamp lastSeenVersion for a brand-new user the moment onboarding is shown
         // (legacy parity: app.jsx:322 setUserLastSeenVersion(version) in the
-        // new-user branch). Without this, lastSeenVersion stays '' and the pledge
+        // new-user branch). Persisted via syncStore to match legacy db.sync =
+        // chrome.storage.sync (db.js:131-140) and contract §7.2 — so a user
+        // migrating from the legacy extension (whose lastSeenVersion lives in
+        // chrome.storage.sync) is read back correctly and not re-onboarded.
+        // Without this, lastSeenVersion stays '' and the pledge
         // effect would treat a first-time user as an "upgrade" on their NEXT boot
         // (semverCompare('0.0.0', APP_VERSION) < 0), showing them a version-upgrade
         // prompt they have no baseline for (wrong audience — REQ-MOD-3). The pledge
         // effect additionally gates on a truthy lastSeenVersion (below).
-        void localStore.get<string>(LS_KEYS.lastSeenVersion, '').then((v) => {
-          if (!v) void localStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
+        void syncStore.get<string>(LS_KEYS.lastSeenVersion, '').then((v) => {
+          if (!v) void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
         });
       }
     });
@@ -189,7 +193,7 @@ export function AppRoot() {
   // on the next boot, matching legacy's at-most-one-per-session behavior).
   useEffect(() => {
     void (async () => {
-      const seen = await localStore.get<string>(LS_KEYS.lastSeenVersion, '');
+      const seen = await syncStore.get<string>(LS_KEYS.lastSeenVersion, '');
       // pledgeModalSeen latch (legacy parity: app.jsx:331 `!window.localStorage.
       // pledgeModalSeen`). A user MIGRATING from legacy who already dismissed the
       // pledge has pledgeModalSeen=true (set by legacy on dismiss) but a still-behind
@@ -650,8 +654,13 @@ export function AppRoot() {
         onOpenChange={(o) => { if (!o) closeModal(); }}
         version={APP_VERSION}
         onDismiss={() => {
+          // pledgeModalSeen stays on localStore (legacy uses window.localStorage:
+          // app.jsx:334, NOT chrome.storage.sync). lastSeenVersion goes to syncStore
+          // to match legacy db.sync (db.js:131-140) + contract §7.2 — see the boot
+          // effects above. The two backends are identical on web (syncStore falls
+          // back to localStorage); the split matters only in the extension.
           void localStore.set(LS_KEYS.pledgeModalSeen, true);
-          void localStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
+          void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
           track('pledgeModalSeen', { category: 'ui', label: APP_VERSION });
           closeModal();
         }}

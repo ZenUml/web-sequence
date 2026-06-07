@@ -83,6 +83,7 @@ vi.mock('../services/exportImport', async (orig) => {
 });
 
 import { LS_KEYS, APP_VERSION } from '../config/constants';
+import { localStore, syncStore } from '../services/storage';
 
 beforeEach(async () => {
   useAuthStore.setState({ user: null, online: true, authReady: false });
@@ -108,6 +109,7 @@ beforeEach(async () => {
   subSvc.retrieveSubscription.mockResolvedValue(null);
   paddle.openCheckout.mockClear();
 });
+
 
 describe('AppRoot', () => {
   it('renders editor and preview regions', async () => {
@@ -515,6 +517,81 @@ describe('AppRoot — M04 one-time triggers', () => {
     await waitFor(() => expect(screen.getByTestId('header-title')).toBeInTheDocument());
     expect(useUiStore.getState().activeModal).not.toBe('pledge');
     expect(screen.queryByTestId('pledge-modal')).not.toBeInTheDocument();
+  });
+});
+
+describe('AppRoot — lastSeenVersion storage backend (adversarial review #1)', () => {
+  // On WEB, syncStore and localStore both fall back to window.localStorage
+  // (storage.ts:20-22) — so asserting on window.localStorage CANNOT discriminate
+  // which backend was used. But they are two DISTINCT objects (storage.ts:32-33),
+  // so we spy each independently and assert lastSeenVersion routes through syncStore
+  // (= chrome.storage.sync in the extension; legacy db.sync, db.js:131-140 + contract
+  // §7.2), NOT localStore. This is the only honest seam; revert→fail proves it.
+  //
+  // Why it matters: a user migrating from the legacy extension has lastSeenVersion in
+  // chrome.storage.sync. If the rewrite reads it via localStore it sees '' → treats
+  // an upgrading user as brand-new → re-fires onboarding / mis-targets the pledge
+  // (REQ-MOD-3). Reads (176, 192) AND writes (177) must both route through syncStore;
+  // reads-on-local + writes-on-sync is exactly the broken extension state, so this
+  // test asserts BOTH directions.
+  it('reads AND writes lastSeenVersion via syncStore (not localStore) on new-user boot', async () => {
+    const syncSet = vi.spyOn(syncStore, 'set');
+    const syncGet = vi.spyOn(syncStore, 'get');
+    const localSet = vi.spyOn(localStore, 'set');
+    const localGet = vi.spyOn(localStore, 'get');
+    try {
+      window.localStorage.removeItem(LS_KEYS.onboarded);
+      window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
+      render(<AppRoot />);
+      await screen.findByTestId('onboarding-modal');
+      // WRITE (177): new-user stamp routes through syncStore.
+      await waitFor(() =>
+        expect(syncSet).toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, APP_VERSION),
+      );
+      // READ (176 + 192): the version probe reads from syncStore.
+      expect(syncGet).toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, '');
+      // localStore must NOT carry lastSeenVersion in either direction.
+      expect(localSet).not.toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, expect.anything());
+      expect(localGet).not.toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, expect.anything());
+    } finally {
+      syncSet.mockRestore();
+      syncGet.mockRestore();
+      localSet.mockRestore();
+      localGet.mockRestore();
+    }
+  });
+});
+
+describe('AppRoot — pledge dismiss persistence split (adversarial review #1)', () => {
+  // #1: the dismiss handler's lastSeenVersion write goes to syncStore (extension =
+  // chrome.storage.sync, contract §7.2); pledgeModalSeen stays on localStore (legacy
+  // window.localStorage, app.jsx:334, NOT in §7.2's sync-key list) — the split.
+  const behind = JSON.stringify('0.0.1');
+
+  it('on dismiss: pledgeModalSeen→localStore, lastSeenVersion→syncStore (the split)', async () => {
+    const localSet = vi.spyOn(localStore, 'set');
+    const syncSet = vi.spyOn(syncStore, 'set');
+    try {
+      window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+      window.localStorage.setItem(LS_KEYS.lastSeenVersion, behind);
+      window.localStorage.removeItem(LS_KEYS.pledgeModalSeen);
+      render(<AppRoot />);
+      const dismiss = await screen.findByTestId('pledge-dismiss');
+      localSet.mockClear();
+      syncSet.mockClear();
+      await act(async () => { await userEvent.click(dismiss); });
+      // Dismiss advances lastSeenVersion via syncStore (#1) ...
+      await waitFor(() =>
+        expect(syncSet).toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, APP_VERSION),
+      );
+      // ... and keeps the latch on localStore (#2 split).
+      expect(localSet).toHaveBeenCalledWith(LS_KEYS.pledgeModalSeen, true);
+      // lastSeenVersion is never written through localStore.
+      expect(localSet).not.toHaveBeenCalledWith(LS_KEYS.lastSeenVersion, expect.anything());
+    } finally {
+      localSet.mockRestore();
+      syncSet.mockRestore();
+    }
   });
 });
 
