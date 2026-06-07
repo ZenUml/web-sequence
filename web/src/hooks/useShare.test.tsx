@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useShare } from './useShare';
 
-const createShareMock = vi.fn(async () => ({ url: 'http://x?id=1&share-token=t&v=md5', md5: 'md5' }));
+const createShareMock = vi.fn(async () => ({
+  url: 'http://x?id=1&share-token=t&v=md5',
+  md5: 'md5',
+}));
 const stopSharingMock = vi.fn(async () => {});
 const getItemIdMock = () => 'item-1';
 const onBeforeShareMock = vi.fn(async () => {});
@@ -26,7 +29,9 @@ describe('useShare', () => {
   it('share() calls onBeforeShare, createShare with item id, and sets url', async () => {
     const { result } = renderHook(() => useShare(makeOpts()));
     expect(result.current.url).toBeNull();
-    await act(async () => { await result.current.share(); });
+    await act(async () => {
+      await result.current.share();
+    });
     expect(onBeforeShareMock).toHaveBeenCalledTimes(1);
     expect(createShareMock).toHaveBeenCalledWith('item-1');
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
@@ -37,10 +42,14 @@ describe('useShare', () => {
   it('stop() calls stopSharing with item id and clears url', async () => {
     const { result } = renderHook(() => useShare(makeOpts()));
     // First share to set the url
-    await act(async () => { await result.current.share(); });
+    await act(async () => {
+      await result.current.share();
+    });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
 
-    await act(async () => { await result.current.stop(); });
+    await act(async () => {
+      await result.current.stop();
+    });
     expect(stopSharingMock).toHaveBeenCalledWith('item-1');
     expect(result.current.url).toBeNull();
   });
@@ -53,43 +62,71 @@ describe('useShare', () => {
     });
 
     const { result } = renderHook(() => useShare(makeOpts()));
-    await act(async () => { await result.current.share(); });
-    await act(async () => { await result.current.copy(); });
-    expect(writeTextMock).toHaveBeenCalledWith('http://x?id=1&share-token=t&v=md5');
+    await act(async () => {
+      await result.current.share();
+    });
+    await act(async () => {
+      await result.current.copy();
+    });
+    expect(writeTextMock).toHaveBeenCalledWith(
+      'http://x?id=1&share-token=t&v=md5',
+    );
   });
 
   it('share() sets error and clears sharing when createShare rejects', async () => {
-    const failingCreate = vi.fn(async () => { throw new Error('server error'); });
-    const { result } = renderHook(() => useShare(makeOpts({ createShare: failingCreate })));
+    const failingCreate = vi.fn(async () => {
+      throw new Error('server error');
+    });
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ createShare: failingCreate })),
+    );
 
-    await act(async () => { await result.current.share(); });
+    await act(async () => {
+      await result.current.share();
+    });
     expect(result.current.error).toBe('server error');
     expect(result.current.sharing).toBe(false);
     expect(result.current.url).toBeNull();
   });
 
   it('share() does nothing when getItemId returns null', async () => {
-    const { result } = renderHook(() => useShare(makeOpts({ getItemId: () => null })));
-    await act(async () => { await result.current.share(); });
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ getItemId: () => null })),
+    );
+    await act(async () => {
+      await result.current.share();
+    });
     expect(createShareMock).not.toHaveBeenCalled();
     expect(result.current.url).toBeNull();
   });
 
   it('stop() does nothing when getItemId returns null', async () => {
-    const { result } = renderHook(() => useShare(makeOpts({ getItemId: () => null })));
-    await act(async () => { await result.current.stop(); });
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ getItemId: () => null })),
+    );
+    await act(async () => {
+      await result.current.stop();
+    });
     expect(stopSharingMock).not.toHaveBeenCalled();
   });
 
   it('stop() surfaces an error and KEEPS the url when stopSharing rejects (advisor fix #7)', async () => {
     // A failed stop must not clear the link — clearing it would imply the diagram
     // is private when the public share may still be live.
-    const failingStop = vi.fn(async () => { throw new Error('stop failed'); });
-    const { result } = renderHook(() => useShare(makeOpts({ stopSharing: failingStop })));
-    await act(async () => { await result.current.share(); });
+    const failingStop = vi.fn(async () => {
+      throw new Error('stop failed');
+    });
+    const { result } = renderHook(() =>
+      useShare(makeOpts({ stopSharing: failingStop })),
+    );
+    await act(async () => {
+      await result.current.share();
+    });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
 
-    await act(async () => { await result.current.stop(); });
+    await act(async () => {
+      await result.current.stop();
+    });
     expect(result.current.error).toBe('stop failed');
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
   });
@@ -101,7 +138,9 @@ describe('useShare', () => {
       ({ itemId }) => useShare(makeOpts({ itemId })),
       { initialProps: { itemId: 'A' } },
     );
-    await act(async () => { await result.current.share(); });
+    await act(async () => {
+      await result.current.share();
+    });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
 
     rerender({ itemId: 'B' });
@@ -117,9 +156,15 @@ describe('useShare', () => {
     const getItemId = () => currentId;
     let releaseSave!: () => void;
     const onBeforeShare = vi.fn(
-      () => new Promise<void>((resolve) => { releaseSave = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          releaseSave = resolve;
+        }),
     );
-    const createShare = vi.fn(async (id: string) => ({ url: `url-for-${id}`, md5: 'm' }));
+    const createShare = vi.fn(async (id: string) => ({
+      url: `url-for-${id}`,
+      md5: 'm',
+    }));
 
     const { result, rerender } = renderHook(
       ({ itemId }) =>
@@ -135,14 +180,19 @@ describe('useShare', () => {
 
     // Click Share while bound to A; save is pending (not yet resolved).
     let sharePromise!: Promise<void>;
-    act(() => { sharePromise = result.current.share(); });
+    act(() => {
+      sharePromise = result.current.share();
+    });
 
     // User switches to B during the save await.
     currentId = 'B';
     rerender({ itemId: 'B' });
 
     // Save completes; createShare runs and resolves.
-    await act(async () => { releaseSave(); await sharePromise; });
+    await act(async () => {
+      releaseSave();
+      await sharePromise;
+    });
 
     // Targeted the click-time item A, not the switched-to B.
     expect(createShare).toHaveBeenCalledWith('A');
@@ -161,23 +211,88 @@ describe('useShare', () => {
     const getItemId = () => currentId;
     let releaseSave!: () => void;
     const onBeforeShare = vi.fn(
-      () => new Promise<void>((resolve) => { releaseSave = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          releaseSave = resolve;
+        }),
     );
-    const createShare = vi.fn(async () => { throw new Error('A not saved'); });
+    const createShare = vi.fn(async () => {
+      throw new Error('A not saved');
+    });
 
     const { result, rerender } = renderHook(
       ({ itemId }) =>
-        useShare({ itemId, getItemId, createShare, stopSharing: stopSharingMock, onBeforeShare }),
+        useShare({
+          itemId,
+          getItemId,
+          createShare,
+          stopSharing: stopSharingMock,
+          onBeforeShare,
+        }),
       { initialProps: { itemId: 'A' } },
     );
 
     let sharePromise!: Promise<void>;
-    act(() => { sharePromise = result.current.share(); });
+    act(() => {
+      sharePromise = result.current.share();
+    });
     currentId = 'B';
     rerender({ itemId: 'B' });
-    await act(async () => { releaseSave(); await sharePromise; });
+    await act(async () => {
+      releaseSave();
+      await sharePromise;
+    });
 
     expect(createShare).toHaveBeenCalledWith('A');
+    expect(result.current.error).toBeNull();
+  });
+
+  it('a stopSharing FAILURE for the click-time item does not surface as an error after switching items (adversarial review)', async () => {
+    // Symmetric to share()'s catch guard: user clicks Stop on A → switches to B while
+    // stopSharing(A) is in flight → stopSharing(A) rejects. The catch must NOT set error
+    // for the now-active B (the itemId reset effect already cleared B's error on switch).
+    // Revert stop()'s catch guard (`if (getItemId() === id)`) → A's failure repopulates
+    // B's popover → fails.
+    let currentId = 'A';
+    const getItemId = () => currentId;
+    let rejectStop!: (e: Error) => void;
+    const stopSharing = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectStop = reject;
+        }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ itemId }) =>
+        useShare({
+          itemId,
+          getItemId,
+          createShare: createShareMock,
+          stopSharing,
+          onBeforeShare: onBeforeShareMock,
+        }),
+      { initialProps: { itemId: 'A' } },
+    );
+
+    // Click Stop while bound to A; stopSharing is pending (not yet settled).
+    let stopPromise!: Promise<void>;
+    act(() => {
+      stopPromise = result.current.stop();
+    });
+
+    // User switches to B during the in-flight stop.
+    currentId = 'B';
+    rerender({ itemId: 'B' });
+
+    // stopSharing(A) now rejects.
+    await act(async () => {
+      rejectStop(new Error('stop A failed'));
+      await stopPromise;
+    });
+
+    expect(stopSharing).toHaveBeenCalledWith('A');
+    // A's failure must not be attributed to the now-active B.
     expect(result.current.error).toBeNull();
   });
 
@@ -186,7 +301,9 @@ describe('useShare', () => {
       ({ itemId }) => useShare(makeOpts({ itemId })),
       { initialProps: { itemId: 'A' } },
     );
-    await act(async () => { await result.current.share(); });
+    await act(async () => {
+      await result.current.share();
+    });
     rerender({ itemId: 'A' });
     expect(result.current.url).toBe('http://x?id=1&share-token=t&v=md5');
   });

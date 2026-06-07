@@ -52,13 +52,20 @@ export function useShare(opts: UseShareOpts): UseShareResult {
       // Guard like the setUrl above: a failure for the click-time item A must not
       // surface as an error on item B if the user switched mid-flight (the reset
       // effect clears error on switch; this avoids re-populating it) (adversarial review).
-      if (getItemId() === id) setError(e instanceof Error ? e.message : String(e));
+      if (getItemId() === id)
+        setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSharing(false);
     }
   }
 
   async function stop(): Promise<void> {
+    // Capture the click-time id BEFORE the await, then guard the entire post-await
+    // block with `getItemId() === id` — same discipline as share(). stopSharing(id)
+    // awaits, during which the user can switch from item A to item B; the itemId
+    // reset effect then clears B's url/error. Without the guard a late resolve/reject
+    // for A would re-populate B's popover: a stale "Stop failed" error or a url=null
+    // attributed to the wrong item (adversarial review).
     const id = getItemId();
     if (!id) return;
     setError(null);
@@ -66,9 +73,10 @@ export function useShare(opts: UseShareOpts): UseShareResult {
       await stopSharing(id);
       // Only clear the link on success — a failed stop must keep the link shown so
       // the UI doesn't imply the diagram is private when it may still be public.
-      setUrl(null);
+      if (getItemId() === id) setUrl(null);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (getItemId() === id)
+        setError(e instanceof Error ? e.message : String(e));
     }
   }
 
