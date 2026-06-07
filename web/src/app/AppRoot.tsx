@@ -212,7 +212,17 @@ export function AppRoot() {
       // audience, REQ-MOD-3). The onboarding effect stamps lastSeenVersion for new
       // users, so by their next boot this is truthy and the pledge stays suppressed.
       if (!seen) return;
-      if (semverCompare(seen, APP_VERSION) < 0) openModal('pledge');
+      if (semverCompare(seen, APP_VERSION) < 0) {
+        openModal('pledge');
+        // Latch pledgeModalSeen at the moment the pledge OPENS (legacy parity:
+        // app.jsx:334 sets window.localStorage.pledgeModalSeen = true right after
+        // openSupportDeveloperModal()). Stamping on open — not only on dismiss —
+        // means a user who reloads or closes the tab WITHOUT dismissing the pledge
+        // is not re-shown it on the next boot (REQ-MOD-3 one-time prompt). Stays on
+        // localStore to match legacy's window.localStorage (NOT chrome.storage.sync;
+        // not in contract §7.2's sync-key list).
+        void localStore.set(LS_KEYS.pledgeModalSeen, true);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -562,11 +562,40 @@ describe('AppRoot — lastSeenVersion storage backend (adversarial review #1)', 
   });
 });
 
-describe('AppRoot — pledge dismiss persistence split (adversarial review #1)', () => {
-  // #1: the dismiss handler's lastSeenVersion write goes to syncStore (extension =
-  // chrome.storage.sync, contract §7.2); pledgeModalSeen stays on localStore (legacy
-  // window.localStorage, app.jsx:334, NOT in §7.2's sync-key list) — the split.
+describe('AppRoot — pledge latch + dismiss persistence (adversarial review #1 + #2)', () => {
+  // #2: the pledge latch (pledgeModalSeen) must be stamped at OPEN, not only on
+  // dismiss (legacy app.jsx:334 sets it right after opening). Otherwise a reload while
+  // the pledge is open (no dismiss) re-shows it next boot. pledgeModalSeen stays on
+  // localStore (legacy window.localStorage, NOT sync — not in contract §7.2). #1: the
+  // dismiss handler's lastSeenVersion write goes to syncStore; pledgeModalSeen to
+  // localStore (the split).
   const behind = JSON.stringify('0.0.1');
+
+  // Discriminating (#2): legacy latches pledgeModalSeen at OPEN (app.jsx:334), so a
+  // reload while the pledge is open — without dismissing — must not re-show it. This
+  // asserts the localStore stamp happens on open with NO dismiss interaction.
+  // Reverting to the bare `openModal('pledge')` (no stamp) makes this fail.
+  it('stamps pledgeModalSeen (localStore) the moment the pledge OPENS', async () => {
+    const localSet = vi.spyOn(localStore, 'set');
+    const syncSet = vi.spyOn(syncStore, 'set');
+    try {
+      window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+      window.localStorage.setItem(LS_KEYS.lastSeenVersion, behind);
+      window.localStorage.removeItem(LS_KEYS.pledgeModalSeen);
+      render(<AppRoot />);
+      // Pledge opens (lastSeenVersion behind).
+      expect(await screen.findByTestId('pledge-modal')).toBeInTheDocument();
+      // Latched on open via localStore — WITHOUT any dismiss interaction.
+      await waitFor(() =>
+        expect(localSet).toHaveBeenCalledWith(LS_KEYS.pledgeModalSeen, true),
+      );
+      // The latch is NOT swept into syncStore (legacy keeps it in window.localStorage).
+      expect(syncSet).not.toHaveBeenCalledWith(LS_KEYS.pledgeModalSeen, expect.anything());
+    } finally {
+      localSet.mockRestore();
+      syncSet.mockRestore();
+    }
+  });
 
   it('on dismiss: pledgeModalSeen→localStore, lastSeenVersion→syncStore (the split)', async () => {
     const localSet = vi.spyOn(localStore, 'set');
