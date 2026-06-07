@@ -20,6 +20,7 @@
 // the already-loaded list and need no reload.
 
 import { test, expect } from '@playwright/test';
+import { suppressOneTimeModals } from './helpers/onetime';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
 
@@ -46,6 +47,11 @@ function isThirdPartyError(err) {
 
 /** Navigate to the app with a clean localStorage slate (see persistence.spec.js). */
 async function gotoFresh(page) {
+  // M04: the first load would open the Onboarding/Support-pledge one-time modals on
+  // a clean slate; seed their flags via an init script before any goto so the
+  // header/editor stay interactable. (localStorage.clear() below wipes user data but
+  // re-runs the init script's writes on the subsequent goto.)
+  await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.goto('/');

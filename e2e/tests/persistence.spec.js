@@ -8,6 +8,7 @@
 //   3. "New" resets to the default starter DSL
 
 import { test, expect } from '@playwright/test';
+import { suppressOneTimeModals } from './helpers/onetime';
 
 // Default starter DSL, from web/src/state/editorStore.ts DEFAULT_STARTER.
 const STARTER_DSL_FRAGMENT = 'A.SyncMessage';
@@ -46,10 +47,16 @@ function isThirdPartyError(err) {
  * that the reload is supposed to read.
  */
 async function gotoFresh(page) {
+  // M04: seed ONLY the one-time-modal flags (onboarded / lastSeenVersion) via an
+  // init script so Onboarding/Support-pledge don't trap focus. This is safe with
+  // this spec's reload-reads-storage approach: the init script ADDS two unrelated
+  // keys on each navigation but never touches the `code` slot the reload reads.
+  await suppressOneTimeModals(page);
   // Step 1: land on the app origin so we can write to its localStorage.
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // Step 2: reload — this time localStorage is empty and we do NOT re-clear it.
+  // Step 2: reload — localStorage user-data is empty; the init script re-seeds only
+  // the one-time flags. We do NOT re-clear here.
   await page.goto('/');
 }
 

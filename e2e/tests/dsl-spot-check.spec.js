@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { suppressOneTimeModals } from './helpers/onetime';
 
 // DSL spot-check: type DSL into the CodeMirror 6 editor of the NEW app and prove
 // the full render path works end to end:
@@ -41,6 +42,7 @@ test.beforeEach(async ({ page }) => {
     if (isThirdPartyError(err)) return;
     throw err;
   });
+  await suppressOneTimeModals(page); // M04: keep onboarding/pledge from trapping focus
   await page.goto('/');
 });
 

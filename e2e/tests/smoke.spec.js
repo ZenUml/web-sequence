@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { suppressOneTimeModals } from './helpers/onetime';
 
 // Smoke: the NEW app (web/) loads, the editor + preview shells are present, and
 // the preview iframe's srcdoc carries the @zenuml/core mount point. This proves
@@ -34,6 +35,7 @@ test.beforeEach(async ({ page }) => {
     if (isThirdPartyError(err)) return;
     throw err;
   });
+  await suppressOneTimeModals(page); // M04: keep onboarding/pledge from trapping focus
   await page.goto('/');
 });
 

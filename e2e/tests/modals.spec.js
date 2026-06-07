@@ -12,6 +12,7 @@
 // specs. The webServer (playwright.config.js) already boots `pnpm -C web dev`.
 
 import { test, expect } from '@playwright/test';
+import { suppressOneTimeModals } from './helpers/onetime';
 
 const THIRD_PARTY_ERROR_SOURCES = [
   'userscript.js', 'gtm.js', 'googletagmanager', 'google-analytics',
@@ -24,15 +25,11 @@ function isThirdPartyError(err) {
 }
 
 async function gotoFresh(page) {
+  // Seed the one-time-modal flags via an init script (before any goto) so
+  // Onboarding/Support-pledge don't intercept the header clicks these tests drive.
+  await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // M04 one-time triggers (Onboarding / Support-pledge) open on a clean slate and
-  // would intercept clicks. Pre-mark them seen so the editor is interactable.
-  await page.evaluate(() => {
-    localStorage.setItem('onboarded', JSON.stringify(true));
-    // lastSeenVersion ahead of APP_VERSION → no support-pledge.
-    localStorage.setItem('lastSeenVersion', JSON.stringify('99.0.0'));
-  });
   await page.goto('/');
   await expect(page.locator('[data-testid="dsl-editor"] .cm-content')).toBeVisible({ timeout: 15_000 });
 }
