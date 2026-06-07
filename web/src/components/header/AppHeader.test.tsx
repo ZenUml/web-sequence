@@ -62,11 +62,44 @@ describe('AppHeader', () => {
     expect(onSave).toHaveBeenCalled();
   });
 
-  it('header-new calls onNew', async () => {
+  it('header-new fires onNew immediately when there are no unsaved changes', async () => {
     const onNew = vi.fn();
-    render(<AppHeader {...baseProps} onNew={onNew} />);
+    render(<AppHeader {...baseProps} unsavedCount={0} onNew={onNew} />);
     await userEvent.click(screen.getByTestId('header-new'));
     expect(onNew).toHaveBeenCalled();
+    // No confirm dialog should appear for a clean diagram.
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument();
+  });
+
+  // #8: guard "New" against data loss when there are unsaved edits.
+  it('header-new opens a discard-confirm (not onNew) when unsavedCount > 0', async () => {
+    const onNew = vi.fn();
+    render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    // onNew must NOT fire yet — the confirm dialog gates it.
+    expect(onNew).not.toHaveBeenCalled();
+    // The discard-confirm dialog appears (heading + its confirm action). Title text
+    // is rendered twice by Radix (visible Title + sr-only Description), so assert via
+    // the dialog role + the unique confirm-ok testid rather than findByText.
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Discard unsaved changes?');
+    expect(screen.getByTestId('confirm-ok')).toBeInTheDocument();
+  });
+
+  it('header-new confirm fires onNew; cancel does not', async () => {
+    const onNew = vi.fn();
+    const { rerender } = render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
+
+    // Open then cancel — onNew stays un-called.
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(await screen.findByTestId('confirm-cancel'));
+    expect(onNew).not.toHaveBeenCalled();
+
+    // Re-open and confirm — now onNew fires exactly once.
+    rerender(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(await screen.findByTestId('confirm-ok'));
+    expect(onNew).toHaveBeenCalledTimes(1);
   });
 
   it('header-fork calls onFork', async () => {

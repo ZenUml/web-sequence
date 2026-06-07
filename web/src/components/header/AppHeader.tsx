@@ -10,6 +10,7 @@ import {
 } from '../../ui';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
+import { ConfirmDialog } from '../modals/ConfirmDialog';
 import type { AppUser, PlanType } from '../../domain/types';
 import type { ProviderName } from '../../services/types';
 
@@ -86,6 +87,15 @@ export function AppHeader({
     else setLoginOpenInternal(o);
   };
 
+  // #8: guard "New" against data loss. With unsaved edits, New first asks the user
+  // to confirm discarding them; only on confirm does onNew() fire. With a clean
+  // diagram (unsavedCount === 0) New is immediate (no friction for the common case).
+  const [confirmNewOpen, setConfirmNewOpen] = useState(false);
+  const handleNewClick = () => {
+    if (unsavedCount > 0) setConfirmNewOpen(true);
+    else onNew();
+  };
+
   return (
     <>
       <header className="bg-blueprint border-b border-ink-line/40 h-12 px-3 flex items-center gap-2">
@@ -112,7 +122,8 @@ export function AppHeader({
             variant="ghost"
             size="sm"
             data-testid="header-new"
-            onClick={onNew}
+            title="Start a new blank diagram"
+            onClick={handleNewClick}
           >
             New
           </Button>
@@ -121,9 +132,10 @@ export function AppHeader({
             variant="subtle"
             size="sm"
             data-testid="header-fork"
+            title="Make an editable copy of this diagram"
             onClick={onFork}
           >
-            Fork
+            Duplicate
           </Button>
 
           {/* Save with optional unsaved dot */}
@@ -132,6 +144,7 @@ export function AppHeader({
               variant="primary"
               size="sm"
               data-testid="header-save"
+              title="Save this diagram"
               onClick={onSave}
               disabled={readOnly}
             >
@@ -200,9 +213,13 @@ export function AppHeader({
             />
           ) : (
             <Button
-              variant="primary"
+              // #3: Save is the single cobalt primary in the header. Sign in stays
+              // clearly clickable but quiet (subtle) so only one accent signal competes
+              // for attention.
+              variant="subtle"
               size="sm"
               data-testid="header-login"
+              title="Sign in to save and sync across devices"
               onClick={() => setLoginOpen(true)}
             >
               Sign in
@@ -217,6 +234,18 @@ export function AppHeader({
         onLogin={onLogin}
         lastProvider={lastProvider}
         error={loginError}
+      />
+
+      {/* #8: discard-unsaved-changes guard for "New". */}
+      <ConfirmDialog
+        open={confirmNewOpen}
+        onOpenChange={setConfirmNewOpen}
+        title="Discard unsaved changes?"
+        message="Your current diagram has unsaved edits."
+        confirmLabel="Discard & start new"
+        cancelLabel="Keep editing"
+        tone="danger"
+        onConfirm={onNew}
       />
     </>
   );
