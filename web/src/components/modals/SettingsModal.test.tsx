@@ -28,6 +28,12 @@ function setup(over: Partial<Settings> = {}, props: Record<string, unknown> = {}
 }
 
 describe('SettingsModal', () => {
+  // DISCRIMINATING: the picker's default must match the rendered editor default
+  // (editor DEFAULT_THEME is 'ink'). A 'monokai' default would contradict it.
+  it('DEFAULT_SETTINGS.editorTheme is "ink"', () => {
+    expect(DEFAULT_SETTINGS.editorTheme).toBe('ink');
+  });
+
   it('does not render when closed', () => {
     render(
       <SettingsModal
@@ -88,8 +94,22 @@ describe('SettingsModal', () => {
   it('changing a Select fires onChange with the typed value', async () => {
     const { onChange } = setup();
     await userEvent.click(screen.getByTestId('setting-editorTheme'));
-    await userEvent.click(await screen.findByText('dracula'));
+    // The Theme picker shows human labels ("Dracula") but emits the theme id
+    // ("dracula") — the resolvable CM6 id, not the display label.
+    await userEvent.click(await screen.findByText('Dracula'));
     expect(onChange).toHaveBeenCalledWith('editorTheme', 'dracula');
+  });
+
+  // DISCRIMINATING: the Theme picker must offer ONLY the CM6-resolvable themes
+  // (incl. "Ink"), never the dead legacy CM5 ids. Opening the dropdown should
+  // surface the Ink option and NOT a CM5 id like "cobalt".
+  it('Theme picker offers the CM6 set incl. Ink, not dead CM5 ids', async () => {
+    setup({ editorTheme: 'monokai' }); // open with a non-ink value so "Ink" is a real option
+    await userEvent.click(screen.getByTestId('setting-editorTheme'));
+    expect(await screen.findByText('Ink')).toBeInTheDocument();
+    expect(screen.getByText('Dracula')).toBeInTheDocument();
+    expect(screen.queryByText('cobalt')).not.toBeInTheDocument();
+    expect(screen.queryByText('zenburn')).not.toBeInTheDocument();
   });
 
   // DISCRIMINATING: fontSize must be coerced to a NUMBER, not the option string.

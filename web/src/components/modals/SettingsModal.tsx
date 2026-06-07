@@ -137,7 +137,7 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
             label="Theme"
             testid="setting-editorTheme"
             value={settings.editorTheme}
-            options={opts(EDITOR_THEMES)}
+            options={EDITOR_THEMES.map((t) => ({ value: t.id, label: t.label }))}
             onValueChange={(v) => onChange('editorTheme', v)}
           />
           <SelectRow

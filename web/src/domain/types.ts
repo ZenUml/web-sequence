@@ -79,7 +79,7 @@ export interface Settings {
   htmlMode: HtmlMode;
   jsMode: JsMode;
   cssMode: CssMode;
-  editorTheme: string;              // default 'monokai'
+  editorTheme: string;              // default 'ink' (matches editor DEFAULT_THEME)
   keymap: 'sublime' | 'vim';
   fontSize: number;                 // 12–18, default 16
   editorFont: string;              // 'FiraCode' | 'Inconsolata' | 'Monoid' | 'FixedSys' | 'other'
@@ -99,7 +99,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   preserveLastCode: true, replaceNewTab: false,
   htmlMode: 'html', jsMode: 'js', cssMode: 'css',
-  editorTheme: 'monokai', keymap: 'sublime', fontSize: 16,
+  editorTheme: 'ink', keymap: 'sublime', fontSize: 16,
   editorFont: 'FiraCode', editorCustomFont: '',
   indentWith: 'spaces', indentSize: 2,
   lineWrap: true, autoCloseTags: true, autoComplete: true,
