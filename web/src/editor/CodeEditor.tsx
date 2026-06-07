@@ -23,10 +23,26 @@ export interface CodeEditorProps {
   diagnostics?: { lineNumber: number; message: string }[]; // REQ-ED-7: inline error markers
 }
 
+// Resolve a stored editor-font setting to a real CSS font stack that ALWAYS ends in a
+// monospace fallback. Without this, `font-family: FiraCode` (the camel-cased setting
+// value, with no fallback and no bundled web font) falls back to the browser's
+// PROPORTIONAL default — the code editor then renders in a serif-ish proportional font.
+const FONT_FALLBACK = 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
+const FONT_CSS_NAME: Record<string, string> = {
+  FiraCode: '"Fira Code"',
+  Inconsolata: '"Inconsolata"',
+  Monoid: '"Monoid"',
+  FixedSys: '"FixedSys"',
+};
+function fontStack(family: string): string {
+  const name = FONT_CSS_NAME[family] ?? (family ? `"${family}"` : '');
+  return name ? `${name}, ${FONT_FALLBACK}` : FONT_FALLBACK;
+}
+
 function fontTheme(family: string, size: number): Extension {
   return EditorView.theme({
     '&': { fontSize: size + 'px' },
-    '.cm-content': { fontFamily: family },
+    '.cm-content': { fontFamily: fontStack(family) },
   });
 }
 
