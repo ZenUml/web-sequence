@@ -45,7 +45,9 @@ export function LibraryItemRow({
   const [confirming, setConfirming] = useState(false);
 
   const currentFolder =
-    item.folderId != null ? folders.find((f) => f.id === item.folderId) : undefined;
+    item.folderId != null
+      ? folders.find((f) => f.id === item.folderId)
+      : undefined;
 
   return (
     <>
@@ -158,7 +160,7 @@ export function LibraryItemRow({
             <MenuSeparator />
             <MenuItem
               data-testid={`lib-action-delete-${item.id}`}
-              className="data-[highlighted]:bg-danger/20 data-[highlighted]:text-onlight-strong text-danger"
+              tone="danger"
               onSelect={() => setConfirming(true)}
             >
               Delete

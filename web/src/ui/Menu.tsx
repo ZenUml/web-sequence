@@ -34,13 +34,31 @@ export function MenuContent({
 export function MenuItem({
   children,
   className,
+  tone = 'default',
   ...rest
-}: React.ComponentPropsWithoutRef<typeof DropdownMenu.Item>) {
+}: React.ComponentPropsWithoutRef<typeof DropdownMenu.Item> & {
+  // Destructive items need the danger highlight to WIN. `cn` is bare clsx (no
+  // tailwind-merge), so appending `data-[highlighted]:bg-danger/20` on top of the base
+  // `data-[highlighted]:bg-accent-tint` leaves both in the class string — the winner is
+  // decided by compiled-CSS source order, not input order, so the danger tint is not
+  // guaranteed. The tone variant SWAPS the base highlight class instead of appending, so
+  // exactly one `data-[highlighted]:bg-*` is emitted and the affordance is deterministic
+  // (adversarial review).
+  tone?: 'default' | 'danger';
+}) {
+  // Both tones keep `data-[highlighted]:text-onlight-strong` on highlight — the danger
+  // signal is carried by the background swap (bg-danger/20 vs bg-accent-tint), not by red
+  // text on a pink highlight (which would be low-contrast). Finding #3 was strictly about
+  // the background conflict; the highlight text color is unchanged from the original.
+  const highlight =
+    tone === 'danger'
+      ? 'text-danger data-[highlighted]:bg-danger/20 data-[highlighted]:text-onlight-strong'
+      : 'data-[highlighted]:bg-accent-tint data-[highlighted]:text-onlight-strong';
   return (
     <DropdownMenu.Item
       className={cn(
         'text-[13px] px-2.5 py-1.5 rounded outline-none cursor-pointer',
-        'data-[highlighted]:bg-accent-tint data-[highlighted]:text-onlight-strong',
+        highlight,
         className,
       )}
       {...rest}
