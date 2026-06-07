@@ -21,7 +21,7 @@ beforeEach(() => {
   useAuthStore.setState({ user: null, online: true, authReady: false });
   window.localStorage.clear();
   usvc.getUserSettings.mockResolvedValue({});
-  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set() });
 });
 
 describe('useAuth', () => {
@@ -76,5 +76,26 @@ describe('useAuth', () => {
     expect(useSettingsStore.getState().settings.fontSize).toBe(18);
     // Local-only key (cloud absent) is preserved by the key-wise merge.
     expect(useSettingsStore.getState().settings.keymap).toBe('vim');
+  });
+
+  // Adversarial review #1 — CALL-SITE guard: pins that useAuth routes cloud settings
+  // into the AUTHORITATIVE layer (mergeCloud), not plain merge. The store test proves
+  // mergeLocalBase respects cloudKeys; but if someone "simplifies" useAuth back to
+  // plain `merge`, no cloudKeys are recorded and a later boot-local-base merge would
+  // clobber the cloud value — that revert would sail through the store test. Here we
+  // sign in FIRST (cloud applies), THEN simulate the boot syncStore loop arriving LATE
+  // via mergeLocalBase for the SAME key: it must NOT overwrite the cloud value, which
+  // holds ONLY if useAuth used mergeCloud. Reverting useAuth to plain `merge` → the
+  // late local-base value clobbers cloud → fontSize becomes 13 → fails.
+  it('useAuth routes cloud settings into mergeCloud (a late local-base merge cannot clobber)', async () => {
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set() });
+    usvc.getUserSettings.mockResolvedValue({ fontSize: 18 } as never);
+    renderHook(() => useAuth());
+    await act(async () => { fb._cb({ uid: 'u1', email: 'a@b.c', displayName: 'A', photoURL: null }); });
+    expect(useSettingsStore.getState().settings.fontSize).toBe(18);
+    // Boot syncStore loop arrives LATE with a stale local value for the same key.
+    act(() => { useSettingsStore.getState().mergeLocalBase({ fontSize: 13 }); });
+    // Cloud value survives because useAuth recorded fontSize in cloudKeys via mergeCloud.
+    expect(useSettingsStore.getState().settings.fontSize).toBe(18);
   });
 });
