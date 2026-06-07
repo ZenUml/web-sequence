@@ -8,6 +8,7 @@ import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore } from '../state/uiStore';
 import type { Item, JsMode, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
+import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
@@ -671,12 +672,15 @@ export function AppRoot() {
     onBeforeShare: save, // createShare reads the cloud doc — item must be saved first.
   });
 
-  // ShareButton disabled rule (advisor fix 4): read-only items, signed-out users
-  // (createShare needs a fresh ID token), and never-saved items (not yet in the
-  // live list) cannot be shared. Membership in `items` is the save signal — after a
-  // signed-in save, onSnapshot adds the item and the button enables.
-  const shareDisabled =
-    !!item?.isReadOnly || !user || !items.some((i) => i.id === item?.id);
+  // ShareButton rules (#4): the only DEAD-disabled case is a read-only item (a
+  // shared/embed copy can't be re-shared). The two cases that were previously
+  // silently-disabled are now live actions:
+  //   - signed-out  → requiresAuth: clicking Share opens the login modal (createShare
+  //     needs a signed-in ID token). After sign-in the button shares normally.
+  //   - signed-in + never-saved → enabled: useShare.share() runs onBeforeShare (=save)
+  //     before createShare, so it saves-then-shares with no extra wiring.
+  const shareReadOnly = !!item?.isReadOnly;
+  const shareRequiresAuth = !shareReadOnly && !user;
 
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
   // real location; only the iframe is srcdoc). Read once from window.location.search
@@ -879,10 +883,14 @@ export function AppRoot() {
         onOpenShortcuts={() => openModal('shortcuts')}
         actions={
           <ShareButton
-            disabled={shareDisabled}
+            disabled={shareReadOnly}
+            disabledReason="This is a read-only copy — duplicate it to share"
+            requiresAuth={shareRequiresAuth}
+            onRequireAuth={() => setLoginModalOpen(true)}
             url={share.url}
             sharing={share.sharing}
             error={share.error}
+            copied={share.copied}
             onShare={() => { track('shareLink', { category: 'ui' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}
@@ -920,45 +928,67 @@ export function AppRoot() {
                 onRename={renamePageAction}
                 readOnly={!!item.isReadOnly}
               />
-              <div className="flex items-center gap-2 px-2 py-1 border-b border-gray-200 text-xs">
-                <label className="flex items-center gap-1">
-                  <span className="text-gray-500">JS</span>
-                  <select
-                    data-testid="js-mode-select"
-                    value={item.jsMode}
-                    onChange={(e) => setJsMode(e.target.value as JsMode)}
-                    className="border border-gray-300 rounded px-1 py-0.5"
-                  >
-                    {JS_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                  </select>
+              {/* #6: pre-processor mode strip — rebuilt on the design-system Select
+                  primitive (was native <select> with off-palette gray-*). Labels use
+                  text-ondark-muted (AA-passing) on the ink chrome. testids
+                  js-mode-select / css-mode-select stay on the SelectTrigger. */}
+              <div className="flex items-center gap-3 px-2 py-1.5 border-b border-ink-line/40 text-xs">
+                <label className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
+                    JS
+                  </span>
+                  <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
+                    <SelectTrigger
+                      data-testid="js-mode-select"
+                      aria-label="JavaScript pre-processor mode"
+                      surface="dark"
+                      className="h-7"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JS_MODES.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="flex items-center gap-1">
-                  <span className="text-gray-500">CSS</span>
-                  <select
-                    data-testid="css-mode-select"
-                    value={item.cssMode}
-                    onChange={(e) => handleSetCssMode(e.target.value as CssMode)}
-                    className="border border-gray-300 rounded px-1 py-0.5"
-                  >
-                    {CSS_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                  </select>
+                <label className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
+                    CSS
+                  </span>
+                  <Select value={item.cssMode} onValueChange={(v) => handleSetCssMode(v as CssMode)}>
+                    <SelectTrigger
+                      data-testid="css-mode-select"
+                      aria-label="CSS pre-processor mode"
+                      surface="dark"
+                      className="h-7"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CSS_MODES.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
                     Atomizer config is edited via this affordance (REQ-ED-2). */}
                 {item.cssMode === 'acss' && (
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
+                    variant="subtle"
                     data-testid="acss-settings-open"
                     onClick={() => openModal('acss')}
-                    className="border border-gray-300 rounded px-2 py-0.5 hover:bg-gray-50"
                   >
                     Atomic CSS config
-                  </button>
+                  </Button>
                 )}
               </div>
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
-              <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
+              <div className="flex-1 min-h-0 border-t border-ink-line/40"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
             </div>
             )
           }

@@ -194,14 +194,20 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('share-button')).toBeInTheDocument();
   });
 
-  it('share button is disabled when signed out (createShare needs a signed-in user)', async () => {
-    // Boot lands on a fresh `new` item; the firebase mock signs the user out.
-    // Either the `!user` clause OR the membership clause keeps Share disabled — this
-    // asserts the signed-out gate (the membership clause is covered in isolation by
-    // the share-disabled unit logic; see useShare/ShareButton specs).
-    render(<AppRoot />);
+  // #4: Share is no longer a silently-disabled dead control when signed out. Boot
+  // lands on a fresh editable `new` item (not read-only), so the button is ENABLED;
+  // clicking it routes the signed-out user to the login modal instead of opening an
+  // empty popover behind a sign-in wall. (Reverting #4 — disabling when signed out —
+  // makes the click a no-op and login-google never appears → this fails.)
+  it('share button (signed out) is enabled and opens the login modal on click', async () => {
+    render(<AppRoot />); // signed-out by default
     await screen.findByTestId('header-title');
-    expect(screen.getByTestId('share-button')).toBeDisabled();
+    const shareBtn = screen.getByTestId('share-button');
+    expect(shareBtn).not.toBeDisabled();
+    await act(async () => { await userEvent.click(shareBtn); });
+    // The login modal (not the share popover) appears.
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument();
+    expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 
   it('renders the LibraryPanel (not the old stub) when the library panel is active', async () => {

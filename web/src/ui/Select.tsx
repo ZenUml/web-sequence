@@ -45,26 +45,33 @@ function CheckIcon({ className }: { className?: string }) {
 export const Select = RadixSelect.Root;
 export const SelectValue = RadixSelect.Value;
 
+// SelectTrigger is surface-aware so the same primitive reads correctly on the light
+// paper surface (modals — the default) AND the dark ink chrome (the editor mode
+// strip). The floating SelectContent stays on paper for both surfaces (a small
+// floating menu reads fine on paper over either backdrop, matching the Menu/Popover
+// primitives). `surface` is consumed here, not forwarded to the DOM.
 export const SelectTrigger = forwardRef<
   React.ElementRef<typeof RadixSelect.Trigger>,
-  React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger>
->(function SelectTrigger({ className, children, ...rest }, ref) {
+  React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger> & { surface?: 'light' | 'dark' }
+>(function SelectTrigger({ className, children, surface = 'light', ...rest }, ref) {
+  const isDark = surface === 'dark';
   return (
     <RadixSelect.Trigger
       ref={ref}
       className={cn(
         'inline-flex h-8 items-center justify-between gap-2 rounded px-2 text-[13px] font-sans',
-        'bg-paper-50 text-onlight-strong border border-paper-line ring-draft-light',
         'transition-colors duration-150 ease-draft',
-        'data-[placeholder]:text-onlight-faint',
         'disabled:cursor-not-allowed disabled:opacity-50',
+        isDark
+          ? 'bg-ink-800 text-ondark-strong border border-ink-line/50 ring-draft data-[placeholder]:text-ondark-muted'
+          : 'bg-paper-50 text-onlight-strong border border-paper-line ring-draft-light data-[placeholder]:text-onlight-faint',
         className,
       )}
       {...rest}
     >
       {children}
       <RadixSelect.Icon>
-        <ChevronDownIcon className="h-4 w-4 text-onlight-muted" />
+        <ChevronDownIcon className={cn('h-4 w-4', isDark ? 'text-ondark-muted' : 'text-onlight-muted')} />
       </RadixSelect.Icon>
     </RadixSelect.Trigger>
   );

@@ -50,4 +50,22 @@ describe('ShareButton', () => {
     render(<ShareButton {...base} />);
     expect(screen.getByTestId('share-button')).not.toBeDisabled();
   });
+
+  // #4: signed-out click routes to auth instead of opening the popover.
+  it('calls onRequireAuth and does NOT open the popover when requiresAuth', async () => {
+    const onRequireAuth = vi.fn();
+    render(<ShareButton {...base} requiresAuth onRequireAuth={onRequireAuth} />);
+    await userEvent.click(screen.getByTestId('share-button'));
+    expect(onRequireAuth).toHaveBeenCalledTimes(1);
+    // Popover content must stay closed — the click was intercepted into auth.
+    expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
+  });
+
+  it('opens the popover (no auth intercept) when requiresAuth is false', async () => {
+    const onRequireAuth = vi.fn();
+    render(<ShareButton {...base} onRequireAuth={onRequireAuth} />);
+    await userEvent.click(screen.getByTestId('share-button'));
+    expect(onRequireAuth).not.toHaveBeenCalled();
+    expect(await screen.findByTestId('share-create')).toBeInTheDocument();
+  });
 });
