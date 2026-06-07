@@ -166,3 +166,47 @@ needed for the header (CSS-only responsive), to avoid coupling to useMediaQuery.
 `yarn build` + `vitest` green; desktop layout unchanged (split.js still works); a phone-width
 Playwright screenshot showing tabbed Edit + Preview; a fullscreen screenshot showing the
 fit-centered diagram with no console/rail.
+
+## Phase 3 — Library & creation (§04)
+
+Status note: the library empty-state CTA partly exists (`library-empty` + `lib-empty-new`);
+`CreateNewModal` + `SettingsModal` exist. Phase 3 upgrades them to the design.
+
+### Unit LIB — Library empty-state (`components/library/LibraryPanel.tsx` + test)
+Bring the empty state to the design mock: a framed folder-glyph icon above the serif
+"No diagrams yet" heading + "Start from scratch, or pick a styled template." subtext, then
+TWO actions — primary **New diagram** (existing `onNewDiagram`, keep testid `lib-empty-new`)
+and secondary **Browse templates** (new optional `onBrowseTemplates?()` prop; testid
+`lib-empty-templates`). Keep the "No matches" search-empty variant (single message, no CTA).
+The diagram count already shows once on the header — leave it.
+
+### Unit TPL — Visual template picker (`components/modals/CreateNewModal.tsx` + test; may extend `domain/templates.ts` additively)
+Replace the raw-DSL card body (`{t.item.js}` mono text) with a **schematic CSS thumbnail** — a
+mini sequence diagram (2 participant boxes + 1–2 message lines) drawn with divs, tinted per the
+template's theme so the card shows the LOOK not the source (design §04): Blank = dashed "+"
+card; Basic/plain = ink-on-white; Black & White = black borders; Blue = #2F6BFF tint; starUML =
+amber tint. Group into **Start** (Blank, Basic) and **Styles** (black-white, blue, starUMLTheme)
+with `eyelabel`-style section headers, on a **3-column** grid (`grid-cols-3`). Keep testids
+`create-blank` / `create-template-${id}` and the `onSelect` contract. Add an optional
+`group: 'start' | 'styles'` + (optional) thumbnail hint to the Template type additively if it
+helps categorize — do NOT change existing template content/ids. The thumbnail is a pure CSS
+mock (no @zenuml render — out of scope/expensive), same approach the design prototype uses.
+
+### Unit SET — Two-column Settings (`components/modals/SettingsModal.tsx` + test)
+Lay the settings out in **two columns** (design §04): an **Editor** column (theme, keymap, font
+size, font, indent, line wrap, auto-close, autocomplete) and a **Behavior** column (preserve
+last code, auto-preview, auto-save, preserve console logs, refresh on resize, Light version).
+Use a responsive `grid` (1-col stacked < sm, 2-col ≥ sm) so it halves the height. Add a small
+**"Plus"** badge next to the **Light version** row label (design: it reads as gated, not broken),
+using accent tokens (`text-accent-press`/`accent-soft` on paper). Keep the toggle FUNCTIONAL
+(badge is informational) unless subscription state is already available to the modal — do NOT
+introduce a new functional gate/regression in Phase 3. Keep the Extension section (ext-only) and
+ALL existing testids (`setting-*`).
+
+### Integration (controller, AppRoot.tsx)
+Wire the library's `onBrowseTemplates` → `openModal('createNew')` (same surface the rail's
+Templates entry opens — the visual CreateNewModal IS the "templates panel" per §04).
+
+### Phase 3 done-criteria
+`vitest` + build green; screenshots of (a) the library empty state with both CTAs, (b) the
+visual template picker (Start/Styles thumbnails), (c) the two-column Settings with the Plus badge.
