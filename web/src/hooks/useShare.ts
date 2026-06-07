@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+// How long the Copy button shows its "Copied ✓" confirmation before reverting.
+const COPIED_RESET_MS = 1500;
 
 export interface UseShareOpts {
   // The current item's id (reactive). When it changes, url/error reset so the
@@ -14,6 +17,9 @@ export interface UseShareResult {
   url: string | null;
   sharing: boolean;
   error: string | null;
+  // Transient confirmation: true for ~1.5s after a successful copy(), then reverts.
+  // The Copy button reads this to swap its label to "Copied ✓".
+  copied: boolean;
   share(): Promise<void>;
   stop(): Promise<void>;
   copy(): Promise<void>;
@@ -24,6 +30,16 @@ export function useShare(opts: UseShareOpts): UseShareResult {
   const [url, setUrl] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  // Hold the revert timer so a rapid re-copy doesn't stack timers (which would
+  // flip copied back to false too early) and so we can cancel it on unmount.
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
+    };
+  }, []);
 
   // Reset url/error when the active item changes. Without this, opening item B after
   // sharing item A leaves A's url/error in state, so Copy would copy A's link and
@@ -83,8 +99,16 @@ export function useShare(opts: UseShareOpts): UseShareResult {
   async function copy(): Promise<void> {
     if (url && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);
+      // Only confirm AFTER the write resolves — a rejected/absent clipboard must
+      // leave copied false so the button never claims a copy that didn't happen.
+      setCopied(true);
+      if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => {
+        setCopied(false);
+        copiedTimer.current = null;
+      }, COPIED_RESET_MS);
     }
   }
 
-  return { url, sharing, error, share, stop, copy };
+  return { url, sharing, error, copied, share, stop, copy };
 }

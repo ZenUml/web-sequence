@@ -77,6 +77,21 @@ describe('SharePopover', () => {
     expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 
+  it('shows "Copied ✓" on the copy button when copied is true (keeping the testid)', async () => {
+    // Discriminating: revert SharePopover's `{copied ? 'Copied ✓' : 'Copy'}` back to
+    // a static 'Copy' → the button text stays 'Copy' → this assertion fails.
+    renderOpen({ ...base, url: 'https://app.zenuml.com/s/abc', copied: true });
+    const copyBtn = await screen.findByTestId('share-copy');
+    expect(copyBtn).toHaveTextContent('Copied ✓');
+  });
+
+  it('shows "Copy" (not copied) when copied is false/omitted', async () => {
+    renderOpen({ ...base, url: 'https://app.zenuml.com/s/abc' });
+    const copyBtn = await screen.findByTestId('share-copy');
+    expect(copyBtn).toHaveTextContent('Copy');
+    expect(copyBtn).not.toHaveTextContent('Copied');
+  });
+
   it('clicking copy calls onCopy', async () => {
     const onCopy = vi.fn();
     renderOpen({ ...base, url: 'https://app.zenuml.com/s/abc', onCopy });

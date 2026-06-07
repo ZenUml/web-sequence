@@ -90,6 +90,53 @@ describe('useShare', () => {
     );
   });
 
+  it('copy() sets copied=true on success then reverts after 1.5s', async () => {
+    // Discriminating: revert useShare's copy() to drop setCopied/timer → copied
+    // stays false → the first assertion fails. Keep setCopied but drop the timer
+    // → copied never reverts → the post-advance assertion fails.
+    const writeTextMock = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useShare(makeOpts()));
+      await act(async () => {
+        await result.current.share();
+      });
+      expect(result.current.copied).toBe(false);
+
+      // Drive the real clipboard await to completion BEFORE touching fake timers.
+      await act(async () => {
+        await result.current.copy();
+      });
+      expect(result.current.copied).toBe(true);
+
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(result.current.copied).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('copy() does NOT set copied when there is no url to copy', async () => {
+    // No share() first → url is null → writeText never runs → copied must stay false.
+    const writeTextMock = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+    const { result } = renderHook(() => useShare(makeOpts()));
+    await act(async () => {
+      await result.current.copy();
+    });
+    expect(writeTextMock).not.toHaveBeenCalled();
+    expect(result.current.copied).toBe(false);
+  });
+
   it('share() sets error and clears sharing when createShare rejects', async () => {
     const failingCreate = vi.fn(async () => {
       throw new Error('server error');

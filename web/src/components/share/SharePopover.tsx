@@ -4,6 +4,10 @@ export interface SharePopoverProps {
   url: string | null;
   sharing: boolean;
   error: string | null;
+  // Transient confirmation from useShare: when true the Copy button shows
+  // "Copied ✓" for ~1.5s after a successful copy. Optional so callers that don't
+  // wire it (and the legacy default) simply never show the confirmation.
+  copied?: boolean;
   onShare(): void;
   onStop(): void;
   onCopy(): void;
@@ -11,7 +15,15 @@ export interface SharePopoverProps {
 
 // The paper body of the share affordance. It renders only the PopoverContent —
 // the Popover Root + trigger live in ShareButton so there is exactly one Root.
-export function SharePopover({ url, sharing, error, onShare, onStop, onCopy }: SharePopoverProps) {
+export function SharePopover({
+  url,
+  sharing,
+  error,
+  copied = false,
+  onShare,
+  onStop,
+  onCopy,
+}: SharePopoverProps) {
   return (
     <PopoverContent className="w-[min(360px,calc(100vw-2rem))]">
       {url ? (
@@ -36,7 +48,7 @@ export function SharePopover({ url, sharing, error, onShare, onStop, onCopy }: S
               size="sm"
               onClick={onCopy}
             >
-              Copy
+              {copied ? 'Copied ✓' : 'Copy'}
             </Button>
           </div>
           <div className="flex justify-end">
