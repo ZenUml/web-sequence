@@ -18,6 +18,39 @@
   var app = null;
   function post(msg) { parent.postMessage(msg, '*'); }
 
+  // ---- Diagram natural-size measurement ----------------------------------------
+  // WIDTH: .bg-skin-canvas.scrollWidth — the DiagramFrame's inline-block root, which
+  // shrinks to its content (its block ancestors stretch to the iframe width, so their
+  // scrollWidth is useless). HEIGHT: #diagram.scrollHeight. Buffers (+16/+24) keep the
+  // right-edge chrome + foot lifeline dashes from clipping.
+  function measureAndPostContentSize() {
+    var diagramEl = document.getElementById('diagram') || document.getElementById('mounting-point');
+    var contentH = (diagramEl ? diagramEl.scrollHeight : document.documentElement.scrollHeight) + 24;
+    var frameRootEl = document.querySelector('.bg-skin-canvas');
+    var contentW = (frameRootEl ? frameRootEl.scrollWidth : (diagramEl ? diagramEl.scrollWidth : document.documentElement.scrollWidth)) + 16;
+    post({ type: 'contentSize', width: contentW, height: contentH });
+  }
+  // @zenuml/core lays out ASYNCHRONOUSLY after app.render() resolves (React commit +
+  // SVG/arrow layout), so a single synchronous measure under-reports larger diagrams —
+  // present-mode fit then sizes the iframe too small and CLIPS the diagram (small
+  // diagrams settle within the frame, which is why it looked fine). So we measure
+  // immediately AND re-measure once layout settles: a ResizeObserver on the inline-block
+  // root re-fires when its content box finishes growing (and on any later reflow, keeping
+  // contentSize fresh); an rAF chain is the fallback where ResizeObserver is absent.
+  var __sizeRO = (typeof ResizeObserver !== 'undefined')
+    ? new ResizeObserver(function () { measureAndPostContentSize(); })
+    : null;
+  function trackContentSettle() {
+    if (__sizeRO) {
+      __sizeRO.disconnect();
+      var el = document.querySelector('.bg-skin-canvas');
+      if (el) __sizeRO.observe(el);
+    } else {
+      var n = 4;
+      (function tick() { measureAndPostContentSize(); if (n-- > 0) requestAnimationFrame(tick); })();
+    }
+  }
+
   ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
     var orig = console[level];
     console[level] = function () {
@@ -59,38 +92,13 @@
           });
           post({ type: 'rendered' });
           // Report the diagram's natural content size (width × height) in ALL modes
-          // (spec Phase 2 §PF: "report + store … in ALL modes"). Consumers decide what
-          // to do with it: embed shrink-wraps the iframe card; present/fit scales the
-          // iframe to fit + center; editor stores-but-ignores. Previously gated on the
-          // embed-suppress style element — that left present/fit dead in production
-          // because fit mode is non-embed, so the post never fired. The receiver
-          // (PreviewFrame) already gates application by mode, so an unconditional post
-          // is safe: editor mode stores it without applying (GATING CANARY test).
-          //
-          // HEIGHT: #diagram.scrollHeight — unconstrained axis, already validated
-          // in round-4. +24px bottom buffer so lifeline dashes at the foot of each
-          // participant column are not clipped by the iframe bottom.
-          //
-          // WIDTH: .bg-skin-canvas.scrollWidth — this is the DiagramFrame's inline-block
-          // root (class="p-1 bg-skin-canvas inline-block" in @zenuml/core). Its parent
-          // chain (#mounting-point > .zenuml > ...) are all display:block and stretch
-          // to fill the iframe, so their scrollWidth equals the iframe clientWidth (NOT
-          // the natural content width). Only the inline-block itself shrinks to fit its
-          // content. Probe results (2026-06-07, small A.method() diagram):
-          //   #diagram.scrollWidth = 750 (= iframe width — useless)
-          //   .bg-skin-canvas.scrollWidth = 249 (= natural content — correct)
-          // +16px right buffer so lifeline/edge chrome on the right side is not clipped.
-          // NOTE: width was probed only in embed mode (core chrome suppressed). Present
-          // mode keeps core chrome — the .bg-skin-canvas measurement should still be the
-          // inline-block content width, but this needs the Phase 2 fullscreen screenshot
-          // to confirm there is no clipping/over-shrink. See done-criteria.
-          {
-            var diagramEl = document.getElementById('diagram') || document.getElementById('mounting-point');
-            var contentH = (diagramEl ? diagramEl.scrollHeight : document.documentElement.scrollHeight) + 24;
-            var frameRootEl = document.querySelector('.bg-skin-canvas');
-            var contentW = (frameRootEl ? frameRootEl.scrollWidth : (diagramEl ? diagramEl.scrollWidth : document.documentElement.scrollWidth)) + 16;
-            post({ type: 'contentSize', width: contentW, height: contentH });
-          }
+          // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
+          // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout
+          // settles (see measureAndPostContentSize / trackContentSettle above) — the
+          // synchronous-only measure under-reported larger diagrams and present mode
+          // clipped them.
+          measureAndPostContentSize();
+          trackContentSettle();
         } catch (err) {
           post({ type: 'error', message: String((err && err.message) || err) });
         }
