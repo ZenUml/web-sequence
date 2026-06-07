@@ -37,3 +37,19 @@ export async function getSharedItem(id: string, shareToken: string): Promise<Ite
   }
   return (await res.json()) as Item;
 }
+
+// POST /track — non-blocking analytics (§5.5). Swallows all errors: a failed
+// analytics call must never break the user action that triggered it.
+export async function trackEvent(
+  payload: Record<string, unknown> & { event: string; userId: string | null },
+): Promise<void> {
+  try {
+    await fetch('/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    /* non-blocking */
+  }
+}

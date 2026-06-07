@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, beforeAll, afterAll } from 'vitest';
 import { vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { getSharedItem, createShare } from './cloudFunctions';
+import { getSharedItem, createShare, trackEvent } from './cloudFunctions';
 
 vi.mock('./firebase', () => ({ getIdToken: vi.fn(async () => 'fresh-token') }));
 
@@ -53,5 +53,30 @@ describe('createShare', () => {
   it('throws the server error on non-ok', async () => {
     server.use(http.post(`${window.location.origin}/create-share`, () => HttpResponse.json({ error: 'Forbidden' }, { status: 403 })));
     await expect(createShare('item-1')).rejects.toThrow(/Forbidden/);
+  });
+});
+
+describe('trackEvent', () => {
+  it('POSTs { event, userId, ...properties } to /track', async () => {
+    let received: Record<string, unknown> | null = null;
+    server.use(http.post(`${window.location.origin}/track`, async ({ request }) => {
+      received = (await request.json()) as Record<string, unknown>;
+      return HttpResponse.text('Event tracked successfully');
+    }));
+    await trackEvent({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+    expect(received).toEqual({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+  });
+  it('carries userId:null for anonymous events', async () => {
+    let received: Record<string, unknown> | null = null;
+    server.use(http.post(`${window.location.origin}/track`, async ({ request }) => {
+      received = (await request.json()) as Record<string, unknown>;
+      return HttpResponse.text('ok');
+    }));
+    await trackEvent({ event: 'pageView', userId: null });
+    expect(received!.userId).toBeNull();
+  });
+  it('never throws on a network/non-ok error (non-blocking)', async () => {
+    server.use(http.post(`${window.location.origin}/track`, () => HttpResponse.error()));
+    await expect(trackEvent({ event: 'x', userId: null })).resolves.toBeUndefined();
   });
 });
