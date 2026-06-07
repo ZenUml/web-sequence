@@ -58,6 +58,15 @@
             stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
           });
           post({ type: 'rendered' });
+          // Embed-only: report the diagram's natural content height so the host can
+          // shrink-wrap the iframe card to the diagram rather than leaving a vast
+          // empty box. Gated on the embed-suppress style element (present only when
+          // getCompleteHtml({ embed: true }) was used) so the editor path is untouched.
+          if (document.getElementById('zenuml-embed-suppress')) {
+            var diagramEl = document.getElementById('diagram') || document.getElementById('mounting-point');
+            var contentH = diagramEl ? diagramEl.scrollHeight : document.documentElement.scrollHeight;
+            post({ type: 'contentHeight', height: contentH });
+          }
         } catch (err) {
           post({ type: 'error', message: String((err && err.message) || err) });
         }

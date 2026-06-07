@@ -21,10 +21,15 @@ export type FrameMessage =
   | { type: 'png'; id: number; dataUrl: string | null }
   | { type: 'console'; level: string; args: string[] }
   | { type: 'evalResult'; id: number; ok: boolean; value: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  // Embed-only: posted after each render so the host can shrink-wrap the iframe
+  // to its content height. Only sent when the bootstrap was started in embed mode
+  // (previewHtml's `embed=true` path); ignored by non-embed PreviewFrame instances.
+  | { type: 'contentHeight'; height: number };
 
 const FRAME_TYPES = new Set([
   'ready', 'rendered', 'codeChange', 'png', 'console', 'evalResult', 'error',
+  'contentHeight',
 ]);
 
 export function isFrameMessage(data: unknown): data is FrameMessage {

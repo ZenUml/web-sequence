@@ -716,17 +716,14 @@ export function AppRoot() {
         <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
         {/* Render the diagram on paper inside a hairline + shadow card so the embed
             reads as an intentional framed surface, not an unstyled white box on cream.
-            The card is centered and width/height-capped (NOT h-full w-full) so a small
-            diagram no longer strands itself in one corner of a vast cream area; the
-            wrapper's items-center/justify-center then centers the card itself.
-            overflow-auto (not -hidden) lets a tall/wide diagram scroll rather than clip.
-            NOTE: the diagram is top-aligned WITHIN the iframe document (previewHtml's
-            body has no centering, and that file is shared with the editor / out of
-            embed scope), so this fix sizes & centers the CARD — it does not re-center
-            the iframe's internal content. */}
+            The card hugs the diagram's natural height: PreviewFrame posts a
+            'contentHeight' message after each render (embed-only) and sets an explicit
+            pixel height on the iframe, so the card (height:auto) wraps it snugly.
+            max-h-[calc(100vh-5rem)] + overflow-auto caps and scrolls tall diagrams;
+            the wrapper's items-center/justify-center then centers the card. */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <div className="mx-auto max-w-3xl w-full h-full max-h-full rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
+            <div className="mx-auto max-w-3xl w-full max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
               <PreviewFrame
                 ref={previewRef}
                 code={item.js}

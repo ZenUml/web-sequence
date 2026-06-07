@@ -28,17 +28,21 @@ export interface PreviewParts {
 }
 
 // Embed-only chrome suppression. Targets @zenuml/core's rendered DOM hooks:
-//   .footer        — info/tip button, theme settings, numbering checkbox, version
-//                    string, zoom controls (+/100%/−), and the "ZenUML.com" brand
-//                    watermark are ALL children of this one container.
-//   .header .hide-export — the privacy/shield icon lives in the header's right slot
-//                    and carries `hide-export`; the title (no `hide-export`) is left
-//                    untouched so an embedded diagram still shows its title.
+//   .footer                  — info/tip button, theme settings, numbering checkbox,
+//                              version string, zoom controls, and "ZenUML.com" brand
+//                              watermark are ALL children of this one container.
+//   .header.bg-skin-title    — the top chrome band (title + export/shield icons).
+//                              EmbedHeader (above the iframe) already shows the title,
+//                              so hiding the in-diagram chrome band is safe. The
+//                              skin-specific class (.bg-skin-title) ensures we only
+//                              hide the chrome band, NOT the diagram-internal fragment
+//                              headers (loop/alt/opt/par/critical labels), which use
+//                              .header.bg-skin-fragment-header instead.
 // `!important` wins unconditionally against core's utility classes. Baked into the
 // srcdoc (not pushed via updateCss) so there is no chrome flash on first paint and
 // the user-CSS rail (`#zenumlstyle`) stays clean.
 export const EMBED_CHROME_SUPPRESS_CSS =
-  '.footer{display:none !important}.header .hide-export{display:none !important}';
+  '.footer{display:none !important}.header.bg-skin-title{display:none !important}';
 
 export function getCompleteHtml(parts: PreviewParts = {}): string {
   const embedStyle = parts.embed

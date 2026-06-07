@@ -50,7 +50,14 @@ describe('getCompleteHtml', () => {
     expect(embedHtml).toContain(EMBED_CHROME_SUPPRESS_CSS);
     // Targets the real @zenuml/core DOM hooks for the chrome we must hide.
     expect(embedHtml).toContain('.footer{display:none !important}');
-    expect(embedHtml).toContain('.header .hide-export{display:none !important}');
+    // DISCRIMINATING: the skin-specific class (.bg-skin-title) ensures only the
+    // top chrome band is hidden, NOT the diagram-internal fragment headers
+    // (loop/alt/opt/par labels which use .header.bg-skin-fragment-header).
+    // Reverting to the bare `.header` selector would hide fragment labels (regression).
+    // Reverting to `.header .hide-export` would leave an empty white chrome band visible.
+    expect(embedHtml).toContain('.header.bg-skin-title{display:none !important}');
+    // The old child-selector form must NOT be present (it left the chrome band visible).
+    expect(embedHtml).not.toContain('.header .hide-export');
 
     // Not in the normal editor preview (embed omitted or false).
     expect(getCompleteHtml({}).includes('zenuml-embed-suppress')).toBe(false);

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { getCompleteHtml } from './previewHtml';
 import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
@@ -36,6 +36,9 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const embedMode = embed ?? detectFromEnv().isEmbed;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
+  // Embed-only: iframe natural content height reported via 'contentHeight' message.
+  // null = no report yet (iframe uses h-full to fill the card during initial load).
+  const [embedContentHeight, setEmbedContentHeight] = useState<number | null>(null);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
   const pngId = useRef(0);
   const evalWaiters = useRef(new Map<number, (r: { ok: boolean; value: string }) => void>());
@@ -84,6 +87,12 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
           if (w) { w({ ok: msg.ok, value: msg.value }); evalWaiters.current.delete(msg.id); }
           break;
         }
+        case 'contentHeight':
+          // Embed-only: shrink-wrap the iframe to the diagram's natural content height.
+          // The card wrapper in AppRoot supplies max-h + overflow-auto, so a tall
+          // diagram scrolls rather than blowing out the viewport.
+          if (embedMode) setEmbedContentHeight(msg.height);
+          break;
       }
     }
     window.addEventListener('message', onMessage);
@@ -130,13 +139,23 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     },
   }));
 
+  // In embed mode: once the bootstrap reports contentHeight, set an explicit pixel
+  // height so the iframe shrinks to its content. Before the first report, fall back
+  // to h-full so the card is not a 0-px collapsed box during initial load.
+  // In editor mode: always h-full (fills the split-pane right panel).
+  const iframeStyle =
+    embedMode && embedContentHeight !== null
+      ? { height: `${embedContentHeight}px` }
+      : undefined;
+
   return (
     <iframe
       ref={iframeRef}
       data-testid="preview-iframe"
       title="ZenUML preview"
       srcDoc={srcdoc}
-      className="h-full w-full border-0"
+      className={embedMode && embedContentHeight !== null ? 'w-full border-0' : 'h-full w-full border-0'}
+      style={iframeStyle}
       allowFullScreen
     />
   );
