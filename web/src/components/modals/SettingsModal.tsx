@@ -46,8 +46,20 @@ const INDENT_SIZES = [2, 4, 8];
 const FONTS = ['FiraCode', 'Inconsolata', 'Monoid', 'FixedSys', 'other'];
 const KEYMAPS: Settings['keymap'][] = ['sublime', 'vim'];
 const HTML_MODES: Settings['htmlMode'][] = ['html', 'markdown', 'jade'];
-const JS_MODES: Settings['jsMode'][] = ['js', 'es6', 'coffeescript', 'typescript'];
-const CSS_MODES: Settings['cssMode'][] = ['css', 'scss', 'sass', 'less', 'stylus', 'acss'];
+const JS_MODES: Settings['jsMode'][] = [
+  'js',
+  'es6',
+  'coffeescript',
+  'typescript',
+];
+const CSS_MODES: Settings['cssMode'][] = [
+  'css',
+  'scss',
+  'sass',
+  'less',
+  'stylus',
+  'acss',
+];
 const INDENT_WITH: Settings['indentWith'][] = ['spaces', 'tabs'];
 
 function Section({ children }: { children: string }) {
@@ -119,7 +131,11 @@ function SelectRow({
     <div className={ROW}>
       <span className={ROW_LABEL}>{label}</span>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger data-testid={testid} aria-label={label} className="min-w-[150px]">
+        <SelectTrigger
+          data-testid={testid}
+          aria-label={label}
+          className="min-w-[150px]"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-72">
@@ -134,9 +150,16 @@ function SelectRow({
   );
 }
 
-const opts = (vals: readonly string[]) => vals.map((v) => ({ value: v, label: v }));
+const opts = (vals: readonly string[]) =>
+  vals.map((v) => ({ value: v, label: v }));
 
-export function SettingsModal({ open, onOpenChange, settings, onChange, isExtension = false }: SettingsModalProps) {
+export function SettingsModal({
+  open,
+  onOpenChange,
+  settings,
+  onChange,
+  isExtension = false,
+}: SettingsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -168,7 +191,10 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
                     label="Theme"
                     testid="setting-editorTheme"
                     value={settings.editorTheme}
-                    options={EDITOR_THEMES.map((t) => ({ value: t.id, label: t.label }))}
+                    options={EDITOR_THEMES.map((t) => ({
+                      value: t.id,
+                      label: t.label,
+                    }))}
                     onValueChange={(v) => onChange('editorTheme', v)}
                   />
                   <SelectRow
@@ -176,13 +202,18 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
                     testid="setting-keymap"
                     value={settings.keymap}
                     options={opts(KEYMAPS)}
-                    onValueChange={(v) => onChange('keymap', v as Settings['keymap'])}
+                    onValueChange={(v) =>
+                      onChange('keymap', v as Settings['keymap'])
+                    }
                   />
                   <SelectRow
                     label="Font size"
                     testid="setting-fontSize"
                     value={String(settings.fontSize)}
-                    options={FONT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                    options={FONT_SIZES.map((n) => ({
+                      value: String(n),
+                      label: String(n),
+                    }))}
                     onValueChange={(v) => onChange('fontSize', Number(v))}
                   />
                   <SelectRow
@@ -202,7 +233,9 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
                         className="min-w-[150px]"
                         value={settings.editorCustomFont}
                         placeholder="Font name"
-                        onChange={(e) => onChange('editorCustomFont', e.target.value)}
+                        onChange={(e) =>
+                          onChange('editorCustomFont', e.target.value)
+                        }
                       />
                     </div>
                   )}
@@ -211,13 +244,18 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
                     testid="setting-indentWith"
                     value={settings.indentWith}
                     options={opts(INDENT_WITH)}
-                    onValueChange={(v) => onChange('indentWith', v as Settings['indentWith'])}
+                    onValueChange={(v) =>
+                      onChange('indentWith', v as Settings['indentWith'])
+                    }
                   />
                   <SelectRow
                     label="Indent size"
                     testid="setting-indentSize"
                     value={String(settings.indentSize)}
-                    options={INDENT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                    options={INDENT_SIZES.map((n) => ({
+                      value: String(n),
+                      label: String(n),
+                    }))}
                     onValueChange={(v) => onChange('indentSize', Number(v))}
                   />
                   <SwitchRow
@@ -287,38 +325,44 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
 
               {/* Extension + Default modes stay full-width below the two columns. */}
               {isExtension && (
-            <>
-              <Section>Extension</Section>
-              <SwitchRow
-                label="Replace new tab page"
-                testid="setting-replaceNewTab"
-                checked={settings.replaceNewTab}
-                onCheckedChange={(v) => onChange('replaceNewTab', v)}
-              />
-            </>
-          )}
+                <>
+                  <Section>Extension</Section>
+                  <SwitchRow
+                    label="Replace new tab page"
+                    testid="setting-replaceNewTab"
+                    checked={settings.replaceNewTab}
+                    onCheckedChange={(v) => onChange('replaceNewTab', v)}
+                  />
+                </>
+              )}
 
-          <Section>Default modes</Section>
-          <SelectRow
-            label="HTML mode"
-            testid="setting-htmlMode"
-            value={settings.htmlMode}
-            options={opts(HTML_MODES)}
-            onValueChange={(v) => onChange('htmlMode', v as Settings['htmlMode'])}
-          />
-          <SelectRow
-            label="JS mode"
-            testid="setting-jsMode"
-            value={settings.jsMode}
-            options={opts(JS_MODES)}
-            onValueChange={(v) => onChange('jsMode', v as Settings['jsMode'])}
-          />
-          <SelectRow
-            label="CSS mode"
-            testid="setting-cssMode"
-            value={settings.cssMode}
-            options={opts(CSS_MODES)}
-            onValueChange={(v) => onChange('cssMode', v as Settings['cssMode'])}
+              <Section>Default modes</Section>
+              <SelectRow
+                label="HTML mode"
+                testid="setting-htmlMode"
+                value={settings.htmlMode}
+                options={opts(HTML_MODES)}
+                onValueChange={(v) =>
+                  onChange('htmlMode', v as Settings['htmlMode'])
+                }
+              />
+              <SelectRow
+                label="JS mode"
+                testid="setting-jsMode"
+                value={settings.jsMode}
+                options={opts(JS_MODES)}
+                onValueChange={(v) =>
+                  onChange('jsMode', v as Settings['jsMode'])
+                }
+              />
+              <SelectRow
+                label="CSS mode"
+                testid="setting-cssMode"
+                value={settings.cssMode}
+                options={opts(CSS_MODES)}
+                onValueChange={(v) =>
+                  onChange('cssMode', v as Settings['cssMode'])
+                }
               />
             </div>
           </div>
