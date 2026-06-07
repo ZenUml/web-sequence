@@ -45,6 +45,7 @@ import { isPlus } from '../domain/plan';
 import { semverCompare } from '../domain/semver';
 import { config as appConfig } from '../config/firebaseConfig';
 import type { Settings, PlanType } from '../domain/types';
+import { DEFAULT_SETTINGS } from '../domain/types';
 import { SettingsModal } from '../components/modals/SettingsModal';
 import { CreateNewModal } from '../components/modals/CreateNewModal';
 import { HelpModal } from '../components/modals/HelpModal';
@@ -163,7 +164,19 @@ export function AppRoot() {
   // `onboarded` flag is unset; dismissing marks it (handled at the modal's onDismiss).
   useEffect(() => {
     void localStore.get<boolean>(LS_KEYS.onboarded, false).then((seen) => {
-      if (!seen) openModal('onboarding');
+      if (!seen) {
+        openModal('onboarding');
+        // Stamp lastSeenVersion for a brand-new user the moment onboarding is shown
+        // (legacy parity: app.jsx:322 setUserLastSeenVersion(version) in the
+        // new-user branch). Without this, lastSeenVersion stays '' and the pledge
+        // effect would treat a first-time user as an "upgrade" on their NEXT boot
+        // (semverCompare('0.0.0', APP_VERSION) < 0), showing them a version-upgrade
+        // prompt they have no baseline for (wrong audience — REQ-MOD-3). The pledge
+        // effect additionally gates on a truthy lastSeenVersion (below).
+        void localStore.get<string>(LS_KEYS.lastSeenVersion, '').then((v) => {
+          if (!v) void localStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
+        });
+      }
     });
     // openModal is a stable zustand action.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +190,15 @@ export function AppRoot() {
   useEffect(() => {
     void localStore.get<string>(LS_KEYS.lastSeenVersion, '').then((seen) => {
       if (useUiStore.getState().activeModal) return; // don't replace onboarding
-      if (semverCompare(seen || '0.0.0', APP_VERSION) < 0) openModal('pledge');
+      // Truthiness gate (legacy parity: app.jsx:329 `lastSeenVersion &&`). A
+      // brand-new user has no stored lastSeenVersion — the pledge is an UPGRADE
+      // prompt and must never fire for someone who has no prior version baseline.
+      // Without this guard, `semverCompare('0.0.0', APP_VERSION) < 0` is true and a
+      // first-time user is shown a "we just shipped a new version" prompt (wrong
+      // audience, REQ-MOD-3). The onboarding effect stamps lastSeenVersion for new
+      // users, so by their next boot this is truthy and the pledge stays suppressed.
+      if (!seen) return;
+      if (semverCompare(seen, APP_VERSION) < 0) openModal('pledge');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -186,6 +207,31 @@ export function AppRoot() {
   // onAuthChange handler (getUserSettings → settingsStore.merge). That IS the
   // load-once apply (OQ-5); no remote settings subscription. M04 only adds the
   // settings UI + the per-change persist split (handleSettingChange below).
+
+  // Boot: load synced prefs UNCONDITIONALLY (adversarial review). Legacy reads
+  // db.getSettings(defaultSettings) in componentDidMount, NOT gated by login
+  // (app.jsx:220). handleSettingChange persists every change to syncStore — but
+  // nothing read it back at startup, so a signed-out user's theme/fontSize/keymap/
+  // preserveLastCode/etc. were silently discarded on reload (settingsStore re-inits
+  // to DEFAULT_SETTINGS). This restores REQ-SET persistence parity for anonymous
+  // users (and underpins preserveLastCode's synced boot behavior). For a signed-in
+  // user this runs too, then useAuth's getUserSettings merge applies cloud values
+  // on top (cloud wins) — both merges are key-wise so unknown keys are untouched.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const keys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
+      const loaded: Partial<Settings> = {};
+      for (const k of keys) {
+        const v = await syncStore.get<Settings[typeof k] | undefined>(k, undefined);
+        if (v !== undefined) (loaded as Record<string, unknown>)[k] = v;
+      }
+      if (!cancelled && Object.keys(loaded).length > 0) {
+        useSettingsStore.getState().merge(loaded);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // REQ-PRV-4 (lazy transpile): plain CSS stays synchronous; transpiled modes
   // (scss/sass/less/stylus/acss) compute asynchronously into local state. For ACSS
@@ -276,33 +322,59 @@ export function AppRoot() {
     // only enforce when signed-in AND the subscription read has RESOLVED (!subLoading)
     // — an unresolved subscription transiently derives to 'free', so enforcing would
     // falsely block a paying user and silently skip their cloud write.
+    // Two DISTINCT withhold-the-cloud-write conditions (adversarial review):
+    //  - overLimit: a GENUINE plan-cap hit (owned-count read succeeded and exceeds
+    //    the cap). This is the only case that shows LimitReachedNotice + fires the
+    //    'Free Limit' analytics event.
+    //  - readFailed: the owned-count read THREW (offline blip / Firestore error) so
+    //    we cannot prove the save is within a non-Plus cap. We FAIL CLOSED — withhold
+    //    the cloud write to avoid silently admitting a cap-bypassing write (the rules
+    //    do not enforce the count; this is the only enforcement point). But we must
+    //    NOT tell the user they hit a limit they may not have hit, and must NOT
+    //    inflate the 'Free Limit' metric on a non-limit condition. A Plus user is
+    //    unaffected either way (isOverFileLimit is false for Plus regardless of count).
     let overLimit = false;
+    let readFailed = false;
     if (uid && !subLoading) {
-      let ownedIds: string[] = [];
-      try { ownedIds = await getUserItemIds(uid); } catch { ownedIds = []; }
-      overLimit = isOverFileLimit({ subscription, ownedIds, itemId: itemToSave.id });
+      try {
+        const ownedIds = await getUserItemIds(uid);
+        overLimit = isOverFileLimit({ subscription, ownedIds, itemId: itemToSave.id });
+      } catch {
+        readFailed = !isPlus(subscription);
+      }
     }
+    const withholdCloud = overLimit || readFailed;
 
     useEditorStore.getState().setSaving(true);
     try {
-      if (uid && !overLimit) {
+      if (uid && !withholdCloud) {
         // FIX 6: ensure user doc exists before any cloud write to prevent membership
         // loss on first save after login (ensureUser is memoized per-uid).
         await ensureUser(uid);
       }
-      if (overLimit) {
+      if (withholdCloud) {
         // Softened enforcement: keep the LOCAL copy, withhold the cloud write +
-        // membership. Non-blocking notice with inline upgrade (NOT alert()+forced modal).
+        // membership. The notice + 'Free Limit' analytics fire ONLY for a genuine
+        // cap hit (overLimit), never for a transient read failure (readFailed).
         await itemService.setItem(itemToSave.id, itemToSave, { skipCloud: true });
-        setLimitNoticeOpen(true);
-        track('Free Limit', { category: 'storage', label: planType });
+        if (overLimit) {
+          setLimitNoticeOpen(true);
+          track('Free Limit', { category: 'storage', label: planType });
+        }
+        // DO NOT markSaved() here (adversarial review): the cloud write was
+        // deliberately withheld, so the diagram is NOT synced. Calling markSaved
+        // would clear dirty + reset unsavedCount to 0, presenting the item as a
+        // clean cloud save and risking silent data loss (the user believes it is
+        // synced across devices when it lives only in localStorage). Legacy returns
+        // early BEFORE saveItem on the over-cap path, so dirty/unsaved state is
+        // never cleared and the user keeps being prompted to resolve the cap.
       } else {
         await itemService.setItem(itemToSave.id, itemToSave);
         if (uid) {
           try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
         }
+        useEditorStore.getState().markSaved();
       }
-      useEditorStore.getState().markSaved();
     } finally {
       useEditorStore.getState().setSaving(false);
     }

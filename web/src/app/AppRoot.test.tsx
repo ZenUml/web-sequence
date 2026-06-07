@@ -286,6 +286,73 @@ describe('AppRoot — M04 save-seam plan limit', () => {
     expect(userSvc.setItemForUser).toHaveBeenCalled();
     expect(screen.queryByTestId('limit-notice')).not.toBeInTheDocument();
   });
+
+  // Discriminating (adversarial review #1): the over-limit branch must NOT clear the
+  // editor's dirty/unsaved state. The cloud write was withheld (skipCloud), so the
+  // diagram is NOT synced — calling markSaved() would falsely present it as a clean
+  // cloud save (silent data-loss risk). Reverting to the unconditional markSaved()
+  // makes dirty=false / unsavedCount=0 here → fails.
+  it('(e) over-limit save does NOT clear dirty/unsaved state (no false clean-save signal)', async () => {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    userSvc.getUserItemIds.mockResolvedValue(['a', 'b', 'c', 'd']); // over free cap
+    await bootSignedIn();
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    // Make a real content edit so dirty=true / unsavedCount>0 going into the save.
+    act(() => { store.getState().setDsl('A.x'); });
+    expect(store.getState().dirty).toBe(true);
+    expect(store.getState().unsavedCount).toBeGreaterThan(0);
+    await clickSave();
+    await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
+    // Cloud was withheld → state must remain dirty/unsaved (user keeps being prompted).
+    expect(store.getState().dirty).toBe(true);
+    expect(store.getState().unsavedCount).toBeGreaterThan(0);
+  });
+
+  // Discriminating (adversarial review #2): a transient getUserItemIds error must
+  // FAIL CLOSED for a non-Plus user — withhold the cloud write rather than admit a
+  // cap-bypassing write. The old code swallowed the error to [] (length 0 > cap =
+  // false) and proceeded with the full cloud write. CRUCIALLY, a read FAILURE is NOT
+  // a confirmed limit hit: it must NOT show the "you hit your limit, upgrade" notice
+  // (false claim to a possibly-under-cap user) and must NOT fire the 'Free Limit'
+  // analytics (metric inflation on a non-limit condition). So: cloud skipped, no
+  // membership write, but NO limit-notice. Reverting the fail-closed write makes
+  // skipCloud falsy / setItemForUser called → fails; coupling the notice to the
+  // read-error case makes limit-notice appear → also fails.
+  it('(f) FAIL CLOSED — getUserItemIds throws for a free user → cloud SKIPPED, NO limit notice', async () => {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    userSvc.getUserItemIds.mockRejectedValue(new Error('Firestore offline'));
+    await bootSignedIn();
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    // Edit so we can assert dirty stays true (no false clean-save) after withholding.
+    act(() => { store.getState().setDsl('A.x'); });
+    await clickSave();
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
+    const call = itemSvc.setItem.mock.calls.at(-1)!;
+    expect(call[2]).toEqual({ skipCloud: true }); // write withheld → no cap bypass
+    expect(userSvc.setItemForUser).not.toHaveBeenCalled();
+    // A read FAILURE is not a confirmed limit hit → no misleading limit notice.
+    expect(screen.queryByTestId('limit-notice')).not.toBeInTheDocument();
+    // Dirty state preserved (the write did not land) so the user retries honestly.
+    expect(store.getState().dirty).toBe(true);
+  });
+
+  // Discriminating (adversarial review #2 complement): a Plus user is unaffected by
+  // the read error — isOverFileLimit is false for Plus regardless of count, so the
+  // fail-closed branch must NOT withhold their cloud write.
+  it('(g) FAIL CLOSED does not penalize a PLUS user when getUserItemIds throws', async () => {
+    subSvc.retrieveSubscription.mockResolvedValue(
+      { status: 'active', passthrough: '{"planType":"plus-monthly"}' } as never,
+    );
+    userSvc.getUserItemIds.mockRejectedValue(new Error('Firestore offline'));
+    await bootSignedIn();
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    await clickSave();
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
+    const call = itemSvc.setItem.mock.calls.at(-1)!;
+    expect(call[2]?.skipCloud).toBeFalsy();
+    expect(userSvc.setItemForUser).toHaveBeenCalled();
+    expect(screen.queryByTestId('limit-notice')).not.toBeInTheDocument();
+  });
 });
 
 describe('AppRoot — M04 custom-CSS Plus gate', () => {
@@ -392,5 +459,65 @@ describe('AppRoot — M04 one-time triggers', () => {
     await screen.findByTestId('header-title');
     await waitFor(() => expect(useUiStore.getState().activeModal).toBe('pledge'));
     expect(await screen.findByTestId('pledge-modal')).toBeInTheDocument();
+  });
+
+  // Discriminating (adversarial review #4): a brand-new user (no lastSeenVersion,
+  // not onboarded) must see Onboarding — NEVER the version-upgrade pledge. And the
+  // moment onboarding is shown, lastSeenVersion is stamped so their NEXT boot does
+  // not mistake them for an upgrade. Reverting either part (no stamp, or no
+  // truthiness gate) makes the pledge open for a first-time user → fails.
+  it('brand-new user sees Onboarding and is stamped — never the upgrade pledge', async () => {
+    window.localStorage.removeItem(LS_KEYS.onboarded);
+    window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    // Onboarding opens (not pledge).
+    expect(await screen.findByTestId('onboarding-modal')).toBeInTheDocument();
+    expect(useUiStore.getState().activeModal).toBe('onboarding');
+    // lastSeenVersion is stamped to APP_VERSION (so the 2nd boot suppresses the pledge).
+    await waitFor(() =>
+      expect(window.localStorage.getItem(LS_KEYS.lastSeenVersion)).toBe(JSON.stringify(APP_VERSION)),
+    );
+  });
+
+  // Discriminating (adversarial review #4, the actual reported symptom): simulate the
+  // SECOND visit of a brand-new user — onboarded already true (they dismissed it) but
+  // suppose the stamp never happened (lastSeenVersion still ''). The pledge MUST NOT
+  // open (truthiness gate). The old gate computed semverCompare('0.0.0', APP_VERSION)
+  // < 0 → true and opened the pledge for a first-timer.
+  it('does NOT open the pledge when lastSeenVersion is empty (first-timer, wrong audience)', async () => {
+    window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+    window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    // Give the async boot effects time to run; the pledge must stay closed.
+    await waitFor(() => expect(screen.getByTestId('header-title')).toBeInTheDocument());
+    expect(useUiStore.getState().activeModal).not.toBe('pledge');
+    expect(screen.queryByTestId('pledge-modal')).not.toBeInTheDocument();
+  });
+});
+
+describe('AppRoot — signed-out settings persistence (adversarial review #3)', () => {
+  // Discriminating: a signed-out user's prefs written to syncStore must be LOADED on
+  // boot. handleSettingChange writes syncStore.set(key, value); before the fix nothing
+  // read it back, so settingsStore re-init to DEFAULT_SETTINGS discarded the value on
+  // reload. We pre-seed syncStore (= localStorage on web) with a NON-default value and
+  // assert settingsStore reflects it after boot. Reverting the boot-load effect leaves
+  // the store at DEFAULT_SETTINGS → fails.
+  it('loads synced prefs into settingsStore on boot (signed-out)', async () => {
+    const { useSettingsStore } = await import('../state/settingsStore');
+    const { DEFAULT_SETTINGS } = await import('../domain/types');
+    // Distinctive non-default values (default fontSize 16, editorTheme 'monokai',
+    // preserveLastCode true).
+    window.localStorage.setItem('fontSize', JSON.stringify(13));
+    window.localStorage.setItem('editorTheme', JSON.stringify('dracula'));
+    window.localStorage.setItem('preserveLastCode', JSON.stringify(false));
+    expect(DEFAULT_SETTINGS.fontSize).not.toBe(13); // guard: the test value IS non-default
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await waitFor(() => expect(useSettingsStore.getState().settings.fontSize).toBe(13));
+    expect(useSettingsStore.getState().settings.editorTheme).toBe('dracula');
+    expect(useSettingsStore.getState().settings.preserveLastCode).toBe(false);
   });
 });

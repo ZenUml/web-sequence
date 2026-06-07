@@ -8,12 +8,21 @@ const fb = vi.hoisted(() => ({
   _cb: (_u: unknown) => {},
 }));
 vi.mock('../services/firebase', () => ({ login: fb.login, logout: fb.logout, onAuthChange: fb.onAuthChange }));
-vi.mock('../services/userService', () => ({ ensureUser: vi.fn(async () => ({})), getUserSettings: vi.fn(async () => ({})) }));
+const usvc = vi.hoisted(() => ({ ensureUser: vi.fn(async () => ({})), getUserSettings: vi.fn(async () => ({})) }));
+vi.mock('../services/userService', () => usvc);
 
 import { useAuth } from './useAuth';
 import { useAuthStore } from '../state/authStore';
+import { useSettingsStore } from '../state/settingsStore';
+import { DEFAULT_SETTINGS } from '../domain/types';
 
-beforeEach(() => { vi.clearAllMocks(); useAuthStore.setState({ user: null, online: true, authReady: false }); window.localStorage.clear(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  useAuthStore.setState({ user: null, online: true, authReady: false });
+  window.localStorage.clear();
+  usvc.getUserSettings.mockResolvedValue({});
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
+});
 
 describe('useAuth', () => {
   it('subscribes to auth changes and reflects the user in the store', async () => {
@@ -47,5 +56,25 @@ describe('useAuth', () => {
     renderHook(() => useAuth());
     await act(async () => { fb._cb(null); });
     expect(useAuthStore.getState().authReady).toBe(true);
+  });
+
+  // Adversarial review #3 follow-up: when a signed-in user's cloud settings load,
+  // they must WIN over whatever the signed-out boot (syncStore) already merged for
+  // the SAME key, while local-only keys (absent from cloud) survive. This pins the
+  // "cloud wins, local fills gaps" ordering that the AppRoot boot syncStore-load +
+  // useAuth cloud-merge together rely on. We simulate the boot having already
+  // applied a local value, then sign in and resolve a DIFFERENT cloud value.
+  it('cloud settings (on sign-in) win over a previously-merged local value; local-only keys survive', async () => {
+    // Pretend the signed-out boot already merged these from syncStore:
+    //   fontSize 13 (local), keymap 'vim' (local-only — cloud will NOT return it).
+    useSettingsStore.getState().merge({ fontSize: 13, keymap: 'vim' });
+    // Cloud returns a DIFFERENT fontSize and does not mention keymap.
+    usvc.getUserSettings.mockResolvedValue({ fontSize: 18 } as never);
+    renderHook(() => useAuth());
+    await act(async () => { fb._cb({ uid: 'u1', email: 'a@b.c', displayName: 'A', photoURL: null }); });
+    // Cloud value wins for the overlapping key.
+    expect(useSettingsStore.getState().settings.fontSize).toBe(18);
+    // Local-only key (cloud absent) is preserved by the key-wise merge.
+    expect(useSettingsStore.getState().settings.keymap).toBe('vim');
   });
 });
