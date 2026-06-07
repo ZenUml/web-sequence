@@ -24,6 +24,14 @@ export interface SettingsModalProps {
   onOpenChange(o: boolean): void;
   settings: Settings;
   onChange<K extends keyof Settings>(key: K, value: Settings[K]): void;
+  // Whether the app is running as the Chrome extension. The "Replace new tab page"
+  // toggle is extension-ONLY: it is consumed by the extension background page
+  // (src/extension/eventPage.js via chrome_url_overrides). On the web app there is no
+  // background page or url override, so the control is inert there — legacy hides all
+  // extension-only controls on the web via `body:not(.is-extension) .show-when-extension`
+  // (src/style.css:1670) and its in-app SettingsModal never exposes replaceNewTab at
+  // all. We gate the whole Extension section on this flag for parity (adversarial review).
+  isExtension?: boolean;
 }
 
 const META_LABEL =
@@ -103,7 +111,7 @@ function SelectRow({
 
 const opts = (vals: readonly string[]) => vals.map((v) => ({ value: v, label: v }));
 
-export function SettingsModal({ open, onOpenChange, settings, onChange }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, settings, onChange, isExtension = false }: SettingsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -226,13 +234,17 @@ export function SettingsModal({ open, onOpenChange, settings, onChange }: Settin
             onCheckedChange={(v) => onChange('lightVersion', v)}
           />
 
-          <Section>Extension</Section>
-          <SwitchRow
-            label="Replace new tab page"
-            testid="setting-replaceNewTab"
-            checked={settings.replaceNewTab}
-            onCheckedChange={(v) => onChange('replaceNewTab', v)}
-          />
+          {isExtension && (
+            <>
+              <Section>Extension</Section>
+              <SwitchRow
+                label="Replace new tab page"
+                testid="setting-replaceNewTab"
+                checked={settings.replaceNewTab}
+                onCheckedChange={(v) => onChange('replaceNewTab', v)}
+              />
+            </>
+          )}
 
           <Section>Default modes</Section>
           <SelectRow

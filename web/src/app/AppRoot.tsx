@@ -42,6 +42,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
+import { detectFromEnv } from './runtimeMode';
 import { semverCompare } from '../domain/semver';
 import { config as appConfig } from '../config/firebaseConfig';
 import type { Settings, PlanType } from '../domain/types';
@@ -660,6 +661,10 @@ export function AppRoot() {
         onOpenChange={(o) => { if (!o) closeModal(); }}
         settings={settings}
         onChange={handleSettingChange}
+        // Extension-only controls (Replace new tab page) render ONLY in the extension;
+        // inert on the web app (adversarial review). detectFromEnv reads chrome-extension:
+        // protocol / window.IS_EXTENSION — the same gate analytics uses.
+        isExtension={detectFromEnv().isExtension}
       />
       <CreateNewModal
         open={activeModal === 'createNew'}

@@ -40,18 +40,34 @@ describe('SettingsModal', () => {
     expect(screen.queryByTestId('settings-modal')).not.toBeInTheDocument();
   });
 
-  it('renders a control for every non-dropped preference', () => {
+  it('renders a control for every non-dropped, non-extension-only preference', () => {
     setup();
     const keys: (keyof Settings)[] = [
       'editorTheme', 'keymap', 'fontSize', 'editorFont', 'indentWith', 'indentSize',
       'lineWrap', 'autoCloseTags', 'autoComplete',
       'preserveLastCode', 'autoPreview', 'autoSave', 'preserveConsoleLogs',
-      'refreshOnResize', 'lightVersion', 'replaceNewTab',
+      'refreshOnResize', 'lightVersion',
       'htmlMode', 'jsMode', 'cssMode',
     ];
     for (const k of keys) {
       expect(screen.getByTestId(`setting-${k}`)).toBeInTheDocument();
     }
+  });
+
+  // DISCRIMINATING (adversarial review, finding 2): "Replace new tab page" is an
+  // extension-ONLY control (consumed by the extension background page via
+  // chrome_url_overrides). On the web app it is inert, so it must NOT render unless
+  // isExtension is true. Legacy hides extension-only controls on the web
+  // (body:not(.is-extension) .show-when-extension) and never exposes replaceNewTab in
+  // its in-app SettingsModal. Removing the isExtension gate (rendering it always) → fails.
+  it('does NOT render the extension-only replaceNewTab toggle on the web app', () => {
+    setup(); // no isExtension prop → web app
+    expect(screen.queryByTestId('setting-replaceNewTab')).not.toBeInTheDocument();
+  });
+
+  it('DOES render the extension-only replaceNewTab toggle when isExtension', () => {
+    setup({}, { isExtension: true });
+    expect(screen.getByTestId('setting-replaceNewTab')).toBeInTheDocument();
   });
 
   // Dropped settings (roadmap §3) must NOT be surfaced.
