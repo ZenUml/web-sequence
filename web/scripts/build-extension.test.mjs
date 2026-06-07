@@ -79,6 +79,18 @@ describe('assembleExtension', () => {
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.background.service_worker).toBe('eventPage.js');
 
+    // MV3 loads a service worker WITHOUT background.type as a CLASSIC script, and a
+    // classic script with a top-level `export` is a parse-time SyntaxError that kills
+    // worker registration. eventPage.js keeps ESM exports (deliberately, so the unit
+    // test can drive its handlers — same reasoning as options.html's type="module").
+    // So the invariant that must hold in the ASSEMBLED package: if the worker source
+    // has a top-level `export`, the manifest MUST declare the worker as a module.
+    const workerSrc = readFileSync(join(outDir, 'eventPage.js'), 'utf8');
+    const hasTopLevelExport = /^export\s/m.test(workerSrc);
+    if (hasTopLevelExport) {
+      expect(manifest.background.type).toBe('module');
+    }
+
     // The packaged index.html uses RELATIVE asset refs (loads under chrome-extension://).
     const indexHtml = readFileSync(join(outDir, 'index.html'), 'utf8');
     expect(indexHtml).toContain('./assets/main.js');
