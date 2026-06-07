@@ -69,6 +69,24 @@ describe('analytics.emit', () => {
     ).not.toThrow();
     expect(cf.trackEvent).toHaveBeenCalledTimes(1);
   });
+
+  // Discriminating (REQ-ANL-1 non-blocking contract): a CDN-injected third-party
+  // global that throws SYNCHRONOUSLY must NOT propagate out of emit() into the
+  // caller — callers run track() before the actual save/share, so an escaped throw
+  // would abort the user action. Without the try/catch guard this test throws and
+  // fails. The server path must still have fired (proving the throw was contained
+  // AFTER the non-blocking server POST, not before it).
+  it('swallows a synchronously-throwing window.mixpanel.track (non-blocking)', () => {
+    window.dataLayer = [];
+    window.mixpanel = { track: vi.fn(() => { throw new Error('CDN script blew up'); }) };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() =>
+      emit('shareLink', { category: 'share' }, { userId: 'u1', debug: false, isExtension: false }),
+    ).not.toThrow();
+    // Server path already fired (non-blocking POST happens before the CDN push).
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'shareLink', userId: 'u1', category: 'share' });
+    spy.mockRestore();
+  });
 });
 
 describe('analytics.loadClientAnalytics', () => {

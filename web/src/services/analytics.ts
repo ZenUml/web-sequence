@@ -49,13 +49,26 @@ export function emit(
 
   // Client CDN path: push to GTM/Mixpanel when their snippets are present. Skipped
   // under the extension, where the CDN scripts are never injected.
+  //
+  // GUARDED: `emit` is fire-and-forget and MUST NOT throw into its caller. Callers
+  // invoke `track(...)` synchronously as the FIRST statement of user-action handlers
+  // (onShare runs track() before share.share(); save runs track() before persisting).
+  // A CDN-injected third-party global (`window.mixpanel.track`) can throw
+  // synchronously — if that escaped, the exception would propagate out of the handler
+  // and the actual share/save would never execute. Swallow + log so the non-blocking
+  // contract holds for the client path too (the server path is already non-blocking).
   if (!isExtension) {
     if (typeof window !== 'undefined') {
-      if (Array.isArray(window.dataLayer)) {
-        window.dataLayer.push({ event, ...props });
-      }
-      if (window.mixpanel && typeof window.mixpanel.track === 'function') {
-        window.mixpanel.track(event, props);
+      try {
+        if (Array.isArray(window.dataLayer)) {
+          window.dataLayer.push({ event, ...props });
+        }
+        if (window.mixpanel && typeof window.mixpanel.track === 'function') {
+          window.mixpanel.track(event, props);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[analytics] client CDN push failed (non-blocking)', e);
       }
     }
   }
