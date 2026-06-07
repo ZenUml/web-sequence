@@ -16,7 +16,7 @@ export interface CodeEditorProps {
   onChange: (value: string) => void;
   readOnly?: boolean;
   testId?: string;
-  themeId?: string;               // default 'monokai' (DEFAULT_SETTINGS.editorTheme)
+  themeId?: string;               // default DEFAULT_THEME ('ink' — calm drafting theme)
   fontFamily?: string;            // default 'FiraCode' (DEFAULT_SETTINGS.editorFont)
   fontSize?: number;              // default 16 (DEFAULT_SETTINGS.fontSize)
   keymap?: 'sublime' | 'vim';     // default 'sublime' (CM6 default keymap, no vim)
