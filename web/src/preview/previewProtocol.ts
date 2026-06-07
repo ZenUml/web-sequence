@@ -23,13 +23,18 @@ export type FrameMessage =
   | { type: 'evalResult'; id: number; ok: boolean; value: string }
   | { type: 'error'; message: string }
   // Embed-only: posted after each render so the host can shrink-wrap the iframe
-  // to its content height. Only sent when the bootstrap was started in embed mode
-  // (previewHtml's `embed=true` path); ignored by non-embed PreviewFrame instances.
-  | { type: 'contentHeight'; height: number };
+  // to its natural content size (both width AND height). Only sent when the bootstrap
+  // was started in embed mode (previewHtml's `embed=true` path); ignored by non-embed
+  // PreviewFrame instances.
+  // width  = .bg-skin-canvas.scrollWidth + 16px right buffer (so lifeline tails / right
+  //           edges are not clipped by the card edge).
+  // height = #diagram.scrollHeight + 24px bottom buffer (so lifeline dashes at the
+  //           foot of each column are not clipped by the iframe bottom).
+  | { type: 'contentSize'; width: number; height: number };
 
 const FRAME_TYPES = new Set([
   'ready', 'rendered', 'codeChange', 'png', 'console', 'evalResult', 'error',
-  'contentHeight',
+  'contentSize',
 ]);
 
 export function isFrameMessage(data: unknown): data is FrameMessage {

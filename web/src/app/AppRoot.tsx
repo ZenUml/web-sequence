@@ -716,14 +716,15 @@ export function AppRoot() {
         <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
         {/* Render the diagram on paper inside a hairline + shadow card so the embed
             reads as an intentional framed surface, not an unstyled white box on cream.
-            The card hugs the diagram's natural height: PreviewFrame posts a
-            'contentHeight' message after each render (embed-only) and sets an explicit
-            pixel height on the iframe, so the card (height:auto) wraps it snugly.
-            max-h-[calc(100vh-5rem)] + overflow-auto caps and scrolls tall diagrams;
-            the wrapper's items-center/justify-center then centers the card. */}
+            PreviewFrame posts a 'contentSize' message after each render (embed-only)
+            and sets an explicit pixel width + height on the iframe, so the card
+            (width/height:auto, i.e. shrink-to-fit) hugs the diagram on both axes.
+            The wrapper's items-center/justify-center centers the card in both axes.
+            max-w/max-h cap + overflow-auto ensure a large diagram scrolls rather than
+            bleeding beyond the viewport. */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <div className="mx-auto max-w-3xl w-full max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
+            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
               <PreviewFrame
                 ref={previewRef}
                 code={item.js}

@@ -36,9 +36,9 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const embedMode = embed ?? detectFromEnv().isEmbed;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
-  // Embed-only: iframe natural content height reported via 'contentHeight' message.
-  // null = no report yet (iframe uses h-full to fill the card during initial load).
-  const [embedContentHeight, setEmbedContentHeight] = useState<number | null>(null);
+  // Embed-only: iframe natural content size reported via 'contentSize' message.
+  // null = no report yet (iframe uses h-full / default width during initial load).
+  const [embedContentSize, setEmbedContentSize] = useState<{ width: number; height: number } | null>(null);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
   const pngId = useRef(0);
   const evalWaiters = useRef(new Map<number, (r: { ok: boolean; value: string }) => void>());
@@ -87,11 +87,11 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
           if (w) { w({ ok: msg.ok, value: msg.value }); evalWaiters.current.delete(msg.id); }
           break;
         }
-        case 'contentHeight':
-          // Embed-only: shrink-wrap the iframe to the diagram's natural content height.
-          // The card wrapper in AppRoot supplies max-h + overflow-auto, so a tall
-          // diagram scrolls rather than blowing out the viewport.
-          if (embedMode) setEmbedContentHeight(msg.height);
+        case 'contentSize':
+          // Embed-only: shrink-wrap the iframe to the diagram's natural content size
+          // (width × height). The card wrapper in AppRoot supplies max-w / max-h +
+          // overflow-auto, so a diagram larger than the viewport cap scrolls.
+          if (embedMode) setEmbedContentSize({ width: msg.width, height: msg.height });
           break;
       }
     }
@@ -139,13 +139,14 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     },
   }));
 
-  // In embed mode: once the bootstrap reports contentHeight, set an explicit pixel
-  // height so the iframe shrinks to its content. Before the first report, fall back
-  // to h-full so the card is not a 0-px collapsed box during initial load.
-  // In editor mode: always h-full (fills the split-pane right panel).
+  // In embed mode: once the bootstrap reports contentSize, set explicit pixel
+  // width and height so the iframe shrinks to its content on both axes. Before the
+  // first report, fall back to h-full (editor-style fill) so the card is not a 0-px
+  // collapsed box during initial load.
+  // In editor mode: always h-full w-full (fills the split-pane right panel).
   const iframeStyle =
-    embedMode && embedContentHeight !== null
-      ? { height: `${embedContentHeight}px` }
+    embedMode && embedContentSize !== null
+      ? { width: `${embedContentSize.width}px`, height: `${embedContentSize.height}px` }
       : undefined;
 
   return (
@@ -154,7 +155,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       data-testid="preview-iframe"
       title="ZenUML preview"
       srcDoc={srcdoc}
-      className={embedMode && embedContentHeight !== null ? 'w-full border-0' : 'h-full w-full border-0'}
+      className={embedMode && embedContentSize !== null ? 'border-0' : 'h-full w-full border-0'}
       style={iframeStyle}
       allowFullScreen
     />

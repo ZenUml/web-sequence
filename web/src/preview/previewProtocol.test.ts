@@ -14,17 +14,21 @@ describe('isFrameMessage', () => {
     expect(isFrameMessage({ noType: true })).toBe(false);
   });
 
-  // DISCRIMINATING (embed card-hugging, round-4): the bootstrap posts
-  // { type: 'contentHeight', height: <px> } after each embed render so the host
-  // can shrink-wrap the iframe. Removing 'contentHeight' from FRAME_TYPES makes
-  // this test fail; adding it as an unguarded new type that isn't recognised here
-  // also fails the negative case.
-  it('accepts contentHeight message (embed iframe sizing)', () => {
-    expect(isFrameMessage({ type: 'contentHeight', height: 320 })).toBe(true);
-    expect(isFrameMessage({ type: 'contentHeight', height: 0 })).toBe(true);
+  // DISCRIMINATING (embed card shrink-wrap, round-5): the bootstrap posts
+  // { type: 'contentSize', width: <px>, height: <px> } after each embed render so
+  // the host can shrink-wrap the iframe on BOTH axes (width + height). The width
+  // is measured from .bg-skin-canvas.scrollWidth (the inline-block DiagramFrame root)
+  // — NOT from #diagram.scrollWidth which equals the full iframe clientWidth.
+  // Removing 'contentSize' from FRAME_TYPES makes this test fail; adding it as an
+  // unguarded new type that isn't recognised also fails the negative case.
+  it('accepts contentSize message (embed iframe width+height sizing)', () => {
+    expect(isFrameMessage({ type: 'contentSize', width: 265, height: 344 })).toBe(true);
+    expect(isFrameMessage({ type: 'contentSize', width: 0, height: 0 })).toBe(true);
   });
-  it('rejects a contentHeight-shaped message with wrong type string', () => {
-    expect(isFrameMessage({ type: 'ContentHeight', height: 320 })).toBe(false);
-    expect(isFrameMessage({ type: 'content-height', height: 320 })).toBe(false);
+  it('rejects a contentSize-shaped message with wrong type string', () => {
+    expect(isFrameMessage({ type: 'ContentSize', width: 265, height: 344 })).toBe(false);
+    expect(isFrameMessage({ type: 'content-size', width: 265, height: 344 })).toBe(false);
+    // Old contentHeight type is no longer in the protocol — must be rejected.
+    expect(isFrameMessage({ type: 'contentHeight', height: 320 })).toBe(false);
   });
 });

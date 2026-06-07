@@ -120,4 +120,36 @@ describe('PreviewFrame', () => {
     expect(srcdoc).toContain('id="zenuml-embed-suppress"');
     expect(srcdoc).toContain('.footer{display:none !important}');
   });
+
+  // DISCRIMINATING (round-5): in embed mode, a 'contentSize' message must set BOTH
+  // explicit pixel width and height on the iframe — width shrink-wraps the horizontal
+  // stranding gap; height is the existing round-4 card-hugging. In non-embed mode the
+  // message must be silently ignored (no style change, no crash).
+  //
+  // The width comes from .bg-skin-canvas.scrollWidth (the inline-block DiagramFrame
+  // root — NOT from #diagram/docScrollWidth which equal the full iframe clientWidth).
+  // Removing the 'contentSize' case from the switch OR wiring it to only set height
+  // makes this test fail.
+  it('in embed mode: contentSize message sets both iframe width and height', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} embed />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 265, height: 344 } }));
+    });
+    expect(iframe.style.width).toBe('265px');
+    expect(iframe.style.height).toBe('344px');
+  });
+
+  it('in non-embed mode: contentSize message is ignored (style stays unset)', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 265, height: 344 } }));
+    });
+    // Non-embed ignores the message: no explicit pixel style, h-full w-full class kept.
+    expect(iframe.style.width).toBe('');
+    expect(iframe.style.height).toBe('');
+  });
 });
