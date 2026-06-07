@@ -1088,4 +1088,22 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(href).toContain('id=shared-1');
     expect(href).toContain('share-token=tok');
   });
+
+  it('?embed with a dead share-link (item null) shows an on-paper empty state, not blank', async () => {
+    // A bad ?id (or ?code that fails to resolve) leaves currentItem null. The embed
+    // branch renders BEFORE the `if (!item)` guard, so without this state the user
+    // sees blank cream. The default cloudFunctions mock rejects getSharedItem, so an
+    // ?id embed with no per-test resolve never seeds an item.
+    // DISCRIMINATING: reverting the embed-branch `: <empty state>` back to `: null`
+    // → `embed-empty` is never rendered → findByTestId rejects → this test fails.
+    window.history.replaceState({}, '', '/?embed&id=does-not-exist&share-token=bad');
+    render(<AppRoot />);
+    // The embed shell (header) still renders — only the diagram body is replaced.
+    await screen.findByTestId('embed-header');
+    // currentItem stays null on the rejected shared read.
+    await waitFor(() =>
+      expect(useEditorStore.getState().currentItem).toBeNull(),
+    );
+    expect(await screen.findByTestId('embed-empty')).toBeInTheDocument();
+  });
 });

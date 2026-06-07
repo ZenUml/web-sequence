@@ -8,7 +8,7 @@ import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore } from '../state/uiStore';
 import type { Item, JsMode, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
-import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
+import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue, Tooltip } from '../ui';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
 import { Toolbox } from '../components/Toolbox';
@@ -714,12 +714,19 @@ export function AppRoot() {
     return (
       <div data-testid="embed-root" className="flex flex-col h-full w-full surface-paper">
         <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
-        {/* Render the diagram directly on paper, centered with breathing room and a
-            hairline + shadow so the embed reads as an intentional framed surface
-            rather than an unstyled white box on cream. */}
+        {/* Render the diagram on paper inside a hairline + shadow card so the embed
+            reads as an intentional framed surface, not an unstyled white box on cream.
+            The card is centered and width/height-capped (NOT h-full w-full) so a small
+            diagram no longer strands itself in one corner of a vast cream area; the
+            wrapper's items-center/justify-center then centers the card itself.
+            overflow-auto (not -hidden) lets a tall/wide diagram scroll rather than clip.
+            NOTE: the diagram is top-aligned WITHIN the iframe document (previewHtml's
+            body has no centering, and that file is shared with the editor / out of
+            embed scope), so this fix sizes & centers the CARD — it does not re-center
+            the iframe's internal content. */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <div className="h-full w-full rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-hidden flex items-center justify-center">
+            <div className="mx-auto max-w-3xl w-full h-full max-h-full rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
               <PreviewFrame
                 ref={previewRef}
                 code={item.js}
@@ -727,7 +734,32 @@ export function AppRoot() {
                 stickyOffset={stickyOffset}
               />
             </div>
-          ) : null}
+          ) : (
+            // REQ-EMB: a bad ?code/?id leaves item null. Surface an on-paper empty
+            // state (serif display face + onlight tokens, matching the modal empty
+            // states) instead of returning null and stranding the user on blank cream.
+            <div
+              data-testid="embed-empty"
+              className="mx-auto max-w-md rounded-lg border border-paper-line bg-paper-50 shadow-pop px-8 py-10 text-center"
+            >
+              <h2 className="font-serif text-[22px] leading-tight text-onlight-strong">
+                Diagram unavailable
+              </h2>
+              <p className="mt-2 text-[13px] text-onlight-muted">
+                This embedded diagram could not be loaded. The link may be broken or the
+                diagram is no longer shared.
+              </p>
+              <a
+                data-testid="embed-empty-link"
+                href={openUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex items-center justify-center h-8 px-3 rounded text-[13px] font-medium bg-accent-press text-white hover:bg-accent ring-draft shadow-inset"
+              >
+                Open ZenUML
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -750,6 +782,15 @@ export function AppRoot() {
   }
 
   const previewCss = item.cssMode === 'css' ? item.css : transpiledCss;
+
+  // Editor chrome driven by the user's Settings (REQ-SET). The Settings modal writes
+  // these via handleSettingChange → settingsStore; thread them into BOTH CodeEditors
+  // so theme/font/size/keymap changes actually take effect (they were previously
+  // no-ops — the editors fell back to component defaults). The font field carries the
+  // sentinel 'other' when a custom family is in use; resolve it to the real family
+  // (literal 'other' is not a CSS font and would silently fall back to FiraCode).
+  const editorFontFamily =
+    settings.editorFont === 'other' ? settings.editorCustomFont : settings.editorFont;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -948,28 +989,36 @@ export function AppRoot() {
                     <span className="h-3 w-0.5 rounded-full bg-accent-onDark/70" aria-hidden="true" />
                     DSL
                   </span>
-                  <label className="flex items-center gap-1.5">
-                    <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-faint">
-                      JS
-                    </span>
-                    <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
-                      <SelectTrigger
-                        data-testid="js-mode-select"
-                        aria-label="JavaScript pre-processor mode"
-                        surface="dark"
-                        className="h-7"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {JS_MODES.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
+                  {/* #LOW (editor-wiring): the DSL pane holds ZenUML DSL, not JS — so a bare
+                      "JS" Select here reads as "what language is the DSL?". It actually
+                      controls the pre-processor for the item's embedded <script> (the preview
+                      runs item.js through this pipeline). A Tooltip disambiguates without
+                      removing the control (keeping the js-mode-select testid + the existing
+                      "renders js and css mode selects" coverage). */}
+                  <Tooltip label="Pre-processor for the diagram's embedded <script> code — not the ZenUML DSL above.">
+                    <label className="flex items-center gap-1.5">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-faint">
+                        JS
+                      </span>
+                      <Select value={item.jsMode} onValueChange={(v) => setJsMode(v as JsMode)}>
+                        <SelectTrigger
+                          data-testid="js-mode-select"
+                          aria-label="JavaScript pre-processor mode"
+                          surface="dark"
+                          className="h-7"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {JS_MODES.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  </Tooltip>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
               <div className="flex flex-1 min-h-0 flex-col border-t border-ink-line/40">
                 {/* CSS pane header — secondary surface marker */}
@@ -1007,7 +1056,7 @@ export function AppRoot() {
                     </Select>
                   </div>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
             </div>
             )
