@@ -23,9 +23,9 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem, createShare } from '../services/cloudFunctions';
-import { ensureUser, setItemForUser, unsetItemForUser } from '../services/userService';
-import { localStore } from '../services/storage';
-import { LS_KEYS } from '../config/constants';
+import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds, setUserSetting } from '../services/userService';
+import { localStore, syncStore } from '../services/storage';
+import { LS_KEYS, APP_VERSION } from '../config/constants';
 import type { ProviderName } from '../services/types';
 import { useItems } from '../hooks/useItems';
 import { useFolders } from '../hooks/useFolders';
@@ -36,6 +36,25 @@ import { ShareButton } from '../components/share/ShareButton';
 import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
 import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
 import { downloadText } from '../services/download';
+// M04 — subscription / settings / modals / analytics
+import { useSubscription } from '../hooks/useSubscription';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
+import { isOverFileLimit, limitFor } from '../domain/planLimit';
+import { isPlus } from '../domain/plan';
+import { semverCompare } from '../domain/semver';
+import { config as appConfig } from '../config/firebaseConfig';
+import type { Settings, PlanType } from '../domain/types';
+import { SettingsModal } from '../components/modals/SettingsModal';
+import { CreateNewModal } from '../components/modals/CreateNewModal';
+import { HelpModal } from '../components/modals/HelpModal';
+import { CheatSheetModal } from '../components/modals/CheatSheetModal';
+import { KeyboardShortcutsModal } from '../components/modals/KeyboardShortcutsModal';
+import { OnboardingModal } from '../components/modals/OnboardingModal';
+import { SupportPledgeModal } from '../components/modals/SupportPledgeModal';
+import { AtomicCssSettingsModal, type CssSettings } from '../components/modals/AtomicCssSettingsModal';
+import { PricingModal, type BillingPeriod } from '../components/subscription/PricingModal';
+import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
 
 const JS_MODES: { value: JsMode; label: string }[] = [
   { value: 'js', label: 'JavaScript' },
@@ -54,7 +73,7 @@ const CSS_MODES: { value: CssMode; label: string }[] = [
 
 export function AppRoot() {
   // Auth + online status side-effects (no return value needed from useOnlineStatus)
-  const { login, logout } = useAuth();
+  const { login, logout, loginError } = useAuth();
   useOnlineStatus();
 
   const item = useEditorStore((s) => s.currentItem);
@@ -88,6 +107,27 @@ export function AppRoot() {
   const activePanel = useUiStore((s) => s.activePanel);
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
+  // M04: single-modal state + open/close.
+  const activeModal = useUiStore((s) => s.activeModal);
+  const openModal = useUiStore((s) => s.openModal);
+  const closeModal = useUiStore((s) => s.closeModal);
+
+  // M04: subscription (load + derive plan on auth) — `loading` gates the plan-limit
+  // race guard (§1). analytics.track binds the current userId. paddle = checkout.
+  const { subscription, planType, subscribed, loading: subLoading, reload: reloadSubscription } =
+    useSubscription();
+  const { track } = useAnalytics();
+  const { openCheckout } = usePaddle();
+  const paymentEnabled = appConfig.features.payment;
+
+  // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
+  const settings = useSettingsStore((s) => s.settings);
+  const mergeSettings = useSettingsStore((s) => s.merge);
+
+  // M04: plan-limit notice + pricing billing-period state.
+  const [limitNoticeOpen, setLimitNoticeOpen] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+
   // REQ-PST (M02 Task 16): library panel — items list from hook.
   const { items } = useItems();
   // REQ-LIB-6: folders for the library panel (sign-in gated; [] + no-op when signed-out).
@@ -110,6 +150,34 @@ export function AppRoot() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  // M04 one-time trigger: first-run Onboarding (REQ-MOD-3). Opens on boot when the
+  // `onboarded` flag is unset; dismissing marks it (handled at the modal's onDismiss).
+  useEffect(() => {
+    void localStore.get<boolean>(LS_KEYS.onboarded, false).then((seen) => {
+      if (!seen) openModal('onboarding');
+    });
+    // openModal is a stable zustand action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // M04 one-time trigger: Support-pledge on version upgrade (REQ-MOD-3). On boot,
+  // semver-compare the stored lastSeenVersion against APP_VERSION; if behind, open
+  // the pledge. Does NOT pre-empt Onboarding (only one modal is open at a time — the
+  // onboarding open above runs first; the pledge opens once onboarding is dismissed
+  // on the next boot, matching legacy's at-most-one-per-session behavior).
+  useEffect(() => {
+    void localStore.get<string>(LS_KEYS.lastSeenVersion, '').then((seen) => {
+      if (useUiStore.getState().activeModal) return; // don't replace onboarding
+      if (semverCompare(seen || '0.0.0', APP_VERSION) < 0) openModal('pledge');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // NOTE: the signed-in user's settings are loaded ONCE on sign-in by useAuth's
+  // onAuthChange handler (getUserSettings → settingsStore.merge). That IS the
+  // load-once apply (OQ-5); no remote settings subscription. M04 only adds the
+  // settings UI + the per-change persist split (handleSettingChange below).
 
   // REQ-PRV-4 (lazy transpile): plain CSS stays synchronous; transpiled modes
   // (scss/sass/less/stylus/acss) compute asynchronously into local state. For ACSS
@@ -186,17 +254,45 @@ export function AppRoot() {
     if (!it || it.isReadOnly) return;
     // Stamp updatedOn so the local copy reflects the save time.
     const itemToSave: Item = { ...it, updatedOn: Date.now() };
+    const uid = useAuthStore.getState().user?.uid;
+
+    // M04 save analytics (legacy parity): label = not-logged-in / saved / new.
+    track('saveBtnClick', {
+      category: 'ui',
+      label: !uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new',
+    });
+
+    // M04 plan-limit seam (REQ-SUB-5, legacy-exact). Sample the owned ids PRE-INSERT
+    // (before setItem/setItemForUser register this item) so the predicate
+    // `ownedIds.length > limitFor(sub)` matches legacy checkItemsLimit. RACE GUARD:
+    // only enforce when signed-in AND the subscription read has RESOLVED (!subLoading)
+    // — an unresolved subscription transiently derives to 'free', so enforcing would
+    // falsely block a paying user and silently skip their cloud write.
+    let overLimit = false;
+    if (uid && !subLoading) {
+      let ownedIds: string[] = [];
+      try { ownedIds = await getUserItemIds(uid); } catch { ownedIds = []; }
+      overLimit = isOverFileLimit({ subscription, ownedIds, itemId: itemToSave.id });
+    }
+
     useEditorStore.getState().setSaving(true);
     try {
-      // FIX 6: ensure user doc exists before any cloud write to prevent membership loss
-      // on first save after login (ensureUser is memoized per-uid so repeat calls are cheap).
-      const uid = useAuthStore.getState().user?.uid;
-      if (uid) {
+      if (uid && !overLimit) {
+        // FIX 6: ensure user doc exists before any cloud write to prevent membership
+        // loss on first save after login (ensureUser is memoized per-uid).
         await ensureUser(uid);
       }
-      await itemService.setItem(itemToSave.id, itemToSave);
-      if (uid) {
-        try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
+      if (overLimit) {
+        // Softened enforcement: keep the LOCAL copy, withhold the cloud write +
+        // membership. Non-blocking notice with inline upgrade (NOT alert()+forced modal).
+        await itemService.setItem(itemToSave.id, itemToSave, { skipCloud: true });
+        setLimitNoticeOpen(true);
+        track('Free Limit', { category: 'storage', label: planType });
+      } else {
+        await itemService.setItem(itemToSave.id, itemToSave);
+        if (uid) {
+          try { await setItemForUser(uid, itemToSave.id); } catch { /* membership best-effort */ }
+        }
       }
       useEditorStore.getState().markSaved();
     } finally {
@@ -211,7 +307,86 @@ export function AppRoot() {
         setNoticeOpen(true);
       }
     }
-    // M04: enforce plan limit; trackEvent('fn','saved').
+  }
+
+  // M04 §8: custom-CSS is Plus-only. Returns true if the attempted CSS change is
+  // GATED (caller must NOT apply it). Anonymous → prompt sign-in (one-time notice);
+  // signed-in non-Plus → open pricing. RACE GUARD: while the subscription is still
+  // loading we do NOT gate (a Plus user mid-load must not be treated as Free). Plus
+  // users edit freely.
+  function cssGated(): boolean {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setNoticeOpen(true); // sign-in nudge (saved-on-device notice routes to login)
+      track('Free Limit', { category: 'custom-css' });
+      return true;
+    }
+    if (subLoading) return false; // unresolved → not gated (race guard)
+    if (isPlus(subscription)) return false;
+    openModal('pricing');
+    track('Free Limit', { category: 'custom-css' });
+    return true;
+  }
+
+  function handleSetCss(css: string) {
+    if (cssGated()) return;
+    setCss(css);
+  }
+
+  function handleSetCssMode(mode: CssMode) {
+    // Custom (non-plain) CSS modes are Plus-only; plain 'css' is always allowed.
+    if (mode !== 'css' && cssGated()) return;
+    setCssMode(mode);
+  }
+
+  // M04: settings change — live-apply (settingsStore.merge) + persist split
+  // (syncStore always; cloud when signed-in). REQ-SET-1/4, REQ-PST.
+  function handleSettingChange<K extends keyof Settings>(key: K, value: Settings[K]) {
+    mergeSettings({ [key]: value } as Partial<Settings>);
+    void syncStore.set(key, value);
+    const uid = useAuthStore.getState().user?.uid;
+    if (uid) void setUserSetting(uid, key, value).catch(() => {});
+    track('updatePref-' + key, { category: 'settings', label: String(value) });
+  }
+
+  // M04: Paddle checkout from the pricing modal. Non-logged-in upgrade → sign-in
+  // first (close pricing; the header login affordance is the entry). Guarded by the
+  // payment feature flag at the call site (pricing isn't reachable when off).
+  function handleUpgrade(plan: PlanType) {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) { closeModal(); return; }
+    if (plan === 'free' || plan === 'enterprise') return;
+    openCheckout({
+      planType: plan as CheckoutPlanType,
+      email: currentUser.email ?? undefined,
+      userId: currentUser.uid,
+      onSuccess: () => reloadSubscription(),
+    });
+  }
+
+  // M04: manage plan → open the Paddle-hosted cancel URL in a new tab (REQ-SUB-4).
+  function handleManagePlan() {
+    const url = (subscription as { cancel_url?: string } | null)?.cancel_url;
+    if (url) window.open(url, '_blank', 'noopener');
+  }
+
+  // M04: Create-New → load the chosen template as a fresh owned item.
+  function handleCreateNew(partial: Partial<Item>) {
+    const base = useEditorStore.getState().currentItem;
+    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID() : String(Date.now());
+    useEditorStore.getState().loadItem(migrateToPages({
+      ...(base ?? {}),
+      id,
+      title: 'Untitled',
+      js: '', css: '', html: '',
+      htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+      pages: [], currentPageId: '',
+      createdBy: undefined,
+      isReadOnly: false,
+      ...partial,
+    } as Item));
+    setActivePanel('editor');
   }
 
   // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
@@ -339,6 +514,72 @@ export function AppRoot() {
         onImport={() => void doImport()}
         onDismiss={() => void dismissImport()}
       />
+
+      {/* M04 modal inventory — single-modal state via uiStore.activeModal. */}
+      <SettingsModal
+        open={activeModal === 'settings'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        settings={settings}
+        onChange={handleSettingChange}
+      />
+      <CreateNewModal
+        open={activeModal === 'createNew'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        onSelect={handleCreateNew}
+      />
+      <HelpModal
+        open={activeModal === 'help'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        version={APP_VERSION}
+      />
+      <CheatSheetModal
+        open={activeModal === 'cheatsheet'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+      />
+      <KeyboardShortcutsModal
+        open={activeModal === 'shortcuts'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+      />
+      <OnboardingModal
+        open={activeModal === 'onboarding'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        onDismiss={() => { void localStore.set(LS_KEYS.onboarded, true); closeModal(); }}
+      />
+      <SupportPledgeModal
+        open={activeModal === 'pledge'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        version={APP_VERSION}
+        onDismiss={() => {
+          void localStore.set(LS_KEYS.pledgeModalSeen, true);
+          void localStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
+          track('onboardModalSeen', { category: 'ui', label: APP_VERSION });
+          closeModal();
+        }}
+      />
+      <AtomicCssSettingsModal
+        open={activeModal === 'acss'}
+        onOpenChange={(o) => { if (!o) closeModal(); }}
+        value={(item.cssSettings as CssSettings | undefined) ?? {}}
+        onChange={(next) => { useEditorStore.getState().setCssSettings(next); closeModal(); }}
+      />
+      {paymentEnabled && (
+        <PricingModal
+          open={activeModal === 'pricing'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          currentPlanType={planType}
+          billingPeriod={billingPeriod}
+          onPeriodChange={setBillingPeriod}
+          onUpgrade={handleUpgrade}
+          onContactEnterprise={() => window.open('https://zenuml.com/docs/about/contact-us', '_blank', 'noopener')}
+        />
+      )}
+      <LimitReachedNotice
+        open={limitNoticeOpen}
+        onOpenChange={setLimitNoticeOpen}
+        limit={limitFor(subscription)}
+        onUpgrade={() => { setLimitNoticeOpen(false); if (paymentEnabled) openModal('pricing'); }}
+      />
+
       <AppHeader
         title={item.title ?? ''}
         unsavedCount={unsavedCount}
@@ -351,6 +592,16 @@ export function AppRoot() {
         onSave={save}
         onLogin={login}
         onLogout={logout}
+        loginError={loginError}
+        subscribed={subscribed}
+        planType={planType}
+        paymentEnabled={paymentEnabled}
+        onUpgrade={() => openModal('pricing')}
+        onManagePlan={handleManagePlan}
+        onOpenSettings={() => { openModal('settings'); track('openSettingsModal', { category: 'ui' }); }}
+        onOpenCreateNew={() => openModal('createNew')}
+        onOpenHelp={() => openModal('help')}
+        onOpenPricing={() => openModal('pricing')}
         actions={
           <ShareButton
             disabled={shareDisabled}
@@ -411,7 +662,7 @@ export function AppRoot() {
                   <select
                     data-testid="css-mode-select"
                     value={item.cssMode}
-                    onChange={(e) => setCssMode(e.target.value as CssMode)}
+                    onChange={(e) => handleSetCssMode(e.target.value as CssMode)}
                     className="border border-gray-300 rounded px-1 py-0.5"
                   >
                     {CSS_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -420,7 +671,7 @@ export function AppRoot() {
               </div>
               <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" /></div>
-              <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={setCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
+              <div className="flex-1 min-h-0 border-t border-gray-200"><CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} /></div>
             </div>
             )
           }
