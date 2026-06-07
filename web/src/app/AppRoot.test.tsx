@@ -496,6 +496,26 @@ describe('AppRoot — M04 one-time triggers', () => {
     expect(useUiStore.getState().activeModal).not.toBe('pledge');
     expect(screen.queryByTestId('pledge-modal')).not.toBeInTheDocument();
   });
+
+  // Discriminating (adversarial review #2): a user MIGRATING from legacy who already
+  // dismissed the pledge has pledgeModalSeen=true in the SAME localStorage the rewrite
+  // reads, but a still-behind lastSeenVersion (legacy bumps lastSeenVersion only on
+  // new-user onboarding / notification-click, NOT on pledge dismiss — app.jsx:329-331).
+  // Legacy gates the pledge on `lastSeenVersion && semverCompare<0 && !pledgeModalSeen`.
+  // The rewrite must honor pledgeModalSeen, or it re-shows the pledge once to a user
+  // who already saw it (wrong audience, REQ-MOD-3). Reverting the !pledgeModalSeen gate
+  // makes the pledge open here → fails.
+  it('does NOT re-open the pledge for a legacy user who already dismissed it (pledgeModalSeen=true)', async () => {
+    window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+    window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify('0.0.1')); // behind APP_VERSION
+    window.localStorage.setItem(LS_KEYS.pledgeModalSeen, JSON.stringify(true)); // already saw it (legacy)
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await waitFor(() => expect(screen.getByTestId('header-title')).toBeInTheDocument());
+    expect(useUiStore.getState().activeModal).not.toBe('pledge');
+    expect(screen.queryByTestId('pledge-modal')).not.toBeInTheDocument();
+  });
 });
 
 describe('AppRoot — signed-out settings persistence (adversarial review #3)', () => {

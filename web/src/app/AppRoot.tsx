@@ -188,8 +188,18 @@ export function AppRoot() {
   // onboarding open above runs first; the pledge opens once onboarding is dismissed
   // on the next boot, matching legacy's at-most-one-per-session behavior).
   useEffect(() => {
-    void localStore.get<string>(LS_KEYS.lastSeenVersion, '').then((seen) => {
+    void (async () => {
+      const seen = await localStore.get<string>(LS_KEYS.lastSeenVersion, '');
+      // pledgeModalSeen latch (legacy parity: app.jsx:331 `!window.localStorage.
+      // pledgeModalSeen`). A user MIGRATING from legacy who already dismissed the
+      // pledge has pledgeModalSeen=true (set by legacy on dismiss) but a still-behind
+      // lastSeenVersion (legacy bumps lastSeenVersion only on new-user onboarding /
+      // notification-click, NOT on pledge dismiss). Reading this flag prevents a
+      // spurious one-time re-show to that already-served audience (REQ-MOD-3) and
+      // makes pledgeModalSeen a live latch instead of dead state.
+      const pledgeSeen = await localStore.get<boolean>(LS_KEYS.pledgeModalSeen, false);
       if (useUiStore.getState().activeModal) return; // don't replace onboarding
+      if (pledgeSeen) return;
       // Truthiness gate (legacy parity: app.jsx:329 `lastSeenVersion &&`). A
       // brand-new user has no stored lastSeenVersion — the pledge is an UPGRADE
       // prompt and must never fire for someone who has no prior version baseline.
@@ -199,7 +209,7 @@ export function AppRoot() {
       // users, so by their next boot this is truthy and the pledge stays suppressed.
       if (!seen) return;
       if (semverCompare(seen, APP_VERSION) < 0) openModal('pledge');
-    });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
