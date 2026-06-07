@@ -12,6 +12,11 @@ import type { Item } from './types';
 export interface Template {
   id: 'basic' | 'black-white' | 'blue' | 'starUMLTheme';
   title: string;
+  // Picker grouping (REQ §04): 'start' = example starters, 'styles' = themed
+  // looks. ADDITIVE optional field — does NOT affect template content/ids or the
+  // onSelect(item) contract; only drives the CreateNewModal section a card lands
+  // in. Defaults to 'styles' when absent.
+  group?: 'start' | 'styles';
   item: Partial<Item>;
 }
 
@@ -19,6 +24,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'basic',
     title: 'Basic',
+    group: 'start',
     item: {
       title: 'Basic',
       mainSizes: [30, 70],
@@ -32,6 +38,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'black-white',
     title: 'Black & White',
+    group: 'styles',
     item: {
       title: 'Advanced',
       mainSizes: [30, 70],
@@ -46,6 +53,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'blue',
     title: 'Blue',
+    group: 'styles',
     item: {
       title: 'Advanced',
       mainSizes: [30, 70],
@@ -60,6 +68,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'starUMLTheme',
     title: 'starUML Theme',
+    group: 'styles',
     item: {
       title: 'starUML Theme',
       mainSizes: [30, 70],

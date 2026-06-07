@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { CreateNewModal } from './CreateNewModal';
 import { TEMPLATES, blankTemplate } from '../../domain/templates';
 
@@ -50,6 +50,37 @@ describe('CreateNewModal', () => {
       p.onSelect.mockClear();
       fireEvent.click(screen.getByTestId(`create-template-${t.id}`));
       expect(p.onSelect.mock.calls[0][0].js).toBe(t.item.js);
+    }
+  });
+
+  // --- §04 visual-picker upgrades ---------------------------------------
+
+  it('shows the template look, NOT the raw DSL body (schematic thumbnails replace mono source)', () => {
+    setup();
+    // Distinctive snippets from the template DSL must be absent from the picker —
+    // proves the raw `{t.item.js}` body was replaced by a CSS thumbnail.
+    expect(screen.queryByText(/A\.method\(\)/)).toBeNull();
+    expect(screen.queryByText(/Get order by id/)).toBeNull();
+  });
+
+  it('renders the Start and Styles section eyelabels', () => {
+    setup();
+    expect(screen.getByText('Start')).toBeTruthy();
+    expect(screen.getByText('Styles')).toBeTruthy();
+  });
+
+  it('groups Blank + basic under Start and the themed templates under Styles', () => {
+    setup();
+    const start = screen.getByText('Start').closest('section')!;
+    const styles = screen.getByText('Styles').closest('section')!;
+
+    expect(within(start).getByTestId('create-blank')).toBeTruthy();
+    expect(within(start).getByTestId('create-template-basic')).toBeTruthy();
+    // basic is a "start" example, not a "styles" theme.
+    expect(within(styles).queryByTestId('create-template-basic')).toBeNull();
+
+    for (const t of TEMPLATES.filter((x) => x.group !== 'start')) {
+      expect(within(styles).getByTestId(`create-template-${t.id}`)).toBeTruthy();
     }
   });
 });

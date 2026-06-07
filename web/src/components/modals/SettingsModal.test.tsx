@@ -84,6 +84,50 @@ describe('SettingsModal', () => {
     }
   });
 
+  // Two-column layout (design §04): an "Editor" column and a "Behavior" column,
+  // each with its own eyelabel header. Both headers must be present.
+  it('renders both the Editor and Behavior column headers', () => {
+    setup();
+    expect(screen.getByText('Editor')).toBeInTheDocument();
+    expect(screen.getByText('Behavior')).toBeInTheDocument();
+  });
+
+  // DISCRIMINATING: the rows must be laid into a responsive 2-column grid
+  // (single column < sm, two columns at sm+). The grid wraps the Editor +
+  // Behavior columns. A flat single-column layout (no sm:grid-cols-2) fails.
+  it('lays the rows into a responsive two-column grid', () => {
+    setup();
+    const themeRow = screen.getByTestId('setting-editorTheme');
+    const grid = themeRow.closest('.grid');
+    expect(grid).not.toBeNull();
+    expect(grid!.className).toMatch(/grid-cols-1/);
+    expect(grid!.className).toMatch(/sm:grid-cols-2/);
+    // The Editor column control and a Behavior column control share the grid.
+    expect(grid).toContainElement(screen.getByTestId('setting-lightVersion'));
+  });
+
+  // The "Plus" gating badge sits next to the Light version row's label. It is
+  // INFORMATIONAL only — see the functional-toggle test below.
+  it('renders a "Plus" badge adjacent to the Light version toggle', () => {
+    setup();
+    const badge = screen.getByTestId('setting-lightVersion-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent('Plus');
+    // The badge shares the Light version row with its toggle (same ROW container).
+    const row = screen.getByTestId('setting-lightVersion').closest('div');
+    expect(row).not.toBeNull();
+  });
+
+  // DISCRIMINATING: the badge is decorative — the Light version toggle must stay
+  // FUNCTIONAL (no new gate in Phase 3). A `disabled` toggle would not fire onChange.
+  it('Light version toggle remains functional despite the Plus badge', () => {
+    const { onChange } = setup({ lightVersion: false });
+    const toggle = screen.getByTestId('setting-lightVersion');
+    expect(toggle).not.toBeDisabled();
+    fireEvent.click(toggle);
+    expect(onChange).toHaveBeenCalledWith('lightVersion', true);
+  });
+
   it('toggling a boolean switch fires onChange(key, boolean)', () => {
     const { onChange } = setup({ lineWrap: false });
     // Radix Switch renders a button with role=switch; click toggles it.

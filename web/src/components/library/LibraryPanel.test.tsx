@@ -218,7 +218,10 @@ describe('LibraryPanel', () => {
     render(<LibraryPanel items={[]} folders={folders} {...handlers} />);
     const empty = screen.getByTestId('library-empty');
     expect(empty).toHaveTextContent(/No diagrams/i);
+    // Design §04: serif headline + the subtext promise + a decorative framed glyph.
     expect(empty.querySelector('.font-serif')).not.toBeNull();
+    expect(empty).toHaveTextContent(/Start from scratch, or pick a styled template/i);
+    expect(empty.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   });
 
   it('"No diagrams" empty state offers a primary New diagram CTA wired to onNewDiagram', async () => {
@@ -240,6 +243,39 @@ describe('LibraryPanel', () => {
     await userEvent.type(screen.getByTestId('lib-search'), 'zzzznomatch');
     expect(screen.getByTestId('library-empty')).toHaveTextContent(/No matches/i);
     expect(screen.queryByTestId('lib-empty-new')).not.toBeInTheDocument();
+  });
+
+  it('"No diagrams" empty state offers a secondary Browse templates CTA wired to onBrowseTemplates', async () => {
+    const handlers = baseHandlers();
+    const onBrowseTemplates = vi.fn();
+    render(
+      <LibraryPanel
+        items={[]}
+        folders={folders}
+        {...handlers}
+        onBrowseTemplates={onBrowseTemplates}
+      />,
+    );
+    const cta = screen.getByTestId('lib-empty-templates');
+    expect(cta).toHaveTextContent(/Browse templates/i);
+    await userEvent.click(cta);
+    expect(onBrowseTemplates).toHaveBeenCalledTimes(1);
+  });
+
+  it('omits the Browse templates CTA when onBrowseTemplates is not provided', () => {
+    const handlers = baseHandlers();
+    render(<LibraryPanel items={[]} folders={folders} {...handlers} />);
+    expect(screen.getByTestId('library-empty')).toHaveTextContent(/No diagrams yet/i);
+    expect(screen.queryByTestId('lib-empty-templates')).not.toBeInTheDocument();
+  });
+
+  it('"No matches" empty state does NOT show the Browse templates CTA', async () => {
+    // Secondary CTA, like the primary, belongs only to the genuinely-empty library.
+    const onBrowseTemplates = vi.fn();
+    renderPanel({ onBrowseTemplates });
+    await userEvent.type(screen.getByTestId('lib-search'), 'zzzznomatch');
+    expect(screen.getByTestId('library-empty')).toHaveTextContent(/No matches/i);
+    expect(screen.queryByTestId('lib-empty-templates')).not.toBeInTheDocument();
   });
 
   it('shows the "No matches" empty state when a query filters everything out', async () => {

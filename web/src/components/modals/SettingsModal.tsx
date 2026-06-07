@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -58,15 +59,22 @@ function SwitchRow({
   testid,
   checked,
   onCheckedChange,
+  labelBadge,
 }: {
   label: string;
   testid: string;
   checked: boolean;
   onCheckedChange(v: boolean): void;
+  // Optional informational badge rendered right of the label (e.g. the "Plus"
+  // gating affordance on Light version). Decorative only — never gates the toggle.
+  labelBadge?: ReactNode;
 }) {
   return (
     <div className={ROW}>
-      <span className={ROW_LABEL}>{label}</span>
+      <span className="flex items-center gap-1.5">
+        <span className={ROW_LABEL}>{label}</span>
+        {labelBadge}
+      </span>
       <Switch
         data-testid={testid}
         aria-label={label}
@@ -74,6 +82,23 @@ function SwitchRow({
         onCheckedChange={onCheckedChange}
       />
     </div>
+  );
+}
+
+// Small "Plus" pill marking a premium-tier feature. Informational ONLY — it does
+// NOT disable the adjacent toggle (no new functional gate, per Phase 3). Mirrors
+// the design's inline settings badge (§04 source line 458: #EEF3FF bg /
+// var(--accent-press) text / #cfe0ff border, default UI font, mixed-case "Plus")
+// using tokens instead of raw hex: accent-soft tint + accent-press text + an
+// accent-derived border approximating the cfe0ff-ish edge. No uppercase/mono/tracking.
+function PlusBadge() {
+  return (
+    <span
+      data-testid="setting-lightVersion-badge"
+      className="inline-flex items-center rounded border border-accent/30 bg-accent-soft px-1.5 py-px text-[10px] text-accent-press"
+    >
+      Plus
+    </span>
   );
 }
 
@@ -132,121 +157,136 @@ export function SettingsModal({ open, onOpenChange, settings, onChange, isExtens
             className="max-h-[calc(85vh-9rem)] overflow-y-auto pr-1"
           >
             <div data-testid="settings-modal" className="text-onlight-strong">
-              <Section>Editor</Section>
-          <SelectRow
-            label="Theme"
-            testid="setting-editorTheme"
-            value={settings.editorTheme}
-            options={EDITOR_THEMES.map((t) => ({ value: t.id, label: t.label }))}
-            onValueChange={(v) => onChange('editorTheme', v)}
-          />
-          <SelectRow
-            label="Keymap"
-            testid="setting-keymap"
-            value={settings.keymap}
-            options={opts(KEYMAPS)}
-            onValueChange={(v) => onChange('keymap', v as Settings['keymap'])}
-          />
-          <SelectRow
-            label="Font size"
-            testid="setting-fontSize"
-            value={String(settings.fontSize)}
-            options={FONT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
-            onValueChange={(v) => onChange('fontSize', Number(v))}
-          />
-          <SelectRow
-            label="Font family"
-            testid="setting-editorFont"
-            value={settings.editorFont}
-            options={opts(FONTS)}
-            onValueChange={(v) => onChange('editorFont', v)}
-          />
-          {settings.editorFont === 'other' && (
-            <div className={ROW}>
-              <span className={ROW_LABEL}>Custom font</span>
-              <TextInput
-                surface="light"
-                data-testid="setting-editorCustomFont"
-                aria-label="Custom font"
-                className="min-w-[150px]"
-                value={settings.editorCustomFont}
-                placeholder="Font name"
-                onChange={(e) => onChange('editorCustomFont', e.target.value)}
-              />
-            </div>
-          )}
-          <SelectRow
-            label="Indent with"
-            testid="setting-indentWith"
-            value={settings.indentWith}
-            options={opts(INDENT_WITH)}
-            onValueChange={(v) => onChange('indentWith', v as Settings['indentWith'])}
-          />
-          <SelectRow
-            label="Indent size"
-            testid="setting-indentSize"
-            value={String(settings.indentSize)}
-            options={INDENT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
-            onValueChange={(v) => onChange('indentSize', Number(v))}
-          />
-          <SwitchRow
-            label="Line wrap"
-            testid="setting-lineWrap"
-            checked={settings.lineWrap}
-            onCheckedChange={(v) => onChange('lineWrap', v)}
-          />
-          <SwitchRow
-            label="Auto-close tags"
-            testid="setting-autoCloseTags"
-            checked={settings.autoCloseTags}
-            onCheckedChange={(v) => onChange('autoCloseTags', v)}
-          />
-          <SwitchRow
-            label="Autocomplete"
-            testid="setting-autoComplete"
-            checked={settings.autoComplete}
-            onCheckedChange={(v) => onChange('autoComplete', v)}
-          />
+              {/* Two-column layout (design §04): Editor | Behavior. Stacks to one
+                  column below sm, splits into two at sm+ to halve the height so
+                  nothing falls below the fold. gap-x-8 ≈ the design's 30px gutter. */}
+              <div className="grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
+                {/* Editor column */}
+                <div>
+                  <Section>Editor</Section>
+                  <SelectRow
+                    label="Theme"
+                    testid="setting-editorTheme"
+                    value={settings.editorTheme}
+                    options={EDITOR_THEMES.map((t) => ({ value: t.id, label: t.label }))}
+                    onValueChange={(v) => onChange('editorTheme', v)}
+                  />
+                  <SelectRow
+                    label="Keymap"
+                    testid="setting-keymap"
+                    value={settings.keymap}
+                    options={opts(KEYMAPS)}
+                    onValueChange={(v) => onChange('keymap', v as Settings['keymap'])}
+                  />
+                  <SelectRow
+                    label="Font size"
+                    testid="setting-fontSize"
+                    value={String(settings.fontSize)}
+                    options={FONT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                    onValueChange={(v) => onChange('fontSize', Number(v))}
+                  />
+                  <SelectRow
+                    label="Font family"
+                    testid="setting-editorFont"
+                    value={settings.editorFont}
+                    options={opts(FONTS)}
+                    onValueChange={(v) => onChange('editorFont', v)}
+                  />
+                  {settings.editorFont === 'other' && (
+                    <div className={ROW}>
+                      <span className={ROW_LABEL}>Custom font</span>
+                      <TextInput
+                        surface="light"
+                        data-testid="setting-editorCustomFont"
+                        aria-label="Custom font"
+                        className="min-w-[150px]"
+                        value={settings.editorCustomFont}
+                        placeholder="Font name"
+                        onChange={(e) => onChange('editorCustomFont', e.target.value)}
+                      />
+                    </div>
+                  )}
+                  <SelectRow
+                    label="Indent with"
+                    testid="setting-indentWith"
+                    value={settings.indentWith}
+                    options={opts(INDENT_WITH)}
+                    onValueChange={(v) => onChange('indentWith', v as Settings['indentWith'])}
+                  />
+                  <SelectRow
+                    label="Indent size"
+                    testid="setting-indentSize"
+                    value={String(settings.indentSize)}
+                    options={INDENT_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                    onValueChange={(v) => onChange('indentSize', Number(v))}
+                  />
+                  <SwitchRow
+                    label="Line wrap"
+                    testid="setting-lineWrap"
+                    checked={settings.lineWrap}
+                    onCheckedChange={(v) => onChange('lineWrap', v)}
+                  />
+                  <SwitchRow
+                    label="Auto-close tags"
+                    testid="setting-autoCloseTags"
+                    checked={settings.autoCloseTags}
+                    onCheckedChange={(v) => onChange('autoCloseTags', v)}
+                  />
+                  <SwitchRow
+                    label="Autocomplete"
+                    testid="setting-autoComplete"
+                    checked={settings.autoComplete}
+                    onCheckedChange={(v) => onChange('autoComplete', v)}
+                  />
+                </div>
 
-          <Section>Behavior</Section>
-          <SwitchRow
-            label="Preserve last code"
-            testid="setting-preserveLastCode"
-            checked={settings.preserveLastCode}
-            onCheckedChange={(v) => onChange('preserveLastCode', v)}
-          />
-          <SwitchRow
-            label="Auto-preview"
-            testid="setting-autoPreview"
-            checked={settings.autoPreview}
-            onCheckedChange={(v) => onChange('autoPreview', v)}
-          />
-          <SwitchRow
-            label="Auto-save"
-            testid="setting-autoSave"
-            checked={settings.autoSave}
-            onCheckedChange={(v) => onChange('autoSave', v)}
-          />
-          <SwitchRow
-            label="Preserve console logs"
-            testid="setting-preserveConsoleLogs"
-            checked={settings.preserveConsoleLogs}
-            onCheckedChange={(v) => onChange('preserveConsoleLogs', v)}
-          />
-          <SwitchRow
-            label="Refresh on resize"
-            testid="setting-refreshOnResize"
-            checked={settings.refreshOnResize}
-            onCheckedChange={(v) => onChange('refreshOnResize', v)}
-          />
-          <SwitchRow
-            label="Light version"
-            testid="setting-lightVersion"
-            checked={settings.lightVersion}
-            onCheckedChange={(v) => onChange('lightVersion', v)}
-          />
+                {/* Behavior column */}
+                <div>
+                  <Section>Behavior</Section>
+                  <SwitchRow
+                    label="Preserve last code"
+                    testid="setting-preserveLastCode"
+                    checked={settings.preserveLastCode}
+                    onCheckedChange={(v) => onChange('preserveLastCode', v)}
+                  />
+                  <SwitchRow
+                    label="Auto-preview"
+                    testid="setting-autoPreview"
+                    checked={settings.autoPreview}
+                    onCheckedChange={(v) => onChange('autoPreview', v)}
+                  />
+                  <SwitchRow
+                    label="Auto-save"
+                    testid="setting-autoSave"
+                    checked={settings.autoSave}
+                    onCheckedChange={(v) => onChange('autoSave', v)}
+                  />
+                  <SwitchRow
+                    label="Preserve console logs"
+                    testid="setting-preserveConsoleLogs"
+                    checked={settings.preserveConsoleLogs}
+                    onCheckedChange={(v) => onChange('preserveConsoleLogs', v)}
+                  />
+                  <SwitchRow
+                    label="Refresh on resize"
+                    testid="setting-refreshOnResize"
+                    checked={settings.refreshOnResize}
+                    onCheckedChange={(v) => onChange('refreshOnResize', v)}
+                  />
+                  {/* Light version carries the informational "Plus" badge (gated
+                      look) but the toggle stays fully functional — no new gate. */}
+                  <SwitchRow
+                    label="Light version"
+                    testid="setting-lightVersion"
+                    checked={settings.lightVersion}
+                    onCheckedChange={(v) => onChange('lightVersion', v)}
+                    labelBadge={<PlusBadge />}
+                  />
+                </div>
+              </div>
 
-          {isExtension && (
+              {/* Extension + Default modes stay full-width below the two columns. */}
+              {isExtension && (
             <>
               <Section>Extension</Section>
               <SwitchRow

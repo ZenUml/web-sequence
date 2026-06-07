@@ -31,6 +31,10 @@ export interface LibraryPanelProps {
   // Optional so the (out-of-scope) caller compiles even if it doesn't yet pass one.
   // Drives the "No diagrams" empty-state CTA; the button is omitted when absent.
   onNewDiagram?(): void;
+  // Optional — secondary empty-state CTA that opens the visual template picker.
+  // The "Browse templates" button is omitted when this prop is absent (mirrors
+  // the onNewDiagram pattern). Controller wires it to openModal('createNew').
+  onBrowseTemplates?(): void;
   readOnly?: boolean;
 }
 
@@ -58,6 +62,7 @@ export function LibraryPanel({
   onRenameFolder,
   onDeleteFolder,
   onNewDiagram,
+  onBrowseTemplates,
   readOnly = false,
 }: LibraryPanelProps) {
   const query = useLibraryStore((s) => s.query);
@@ -195,22 +200,65 @@ export function LibraryPanel({
             className="flex flex-1 flex-col items-center justify-center gap-3 bg-blueprint p-8"
             data-testid="library-empty"
           >
-            <h2 className="font-serif text-[28px] leading-tight tracking-tight text-ondark-strong">
-              {libraryEmpty ? 'No diagrams' : 'No matches'}
-            </h2>
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-              {libraryEmpty ? 'Start your first diagram' : 'Try a different search'}
-            </p>
-            {libraryEmpty && onNewDiagram && (
-              <Button
-                variant="primary"
-                size="md"
-                data-testid="lib-empty-new"
-                className="mt-2"
-                onClick={() => onNewDiagram()}
-              >
-                New diagram
-              </Button>
+            {libraryEmpty ? (
+              <>
+                {/* Framed folder glyph (design §04): ~54px rounded tile on a
+                    raised ink-700 surface with an ink-line hairline. The icon
+                    is decorative — the heading below carries the meaning. */}
+                <div className="flex h-[54px] w-[54px] items-center justify-center rounded-2xl border border-ink-line bg-ink-700 text-ondark-muted">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-6 w-6"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+                  </svg>
+                </div>
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <h2 className="font-serif text-[28px] leading-tight tracking-tight text-ondark-strong">
+                    No diagrams yet
+                  </h2>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
+                    Start from scratch, or pick a styled template.
+                  </p>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  {onNewDiagram && (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      data-testid="lib-empty-new"
+                      onClick={() => onNewDiagram()}
+                    >
+                      New diagram
+                    </Button>
+                  )}
+                  {onBrowseTemplates && (
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      data-testid="lib-empty-templates"
+                      onClick={() => onBrowseTemplates()}
+                    >
+                      Browse templates
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="font-serif text-[28px] leading-tight tracking-tight text-ondark-strong">
+                  No matches
+                </h2>
+                <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
+                  Try a different search
+                </p>
+              </>
             )}
           </div>
         ) : (

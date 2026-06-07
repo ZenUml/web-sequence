@@ -996,6 +996,10 @@ export function AppRoot() {
                 onCreateFolder={(name) => void createFolder(name)}
                 onRenameFolder={(id, name) => void renameFolder(id, name)}
                 onDeleteFolder={(id) => void deleteFolder(id)}
+                // §04 empty-state CTAs: New diagram → fresh item + jump to the editor;
+                // Browse templates → the visual CreateNewModal (which IS the templates panel).
+                onNewDiagram={() => { useEditorStore.getState().newItem(); setActivePanel('editor'); }}
+                onBrowseTemplates={() => openModal('createNew')}
                 readOnly={!user}
               />
             ) : (
