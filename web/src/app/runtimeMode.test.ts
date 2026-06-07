@@ -74,6 +74,34 @@ describe('parseEmbedCode — legacy JSON-item vs raw-DSL backward compat', () =>
     expect(parseEmbedCode('"A.b"').js).toBe('"A.b"');
     expect(parseEmbedCode('[1,2,3]').js).toBe('[1,2,3]');
   });
+
+  // Finding 1 (adversarial review): the legacy JSON item carries cssMode/htmlMode/
+  // jsMode (e.g. a scss item). parseEmbedCode must surface them so the render path
+  // transpiles instead of showing raw pre-processor source.
+  it('carries cssMode/htmlMode/jsMode from a legacy JSON item (so the preview transpiles)', () => {
+    const legacy = JSON.stringify({
+      js: 'A.b()', css: '$c: red; .x { color: $c; }', cssMode: 'scss',
+      html: '# Title', htmlMode: 'markdown', jsMode: 'typescript',
+    });
+    const p = parseEmbedCode(legacy);
+    expect(p.cssMode).toBe('scss');
+    expect(p.htmlMode).toBe('markdown');
+    expect(p.jsMode).toBe('typescript');
+  });
+
+  it('defaults the modes to css/html/js when absent (legacy item or raw DSL)', () => {
+    expect(parseEmbedCode(JSON.stringify({ js: 'A.b()' })).cssMode).toBe('css');
+    const raw = parseEmbedCode('A.method()');
+    expect(raw.cssMode).toBe('css');
+    expect(raw.htmlMode).toBe('html');
+    expect(raw.jsMode).toBe('js');
+  });
+
+  it('rejects an unknown/hostile mode and falls back to the plain default', () => {
+    const p = parseEmbedCode(JSON.stringify({ js: 'A.b()', cssMode: 'evil', jsMode: 42 }));
+    expect(p.cssMode).toBe('css');
+    expect(p.jsMode).toBe('js');
+  });
 });
 
 // M05 Task 10: confirm the packaged extension is detected WITHOUT any injected

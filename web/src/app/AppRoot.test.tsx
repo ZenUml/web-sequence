@@ -1003,6 +1003,26 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(useEditorStore.getState().currentItem?.title).toBe('Legacy');
   });
 
+  it('?embed&code=<legacy scss item> seeds the real cssMode so the preview transpiles (finding 1)', async () => {
+    // Legacy embed links carried the full item, including a pre-processor cssMode.
+    // Hardcoding cssMode:'css' in the seed rendered scss/less source verbatim.
+    // DISCRIMINATING: revert AppRoot's seed back to `cssMode:'css'` → currentItem.cssMode
+    // becomes 'css' → this assertion fails. The seed is the bug site, so the assertion
+    // targets the seeded item (not just parseEmbedCode).
+    const legacy = encodeURIComponent(
+      JSON.stringify({ js: 'A.b()', css: '$c: red;\n.x { color: $c; }', cssMode: 'scss', title: 'Styled' }),
+    );
+    window.history.replaceState({}, '', `/?embed&code=${legacy}`);
+    render(<AppRoot />);
+    await screen.findByTestId('embed-header');
+    await waitFor(() =>
+      expect(useEditorStore.getState().currentItem?.cssMode).toBe('scss'),
+    );
+    // The preview branch (item.cssMode === 'css' ? item.css : transpiledCss) now takes
+    // the transpiled path because the mode is no longer forced to 'css'.
+    expect(useEditorStore.getState().currentItem?.css).toContain('$c');
+  });
+
   it('?embed applies the inline title to the embed header', async () => {
     window.history.replaceState({}, '', '/?embed&code=A.b&title=My%20Flow');
     render(<AppRoot />);

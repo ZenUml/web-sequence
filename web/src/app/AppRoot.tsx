@@ -367,7 +367,12 @@ export function AppRoot() {
       title: payload.title ?? 'Untitled',
       js: payload.js,
       css: payload.css, html: payload.html,
-      htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+      // Finding 1 (adversarial review): honour the pre-processor modes the legacy
+      // JSON item carried. Hardcoding cssMode:'css' rendered scss/less/etc. embeds
+      // as raw source — the preview branch (item.cssMode === 'css' ? raw : transpiled)
+      // only transpiles when the real mode survives here.
+      htmlMode: payload.htmlMode, cssMode: payload.cssMode, jsMode: payload.jsMode,
+      cssSettings: payload.cssSettings,
       pages: [], currentPageId: '',
       isReadOnly: true,
     } as Item));

@@ -37,6 +37,35 @@ export interface EmbedPayload {
   css: string;
   html: string;
   title: string | null;
+  /**
+   * Pre-processor modes carried from the legacy JSON item (adversarial review
+   * finding 1). Legacy minted embed links as `?code=${JSON.stringify(currentItem)}`
+   * and the item carries `cssMode`/`htmlMode`/`jsMode` (e.g. `'scss'`/`'less'`).
+   * The render path transpiles via these modes (AppRoot `transpiledCss`); dropping
+   * them rendered raw pre-processor source verbatim. `cssSettings` backs the `acss`
+   * (Atomic CSS) mode. Defaults match a plain-`css` item when absent.
+   */
+  cssMode: CssMode;
+  htmlMode: HtmlMode;
+  jsMode: JsMode;
+  cssSettings?: unknown;
+}
+
+// Allowed mode unions (mirror `web/src/domain/types.ts`). A legacy JSON item's
+// mode is only trusted if it is one of these; anything else falls back to the
+// plain default so a malformed/hostile `?code=` can't smuggle an unknown mode
+// into the transpiler.
+const CSS_MODES = ['css', 'scss', 'sass', 'less', 'stylus', 'acss'] as const;
+const HTML_MODES = ['html', 'markdown', 'jade'] as const;
+const JS_MODES = ['js', 'es6', 'coffeescript', 'typescript'] as const;
+type CssMode = (typeof CSS_MODES)[number];
+type HtmlMode = (typeof HTML_MODES)[number];
+type JsMode = (typeof JS_MODES)[number];
+
+function coerceMode<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
 }
 
 /**
@@ -67,16 +96,29 @@ export function parseEmbedCode(code: string, fallbackTitle: string | null = null
     !Array.isArray(parsed) &&
     typeof (parsed as { js?: unknown }).js === 'string'
   ) {
-    const item = parsed as { js: string; css?: unknown; html?: unknown; title?: unknown };
+    const item = parsed as {
+      js: string;
+      css?: unknown;
+      html?: unknown;
+      title?: unknown;
+      cssMode?: unknown;
+      htmlMode?: unknown;
+      jsMode?: unknown;
+      cssSettings?: unknown;
+    };
     return {
       js: item.js,
       css: typeof item.css === 'string' ? item.css : '',
       html: typeof item.html === 'string' ? item.html : '',
       title: typeof item.title === 'string' ? item.title : fallbackTitle,
+      cssMode: coerceMode(item.cssMode, CSS_MODES, 'css'),
+      htmlMode: coerceMode(item.htmlMode, HTML_MODES, 'html'),
+      jsMode: coerceMode(item.jsMode, JS_MODES, 'js'),
+      cssSettings: item.cssSettings,
     };
   }
   // Raw DSL (contract §8 form).
-  return { js: code, css: '', html: '', title: fallbackTitle };
+  return { js: code, css: '', html: '', title: fallbackTitle, cssMode: 'css', htmlMode: 'html', jsMode: 'js' };
 }
 
 export function detectFromEnv(): RuntimeMode {
