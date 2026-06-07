@@ -37,14 +37,28 @@ export function ShareButton({
     setOpen(next);
   }
 
+  // A disabled <button> has `pointer-events:none` (Button base), so a native `title`
+  // on it never fires hover — the explanation would be invisible exactly when the
+  // control is disabled (the read-only case). Carry the tooltip on a wrapping <span>
+  // (which still receives pointer events) so the read-only Share is never a silent
+  // dead control (#4). When enabled the title sits on the button itself.
+  if (disabled) {
+    return (
+      <span title={disabledReason} className="inline-flex">
+        <Button data-testid="share-button" variant="subtle" disabled>
+          Share
+        </Button>
+      </span>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           data-testid="share-button"
           variant="subtle"
-          disabled={disabled}
-          title={disabled ? disabledReason : 'Create a read-only link to share this diagram'}
+          title="Create a read-only link to share this diagram"
         >
           Share
         </Button>

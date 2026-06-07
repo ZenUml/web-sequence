@@ -138,13 +138,19 @@ export function AppHeader({
             Duplicate
           </Button>
 
-          {/* Save with optional unsaved dot */}
-          <div className="relative">
+          {/* Save with optional unsaved dot. When readOnly the button is disabled,
+              and a disabled button has pointer-events:none so its own `title` never
+              fires — carry the explanation on the wrapping span (which keeps pointer
+              events) so a read-only Save isn't a silent dead control. */}
+          <div
+            className="relative inline-flex"
+            title={readOnly ? 'This is a read-only diagram — duplicate it to make edits you can save' : undefined}
+          >
             <Button
               variant="primary"
               size="sm"
               data-testid="header-save"
-              title="Save this diagram"
+              title={readOnly ? undefined : 'Save this diagram'}
               onClick={onSave}
               disabled={readOnly}
             >

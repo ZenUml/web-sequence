@@ -46,6 +46,19 @@ describe('ShareButton', () => {
     expect(screen.getByTestId('share-button')).toBeDisabled();
   });
 
+  // #4: a disabled Share must not be a SILENT dead control. The disabled button has
+  // pointer-events:none, so the explanation lives on a hover-able wrapper span. A
+  // disabled button with no reachable tooltip would regress the dead-control fix.
+  it('exposes disabledReason on a hover-able wrapper when disabled', () => {
+    render(<ShareButton {...base} disabled disabledReason="Read-only — duplicate to share" />);
+    const btn = screen.getByTestId('share-button');
+    const wrapper = btn.closest('[title]');
+    expect(wrapper).not.toBeNull();
+    expect(wrapper).toHaveAttribute('title', 'Read-only — duplicate to share');
+    // The reason carrier must NOT be the pointer-events:none button itself.
+    expect(wrapper).not.toBe(btn);
+  });
+
   it('is enabled by default', () => {
     render(<ShareButton {...base} />);
     expect(screen.getByTestId('share-button')).not.toBeDisabled();
