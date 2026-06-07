@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 
 // Default starter DSL, from web/src/state/editorStore.ts DEFAULT_STARTER.
-const STARTER_DSL_FRAGMENT = 'A.SyncMessage';
+const STARTER_DSL_FRAGMENT = 'Alice -> Bob: Hello';
 
 // Helpers shared with dsl-spot-check.spec.js style — copy the exact approach:
 // click .cm-content to focus, select-all, Delete, then pressSequentially.
@@ -188,8 +188,12 @@ test('header-new: clicking New resets editor to the default starter DSL', async 
   // Click the "New" button in the header.
   await page.locator('[data-testid="header-new"]').click();
 
+  // #8: with unsaved edits, New first asks to confirm discarding them. Confirm the
+  // discard so New proceeds (a clean diagram would skip this dialog entirely).
+  await page.locator('[data-testid="confirm-ok"]').click();
+
   // After New, the editor should show the default starter DSL, not our custom content.
-  // DEFAULT_STARTER.js = 'A.SyncMessage\nA->B: AsyncMessage' (editorStore.ts)
+  // DEFAULT_STARTER.js = 'Alice -> Bob: Hello\nBob -> Alice: Hi back' (editorStore.ts)
   await expect(editorLocator(page)).toContainText(STARTER_DSL_FRAGMENT, { timeout: 10_000 });
   await expect(editorLocator(page)).not.toContainText('CustomActor');
 });

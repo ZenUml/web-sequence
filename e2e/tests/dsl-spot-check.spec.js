@@ -7,7 +7,7 @@ import { suppressOneTimeModals } from './helpers/onetime';
 //   -> <svg> injected into #mounting-point inside the preview iframe.
 //
 // We deliberately type tokens that are NOT in the default DSL
-// ("A.SyncMessage\nA->B: AsyncMessage", see web/src/app/AppRoot.tsx) so a green
+// ("Alice -> Bob: Hello\nBob -> Alice: Hi back", see web/src/state/editorStore.ts) so a green
 // assertion can only come from OUR typed input being rendered — not from the
 // default content that would render with zero typing.
 

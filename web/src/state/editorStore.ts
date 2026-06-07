@@ -6,7 +6,7 @@ import { applyPageEdit, switchPage, addPage, deletePage, migrateToPages } from '
 // Task 12 will make AppRoot import this instead of its local constant.
 export const DEFAULT_STARTER = {
   title: 'Untitled',
-  js: 'A.SyncMessage\nA->B: AsyncMessage',
+  js: 'Alice -> Bob: Hello\nBob -> Alice: Hi back',
   css: '',
   html: '',
   htmlMode: 'html' as HtmlMode,

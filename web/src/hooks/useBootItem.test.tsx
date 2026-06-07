@@ -291,7 +291,7 @@ describe('useBootItem hook', () => {
 
   it('calls newItem on the editor store when no item resolves', async () => {
     const { useBootItem } = await import('./useBootItem');
-    const { useEditorStore } = await import('../state/editorStore');
+    const { useEditorStore, DEFAULT_STARTER } = await import('../state/editorStore');
 
     useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
 
@@ -303,9 +303,9 @@ describe('useBootItem hook', () => {
     });
 
     const state = useEditorStore.getState();
-    // newItem() creates a fresh item with a generated id
+    // newItem() creates a fresh item with a generated id seeded from DEFAULT_STARTER.
     expect(state.currentItem).not.toBeNull();
-    expect(state.currentItem?.js).toContain('SyncMessage');
+    expect(state.currentItem?.js).toBe(DEFAULT_STARTER.js);
   });
 
   it('on share-error: does NOT seed an item and exposes shareError=true (REQ-SHR-4)', async () => {
