@@ -129,6 +129,35 @@ stay — the Chrome-extension zip is still assembled from the legacy `dist/`/`ap
 flow (NFR-1: legacy retained for rollback). The only added obligation is that
 `web/dist` exists at deploy time.
 
+> **WARNING — extension shipping-path divergence (NOT yet resolved by this diff).**
+> Diff 1 repoints **only the web app** (`hosting.public` → `web/dist`). The
+> Chrome-extension release path is UNCHANGED and still ships the **legacy Preact**
+> bundle, so applying this cutover as written produces a silent product split:
+> app.zenuml.com serves React while the Chrome Web Store extension stays legacy.
+> Specifically, after cutover:
+> - `deploy-prod.yml` (Package Chrome extension step + `publish-extension` job)
+>   assembles + uploads `extension.zip` from the legacy `dist/`/`app/` flow with
+>   `static/manifest.json` (still `version 2026.6.4`).
+> - Root `package.json` `upload`/`pub` (lines 22-23) target the ROOT
+>   `extension.zip`, NOT `web/extension.zip`.
+> - The M05 React extension artifact (`web/scripts/build-extension.mjs` →
+>   `web/extension.zip`, version-stamped from `APP_VERSION = 2026.6.7`) is built
+>   by NO CI workflow (`grep build:extension .github/` is empty) and reaches the
+>   store through NO path. The `web/scripts/manifest.test.ts` strictly-greater
+>   version guard therefore protects an artifact that never ships, while the
+>   artifact that DOES ship carries the unbumped `2026.6.4` — a real `yarn pub`
+>   on the unchanged path would re-upload `2026.6.4` and be REJECTED (not strictly
+>   greater).
+>
+> Shipping the React extension is a SEPARATE frozen-file change (FROZEN under
+> NFR-1, so NOT performed by any rewrite agent and NOT part of this hosting-only
+> diff): repoint `deploy-prod.yml`'s Package + `publish-extension` steps and root
+> `package.json` `upload`/`pub` at `web/scripts/build-extension.mjs` /
+> `web/extension.zip`, and retire or re-stamp `static/manifest.json`. Until that
+> lands, treat the extension as **intentionally still legacy** post-cutover.
+> Full deferral recorded in roadmap §9 ("M05 — extension shipping path still
+> targets the legacy bundle").
+
 Add this step to BOTH `deploy-staging.yml` and `deploy-prod.yml`, immediately
 AFTER the existing `- run: pnpm install --no-frozen-lockfile && pnpm build` line
 and BEFORE the `Deploy to staging` / `pnpm deploy:prod` step:
