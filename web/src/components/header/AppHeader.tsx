@@ -38,6 +38,11 @@ export interface AppHeaderProps {
   onManagePlan?(): void;
   // OAuth error surfaced inside the LoginModal (roadmap §9 carry-forward).
   loginError?: string | null;
+  // Optional CONTROLLED login-modal state so other surfaces (e.g. the anonymous
+  // custom-CSS gate in AppRoot) can open sign-in. When omitted, AppHeader manages
+  // it with internal state (existing-test compatibility).
+  loginOpen?: boolean;
+  onLoginOpenChange?(open: boolean): void;
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
@@ -65,9 +70,17 @@ export function AppHeader({
   onUpgrade,
   onManagePlan,
   loginError,
+  loginOpen: loginOpenProp,
+  onLoginOpenChange,
   actions,
 }: AppHeaderProps) {
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginOpenInternal, setLoginOpenInternal] = useState(false);
+  // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
+  const loginOpen = loginOpenProp ?? loginOpenInternal;
+  const setLoginOpen = (o: boolean) => {
+    if (onLoginOpenChange) onLoginOpenChange(o);
+    else setLoginOpenInternal(o);
+  };
 
   return (
     <>

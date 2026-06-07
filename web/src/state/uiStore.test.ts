@@ -27,4 +27,13 @@ describe('uiStore', () => {
     useUiStore.getState().openModal('pricing');
     expect(useUiStore.getState().activeModal).toBe('pricing');
   });
+  it('setLoginModalOpen toggles the login modal independently of activeModal', () => {
+    useUiStore.getState().openModal('pricing');
+    useUiStore.getState().setLoginModalOpen(true);
+    // login overlays without disturbing the active modal flow
+    expect(useUiStore.getState().loginModalOpen).toBe(true);
+    expect(useUiStore.getState().activeModal).toBe('pricing');
+    useUiStore.getState().setLoginModalOpen(false);
+    expect(useUiStore.getState().loginModalOpen).toBe(false);
+  });
 });

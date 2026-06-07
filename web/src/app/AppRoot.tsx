@@ -107,10 +107,13 @@ export function AppRoot() {
   const activePanel = useUiStore((s) => s.activePanel);
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
-  // M04: single-modal state + open/close.
+  // M04: single-modal state + open/close. Login modal is separate shared state so
+  // the anonymous custom-CSS gate can open sign-in.
   const activeModal = useUiStore((s) => s.activeModal);
   const openModal = useUiStore((s) => s.openModal);
   const closeModal = useUiStore((s) => s.closeModal);
+  const loginModalOpen = useUiStore((s) => s.loginModalOpen);
+  const setLoginModalOpen = useUiStore((s) => s.setLoginModalOpen);
 
   // M04: subscription (load + derive plan on auth) — `loading` gates the plan-limit
   // race guard (§1). analytics.track binds the current userId. paddle = checkout.
@@ -317,7 +320,7 @@ export function AppRoot() {
   function cssGated(): boolean {
     const currentUser = useAuthStore.getState().user;
     if (!currentUser) {
-      setNoticeOpen(true); // sign-in nudge (saved-on-device notice routes to login)
+      setLoginModalOpen(true); // anonymous → open sign-in (plan §8)
       track('Free Limit', { category: 'custom-css' });
       return true;
     }
@@ -419,6 +422,7 @@ export function AppRoot() {
   }
 
   function handleExportAll() {
+    track('exportItems', { category: 'library', label: String(items.length) });
     const json = exportAllItemsJson(items);
     downloadText('zenuml-diagrams.json', json, 'application/json');
   }
@@ -439,6 +443,7 @@ export function AppRoot() {
       // saveItems already writes user-membership in its signed-in batch path, so no
       // separate setItemForUser loop is needed (advisor note 7).
       await itemService.saveItems(map);
+      track('itemsImported', { category: 'library', label: String(parsed.length) });
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Could not import this file.');
     }
@@ -543,7 +548,11 @@ export function AppRoot() {
       <OnboardingModal
         open={activeModal === 'onboarding'}
         onOpenChange={(o) => { if (!o) closeModal(); }}
-        onDismiss={() => { void localStore.set(LS_KEYS.onboarded, true); closeModal(); }}
+        onDismiss={() => {
+          void localStore.set(LS_KEYS.onboarded, true);
+          track('onboardModalSeen', { category: 'ui', label: APP_VERSION });
+          closeModal();
+        }}
       />
       <SupportPledgeModal
         open={activeModal === 'pledge'}
@@ -552,7 +561,7 @@ export function AppRoot() {
         onDismiss={() => {
           void localStore.set(LS_KEYS.pledgeModalSeen, true);
           void localStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
-          track('onboardModalSeen', { category: 'ui', label: APP_VERSION });
+          track('pledgeModalSeen', { category: 'ui', label: APP_VERSION });
           closeModal();
         }}
       />
@@ -590,9 +599,11 @@ export function AppRoot() {
         onNew={() => useEditorStore.getState().newItem()}
         onFork={() => useEditorStore.getState().forkCurrent()}
         onSave={save}
-        onLogin={login}
-        onLogout={logout}
+        onLogin={(provider) => { track('loggedIn', { category: 'auth', label: provider }); login(provider); }}
+        onLogout={() => { track('loggedOut', { category: 'auth' }); logout(); }}
         loginError={loginError}
+        loginOpen={loginModalOpen}
+        onLoginOpenChange={setLoginModalOpen}
         subscribed={subscribed}
         planType={planType}
         paymentEnabled={paymentEnabled}
@@ -608,7 +619,7 @@ export function AppRoot() {
             url={share.url}
             sharing={share.sharing}
             error={share.error}
-            onShare={() => void share.share()}
+            onShare={() => { track('shareLink', { category: 'share' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}
           />

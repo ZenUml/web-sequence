@@ -91,7 +91,7 @@ beforeEach(async () => {
   // prior test (e.g. pricing) doesn't leak (the pledge one-time-trigger no-ops when
   // a modal is already open).
   const { useUiStore } = await import('../state/uiStore');
-  useUiStore.setState({ activeModal: null, activePanel: 'editor', consoleOpen: false, fullscreen: false });
+  useUiStore.setState({ activeModal: null, activePanel: 'editor', consoleOpen: false, fullscreen: false, loginModalOpen: false });
   // M04 one-time triggers fire on boot/auth-ready. jsdom localStorage starts empty,
   // so Onboarding + SupportPledge would auto-open in EVERY AppRoot test and perturb
   // queries. Pre-mark them seen here; dedicated trigger tests clear them explicitly.
@@ -307,6 +307,48 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
     // Gated: CSS unchanged AND pricing modal opened.
     expect(store.getState().currentItem?.css).toBe(before);
     expect(useUiStore.getState().activeModal).toBe('pricing');
+  });
+
+  it('anonymous user editing CSS → login modal opens + CSS unchanged', async () => {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    const before = store.getState().currentItem?.css ?? '';
+    const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cmContent);
+      await userEvent.keyboard('x');
+    });
+    expect(store.getState().currentItem?.css).toBe(before);
+    expect(useUiStore.getState().loginModalOpen).toBe(true);
+    expect(useUiStore.getState().activeModal).not.toBe('pricing');
+  });
+
+  // DISCRIMINATING: a Plus user edits CSS freely (no gate). retrieveSubscription
+  // resolves an active plus sub so isPlus(subscription) is true.
+  it('Plus user editing CSS → change applies, no pricing/login modal', async () => {
+    subSvc.retrieveSubscription.mockResolvedValue(
+      { status: 'active', passthrough: '{"planType":"plus-monthly"}' } as never,
+    );
+    const { useEditorStore: store } = await import('../state/editorStore');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    const before = store.getState().currentItem?.css ?? '';
+    const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cmContent);
+      await userEvent.keyboard('z');
+    });
+    // CSS changed (gate did not fire); no billing/login modal opened.
+    expect(store.getState().currentItem?.css).not.toBe(before);
+    expect(useUiStore.getState().activeModal).not.toBe('pricing');
+    expect(useUiStore.getState().loginModalOpen).toBe(false);
   });
 });
 
