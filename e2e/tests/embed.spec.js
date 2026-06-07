@@ -7,7 +7,9 @@
 //   - the full-app CHROME is suppressed — the real header (header-title/header-menu),
 //     the sidebar panels (sidebar-editor/sidebar-library) and the editor (dsl-editor)
 //     are all ABSENT;
-//   - the inline `?code=` diagram renders an SVG in the preview iframe;
+//   - the inline `?code=` diagram renders its CONTENT in the preview iframe
+//     (embed mode hides @zenuml/core's footer chrome — incl. its only svgs — so we
+//     assert the diagram body's message label / participant, not `#mounting-point svg`);
 //   - the "Open in ZenUML" link points at the canonical app origin.
 //
 // DISCRIMINATING-ID CONTRACT (ground truth — verified against the source, NOT
@@ -87,17 +89,19 @@ test('?embed hides the real header, sidebar, and editor; shows the embed header'
 // ──────────────────────────────────────────────────────────────────────────────
 // Embed renders the inline ?code= diagram BY VALUE (no Firestore read needed).
 // ──────────────────────────────────────────────────────────────────────────────
-test('?embed&code= renders the inline diagram as an SVG in the preview', async ({ page }) => {
+test('?embed&code= renders the inline diagram content in the preview', async ({ page }) => {
   await page.goto(EMBED_URL);
 
-  // The inline DSL renders into the preview iframe's #mounting-point (same mount
-  // scaffold the production-build spec asserts). An empty mount can be zero-size
-  // before the SVG lands, so assert the SVG itself is visible.
-  const svg = page
-    .frameLocator('[data-testid="preview-iframe"]')
-    .locator('#mounting-point svg')
-    .first();
-  await expect(svg).toBeVisible({ timeout: 15_000 });
+  // The inline DSL (EMBED_URL = ?code=A.method()) renders into the preview iframe's
+  // #mounting-point. We assert the diagram CONTENT — the message label `method()`
+  // and participant `A` — rather than `#mounting-point svg`: in EMBED mode the
+  // round-3 chrome suppression (`.footer{display:none}`) hides @zenuml/core's footer
+  // icons/watermark, and those footer svgs were the ONLY svgs under #mounting-point
+  // (the diagram body itself is HTML, not SVG). Asserting content is the test's real
+  // intent and stays DISCRIMINATING: a blank/broken render shows neither label.
+  const mount = page.frameLocator('[data-testid="preview-iframe"]').locator('#mounting-point');
+  await expect(mount.getByText('method()').first()).toBeVisible({ timeout: 15_000 });
+  await expect(mount.getByText('A', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

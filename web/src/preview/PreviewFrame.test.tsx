@@ -107,4 +107,17 @@ describe('PreviewFrame', () => {
     act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'error', message: 'boom' } })); });
     expect(onError).toHaveBeenCalledWith('boom');
   });
+
+  // M05 embed: the srcdoc bakes the core-chrome suppression CSS ONLY when embed.
+  // DISCRIMINATING: default (non-embed, jsdom has empty location.search) must NOT
+  // carry it; an explicit embed prop must.
+  it('bakes embed chrome-suppression CSS into the srcdoc only when embed', () => {
+    const { container: plain } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+    expect(plain.querySelector('iframe')!.getAttribute('srcdoc')).not.toContain('zenuml-embed-suppress');
+
+    const { container: embedded } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} embed />);
+    const srcdoc = embedded.querySelector('iframe')!.getAttribute('srcdoc')!;
+    expect(srcdoc).toContain('id="zenuml-embed-suppress"');
+    expect(srcdoc).toContain('.footer{display:none !important}');
+  });
 });

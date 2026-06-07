@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'rea
 import { getCompleteHtml } from './previewHtml';
 import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
+import { detectFromEnv } from '../app/runtimeMode';
 
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
@@ -13,15 +14,26 @@ export interface PreviewFrameProps {
   css: string;
   stickyOffset: number;
   autoPreview?: boolean;
+  /**
+   * Embed mode: suppress @zenuml/core's interactive chrome (toolbar/zoom/info/
+   * version/watermark/shield) in the preview iframe. Defaults to the runtime
+   * `?embed` flag so the embed path is correct with no call-site wiring; a caller
+   * may override explicitly (e.g. `embed={isEmbed}` in AppRoot if preferred).
+   */
+  embed?: boolean;
   onCodeChange?: (code: string) => void;
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, autoPreview = true, onCodeChange, onConsole, onError },
+  { code, css, stickyOffset, autoPreview = true, embed, onCodeChange, onConsole, onError },
   ref,
 ) {
+  // Self-determine embed from the runtime mode (same source AppRoot reads) so the
+  // embed iframe suppresses core chrome without any AppRoot edit. An explicit
+  // `embed` prop overrides.
+  const embedMode = embed ?? detectFromEnv().isEmbed;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
   const pngWaiters = useRef(new Map<number, (v: string | null) => void>());
@@ -37,7 +49,9 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   cbRef.current = { onCodeChange, onConsole, onError };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
   // `ready` (and on subsequent css changes) rather than baked into the document.
-  const srcdoc = useMemo(() => getCompleteHtml(), []);
+  // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
+  // no chrome flash on first paint.
+  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
 
   const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
 

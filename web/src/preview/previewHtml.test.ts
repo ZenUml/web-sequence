@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 vi.mock('./previewBootstrap.runtime.js?url', () => ({ default: '/bootstrap-test-url.js' }));
 
-import { getCompleteHtml, MOUNT_HTML } from './previewHtml';
+import { getCompleteHtml, MOUNT_HTML, EMBED_CHROME_SUPPRESS_CSS } from './previewHtml';
 
 describe('getCompleteHtml', () => {
   it('includes an empty zenuml style hook, mount point, core script, and external bootstrap', () => {
@@ -38,5 +38,29 @@ describe('getCompleteHtml', () => {
     const html = getCompleteHtml({});
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).toContain(MOUNT_HTML);
+  });
+
+  // M05 embed chrome suppression. DISCRIMINATING: the suppression <style> must be
+  // present ONLY when embed=true. Dropping the embed branch (so the style is always
+  // emitted) fails the "absent otherwise" cases; ignoring the flag (never emitting)
+  // fails the embed=true case.
+  it('injects the embed chrome-suppression style ONLY when embed=true', () => {
+    const embedHtml = getCompleteHtml({ embed: true });
+    expect(embedHtml).toContain('<style id="zenuml-embed-suppress">');
+    expect(embedHtml).toContain(EMBED_CHROME_SUPPRESS_CSS);
+    // Targets the real @zenuml/core DOM hooks for the chrome we must hide.
+    expect(embedHtml).toContain('.footer{display:none !important}');
+    expect(embedHtml).toContain('.header .hide-export{display:none !important}');
+
+    // Not in the normal editor preview (embed omitted or false).
+    expect(getCompleteHtml({}).includes('zenuml-embed-suppress')).toBe(false);
+    expect(getCompleteHtml({ embed: false }).includes('zenuml-embed-suppress')).toBe(false);
+  });
+
+  // The suppression style is SEPARATE from the user-CSS rail: the existing empty
+  // #zenumlstyle hook is preserved in embed mode (updateCss still targets it).
+  it('keeps the empty user-css style hook even in embed mode', () => {
+    const embedHtml = getCompleteHtml({ embed: true });
+    expect(embedHtml).toContain('<style id="zenumlstyle"></style>');
   });
 });
