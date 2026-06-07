@@ -31,6 +31,7 @@
     "@radix-ui/react-popover": "^1.1.16",
     "@radix-ui/react-radio-group": "^1.4.0",
     "@radix-ui/react-select": "^2.3.0",
+    "@radix-ui/react-switch": "^1.3.0",
     "@radix-ui/react-tooltip": "^1.2.9",
     "@replit/codemirror-vim": "^6.3.0",
     "@tanstack/react-query": "^5.101.0",
