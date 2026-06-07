@@ -23,7 +23,10 @@ export function useAuth() {
       useAuthStore.getState().setAuthReady(true);
       if (user) {
         void ensureUser(user.uid).catch(() => {});
-        void getUserSettings(user.uid).then((s) => useSettingsStore.getState().merge(s)).catch(() => {});
+        // mergeCloud (not merge): records cloud-owned keys so the boot syncStore
+        // local-base loop can't clobber them on a later arrival (adversarial review:
+        // the "cloud wins" claim had NO ordering guarantee — now order-independent).
+        void getUserSettings(user.uid).then((s) => useSettingsStore.getState().mergeCloud(s)).catch(() => {});
       }
     });
   }, [setUser]);

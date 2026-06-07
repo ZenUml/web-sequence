@@ -215,8 +215,12 @@ export function AppRoot() {
   // preserveLastCode/etc. were silently discarded on reload (settingsStore re-inits
   // to DEFAULT_SETTINGS). This restores REQ-SET persistence parity for anonymous
   // users (and underpins preserveLastCode's synced boot behavior). For a signed-in
-  // user this runs too, then useAuth's getUserSettings merge applies cloud values
-  // on top (cloud wins) — both merges are key-wise so unknown keys are untouched.
+  // user this runs too, and useAuth's getUserSettings mergeCloud applies cloud values
+  // as the authoritative layer. This loop uses mergeLocalBase, which only fills keys
+  // cloud has NOT claimed — so cloud wins REGARDLESS of arrival order (adversarial
+  // review: the prior plain `merge` had no ordering guarantee, so a cloud merge that
+  // resolved first could be clobbered by this serial local loop key-by-key). Both
+  // merges are key-wise so unknown keys are untouched.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -227,7 +231,7 @@ export function AppRoot() {
         if (v !== undefined) (loaded as Record<string, unknown>)[k] = v;
       }
       if (!cancelled && Object.keys(loaded).length > 0) {
-        useSettingsStore.getState().merge(loaded);
+        useSettingsStore.getState().mergeLocalBase(loaded);
       }
     })();
     return () => { cancelled = true; };
