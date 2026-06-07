@@ -36,13 +36,13 @@ export function EmbedHeader({ title, openUrl }: EmbedHeaderProps) {
         target="_blank"
         rel="noopener noreferrer"
         className={buttonClassName({
-          variant: 'ghost',
+          variant: 'primary',
           size: 'sm',
           surface: 'dark',
-          className: 'font-mono text-accent shrink-0',
+          className: 'shrink-0',
         })}
       >
-        Open in ZenUML
+        Edit in ZenUML
       </a>
     </header>
   );
