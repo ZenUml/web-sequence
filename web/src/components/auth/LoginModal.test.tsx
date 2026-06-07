@@ -23,11 +23,22 @@ describe('LoginModal', () => {
     expect(onLogin).toHaveBeenCalledWith('google');
   });
 
-  it('shows lastProvider hint when provided', () => {
+  it('floats the last-used provider under "Pick up where you left off" with a Last-used chip', () => {
     render(
       <LoginModal open onOpenChange={() => {}} onLogin={() => {}} lastProvider="GitHub" />,
     );
-    expect(screen.getByText(/Last used: GitHub/i)).toBeInTheDocument();
+    // Two-section layout (§05): the returning provider carries the chip + a section header.
+    expect(screen.getByText(/Pick up where you left off/i)).toBeInTheDocument();
+    expect(screen.getByText(/Or use another account/i)).toBeInTheDocument();
+    expect(screen.getByTestId('login-github-lastused')).toBeInTheDocument();
+    // The chip is only on the matched provider, not the others.
+    expect(screen.queryByTestId('login-google-lastused')).toBeNull();
+  });
+
+  it('omits the section headers + chip when there is no last-used provider', () => {
+    render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} />);
+    expect(screen.queryByText(/Pick up where you left off/i)).toBeNull();
+    expect(screen.queryByTestId('login-github-lastused')).toBeNull();
   });
 
   it('renders a provider glyph on each button (decorative, aria-hidden)', () => {

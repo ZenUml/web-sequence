@@ -141,7 +141,7 @@ export function PricingModal({
               )}
             >
               Billed yearly{' '}
-              <span className="text-signal-amber">(Save up to 83%)</span>
+              <span className="text-signal-amberStrong">(Save up to 83%)</span>
             </button>
           </div>
 
@@ -164,7 +164,20 @@ export function PricingModal({
                   <h3 className="font-serif text-[18px] text-onlight-strong">
                     {tier.name}
                   </h3>
-                  <div className="mt-2 flex items-baseline gap-1">
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    {/* §05: on yearly, prove the discount AT the price — show the
+                        struck monthly-equivalent before the discounted per-month price
+                        (only for paid tiers that actually differ; Free/Custom skip). */}
+                    {billingPeriod === 'yearly' &&
+                      tier.price.monthly.startsWith('$') &&
+                      tier.price.monthly !== tier.price.yearly && (
+                        <span
+                          data-testid={`pricing-struck-${tier.key}`}
+                          className="font-serif text-[15px] text-onlight-faint line-through"
+                        >
+                          {tier.price.monthly}
+                        </span>
+                      )}
                     <span className="font-serif text-[24px] text-onlight-strong">
                       {tier.price[billingPeriod]}
                     </span>
@@ -178,7 +191,7 @@ export function PricingModal({
                     {tier.priceNote[billingPeriod]}
                   </p>
                   {billingPeriod === 'yearly' && tier.savings && (
-                    <p className="text-[11px] font-medium text-signal-amber">
+                    <p className="text-[11px] font-medium text-signal-amberStrong">
                       {tier.savings}
                     </p>
                   )}

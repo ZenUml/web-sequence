@@ -72,7 +72,50 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
   // affordance; everything else stays a quiet subtle button. Filter the matched
   // provider out of the tail so reordering never duplicates a data-testid.
   const matched = last ? PROVIDERS.find((p) => p.id === last) : undefined;
-  const ordered = matched ? [matched, ...PROVIDERS.filter((p) => p.id !== matched.id)] : PROVIDERS;
+  const rest = matched ? PROVIDERS.filter((p) => p.id !== matched.id) : PROVIDERS;
+
+  // One provider button. The last-used provider is `elevated` (cobalt primary +
+  // a "Last used" chip); everyone else is a quiet subtle button.
+  function providerButton({ id, label }: { id: ProviderName; label: string }, elevated: boolean) {
+    const chip = elevated && GLYPH_NEEDS_CHIP[id];
+    return (
+      <Button
+        key={id}
+        variant={elevated ? 'primary' : 'subtle'}
+        surface="light"
+        className="w-full"
+        data-testid={`login-${id}`}
+        onClick={() => onLogin(id)}
+      >
+        <span className="flex w-full items-center gap-1.5">
+          <span
+            data-testid={`login-${id}-glyph`}
+            data-chip={chip ? 'true' : undefined}
+            className={
+              chip
+                ? 'flex shrink-0 items-center justify-center rounded-[3px] bg-white p-0.5 text-onlight-strong'
+                : 'shrink-0'
+            }
+          >
+            {GLYPHS[id]}
+          </span>
+          {label}
+          {elevated && (
+            <span
+              data-testid={`login-${id}-lastused`}
+              className="ml-auto rounded-[5px] bg-white/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.06em]"
+            >
+              Last used
+            </span>
+          )}
+        </span>
+      </Button>
+    );
+  }
+
+  // Eyelabel (.ret) section headers — onlight-muted keeps them AA-legible on paper
+  // (onlight-faint fails AA for small text per the contrast audit).
+  const eyelabel = 'font-mono text-[10px] uppercase tracking-[0.12em] text-onlight-muted';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,50 +127,28 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
           <p
             data-testid="login-error"
             role="alert"
-            className="mb-3 rounded border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger"
+            className="mb-3 rounded border border-danger-strong/40 bg-danger/10 px-3 py-2 text-[13px] text-danger-strong"
           >
             {error}
           </p>
         )}
-        {lastProvider && (
-          <p className="mb-3 font-mono text-[11px] text-onlight-muted uppercase tracking-[0.1em]">
-            Last used: {lastProvider}
-          </p>
+        {/* §05: when there's a returning provider, float it under "Pick up where you
+            left off" with a Last-used chip + cobalt elevation, and drop the rest under
+            "Or use another account". One glance, one click to re-auth. */}
+        {matched ? (
+          <>
+            <p className={`mb-2 ${eyelabel}`}>Pick up where you left off</p>
+            <div className="flex flex-col gap-2">{providerButton(matched, true)}</div>
+            <p className={`mb-2 mt-4 ${eyelabel}`}>Or use another account</p>
+            <div className="flex flex-col gap-2">
+              {rest.map((p) => providerButton(p, false))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rest.map((p) => providerButton(p, false))}
+          </div>
         )}
-        <div className="flex flex-col gap-2">
-          {ordered.map(({ id, label }) => {
-            const elevated = matched?.id === id;
-            const chip = elevated && GLYPH_NEEDS_CHIP[id];
-            return (
-              <Button
-                key={id}
-                variant={elevated ? 'primary' : 'subtle'}
-                surface="light"
-                // Button base forces `justify-center` and cn (clsx, no
-                // tailwind-merge) can't override it; left-align via a full-width
-                // inner flex (defaults to flex-start) instead — OAuth convention.
-                className="w-full"
-                data-testid={`login-${id}`}
-                onClick={() => onLogin(id)}
-              >
-                <span className="flex w-full items-center gap-1.5">
-                  <span
-                    data-testid={`login-${id}-glyph`}
-                    data-chip={chip ? 'true' : undefined}
-                    className={
-                      chip
-                        ? 'flex shrink-0 items-center justify-center rounded-[3px] bg-white p-0.5 text-onlight-strong'
-                        : 'shrink-0'
-                    }
-                  >
-                    {GLYPHS[id]}
-                  </span>
-                  {label}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
       </DialogContent>
     </Dialog>
   );
