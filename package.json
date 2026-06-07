@@ -8,6 +8,8 @@
     "engine": "use yarn instead of npm please",
     "start": "if-env NODE_ENV=production && yarn serve || yarn dev",
     "build": "vite build",
+    "build:web": "pnpm -C web build",
+    "_cutover_note": "deploy:staging/deploy:prod now serve web/dist (built via build:web). The legacy gulp 'release' pipeline + 'app/' output are RETAINED for rollback — do NOT delete until the new path is confirmed live and green.",
     "release": "gulp --gulpfile gulpfile.cjs release",
     "prep:release:git-tag-push": "git tag release-`date +%Y%m%d%H%M` && git push origin release-`date +%Y%m%d%H%M`",
     "dev": "vite",

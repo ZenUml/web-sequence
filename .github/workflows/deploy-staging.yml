@@ -34,6 +34,12 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile && pnpm build
+      # Cutover (M05): build the React rewrite artifact that firebase.json now
+      # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
+      # needs its own install. The legacy `pnpm build` above still produces the
+      # extension's dist/app/ assembly (retained for rollback).
+      - name: Build web/dist (cutover hosting artifact)
+        run: pnpm -C web install --no-frozen-lockfile && pnpm -C web build
       # Pre-deploy guard: serve the built dist statically and verify the diagram
       # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
       # path) that the dev-server suite can't see, BEFORE anything ships to
