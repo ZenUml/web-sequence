@@ -24,6 +24,8 @@ function makeBaseDeps(overrides: Partial<BootDeps> = {}): BootDeps {
   return {
     idParam: null,
     shareToken: null,
+    codeParam: null,
+    codeTitle: null,
     preserveLastCode: false,
     getItem: vi.fn(async () => makeItem()),
     getSharedItem: vi.fn(async () => makeItem({ isReadOnly: true })),
@@ -128,6 +130,56 @@ describe('resolveBootItem (pure resolver)', () => {
       preserveLastCode: true,
       getLastCode: vi.fn(async () => { throw new Error('storage unavailable'); }),
     });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('new');
+  });
+
+  // Branch: ?code= inline diagram (adversarial review finding 1) — the embed
+  // "Open in ZenUML" link forwards the original ?code= to the FULL app (no ?embed),
+  // so the full-app boot must seed an EDITABLE diagram from it (legacy parity:
+  // app.jsx read ?code= unconditionally at boot).
+  it('returns an editable code item when codeParam is raw DSL (finding 1)', async () => {
+    const deps = makeBaseDeps({ codeParam: 'A.fromUrl()', codeTitle: 'My Title' });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('code');
+    if (result.kind === 'code') {
+      expect(result.item.js).toBe('A.fromUrl()');
+      expect(result.item.title).toBe('My Title');
+      // MUST be editable — otherwise save() early-returns and ShareButton is
+      // disabled, defeating the entire point of "Open in ZenUML".
+      expect(result.item.isReadOnly).toBeFalsy();
+    }
+  });
+
+  // Legacy embed links carry ?code=${JSON.stringify(item)} — parseEmbedCode must
+  // unwrap it so forwarded legacy links keep working.
+  it('unwraps a legacy JSON-item codeParam into an editable item (finding 1)', async () => {
+    const legacy = JSON.stringify({ js: 'A.legacy()', title: 'Legacy', css: '', html: '' });
+    const deps = makeBaseDeps({ codeParam: legacy, codeTitle: null });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('code');
+    if (result.kind === 'code') {
+      expect(result.item.js).toBe('A.legacy()');
+      expect(result.item.title).toBe('Legacy');
+      expect(result.item.isReadOnly).toBeFalsy();
+    }
+  });
+
+  // Precedence: an explicit ?code= wins over stale last-code (legacy: urlCode || result.code).
+  it('codeParam takes precedence over preserveLastCode (finding 1)', async () => {
+    const deps = makeBaseDeps({
+      codeParam: 'A.url()',
+      preserveLastCode: true,
+      getLastCode: vi.fn(async () => makeItem({ js: 'A.stale()' })),
+    });
+    const result = await resolveBootItem(deps);
+    expect(result.kind).toBe('code');
+    expect(deps.getLastCode).not.toHaveBeenCalled();
+  });
+
+  // An empty codeParam is treated as absent (falls through to normal resolution).
+  it('ignores an empty codeParam (finding 1)', async () => {
+    const deps = makeBaseDeps({ codeParam: '' });
     const result = await resolveBootItem(deps);
     expect(result.kind).toBe('new');
   });
@@ -260,6 +312,24 @@ describe('useBootItem hook', () => {
     expect(useEditorStore.getState().currentItem).toBeNull();
     // result.current is live — read it AFTER act flushes the setShareError re-render.
     expect(view!.result.current.shareError).toBe(true);
+  });
+
+  it('seeds an editable item from codeParam via the hook (finding 1)', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const deps = makeBaseDeps({ codeParam: 'A.fromUrl()', codeTitle: 'Open In' });
+
+    await act(async () => {
+      renderHook(() => useBootItem(deps, true));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    const state = useEditorStore.getState();
+    expect(state.currentItem?.js).toBe('A.fromUrl()');
+    expect(state.currentItem?.isReadOnly).toBeFalsy();
   });
 
   it('runs only once (idempotent) even when deps change', async () => {

@@ -338,6 +338,12 @@ export function AppRoot() {
   const { shareError, clearShareError } = useBootItem({
     idParam,
     shareToken,
+    // Finding 1: full-app boot honours ?code= so the embed's "Open in ZenUML"
+    // link (which forwards ?code=&title= WITHOUT ?embed) seeds the diagram in the
+    // editable editor. Embed itself ignores this branch — its seed runs via the
+    // skip=embedByValue path below — so we null it out when isEmbed.
+    codeParam: isEmbed ? null : runtime.embedCode,
+    codeTitle: isEmbed ? null : runtime.embedTitle,
     preserveLastCode,
     getItem: itemService.getItem,
     getSharedItem,

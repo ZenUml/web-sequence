@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '../state/editorStore';
+import { parseEmbedCode } from '../app/runtimeMode';
 import type { Item } from '../domain/types';
 
 export interface BootDeps {
   idParam: string | null;
   shareToken: string | null;
+  // Adversarial review finding 1: ?code= inline diagram. The embed's "Open in
+  // ZenUML" link forwards the original ?code= (and ?title=) to the FULL app (no
+  // ?embed), so the full-app boot must seed an editable diagram from it. Legacy
+  // app.jsx read ?code= unconditionally at boot — this restores that parity.
+  codeParam: string | null;
+  codeTitle: string | null;
   preserveLastCode: boolean;
   getItem: (id: string) => Promise<Item>;
   getSharedItem: (id: string, token: string) => Promise<Item>;
@@ -14,6 +21,7 @@ export interface BootDeps {
 export type BootResult =
   | { kind: 'shared'; item: Item }
   | { kind: 'item'; item: Item }
+  | { kind: 'code'; item: Item }
   | { kind: 'lastcode'; item: Item }
   | { kind: 'share-error' }
   | { kind: 'new' };
@@ -30,7 +38,7 @@ export type BootResult =
  *  4. else                  → 'new'
  */
 export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
-  const { idParam, shareToken, preserveLastCode, getItem, getSharedItem, getLastCode } = deps;
+  const { idParam, shareToken, codeParam, codeTitle, preserveLastCode, getItem, getSharedItem, getLastCode } = deps;
 
   // Branch 1: shared item (read-only)
   if (shareToken && idParam) {
@@ -40,6 +48,29 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
     } catch {
       return { kind: 'share-error' };
     }
+  }
+
+  // Branch: ?code= inline diagram (finding 1). Seeded EDITABLE (isReadOnly false)
+  // and placed before preserveLastCode so an explicit inline payload wins over
+  // stale last-code (legacy: `urlCode || result.code`). parseEmbedCode accepts
+  // both the contract raw-DSL form and legacy `JSON.stringify(item)` links.
+  if (codeParam) {
+    const payload = parseEmbedCode(codeParam, codeTitle);
+    const id = (globalThis.crypto?.randomUUID?.()) ?? `code-${Date.now()}`;
+    const item: Item = {
+      id,
+      title: payload.title ?? 'Untitled',
+      js: payload.js,
+      css: payload.css,
+      html: payload.html,
+      htmlMode: 'html',
+      cssMode: 'css',
+      jsMode: 'js',
+      pages: [],
+      currentPageId: '',
+      isReadOnly: false,
+    };
+    return { kind: 'code', item };
   }
 
   // Branch 2: owned/local item by id
@@ -101,6 +132,7 @@ export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): U
       switch (result.kind) {
         case 'shared':
         case 'item':
+        case 'code':
         case 'lastcode':
           loadItem(result.item);
           break;
