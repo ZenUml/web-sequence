@@ -3,7 +3,7 @@ import { useSettingsStore } from './settingsStore';
 import { DEFAULT_SETTINGS } from '../domain/types';
 
 describe('settingsStore', () => {
-  beforeEach(() => useSettingsStore.setState({ settings: DEFAULT_SETTINGS, cloudKeys: new Set() }));
+  beforeEach(() => useSettingsStore.setState({ settings: DEFAULT_SETTINGS, cloudKeys: new Set(), userKeys: new Set() }));
   it('defaults to DEFAULT_SETTINGS', () => {
     expect(useSettingsStore.getState().settings.autoSave).toBe(false);
     expect(useSettingsStore.getState().settings.preserveLastCode).toBe(true);
@@ -34,5 +34,20 @@ describe('settingsStore', () => {
     useSettingsStore.getState().mergeCloud({});
     useSettingsStore.getState().mergeLocalBase({ editorTheme: 'light-local' });
     expect(useSettingsStore.getState().settings.editorTheme).toBe('light-local');
+  });
+
+  // Discriminating (adversarial review, finding 3): a LIVE user change (merge) must NOT
+  // be reverted by a LATER-arriving cloud read (mergeCloud). Real timeline: a signed-in
+  // user opens Settings and toggles a control BEFORE useAuth's getUserSettings network
+  // round-trip resolves; if mergeCloud then applied the stale cloud value, the user's
+  // just-made change would visibly flip back. The user's value must survive. Reverting
+  // mergeCloud to apply user-owned keys (dropping the userKeys skip) flips this → fails.
+  it('mergeCloud does NOT revert a key the user just changed live (live change wins)', () => {
+    useSettingsStore.getState().merge({ editorTheme: 'user-pick' }); // live change first
+    useSettingsStore.getState().mergeCloud({ editorTheme: 'stale-cloud', fontSize: 18 });
+    // User's live change survives the later cloud read…
+    expect(useSettingsStore.getState().settings.editorTheme).toBe('user-pick');
+    // …while a key the user did NOT touch still takes the cloud value.
+    expect(useSettingsStore.getState().settings.fontSize).toBe(18);
   });
 });

@@ -21,7 +21,7 @@ beforeEach(() => {
   useAuthStore.setState({ user: null, online: true, authReady: false });
   window.localStorage.clear();
   usvc.getUserSettings.mockResolvedValue({});
-  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set() });
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set(), userKeys: new Set() });
 });
 
 describe('useAuth', () => {
@@ -65,9 +65,11 @@ describe('useAuth', () => {
   // useAuth cloud-merge together rely on. We simulate the boot having already
   // applied a local value, then sign in and resolve a DIFFERENT cloud value.
   it('cloud settings (on sign-in) win over a previously-merged local value; local-only keys survive', async () => {
-    // Pretend the signed-out boot already merged these from syncStore:
+    // Pretend the signed-out boot already loaded these from syncStore via the boot
+    // LOCAL-BASE loop (AppRoot.tsx:268 mergeLocalBase — NOT a live user `merge`, which
+    // after finding 3 is reserved for in-session user changes that win over cloud):
     //   fontSize 13 (local), keymap 'vim' (local-only — cloud will NOT return it).
-    useSettingsStore.getState().merge({ fontSize: 13, keymap: 'vim' });
+    useSettingsStore.getState().mergeLocalBase({ fontSize: 13, keymap: 'vim' });
     // Cloud returns a DIFFERENT fontSize and does not mention keymap.
     usvc.getUserSettings.mockResolvedValue({ fontSize: 18 } as never);
     renderHook(() => useAuth());
@@ -88,7 +90,7 @@ describe('useAuth', () => {
   // holds ONLY if useAuth used mergeCloud. Reverting useAuth to plain `merge` → the
   // late local-base value clobbers cloud → fontSize becomes 13 → fails.
   it('useAuth routes cloud settings into mergeCloud (a late local-base merge cannot clobber)', async () => {
-    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set() });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, cloudKeys: new Set(), userKeys: new Set() });
     usvc.getUserSettings.mockResolvedValue({ fontSize: 18 } as never);
     renderHook(() => useAuth());
     await act(async () => { fb._cb({ uid: 'u1', email: 'a@b.c', displayName: 'A', photoURL: null }); });
