@@ -103,10 +103,66 @@ controller integrates the shared `AppRoot.tsx` → adversarial verify (Workflow)
 - **≥1 Playwright screenshot** of the redesigned editor (per project convention).
 
 ## Phases 2–4 roadmap (one line each)
-- **Phase 2 — §03 hidden failures**: responsive tabbed Edit/Preview at phone width;
-  Present mode fits+centers and hides console/dev toolbar; console error-state styling.
+- **Phase 2 — §03 hidden failures**: see detailed section below.
 - **Phase 3 — §04 library & creation**: library empty-state CTA; visual template
   thumbnails (Start vs Styles, 3-col) — also lands the Templates rail panel; two-column
   Settings modal with `Plus` gating badge on disabled toggles.
 - **Phase 4 — §05 polish**: embed centered + frame capped to content; sign-in last-used
   badge + float returning provider to top; pricing struck monthly price + ladder framing.
+
+## Phase 2 — What the happy path hides (§03)
+
+Status note: **console error states are ALREADY done** (Phase 1 smart console — emerald
+"No issues" / red count, `_STARTER_` suppression). Phase 2 is the responsive + present work.
+
+Architectural decision (frozen-core boundary): Present-mode fit is achieved by **CSS
+`transform: scale()` on the iframe wrapper in AppRoot**, driven by the iframe's reported
+natural content size. We do NOT modify `@zenuml/core` (frozen) or its in-diagram toolbar.
+
+### Unit MQ — useMediaQuery hook (`hooks/useMediaQuery.ts` + test)
+SSR/jsdom-safe `useMediaQuery(query: string): boolean` built on `window.matchMedia` with an
+`addEventListener('change')` subscription and a guarded initial read (matchMedia may be
+absent in jsdom → default false). Export a `useIsMobile()` = `useMediaQuery('(max-width: 767px)')`
+convenience (the Tailwind `md` breakpoint boundary).
+
+### Unit RL — responsive Layout (`components/Layout.tsx` + test)
+- Desktop (≥ md): unchanged split.js two-pane (editor | preview).
+- Mobile (< md): NO split. Render a single pane with a **segmented Edit | Preview** control
+  (design §03 mobile mock) at the top; show the editor child OR the preview child by the
+  selected segment. Manage the segment in local state (default 'edit'). Tear down/skip
+  split.js on mobile (only instantiate when desktop). Use `useIsMobile()`.
+- Segmented control: accent-soft active pill per the mock (`bg-accent-soft text-ondark-strong`
+  vs `text-ondark-faint`). testids `layout-tab-edit` / `layout-tab-preview`.
+
+### Unit PF — Present-mode fit + center (`preview/PreviewFrame.tsx` + test)
+- **Ungate `contentSize`**: report + store the iframe's natural content size in ALL modes
+  (drop the `if (embedMode)` guard around `setEmbedContentSize`; rename to a mode-neutral
+  `contentSize`). Embed behavior must stay byte-identical (still applies explicit px in embed).
+- Add a `fit?: boolean` prop. When `fit` (present/fullscreen) AND a contentSize is known,
+  the controller wrapper scales the iframe to fit its container: `scale = min(cw/w, ch/h, 1)`
+  via `transform`, centered. PreviewFrame exposes the natural size (e.g. an `onContentSize`
+  callback or a forwarded ref getter) so AppRoot can compute the scale against the fullscreen
+  container; OR PreviewFrame self-fits when `fit` using a ResizeObserver on its wrapper.
+  Prefer self-contained: PreviewFrame computes its own fit when `fit` is set (ResizeObserver
+  on the wrapper + the reported contentSize), so AppRoot just passes `fit={fullscreen}`.
+- Editor (non-fit, non-embed) mode stays `h-full w-full` (unchanged) — the existing centering
+  wrapper in AppRoot handles horizontal centering.
+
+### Unit RHm — responsive header (`components/header/AppHeader.tsx` + test)
+At < md, condense so nothing clips (design mobile mock = logo + name + savestate + account;
+Share/Present become icon-only or move): hide the Share/Present text labels (icon-only) and
+the document-menu chevron's affordances may collapse, keeping logo, filename, savestate,
+account. Keep all testids. Use Tailwind responsive classes (`hidden md:inline` etc.) — no JS
+needed for the header (CSS-only responsive), to avoid coupling to useMediaQuery.
+
+### Integration (controller, AppRoot.tsx)
+- Pass `fit={fullscreen}` to PreviewFrame. On mobile, hide the icon rail (Sidebar) — the
+  design mobile mock has no rail; render it `hidden md:flex` (Sidebar wrapper) or gate via
+  `useIsMobile()`. Ensure the renderer header's page tabs still show on mobile preview pane.
+- Confirm fullscreen present mode: console hidden (done Phase 1), diagram fits+centers, only
+  Exit affordance. Mobile: segmented Edit/Preview, full-width, header condensed, no rail.
+
+### Phase 2 done-criteria
+`yarn build` + `vitest` green; desktop layout unchanged (split.js still works); a phone-width
+Playwright screenshot showing tabbed Edit + Preview; a fullscreen screenshot showing the
+fit-centered diagram with no console/rail.
