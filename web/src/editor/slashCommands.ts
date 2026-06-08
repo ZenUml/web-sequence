@@ -10,17 +10,23 @@
 // cursor. The autocomplete source compiles `template` via `snippet()`.
 //
 // `zone` gates where a command is offered, derived from the Lezer parse context:
-//   - 'head'  → cursor in the document Head (participant declarations, groups)
+//   - 'head'  → cursor in a declaration-only context (a `group { }` body, or
+//               within an existing participant declaration)
 //   - 'block' → cursor inside a StatementBraceBlock (message/control-flow body)
-// See CONTEXT.md → "Slash Command Set".
+//   - 'top'   → the document top level, where BOTH participant declarations AND
+//               statements (messages, control flow) are valid — so it offers the
+//               UNION of head + block commands. (ZenUML's top level is a sequence
+//               that permits declarations and messages interleaved.)
+// Each SlashCommand declares only 'head' or 'block'; 'top' is a resolved zone that
+// maps to head ∪ block. See CONTEXT.md → "Slash Command Set".
 
-export type SlashZone = 'head' | 'block';
+export type SlashZone = 'head' | 'block' | 'top';
 
 export interface SlashCommand {
   /** Trigger token typed after `/` (e.g. "if" for `/if`). Unique. */
   name: string;
-  /** Where this command is offered. */
-  zone: SlashZone;
+  /** Where this command is authored (the resolved 'top' zone maps to head ∪ block). */
+  zone: 'head' | 'block';
   /** Human label for the completion popup + hint bar. */
   label: string;
   /** One-line guidance — carries the cognitive load (esp. return vs reply). */
@@ -140,5 +146,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 
 /** Commands available in a given parse zone, in catalog order. */
 export function commandsForZone(zone: SlashZone): SlashCommand[] {
+  // 'top' (document top level) offers declarations ∪ statements.
+  if (zone === 'top') return SLASH_COMMANDS;
   return SLASH_COMMANDS.filter((c) => c.zone === zone);
 }

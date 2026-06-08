@@ -79,12 +79,12 @@ test.describe('A. annotation completion', () => {
 
 // ── B. Slash commands ───────────────────────────────────────────────────────
 test.describe('B. slash commands', () => {
-  test('B1 — / in head offers exactly /participant + /group', async ({ page }) => {
-    await openSlashPopup(page, 'head');
-    const opts = await completionOptionTexts(page);
-    expect(opts.join('\n')).toContain('/participant');
-    expect(opts.join('\n')).toContain('/group');
-    expect(opts).toHaveLength(2);
+  test('B1 — / at the top level offers declaration AND message commands', async ({ page }) => {
+    await openSlashPopup(page, 'head'); // empty doc = document top level ('top' zone)
+    const j = (await completionOptionTexts(page)).join('\n');
+    expect(j).toContain('/participant');
+    expect(j).toContain('/group');
+    expect(j).toContain('/sync'); // top level is the union (ADR 0002 fix)
   });
 
   test('B2 — / in a block offers block commands, not /participant', async ({ page }) => {
@@ -106,10 +106,11 @@ test.describe('B. slash commands', () => {
     expect(j).toContain('/group');
   });
 
-  // GAP (ADR 0002 #2): at the top level, message slash commands are not offered.
-  test.fixme('B4 — top-level / should offer block commands (slash-zone gap)', async ({ page }) => {
+  test('B4 — top-level / offers message commands (slash-zone gap FIXED)', async ({ page }) => {
     await openSlashPopup(page, 'head');
-    expect((await completionOptionTexts(page)).join('\n')).toContain('/sync');
+    const j = (await completionOptionTexts(page)).join('\n');
+    expect(j).toContain('/sync');
+    expect(j).toContain('/if');
   });
 
   test('B5 — accept /if inserts the if-template', async ({ page }) => {
@@ -506,8 +507,7 @@ test.describe('J. negative / edge', () => {
     expect(await completionOptionTexts(page)).toHaveLength(0);
   });
 
-  // GAP: the slash popup currently fires inside comments. Desired: suppressed.
-  test.fixme('J6 — slash inside a comment should not pop the menu', async ({ page }) => {
+  test('J6 — slash inside a comment does NOT pop the menu (FIXED)', async ({ page }) => {
     await enterParBlock(page);
     await page.keyboard.type('// /sync');
     expect((await options(page)).join('\n')).not.toContain('/sync');

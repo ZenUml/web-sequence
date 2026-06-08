@@ -71,7 +71,11 @@ export function resolveZone(state: EditorState, pos: number): SlashZone {
     }
     node = node.parent
   }
-  return 'head'
+  // Not inside a Head/Group/brace → the document TOP LEVEL, where both
+  // declarations and statements (messages, control flow) are valid. 'top' offers
+  // the union of head + block commands/keywords (fixes the top-level slash gap
+  // where `/sync` used to insert literal text — ADR 0002 open work #2).
+  return 'top'
 }
 
 /**
@@ -158,7 +162,9 @@ const BLOCK_KEYWORDS: Completion[] = [
 ]
 
 function keywordsForZone(zone: SlashZone): Completion[] {
-  return zone === 'head' ? HEAD_KEYWORDS : BLOCK_KEYWORDS
+  if (zone === 'head') return HEAD_KEYWORDS
+  if (zone === 'block') return BLOCK_KEYWORDS
+  return [...HEAD_KEYWORDS, ...BLOCK_KEYWORDS] // 'top': both are valid
 }
 
 // Annotations (@Actor, @Database, ...) are only valid where a ParticipantType
@@ -205,6 +211,14 @@ function atMessageEndpoint(state: EditorState, pos: number): boolean {
 export function zenumlCompletions(context: CompletionContext): CompletionResult | null {
   const { state, pos } = context
 
+  // No completions inside a comment: the `/` in `// /sync` must NOT pop the slash
+  // menu, and a word inside a comment must not pop keywords/participant names.
+  // `Comment` is a single token spanning `//` to end-of-line, so the cursor
+  // resolves directly to it.
+  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
+    if (n.name === 'Comment') return null
+  }
+
   // ---- SLASH MODE -------------------------------------------------------
   // Match a `/word` immediately before the cursor. The `/` must be the trigger;
   // we anchor on it so `A.b()/2` (a stray slash) inside text doesn't pop the
@@ -241,7 +255,7 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
 
   // Annotations are ONLY valid where a ParticipantType is — the head. Gate the
   // whole branch on zone so typing "@A" inside a block does NOT offer @Actor etc.
-  if (zone === 'head' && (typed.startsWith('@') || context.explicit)) {
+  if ((zone === 'head' || zone === 'top') && (typed.startsWith('@') || context.explicit)) {
     options.push(...annotationCompletions())
   }
 
@@ -255,7 +269,7 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
     // Zone-gated keywords — but NOT while typing the name of an annotated
     // participant (`@Actor a`): that slot is the participant NAME, not a keyword,
     // so title/group/as must stay out of it.
-    if (!(zone === 'head' && isNamingDeclaration(state, pos))) {
+    if (!((zone === 'head' || zone === 'top') && isNamingDeclaration(state, pos))) {
       options.push(...keywordsForZone(zone))
     }
   }

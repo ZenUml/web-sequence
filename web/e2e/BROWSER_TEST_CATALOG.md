@@ -11,7 +11,9 @@ Status:
 - ✅ᴾ verified in-browser via the committed Playwright e2e (`editor-language.spec.ts`); not reproducible through agent-browser (tooling limitation, noted)
 - ⚠️ confirmed gap / expected-fail on current code
 
-**Result: 49 / 51 pass; 2 confirmed gaps (B4, J6).**
+**Result: 51 / 51 pass.** (B4 top-level slash zone and J6 slash-in-comment were
+gaps surfaced by this catalog and have since been fixed — see Findings. Full
+Playwright implementation: `catalog.spec.ts`.)
 
 ---
 
@@ -69,13 +71,14 @@ agent-browser eval 'JSON.stringify(Array.from(document.querySelectorAll("[data-t
 
 ## B. Slash commands — zone gating, insertion, field navigation
 
-**B1** ✅ GIVEN empty, WHEN I type `/`, THEN exactly `/participant` + `/group`.
+**B1** ✅ GIVEN empty (document top level), WHEN I type `/`, THEN the union of
+declaration + message commands is offered (`/participant`, `/group`, `/sync`, `/if`, …).
 
 **B2** ✅ GIVEN cursor in a block, WHEN I type `/`, THEN block commands (`/sync`,`/async`,`/if`,`/while`,`/par`,`/opt`,`/try`,`/return`,`/reply`,`/new`,`/section`,`/ref`,`/note`) and NOT `/participant`/`/group`.
 
 **B3** ✅ GIVEN `group G {` + Enter (group body), WHEN I type `/`, THEN `/participant` + `/group`.
 
-**B4** ⚠️ GIVEN empty (top-level), WHEN I type `/sync`, THEN `/sync` is NOT offered (only head commands). *Known top-level slash-zone gap — ADR 0002 open work #2. Desired: offer block commands at top level.*
+**B4** ✅ GIVEN empty (top-level), WHEN I type `/`, THEN message commands (`/sync`, `/if`, …) ARE offered alongside declarations. *Was a gap (top-level resolved to `head`); fixed via a `'top'` zone = head ∪ block (ADR 0002 #2).*
 
 **B5** ✅ GIVEN cursor in a block, WHEN I accept `/if`, THEN inserts `if(condition) {` with a field active.
 
@@ -193,29 +196,38 @@ agent-browser eval 'JSON.stringify(Array.from(document.querySelectorAll("[data-t
 
 **J5** ✅ GIVEN a quiescent (cleared) editor, THEN no completion popup appears until typing.
 
-**J6** ⚠️ GIVEN a block with a comment `// /sync`, WHEN inspecting, THEN the slash popup SHOULD be suppressed — **but it is NOT**: `/sync`,`/async` pop inside the comment. *Confirmed gap: the slash completion source does not check for comment context. Desired: no slash popup inside comments. New finding from this catalog run.*
+**J6** ✅ GIVEN a block with a comment `// /sync`, WHEN inspecting, THEN the slash popup is suppressed (no `/sync`). *Was a gap (completion fired inside comments); fixed with an early "cursor in a `Comment` node → no completions" guard in `zenumlCompletions`.*
 
 ---
 
-## Findings from the catalog run
+## Findings from the catalog run (both fixed)
 
-1. **B4** (known) — top-level slash zone: message commands unavailable at the top level. ADR 0002 open work #2.
-2. **J6** (NEW) — the slash-command popup fires inside comments (`// /sync` in a block pops `/sync`). The completion source should bail when the cursor is inside a `Comment` node.
-3. **B7 / F6** — snippet **prev-field** (Shift-Tab) is correct in the editor (Playwright green) but agent-browser cannot drive `Shift+Tab` into a snippet field; use Playwright for those two.
-4. **Highlighting** (G1–G4) and **declare-then-message parity** (G2) confirmed live: `@`=cobalt, `method`=teal, message `Hello`=string color identical with/without a preceding declaration.
+1. **B4 (FIXED)** — top-level slash zone: message commands were unavailable at the
+   document top level. Fixed with a `'top'` zone (head ∪ block) — `resolveZone`
+   defaults to `'top'` outside any Head/Group/brace. ADR 0002 open work #2 closed.
+2. **J6 (FIXED)** — the slash popup fired inside comments. Fixed with an early
+   guard in `zenumlCompletions`: cursor inside a `Comment` node → no completions.
+3. **B7 / F6** — snippet prev-field (Shift-Tab) works in Playwright (`catalog.spec.ts`);
+   agent-browser can't drive `Shift+Tab` into a snippet field, so those two are
+   Playwright-only during live agent-browser bring-up.
+4. **Highlighting** (G1–G4) and **declare-then-message parity** (G2): `@`=cobalt,
+   `method`=teal, message `Hello`=string color identical with/without a declaration.
 
 ## Coverage summary
 
-| Area | Cases | ✅ live | ✅ᴾ e2e | ⚠️ gap |
-|---|---|---|---|---|
-| A | 5 | 5 | – | – |
-| B | 9 | 7 | 1 | 1 |
-| C | 7 | 7 | – | – |
-| D | 3 | 3 | – | – |
-| E | 5 | 5 | – | – |
-| F | 6 | 5 | 1 | – |
-| G | 4 | 4 | – | – |
-| H | 4 | 1 | 3 | – |
-| I | 2 | 2 | – | – |
-| J | 6 | 5 | – | 1 |
-| **Total** | **51** | **44** | **5** | **2** |
+All 51 cases are implemented in `catalog.spec.ts` and pass under Playwright
+(49 were also driven live via agent-browser; B7/F6 are Playwright-only). 0 gaps.
+
+| Area | Cases | Pass |
+|---|---|---|
+| A annotation completion | 5 | 5 |
+| B slash commands | 9 | 9 |
+| C head keyword sub-positions | 7 | 7 |
+| D block keywords | 3 | 3 |
+| E participant names | 5 | 5 |
+| F accept & keymap | 6 | 6 |
+| G highlighting | 4 | 4 |
+| H auto-indentation | 4 | 4 |
+| I hint bar | 2 | 2 |
+| J negative / edge | 6 | 6 |
+| **Total** | **51** | **51** |

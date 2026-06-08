@@ -99,17 +99,17 @@ test.describe('slash snippet multi-field navigation', () => {
 // cursor's parse zone (Head vs StatementBraceBlock).
 // ---------------------------------------------------------------------------
 test.describe('slash zone gating', () => {
-  test("'/' at document head offers only /participant and /group", async ({ page }) => {
+  test("'/' at the document top level offers declaration AND message commands", async ({ page }) => {
+    // The document top level ('top' zone) permits both declarations and statements,
+    // so it offers the union — incl. message commands (ADR 0002 slash-zone fix).
+    // Declaration-only gating is exercised in a group body (separate test).
     await openSlashPopup(page, 'head');
-    const opts = await completionOptionTexts(page);
-    const joined = opts.join('\n');
+    const joined = (await completionOptionTexts(page)).join('\n');
 
     expect(joined).toContain('/participant');
     expect(joined).toContain('/group');
-    // Block-only commands must NOT leak into the head.
-    expect(joined).not.toContain('/if');
-    expect(joined).not.toContain('/sync');
-    expect(opts).toHaveLength(2);
+    expect(joined).toContain('/sync');
+    expect(joined).toContain('/if');
   });
 
   test("'/' inside a block offers control-flow commands (and not head-only ones)", async ({
@@ -198,6 +198,7 @@ test.describe('Tab accepts completions (outranks indentWithTab)', () => {
     await clearEditor(page);
     await page.keyboard.type('@');
     await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(150); // past CM's 75ms completion interactionDelay before accepting
     await page.keyboard.press('Tab');
     // Tab must ACCEPT @Actor (the selected option), not indent: the result is
     // exactly "@Actor" with NO leading whitespace.

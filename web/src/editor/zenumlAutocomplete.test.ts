@@ -37,9 +37,10 @@ function labels(result: { options: readonly Completion[] } | null): string[] {
 }
 
 describe('resolveZone', () => {
-  it("returns 'head' at the very top of a document", () => {
-    const doc = '@Actor A\nB.m(){}'
-    expect(resolveZone(stateAt(doc), 0)).toBe('head')
+  it("returns 'top' at the document top level (declarations ∪ statements)", () => {
+    // The top level permits both participant declarations and statements, so it
+    // is its own zone ('top'), not 'head'. (ADR 0002: fixes the top-level slash gap.)
+    expect(resolveZone(stateAt('A->B: hi'), 0)).toBe('top')
   })
 
   it("returns 'head' inside a participant declaration", () => {
@@ -66,12 +67,12 @@ describe('resolveZone', () => {
     expect(resolveZone(stateAt(doc), pos)).toBe('head')
   })
 
-  it('defaults to head on an empty document', () => {
-    expect(resolveZone(stateAt(''), 0)).toBe('head')
+  it("defaults to 'top' on an empty document", () => {
+    expect(resolveZone(stateAt(''), 0)).toBe('top')
   })
 
-  it('defaults to head on a whitespace-only document', () => {
-    expect(resolveZone(stateAt('   \n  '), 3)).toBe('head')
+  it("defaults to 'top' on a whitespace-only document", () => {
+    expect(resolveZone(stateAt('   \n  '), 3)).toBe('top')
   })
 })
 
@@ -83,10 +84,18 @@ describe('slash commands', () => {
     expect(ls).toContain('/if')
   })
 
-  it('does NOT offer /if in the head', () => {
-    const doc = '/i'
-    const ls = labels(completeAt(doc, 2))
+  it('does NOT offer /if in a group body (a true head-only zone)', () => {
+    // A group body holds participant declarations only — block commands are gated out.
+    const doc = 'group G {\n/i\n}'
+    const ls = labels(completeAt(doc, doc.indexOf('/i') + 2))
     expect(ls).not.toContain('/if')
+    expect(ls).toContain('/participant')
+  })
+
+  it('top-level / offers BOTH declaration and message commands', () => {
+    const ls = labels(completeAt('/', 1))
+    expect(ls).toContain('/participant') // declaration
+    expect(ls).toContain('/sync') // message (the top-level slash gap, now fixed)
   })
 
   it('offers /participant and /group for "/" in the head', () => {
@@ -261,6 +270,18 @@ describe('normal completions — annotations', () => {
     const ls = labels(completeAt(doc, pos))
     expect(ls).not.toContain('@Actor')
     expect(ls).not.toContain('@Database')
+  })
+})
+
+describe('no completions inside a comment', () => {
+  it('does not offer slash commands inside a comment ("// /sync")', () => {
+    const doc = '// /sync'
+    expect(labels(completeAt(doc, doc.length))).toEqual([])
+  })
+
+  it('does not offer keywords/names inside a comment ("// whi")', () => {
+    const doc = '// whi'
+    expect(labels(completeAt(doc, doc.length, true))).toEqual([])
   })
 })
 
