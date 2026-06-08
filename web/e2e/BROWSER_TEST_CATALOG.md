@@ -277,3 +277,16 @@ bugs rather than ratify current behavior. Result: **10 real bugs found + fixed.*
   nodes (the property the disabled linter in `modes.ts` needs). Both modes.ts-named
   false-positive blockers (declare-then-message, quoted method names) are now clear; bare
   `A:B` remains a known minor under-accept.
+
+### Campaign rounds 2–4 — areas X, Y, Z + guards
+| Area | Theme |
+|---|---|
+| X | Authoring journeys: forward-ref, first-mention chains, rename, dedup, self-msg, live-update, new() target |
+| Y | Completion-noise suppression in free-text labels/aliases (#813) |
+| Z | CJK / full-width punctuation auto-correct (feature) — code-only, free-text-preserving, composes with autocomplete |
+
+Additional unit guards: `conformance/noFalsePositive.test.ts` (no Lezer error on renderer-valid DSL),
+`zenumlAutocomplete.fuzz.test.ts` (completion never throws), `cjkAutocorrect.test.ts` (21 cases).
+
+Feature: full-width arrow `→`→`->` is a possible future enhancement (1→2 mapping; the renderer also
+rejects bare `→`). Known minor grammar gaps deferred: `A.b(x = 1)` named param, `A:B`.
