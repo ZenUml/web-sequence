@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Item, Folder, AppUser } from '../../domain/types';
 import {
   SearchInput,
@@ -9,6 +9,10 @@ import {
   SelectItem,
   SelectValue,
   cn,
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
 } from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
 import { FolderList } from '../library/FolderList';
@@ -62,6 +66,9 @@ export function HomeView({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onDeleteItem,
+  onForkItem,
+  onExportHtml,
   readOnly = false,
 }: HomeViewProps) {
   const query = useLibraryStore((s) => s.query);
@@ -70,6 +77,9 @@ export function HomeView({
   const setQuery = useLibraryStore((s) => s.setQuery);
   const setActiveFolder = useLibraryStore((s) => s.setActiveFolder);
   const setSort = useLibraryStore((s) => s.setSort);
+
+  // "Start something new" block collapsed state.
+  const [startHidden, setStartHidden] = useState(false);
 
   const counts = useMemo(() => buildCounts(items, folders), [items, folders]);
 
@@ -110,27 +120,76 @@ export function HomeView({
           </span>
         </div>
 
-        {/* Search — centred, expands to fill space */}
-        <div className="flex-1 min-w-0 max-w-xs mx-auto">
+        {/* Spacer pushes search to center */}
+        <div className="flex-1" />
+
+        {/* Search — centred, fixed width. "/" kbd badge shown when empty */}
+        <div className="w-72 relative shrink-0">
           <SearchInput
             value={query}
             onChange={setQuery}
             surface="dark"
-            placeholder="Search diagrams…"
+            placeholder="Search your diagrams…"
             data-testid="home-search"
+            className="w-full"
           />
+          {!query && (
+            <kbd
+              aria-hidden="true"
+              className={cn(
+                'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2',
+                'inline-flex items-center justify-center h-5 min-w-[18px] px-1 rounded',
+                'bg-ink-700 border border-ink-line/50 font-mono text-[10px] text-ondark-faint select-none',
+              )}
+            >
+              /
+            </kbd>
+          )}
         </div>
 
-        {/* Right-hand actions */}
+        {/* Spacer mirrors brand width to keep search centred */}
+        <div className="flex-1" />
+
+        {/* Right-hand actions — split New button + avatar/sign-in */}
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="primary"
-            size="md"
-            data-testid="home-new"
-            onClick={onNewDiagram}
-          >
-            New diagram
-          </Button>
+          {/* Split New button: primary "New" + caret opening a mini-menu */}
+          <div className="flex items-stretch">
+            <Button
+              variant="primary"
+              size="md"
+              data-testid="home-new"
+              onClick={onNewDiagram}
+              className="rounded-r-none border-r border-white/20"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-3.5 w-3.5" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+              New
+            </Button>
+            <Menu>
+              <MenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More new diagram options"
+                  className={cn(
+                    'grid place-items-center h-8 px-1.5 rounded-r-md rounded-l-none',
+                    'bg-accent hover:bg-accent-hover active:bg-accent-press text-white',
+                    'transition-colors duration-150 ease-draft ring-draft',
+                    'border-l border-white/20',
+                  )}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </MenuTrigger>
+              <MenuContent align="end">
+                <MenuItem onSelect={onNewDiagram}>Blank diagram</MenuItem>
+                <MenuItem onSelect={onBrowseTemplates}>From template…</MenuItem>
+              </MenuContent>
+            </Menu>
+          </div>
+
           {user ? (
             <button
               type="button"
@@ -161,8 +220,11 @@ export function HomeView({
 
       {/* Body — sidebar + main */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Folder sidebar */}
-        <aside className="w-44 shrink-0 bg-ink-950 border-r border-ink-line/40 overflow-y-auto px-2 py-3">
+        {/* Folder sidebar — 236px per design spec */}
+        <aside
+          className="w-[236px] shrink-0 bg-ink-950 border-r border-ink-line/40 overflow-y-auto px-2 py-3"
+          data-testid="home-sidebar"
+        >
           <FolderList
             folders={folders}
             activeFolderId={activeFolderId}
@@ -177,6 +239,42 @@ export function HomeView({
 
         {/* Main diagram grid */}
         <main className="flex-1 bg-blueprint overflow-y-auto">
+          {/* "Start something new" — collapsible template row */}
+          {!libraryEmpty && !query && !startHidden && (
+            <div className="border-b border-ink-line/40 px-5 py-4" data-testid="home-start-block">
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="font-sans font-semibold text-[13px] text-ondark-strong">Start something new</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ondark-faint">templates &amp; styles</span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setStartHidden(true)}
+                  className="font-sans text-[12px] text-ondark-faint hover:text-ondark-muted transition-colors duration-150"
+                >
+                  Hide
+                </button>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {TEMPLATE_STUBS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={onBrowseTemplates}
+                    className={cn(
+                      'flex flex-col items-start gap-1.5 rounded-lg border border-ink-line/40 p-3 shrink-0 w-36',
+                      'bg-ink-900 hover:border-accent/60 hover:bg-ink-800 transition-colors duration-150 ring-draft text-left',
+                    )}
+                  >
+                    <div className="h-16 w-full rounded bg-ink-800 flex items-center justify-center text-ondark-faint text-[9px] font-mono">
+                      {t.icon}
+                    </div>
+                    <span className="font-sans text-[11px] font-medium text-ondark-strong">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Empty library — first-run CTA */}
           {libraryEmpty && !query && (
             <div
@@ -238,15 +336,18 @@ export function HomeView({
 
           {/* Diagram grid */}
           {hasResults && (
-            <div className="p-4">
-              {/* Sort / count bar */}
+            <div className="p-4 pt-5">
+              {/* "My diagrams" heading + sort */}
               <div className="flex items-center justify-between gap-2 mb-4">
-                <span
-                  data-testid="home-count"
-                  className="font-mono text-[11px] text-ondark-faint tabular-nums"
-                >
-                  {visible.length} {visible.length === 1 ? 'diagram' : 'diagrams'}
-                </span>
+                <h2 className="font-sans font-semibold text-[13.5px] text-ondark-strong">
+                  My diagrams
+                  <span
+                    data-testid="home-count"
+                    className="ml-1.5 font-mono text-[11px] font-normal text-ondark-faint tabular-nums"
+                  >
+                    {visible.length}
+                  </span>
+                </h2>
                 <Select
                   value={sort}
                   onValueChange={(v) => setSort(v as 'updated' | 'title')}
@@ -266,14 +367,21 @@ export function HomeView({
                 </Select>
               </div>
 
-              {/* Auto-fill card grid — minmax(200px) matches the design's 232px target */}
+              {/* Auto-fill card grid — minmax(232px) per design spec */}
               <div
                 data-testid="home-grid"
                 className="grid gap-3"
                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
               >
                 {visible.map((item) => (
-                  <DiagramCard key={item.id} item={item} onClick={onOpen} />
+                  <DiagramCard
+                    key={item.id}
+                    item={item}
+                    onClick={onOpen}
+                    onDelete={onDeleteItem}
+                    onFork={onForkItem}
+                    onExportHtml={onExportHtml}
+                  />
                 ))}
               </div>
             </div>
@@ -305,3 +413,12 @@ function BrandIcon() {
     </svg>
   );
 }
+
+// Stub template cards — clicking any opens the full template picker (CreateNewModal).
+const TEMPLATE_STUBS = [
+  { id: 'blank', label: 'Blank', icon: '—' },
+  { id: 'api', label: 'REST API', icon: 'API' },
+  { id: 'auth', label: 'Auth flow', icon: '🔑' },
+  { id: 'microservices', label: 'Microservices', icon: '⬡' },
+  { id: 'ecommerce', label: 'Checkout', icon: '🛒' },
+];
