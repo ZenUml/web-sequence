@@ -163,3 +163,7 @@ label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-au
   Added 『』〖〗→{} CJK corner/lenticular brackets to autocorrect (user request); 「」 deliberately
   left out (ambiguous quote vs brace). +2 unit +Z5 e2e. NOTE: tighten verification (fewer full reruns)
   as we approach the 65% cap.
+- 2026-06-09 8th check: All-models weekly **61%** (fresh), Sonnet 18%. ~4% headroom to the 65% cap
+  (~2h). CJK autocorrect thread CLOSED (arrow → skipped: not keyboard-typable; 「」 skipped: ambiguous).
+  Campaign deliverables complete: 11 bugs (#803-813) + CJK autocorrect feature; 189 e2e + 277 unit
+  green; 19 commits; tree clean. HOLDING for user's next direction (wrap up / new direction / mine more).
