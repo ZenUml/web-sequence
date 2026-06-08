@@ -19,7 +19,6 @@ import {
   completionOptionTexts,
   acceptCompletion,
   errorMarkerCount,
-  snippetFieldCount,
   openBlockWithoutAutoClose,
 } from './helpers/editor';
 
@@ -239,5 +238,33 @@ test.describe('auto-indentation', () => {
     await expect
       .poll(() => getEditorText(page))
       .toBe('A.run() {\n  B->C: hi\n}');
+  });
+
+  // Nested blocks must indent one unit PER depth — the single-level test above
+  // can't tell a depth-aware indent from a fixed copy-previous-line indent.
+  test('nested block body indents one unit per depth (2 then 4)', async ({ page }) => {
+    await clearEditor(page);
+    // Natural flow: closeBrackets auto-pairs each `{`, so each block stays CLOSED
+    // (delimitedIndent needs the closing `}` to compute depth). Do NOT delete the
+    // auto-pair here — typing the inner opener on the indented body line nests it.
+    await page.keyboard.type('A.a() {'); // -> "A.a() {}" cursor between
+    await page.keyboard.press('Enter'); // depth-1 body @ 2 spaces
+    await page.keyboard.type('B.b() {'); // inner block, its `}` auto-paired
+    await page.keyboard.press('Enter'); // depth-2 body @ 4 spaces
+    await page.keyboard.type('C.c()');
+    // depth-1 body at 2 spaces, depth-2 body at 4 spaces — proves indent is
+    // depth-aware (one unit per nesting level), not a fixed copy-previous-line.
+    await expect
+      .poll(() => getEditorText(page))
+      .toMatch(/A\.a\(\) \{\n {2}B\.b\(\) \{\n {4}C\.c\(\)/);
+  });
+
+  // The other block-opening keyword (if) must indent its body too — proves the
+  // indentNodeProp covers StatementBraceBlock generally, not just A.m() blocks.
+  test('if-block body indents one unit', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('if(ready) {'); // closeBrackets pairs `}`
+    await page.keyboard.press('Enter'); // body line, indented
+    await expect.poll(() => getEditorText(page)).toMatch(/if\(ready\) \{\n {2}/);
   });
 });
