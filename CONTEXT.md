@@ -143,7 +143,18 @@ No component calls `parser.parse()` directly. Rationale: the language extension
 maintains an incremental tree; independent re-parses double the work and diverge
 on partially-typed input.
 
-### Known grammar gaps (Lezer ↔ renderer divergence) — deferred milestone
+### Known grammar gaps (Lezer ↔ renderer divergence) — reframed by ADR 0002
+> **DECISION (2026-06-08):** the goal is NOT parity with ANTLR and NOT replacing the
+> Lezer parser. We keep the simple Lezer parser as a deliberate SUBSET; the hard
+> requirement is that its semantic analysis never CONTRADICTS ANTLR ("abstain, don't
+> fabricate"). ANTLR is a test-time conformance ORACLE: a subset-invariant gate asserts
+> `ours ⊆ antlr` per semantic dimension (participants, endpoints, zone). Contradiction =
+> fail; abstention/incompleteness = pass. The fix for the head/statement case is to stop
+> fabricating participants from unparsed lines, NOT to parse them correctly. Highlighting
+> that goes flat is acceptable incompleteness, not a blocker. See
+> `docs/adr/0002-editor-parser-reuse-antlr-via-tree-adapter.md`. The per-gap detail below
+> is retained as test-corpus motivation, not as a work plan.
+
 Surfaced by renderer-in-the-loop verification. The Lezer editor grammar is NARROWER than
 the renderer's ANTLR grammar in three places; each is valid ZenUML the renderer accepts but
 the editor's linter flags (or silently mis-parses). These need a dedicated, test-first grammar
