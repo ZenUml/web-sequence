@@ -393,25 +393,25 @@ export function HomeView({
   );
 }
 
-// Minimal ZenUML brand icon — cobalt rounded square with a sequence-like glyph.
+// ZenUML brand icon — cobalt rounded square with the two-participant sequence glyph.
 function BrandIcon() {
   return (
-    <svg
-      width="26"
-      height="26"
-      viewBox="0 0 26 26"
-      fill="none"
+    <span
+      className={cn(
+        'grid place-items-center h-[30px] w-[30px] rounded-lg text-white shrink-0',
+        'bg-gradient-to-br from-accent to-accent-press shadow-inset',
+      )}
       aria-hidden="true"
     >
-      <rect width="26" height="26" rx="6" fill="#2F6BFF" />
-      <path
-        d="M7 9h12l-5 4 5 4H7"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+      <span className="h-[17px] w-[17px]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <rect x="3" y="4" width="7" height="5" rx="1" />
+          <rect x="14" y="4" width="7" height="5" rx="1" />
+          <path d="M6.5 9v11M17.5 9v6" />
+          <path d="M6.5 13h9M15 11l2 2-2 2" />
+        </svg>
+      </span>
+    </span>
   );
 }
 
