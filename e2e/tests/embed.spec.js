@@ -57,8 +57,8 @@ test('CONTROL: normal (non-embed) mode renders the real header, sidebar, and edi
 
   await expect(page.getByTestId('header-title')).toBeVisible();
   await expect(page.getByTestId('header-menu')).toBeVisible();
-  // Both sidebar panels render unconditionally in normal mode.
-  await expect(page.getByTestId(/^sidebar-/)).toHaveCount(2);
+  // Sidebar rail buttons render unconditionally in normal mode (editor + library + templates + help = 4).
+  await expect(page.getByTestId(/^sidebar-/)).toHaveCount(4);
   await expect(page.getByTestId('dsl-editor')).toBeVisible();
   // The embed shell is NOT present in normal mode.
   await expect(page.getByTestId('embed-header')).toHaveCount(0);
