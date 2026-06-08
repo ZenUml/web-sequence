@@ -4,9 +4,10 @@
 // field counts) — never an internal/unit signal. This is the final acceptance
 // gate the project requires: the whole user journey, not the first step.
 //
-// Preconditions: a vite PREVIEW server is already serving web/dist at the
-// config baseURL (http://localhost:4173). After any SOURCE change, `yarn build`
-// then re-run — the preview serves the built bundle, not live source.
+// SERVER: playwright.config.ts self-builds this worktree and serves it on strict
+// port 4399 (do NOT trust :4173 — that's a different worktree's app). The
+// webServer block runs `yarn build` before the suite, so it always tests the
+// current source. Override with PW_BASE_URL to target an already-running server.
 
 import { test, expect } from '@playwright/test';
 import {
@@ -207,6 +208,50 @@ test.describe('syntax highlighting', () => {
     const arrowSpan = spans.find((s) => s.text === '->');
     expect(arrowSpan, 'expected a span for the arrow "->"').toBeTruthy();
     expect(arrowSpan!.color).not.toBe(baseColor);
+  });
+
+  // INTEGRATION ACCEPTANCE for the Head/Statement grammar fix (ADR 0002, commit
+  // ad4dc2a). Before the fix, `Head { (Participant ST?)+ }` greedily absorbed a
+  // message line that followed a participant declaration, mis-tagging its label
+  // as a participant Name (className colour) — the message wasn't parsed at all.
+  // After the fix the message parses structurally regardless of a preceding
+  // declaration, so its content "Hello" carries the SAME (message-content) colour
+  // whether it stands alone or follows a declaration. Identical colour = proof the
+  // grammar fix is live in the real editor, not just in the unit conformance gate.
+  test('declare-then-message: the message highlights identically to a lone message (grammar fix is live)', async ({
+    page,
+  }) => {
+    const content = editorContent(page);
+    const helloColor = async (): Promise<string | undefined> => {
+      const spans = await content
+        .locator('.cm-line span')
+        .evaluateAll((els) =>
+          els.map((e) => ({ text: e.textContent ?? '', color: getComputedStyle(e).color })),
+        );
+      return spans.find((s) => s.text === 'Hello')?.color;
+    };
+
+    // Baseline: a LONE message — always parsed correctly; "Hello" is message content.
+    await clearEditor(page);
+    await page.keyboard.type('A->B: Hello');
+    await page.waitForTimeout(300);
+    const loneColor = await helloColor();
+    expect(loneColor, 'lone message should colour "Hello" as content').toBeTruthy();
+
+    // The fixed case: the SAME message preceded by a participant declaration.
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alice->Bob: Hello');
+    await page.waitForTimeout(300);
+    const declaredColor = await helloColor();
+
+    // Capture the milestone screenshot of the now-correctly-highlighted shape.
+    await editorRoot(page).screenshot({ path: 'tmp/declare-then-message-highlight.png' });
+
+    // Identical colour proves the message is parsed structurally the same with or
+    // without a preceding declaration — the editor-integration payoff of the fix.
+    expect(declaredColor, 'declare-then-message should colour "Hello" as content').toBe(loneColor);
   });
 });
 
