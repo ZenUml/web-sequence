@@ -185,7 +185,8 @@ test('header-new: clicking New resets editor to the default starter DSL', async 
   await typeDsl(page, CUSTOM_DSL);
   await expect(editorLocator(page)).toContainText('CustomActor');
 
-  // Click the "New" button in the header.
+  // Open the app menu then click "New" (New lives inside the header-menu dropdown).
+  await page.locator('[data-testid="header-menu"]').click();
   await page.locator('[data-testid="header-new"]').click();
 
   // #8: with unsaved edits, New first asks to confirm discarding them. Confirm the

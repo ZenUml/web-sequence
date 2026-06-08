@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { existsSync, readdirSync } from 'fs';
+
+// These tests check the LOCAL web/dist build and hit localhost:PREVIEW_PORT directly.
+// They must not run when PW_BASE_URL targets a remote host (staging/prod gate).
+test.beforeEach(() => {
+  test.skip(!!process.env.PW_BASE_URL, 'production-build checks require a local web/dist build');
+});
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { PREVIEW_PORT } from '../../playwright.config.js';

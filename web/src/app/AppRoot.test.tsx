@@ -199,7 +199,7 @@ describe('AppRoot', () => {
     // Save retired into the app menu; the passive save-state indicator + the app
     // menu trigger are the header's new persistent affordances.
     expect(screen.getByTestId('header-savestate')).toBeInTheDocument();
-    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
   });
 
   // The Save button is gone; ⌘S is the advertised manual-save accelerator (app menu
@@ -288,8 +288,8 @@ describe('AppRoot — M04 save-seam plan limit', () => {
     // Save retired from a top-level button into the app menu (logo ▾). Manual save
     // now: open the app menu, click its Save item.
     await act(async () => {
-      await userEvent.click(screen.getByTestId('app-menu-trigger'));
-      await userEvent.click(await screen.findByTestId('app-menu-save'));
+      await userEvent.click(screen.getByTestId('header-menu'));
+      await userEvent.click(await screen.findByTestId('header-save'));
     });
   }
 
@@ -766,8 +766,8 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     });
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
     await act(async () => {
-      await userEvent.click(screen.getByTestId('app-menu-trigger'));
-      await userEvent.click(await screen.findByTestId('app-menu-save'));
+      await userEvent.click(screen.getByTestId('header-menu'));
+      await userEvent.click(await screen.findByTestId('header-save'));
     });
     await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
     const env = lastEnvelope('Free Limit');
@@ -977,7 +977,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // M05 — embed mode (RM-2 / REQ-EMB-1).
 //
 // DISCRIMINATING-TESTID CONTRACT (verified against the code): AppHeader exposes
-// `header-title`/`app-menu-trigger`/`header-savestate` and Sidebar exposes `sidebar-editor`/
+// `header-title`/`header-menu`/`header-savestate` and Sidebar exposes `sidebar-editor`/
 // `sidebar-library` — these are PRESENT in normal mode (the CONTROL test pins them),
 // so their ABSENCE in embed is a genuine revert→fail signal (there is no `app-header`
 // / bare `sidebar` id that would pass vacuously). The URL is driven via
@@ -989,7 +989,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     window.history.replaceState({}, '', '/');
     render(<AppRoot />);
     expect(await screen.findByTestId('header-title')).toBeInTheDocument();
-    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
     // At least one sidebar-<panel> node renders in normal mode.
     expect(screen.getAllByTestId(/^sidebar-/).length).toBeGreaterThan(0);
     // The embed shell is NOT present in normal mode.
@@ -1003,7 +1003,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(await screen.findByTestId('embed-header')).toBeInTheDocument();
     // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
     expect(screen.queryByTestId('header-title')).toBeNull();
-    expect(screen.queryByTestId('app-menu-trigger')).toBeNull();
+    expect(screen.queryByTestId('header-menu')).toBeNull();
     expect(screen.queryAllByTestId(/^sidebar-/)).toHaveLength(0);
     // No save/auth controls in embed.
     expect(screen.queryByTestId('header-savestate')).toBeNull();
