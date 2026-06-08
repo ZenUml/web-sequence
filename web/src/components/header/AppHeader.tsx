@@ -179,7 +179,11 @@ export function AppHeader({
 
   return (
     <>
-      <header className="bg-blueprint border-b border-ink-line/40 h-14 px-3 md:px-4 flex items-center gap-2 md:gap-3.5">
+      <header className={cn(
+        'bg-blueprint border-b border-ink-line/40 px-3 md:px-4 flex items-center gap-2 md:gap-3.5',
+        // Hub mode on mobile: two rows (nav row + title row). Single row on sm+ or outside hub.
+        onGoHome ? 'h-auto sm:h-14 flex-wrap py-1.5 sm:py-0' : 'h-14',
+      )}>
         {/* App menu — the logo brand button (▾). Holds New / New from template /
             Settings / Keyboard shortcuts / DSL cheat sheet / Help / Pricing / Save. */}
         <AppMenu
@@ -240,6 +244,8 @@ export function AppHeader({
           className={cn(
             'flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
             'bg-ink-700/45 border border-ink-line/50',
+            // Hub mode on mobile: drop title to its own row, stretch full width.
+            onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
           )}
         >
           <TextInput
@@ -252,9 +258,11 @@ export function AppHeader({
             // .fname: quiet until hover/focus — transparent fill + borderless until
             // the field is engaged, so the title reads as text, not a form control.
             className={cn(
-              'min-w-0 max-w-[120px] sm:max-w-[220px] h-7 bg-transparent border-transparent font-sans font-medium',
+              'min-w-0 h-7 bg-transparent border-transparent font-sans font-medium',
               'text-[14px] text-ondark-strong',
               'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
+              // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
+              onGoHome ? 'flex-1 sm:flex-none sm:max-w-[220px]' : 'max-w-[220px]',
             )}
             onChange={(e) => onTitleChange(e.target.value)}
           />
