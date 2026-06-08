@@ -123,8 +123,8 @@ export function HomeView({
         {/* Spacer pushes search to center */}
         <div className="flex-1" />
 
-        {/* Search — centred, fixed width. "/" kbd badge shown when empty */}
-        <div className="w-72 relative shrink-0">
+        {/* Search — centred; fixed 288px on sm+, full-width flex-shrink on mobile */}
+        <div className="relative flex-1 sm:flex-none sm:w-72 min-w-0">
           <SearchInput
             value={query}
             onChange={setQuery}
@@ -164,7 +164,7 @@ export function HomeView({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-3.5 w-3.5" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" />
               </svg>
-              New
+              <span className="hidden sm:inline">New</span>
             </Button>
             <Menu>
               <MenuTrigger asChild>
@@ -211,6 +211,7 @@ export function HomeView({
               size="md"
               data-testid="home-signin"
               onClick={onOpenSignIn}
+              className="hidden sm:flex"
             >
               Sign in
             </Button>
@@ -222,7 +223,7 @@ export function HomeView({
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Folder sidebar — 236px per design spec */}
         <aside
-          className="w-[236px] shrink-0 bg-ink-950 border-r border-ink-line/40 overflow-y-auto px-2 py-3"
+          className="hidden sm:flex sm:flex-col w-[236px] shrink-0 bg-ink-950 border-r border-ink-line/40 overflow-y-auto px-2 py-3"
           data-testid="home-sidebar"
         >
           <FolderList
