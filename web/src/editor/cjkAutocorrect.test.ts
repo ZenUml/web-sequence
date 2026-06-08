@@ -132,4 +132,15 @@ describe('cjkPunctuationAutocorrect', () => {
     })
   })
 
+
+  describe('full-width period variants', () => {
+    it('．(U+FF0E) → . like 。(U+3002)', () => {
+      expect(type('Order', 5, '．')).toBe('Order.')
+    })
+    it('halfwidth katakana ｡ → . and ､ → ,', () => {
+      expect(type('A.b(1', 5, '､')).toBe('A.b(1,')
+      expect(type('Order', 5, '｡')).toBe('Order.')
+    })
+  })
+
 })

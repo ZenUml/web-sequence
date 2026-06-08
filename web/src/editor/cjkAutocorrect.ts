@@ -22,13 +22,24 @@ import { syntaxTree } from '@codemirror/language'
 // Full-width / CJK punctuation → ASCII. Every entry is 1 codepoint → 1 codepoint, so
 // applying the remap never shifts any cursor/selection position.
 const CJK_TO_ASCII: Record<string, string> = {
+  // Periods: ideographic (U+3002), fullwidth (U+FF0E), halfwidth katakana (U+FF61).
   '。': '.',
+  '．': '.',
+  '｡': '.',
+  // Commas: fullwidth (U+FF0C), ideographic (U+3001), halfwidth katakana (U+FF64).
   '，': ',',
   '、': ',',
+  '､': ',',
   '；': ';',
   '：': ':',
   '（': '(',
   '）': ')',
+  // Fullwidth white parentheses (U+FF5F/FF60).
+  '｟': '(',
+  '｠': ')',
+  // Angle brackets (U+3008/3009) — for stereotypes `<<…>>` / comparisons.
+  '〈': '<',
+  '〉': '>',
   '｛': '{',
   '｝': '}',
   // White corner brackets — a CJK user reaches for these as block braces.
