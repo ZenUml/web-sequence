@@ -1441,3 +1441,38 @@ test.describe('X. authoring journeys', () => {
     expect((await options(page)).join('\n')).toContain('Widget');
   });
 });
+
+// ── Y. Completion-noise suppression in free-text labels (#813) ──────────────
+test.describe('Y. label completion noise (#813)', () => {
+  test('Y1 — a message label word that prefixes a keyword offers NO keyword', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: titl'); // would fuzzy-match the `title` keyword
+    expect((await options(page)).join('\n')).not.toContain('Diagram title');
+  });
+
+  test('Y2 — "while" in a label does not pop the while keyword', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: whil');
+    expect((await options(page)).join('\n')).not.toContain('Loop block');
+  });
+
+  test('Y3 — a label word matching a participant name is not offered either', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Server');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('A->B: Serv'); // "Serv" prefixes the participant "Server"
+    expect((await options(page)).join('\n')).not.toContain('Serverparticipant');
+  });
+
+  test('Y4 — endpoint completion still works right after the label suppression', async ({ page }) => {
+    // Guard: suppressing label completion must NOT suppress the From/To endpoint popup.
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alpha');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Beta');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alpha->'); // To endpoint position — popup SHOULD offer Beta
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Beta');
+  });
+});

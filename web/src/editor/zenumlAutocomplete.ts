@@ -237,12 +237,16 @@ function isInsideMessageContent(state: EditorState, pos: number): boolean {
 export function zenumlCompletions(context: CompletionContext): CompletionResult | null {
   const { state, pos } = context
 
-  // No completions inside a comment: the `/` in `// /sync` must NOT pop the slash
-  // menu, and a word inside a comment must not pop keywords/participant names.
-  // `Comment` is a single token spanning `//` to end-of-line, so the cursor
-  // resolves directly to it.
+  // No completions inside free-text spans:
+  //  - a `Comment` (the `/` in `// /sync` must NOT pop the slash menu; a word in a
+  //    comment must not pop keywords/participant names).
+  //  - a message/title/divider LABEL (`Content` / `LineContent`). A label word that
+  //    happens to prefix a keyword — "title screen", "while loading", "new feature" —
+  //    must NOT surface that keyword as noise (#813). `From`/`To` endpoints are siblings
+  //    of `Content` under the message node, so participant completion at endpoints is
+  //    unaffected.
   for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
-    if (n.name === 'Comment') return null
+    if (n.name === 'Comment' || n.name === 'Content' || n.name === 'LineContent') return null
   }
 
   // ---- SLASH MODE -------------------------------------------------------
