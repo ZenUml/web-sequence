@@ -56,6 +56,19 @@ test('built app renders the diagram with no dev-only /@fs/ URL and a 200 core as
 
   await page.goto(PREVIEW_URL);
 
+  // Hub routing: "/" shows the HomeView (library) when no diagram id is in the URL.
+  // Navigate into the editor so the preview-iframe is present.
+  const homeView = page.locator('[data-testid="home-view"]');
+  if (await homeView.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    const emptyCta = page.locator('[data-testid="home-empty-new"]');
+    const headerNew = page.locator('[data-testid="home-new"]');
+    if (await emptyCta.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await emptyCta.click();
+    } else {
+      await headerNew.click();
+    }
+  }
+
   // The diagram must render from the BUILT bundle.
   const mount = page
     .frameLocator('[data-testid="preview-iframe"]')

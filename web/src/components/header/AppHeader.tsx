@@ -60,6 +60,9 @@ export interface AppHeaderProps {
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
+  // Hub (Approach A): when provided, renders a "← Library" breadcrumb left of the
+  // title so the user can return to the home/library view. Omitted in classic mode.
+  onGoHome?(): void;
 }
 
 function Chevron({ className }: { className?: string }) {
@@ -136,6 +139,7 @@ export function AppHeader({
   loginOpen: loginOpenProp,
   onLoginOpenChange,
   actions,
+  onGoHome,
 }: AppHeaderProps) {
   const [loginOpenInternal, setLoginOpenInternal] = useState(false);
   // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
@@ -189,6 +193,45 @@ export function AppHeader({
           onSave={onSave}
           paymentEnabled={paymentEnabled}
         />
+
+        {/* Hub breadcrumb — shown only when onGoHome is provided (Hub editor mode).
+            Design: icon-only back button · "Your diagrams" text button · "/" · [filename ▾]
+            The file menu pill follows immediately after this breadcrumb. */}
+        {onGoHome && (
+          <div className="flex items-center gap-1.5 shrink-0" data-testid="hub-breadcrumb">
+            {/* Back arrow — icon-only affordance */}
+            <button
+              type="button"
+              data-testid="header-go-home"
+              aria-label="Back to your diagrams"
+              onClick={onGoHome}
+              className={cn(
+                'grid place-items-center h-[34px] w-[34px] shrink-0 rounded-lg',
+                'text-ondark-muted hover:text-ondark-strong hover:bg-white/6',
+                'transition-colors duration-150 ease-draft ring-draft',
+              )}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-[18px] w-[18px]" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            {/* "Your diagrams" — clickable text, same action */}
+            <button
+              type="button"
+              onClick={onGoHome}
+              aria-hidden="true"
+              tabIndex={-1}
+              className={cn(
+                'font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
+                'hover:text-ondark-strong transition-colors duration-150 ease-draft',
+              )}
+            >
+              Your diagrams
+            </button>
+            {/* "/" separator */}
+            <span className="text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
+          </div>
+        )}
 
         {/* File menu — inline-editable filename + a chevron opening the document
             menu (Rename / Duplicate). The name + chevron sit together in a quiet
