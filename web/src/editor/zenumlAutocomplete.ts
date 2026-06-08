@@ -75,23 +75,31 @@ export function resolveZone(state: EditorState, pos: number): SlashZone {
 }
 
 /**
- * True when the cursor sits in the NAME slot of a participant that already has a
- * leading `@annotation` or `<<stereotype>>` — i.e. right after `@Actor`, where a
- * participant NAME is expected. In that slot the head keywords (title/group/as)
- * must NOT be offered: `as` is a label modifier that only follows a complete
- * name, and title/group are statement-start keywords. Once the cursor moves past
- * the name (the modifier slot), those keywords are valid again.
+ * True when the cursor sits in the NAME slot of a declaration that already has a
+ * leading marker before the name — an `@annotation`/`<<stereotype>>` (participant,
+ * e.g. `@Actor a`) or the `group` keyword (e.g. `group a`). In that slot a NAME is
+ * expected, so head keywords (title/group/as) must NOT be offered: `as` is a label
+ * modifier that only follows a complete name, and title/group are statement-start
+ * keywords. A BARE leading identifier (`t`) is statement-start, not a name slot, so
+ * keyword completions stay available there. Once the cursor moves past the name
+ * (the modifier slot, or a group's `{ }` body) the keywords are valid again.
  */
-function isNamingPrefixedParticipant(state: EditorState, pos: number): boolean {
+function isNamingDeclaration(state: EditorState, pos: number): boolean {
   let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1)
-  while (node && node.name !== 'Participant') node = node.parent
+  while (node && node.name !== 'Participant' && node.name !== 'Group') node = node.parent
   if (!node) return false
-  const hasPrefix = !!(node.getChild('ParticipantType') || node.getChild('Stereotype'))
-  if (!hasPrefix) return false
   const nameNode = node.getChild('Name')
-  // No name yet (`@Actor ` parses as ParticipantType + error), or the cursor is
-  // within/at the end of the name being typed → still NAMING.
-  return !nameNode || pos <= nameNode.to
+  // Past the name (a participant's modifier slot, or inside a group's `{ }` body)
+  // → no longer naming.
+  if (nameNode && pos > nameNode.to) return false
+  // The slot is a NAME (not a fresh statement-start token) only if the declaration
+  // has a leading marker before the name. `@Actor ` with no name yet parses as
+  // ParticipantType + error and still counts (nameNode is null → naming).
+  return !!(
+    node.getChild('ParticipantType') ||
+    node.getChild('Stereotype') ||
+    node.getChild('GroupKeyword')
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +255,7 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
     // Zone-gated keywords — but NOT while typing the name of an annotated
     // participant (`@Actor a`): that slot is the participant NAME, not a keyword,
     // so title/group/as must stay out of it.
-    if (!(zone === 'head' && isNamingPrefixedParticipant(state, pos))) {
+    if (!(zone === 'head' && isNamingDeclaration(state, pos))) {
       options.push(...keywordsForZone(zone))
     }
   }

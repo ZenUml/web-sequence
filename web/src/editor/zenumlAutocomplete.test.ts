@@ -210,6 +210,24 @@ describe('normal completions — zone-gated keywords', () => {
     const ls = labels(completeAt(doc, doc.length, true))
     expect(ls).toContain('as')
   })
+
+  // Same class as the @Actor name slot: after `group` a group NAME is expected,
+  // so keywords (as/title/group) must not leak into that slot.
+  it('does NOT offer keywords while typing a group name ("group a")', () => {
+    const doc = 'group a'
+    const ls = labels(completeAt(doc, doc.length))
+    expect(ls).not.toContain('as')
+    expect(ls).not.toContain('group')
+    expect(ls).not.toContain('title')
+  })
+
+  // Guard: a bare identifier at statement-start is NOT a name slot — title/group
+  // keyword completions remain available there (e.g. typing `t` -> title).
+  it('STILL offers title/group at statement start (bare "t")', () => {
+    const ls = labels(completeAt('t', 1, true))
+    expect(ls).toContain('title')
+    expect(ls).toContain('group')
+  })
 })
 
 describe('normal completions — annotations', () => {

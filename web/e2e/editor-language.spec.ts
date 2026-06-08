@@ -167,6 +167,22 @@ test.describe('participant autocomplete', () => {
 
     await expect.poll(() => getEditorText(page)).toContain('@Actor a');
   });
+
+  // Same class as the @Actor name slot: after `group ` a group NAME is expected,
+  // so typing it must not pop the `as` keyword.
+  test("typing a name after 'group ' does NOT offer the 'as' keyword", async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('group ');
+    await page.keyboard.type('a'); // the group NAME, not `as`
+    await page.waitForTimeout(300);
+
+    const asKeyword = page.locator('.cm-tooltip-autocomplete li', {
+      hasText: 'Alias / label a participant',
+    });
+    await expect(asKeyword).toHaveCount(0);
+
+    await expect.poll(() => getEditorText(page)).toContain('group a');
+  });
 });
 
 // ---------------------------------------------------------------------------
