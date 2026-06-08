@@ -1,6 +1,7 @@
 @top Program { StatementTerminator* Title? expression* }
 
 @precedence {
+  headReduce @left,
   starter @left,
   title @left,
   name @left,
@@ -27,10 +28,8 @@
 @skip { whitespace | Comment }
 
 expression {
-  !statement (
-    Head |
-    Statement StatementTerminator*
-  )
+  Head |
+  Statement StatementTerminator*
 }
 
 Title { !title TitleKeyword TitleContent StatementTerminator* }
@@ -146,9 +145,19 @@ TitleContent { !title LineContent }
 // After the tokens section but before other rules
 StatementTerminator { SemiColon | Newline }
 
-Head { !statement StarterExp | (Group | (Participant StatementTerminator?))+ }
+// Head/Statement disambiguation (docs/adr/0002 — abstain, don't fabricate).
+// At the boundary `(Participant ST?)+ · Identifier` the parser must choose between
+// CONTINUING the Head with another bare-Name Participant and ENDING the Head so the
+// Identifier can begin a Statement (e.g. the From of a message). The true
+// discriminator is the *next* token (`->`/`.`/`:`), which is LR(2) — beyond a single
+// shift. `!headReduce` (highest precedence) makes the Head REDUCE at that boundary
+// rather than greedily absorb the message's source/target/label tokens as fabricated
+// participants. Annotated/grouped declarations still chain (their lookahead is an
+// Annotation/`group`, not a bare Identifier, so this boundary never triggers), and a
+// lone bare `Client` still parses as a one-Participant Head.
+Head { StarterExp | (Group | (Participant StatementTerminator?))+ !headReduce }
 
-Name { !name Identifier  }
+Name { !name Identifier }
 
 Group {
   !group GroupKeyword Name? GroupBraceBlock |
@@ -162,10 +171,14 @@ StarterExp {
 Starter { Identifier | String }
 
 Participant {
-  !participant ParticipantType Stereotype Name Width? Label? Color? StatementTerminator? |
-  !participant ParticipantType Name Width? Label? Color? StatementTerminator? |
-  !participant Stereotype Name Width? Label? Color? StatementTerminator? |
-  !participant Name Width? Label? Color? StatementTerminator?
+  ParticipantType Stereotype Name Width? Label? Color? |
+  ParticipantType Name Width? Label? Color? |
+  Stereotype Name Width? Label? Color? |
+  // ~pm marks the bare-Name reduce/reduce ambiguity with From/To's Name (a bare
+  // identifier can reduce to either a Participant's Name or a message's To/From
+  // Name). The ambiguity is participant-equivalent for collection purposes; the
+  // marker lets the GLR parser keep both stacks so the error-free branch survives.
+  Name ~pm Width? Label? Color?
 }
 
 ParticipantType { Annotation }
@@ -183,7 +196,7 @@ Label { !label AsKeyword Identifier? }
 Width { Number }
 
 Statement {
-  !statement (
+  (
     Alternative |
     Parallel |
     Optional |
@@ -238,8 +251,8 @@ MessagePart {
   !message FromToPart Dot Function
 }
 
-From { !message Name | String }
-To { !message Name | String }
+From { !message Name ~pm | String }
+To { !message Name ~pm | String }
 
 FromToPart {
   !message From ArrowOp To Dot |

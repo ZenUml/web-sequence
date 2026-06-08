@@ -57,19 +57,16 @@ export const NEGATIVE: CorpusCase[] = [
     name: 'HEADLINE: declare then async message',
     src: '@Actor Alice\nAlice->Bob: Hello',
     note: 'Head-greedy bug: must NOT fabricate "Hello" (a message label) as a participant. ANTLR = {Alice,Bob}.',
-    expectedFabrication: true,
   },
   {
     name: 'declare then sync call',
     src: '@Actor Alice\nAlice.method()',
     note: 'Must not fabricate "method" as a participant. ANTLR = {Alice}.',
-    expectedFabrication: true,
   },
   {
     name: 'two declares then message',
     src: '@Actor A\n@Boundary B\nA->B: doIt',
     note: 'Must not fabricate "doIt". ANTLR = {A,B}.',
-    expectedFabrication: true,
   },
   {
     name: 'message label looks like a Name',
@@ -105,7 +102,6 @@ export const NEGATIVE: CorpusCase[] = [
     name: 'return annotation',
     src: '@Actor A\nA.run() {\n  @return B->A: ok\n}',
     note: 'Reply annotation; "ok" is a label, not a participant.',
-    expectedFabrication: true,
   },
   {
     name: 'divider free text',

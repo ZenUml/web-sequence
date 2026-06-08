@@ -147,15 +147,19 @@ describe('zenuml lezer grammar', () => {
   // they are visible and will flip to passing when a later phase fixes them,
   // without misreporting the current state of this phase.
   // ---------------------------------------------------------------------------
-  describe('known pre-existing limitations (skipped)', () => {
-    // `Head { (Participant ST?)+ }` greedily absorbs a bare message source
-    // ("A") as another Participant, then errors on the following "->". This
-    // breaks the common "declare participants then send messages" shape and
-    // needs a Head/Statement disambiguation decision (participant-vs-message).
-    it.skip('Head followed by a message with a bare source', () => {
+  describe('Head/Statement disambiguation (participant-vs-message)', () => {
+    // Previously skipped: `Head { (Participant ST?)+ }` greedily absorbed a bare
+    // message source ("A") as another Participant, then errored on "->". Fixed by
+    // making Head reduce (rather than chain another Participant) when the trailing
+    // identifier begins a Statement — the `!headReduce` precedence on Head's
+    // repetition resolves the LR-boundary in favour of ending the Head, so the
+    // message parses cleanly with zero error nodes (docs/adr/0002).
+    it('Head followed by a message with a bare source', () => {
       expect(errorRanges('@Actor A\n@Boundary B\nA->B: msg')).toEqual([])
     })
+  })
 
+  describe('known pre-existing limitations (skipped)', () => {
     // `Signature`/`MethodName` only accept Identifier, so a quoted-string
     // method name (used by the shipped "blue"/"black-white" templates, e.g.
     // `SGW."Get order by id"`) is rejected.

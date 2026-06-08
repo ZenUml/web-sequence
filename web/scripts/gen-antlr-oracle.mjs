@@ -45,6 +45,9 @@ await build({
   configFile: false,
   logLevel: 'warn',
   root: CORE_ROOT,
+  // Do NOT copy zenuml-core's publicDir (favicon, fonts, CNAME…) into our outDir;
+  // we only want the single bundled module.
+  publicDir: false,
   resolve: {
     alias: {
       '@': CORE_SRC,

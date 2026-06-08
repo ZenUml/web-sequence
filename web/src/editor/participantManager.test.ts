@@ -59,6 +59,29 @@ describe('zenumlParticipantField + getParticipants', () => {
     })
   })
 
+  // ---- Bare (un-annotated) participant declarations ------------------------
+  // Completeness guard for the AMBIGUOUS bare form (just a Name, no @annotation
+  // / stereotype). The Head/Statement disambiguation (ADR 0002) must still
+  // collect bare declarations IN FULL. This guards the exact degenerate failure
+  // the conformance gate alone cannot catch: a fix that drops every bare
+  // participant still passes the subset gate ([] ⊆ anything) — only a
+  // completeness assertion like this exposes it.
+  describe('bare participant declarations are collected', () => {
+    it('collects a single bare participant', () => {
+      expect(getParticipants(stateFor('Client'))).toEqual(new Set(['Client']))
+    })
+
+    it('collects consecutive bare participants', () => {
+      const participants = getParticipants(stateFor('Alice\nBob\nCharlie'))
+      expect(participants).toEqual(new Set(['Alice', 'Bob', 'Charlie']))
+    })
+
+    it('collects mixed bare and annotated participants', () => {
+      const participants = getParticipants(stateFor('Alice\nBob\n@Actor Carol'))
+      expect(participants).toEqual(new Set(['Alice', 'Bob', 'Carol']))
+    })
+  })
+
   // ---- Stereotype name collision -------------------------------------------
   // Guard: the Stereotype's own Name child must NOT be collected.
   // `@Actor <<service>> Client` must yield {Client}, not {service, Client}.
