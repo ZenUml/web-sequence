@@ -61,6 +61,21 @@ const CJK_TO_ASCII: Record<string, string> = {
   '＾': '^',
   '｀': '`',
   '＼': '\\',
+  // Ideographic (full-width) space — between code tokens it is not whitespace to the
+  // lexer and breaks the parse; ASCII-space it. (In a label it is preserved.)
+  '　': ' ',
+  // Full-width digits (method args, widths). Full-width LETTERS are NOT here — the
+  // grammar's Identifier already accepts them (#809), so they parse as-is.
+  '０': '0',
+  '１': '1',
+  '２': '2',
+  '３': '3',
+  '４': '4',
+  '５': '5',
+  '６': '6',
+  '７': '7',
+  '８': '8',
+  '９': '9',
 }
 
 function hasCjkPunct(text: string): boolean {

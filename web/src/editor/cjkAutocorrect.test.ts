@@ -89,4 +89,18 @@ describe('cjkPunctuationAutocorrect', () => {
       expect(type('', 0, '用户')).toBe('用户')
     })
   })
+
+  describe('full-width space and digits (similar cases)', () => {
+    it('　 (full-width space) → ASCII space between code tokens', () => {
+      expect(type('A', 1, '　B')).toBe('A B')
+    })
+    it('full-width digits → ASCII digits in a method arg', () => {
+      expect(type('A.b(', 4, '１２３')).toBe('A.b(123')
+    })
+    it('preserves full-width digits inside a label', () => {
+      const doc = 'A->B: 第'
+      expect(type(doc, doc.length, '１章')).toBe('A->B: 第１章')
+    })
+  })
+
 })
