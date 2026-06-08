@@ -1475,4 +1475,10 @@ test.describe('Y. label completion noise (#813)', () => {
     await page.keyboard.press('Control+Space');
     expect((await options(page)).join('\n')).toContain('Beta');
   });
+test('Y5 — a string-label word that prefixes a keyword offers NO keyword (#813)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor A as "titl'); // inside the string label
+    expect((await options(page)).join('\n')).not.toContain('Diagram title');
+  });
+
 });

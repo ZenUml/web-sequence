@@ -245,8 +245,19 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   //    must NOT surface that keyword as noise (#813). `From`/`To` endpoints are siblings
   //    of `Content` under the message node, so participant completion at endpoints is
   //    unaffected.
+  //  - a participant alias `as "…"` (`Label` / `String`). The alias value is free text
+  //    (a quoted string or a bare label name); typing `as "title screen"` must not pop
+  //    the `title` keyword (#813). The `as` keyword itself is offered BEFORE the Label
+  //    node exists, so head-keyword completion of `as` is unaffected.
   for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
-    if (n.name === 'Comment' || n.name === 'Content' || n.name === 'LineContent') return null
+    if (
+      n.name === 'Comment' ||
+      n.name === 'Content' ||
+      n.name === 'LineContent' ||
+      n.name === 'Label' ||
+      n.name === 'String'
+    )
+      return null
   }
 
   // ---- SLASH MODE -------------------------------------------------------
