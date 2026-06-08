@@ -215,21 +215,21 @@ export function AppHeader({
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            {/* "Your diagrams" — clickable text, same action */}
+            {/* "Your diagrams" — text label hidden on mobile, icon-only affordance remains */}
             <button
               type="button"
               onClick={onGoHome}
               aria-hidden="true"
               tabIndex={-1}
               className={cn(
-                'font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
+                'hidden sm:block font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
                 'hover:text-ondark-strong transition-colors duration-150 ease-draft',
               )}
             >
               Your diagrams
             </button>
-            {/* "/" separator */}
-            <span className="text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
+            {/* "/" separator — hidden on mobile too (arrow alone is sufficient) */}
+            <span className="hidden sm:inline text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
           </div>
         )}
 
@@ -252,7 +252,7 @@ export function AppHeader({
             // .fname: quiet until hover/focus — transparent fill + borderless until
             // the field is engaged, so the title reads as text, not a form control.
             className={cn(
-              'min-w-0 max-w-[220px] h-7 bg-transparent border-transparent font-sans font-medium',
+              'min-w-0 max-w-[120px] sm:max-w-[220px] h-7 bg-transparent border-transparent font-sans font-medium',
               'text-[14px] text-ondark-strong',
               'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
             )}
