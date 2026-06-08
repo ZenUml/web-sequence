@@ -111,8 +111,17 @@ function Group({ snippets, onInsert }: { snippets: Snippet[]; onInsert: (code: s
 }
 
 export function Toolbox({ onInsert }: { onInsert: (snippetCode: string) => void }) {
-  const message = SNIPPETS.filter((s) => s.group === 'message');
-  const structure = SNIPPETS.filter((s) => s.group === 'structure');
+  // Design spec group 1: message-level constructs (Self moves to group 2).
+  const message = SNIPPETS.filter((s) => s.group === 'message' && s.id !== 'self');
+
+  // Design spec group 2: Self · "Alt / Loop" (merged if+while button) · Note.
+  // Instance is intentionally absent from the toolbar per the design spec.
+  const self = SNIPPETS.find((s) => s.id === 'self')!;
+  const alt = SNIPPETS.find((s) => s.id === 'if')!;
+  const note = SNIPPETS.find((s) => s.id === 'comment')!;
+  const altLoop: Snippet = { ...alt, short: 'Alt / Loop' };
+  const structure = [self, altLoop, note];
+
   return (
     // .insert — keep the hidden md:flex responsive wrapper
     <div

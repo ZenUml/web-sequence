@@ -12,7 +12,7 @@ import { useUiStore } from '../state/uiStore';
 import type { Item, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
 import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
-import { Sidebar } from '../components/Sidebar';
+// Sidebar removed — Hub (Approach A) uses no icon rail; see "no rail" comment below.
 import { Layout } from '../components/Layout';
 import { HintBar } from '../components/HintBar';
 import { PageTabs } from '../components/pages/PageTabs';
@@ -38,7 +38,7 @@ import { useItems } from '../hooks/useItems';
 import { useFolders } from '../hooks/useFolders';
 import { useShare } from '../hooks/useShare';
 import { migrateToPages } from '../domain/item';
-import { LibraryPanel } from '../components/library/LibraryPanel';
+// LibraryPanel removed — Library is now the Home page (isHomeMode), not a side panel.
 import { ShareButton } from '../components/share/ShareButton';
 import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
 import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
@@ -142,7 +142,6 @@ export function AppRoot() {
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
-  const activePanel = useUiStore((s) => s.activePanel);
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
   // M04: single-modal state + open/close. Login modal is separate shared state so
@@ -956,6 +955,12 @@ export function AppRoot() {
           onCreateFolder={(name) => void createFolder(name)}
           onRenameFolder={(id, name) => void renameFolder(id, name)}
           onDeleteFolder={(id) => void deleteFolder(id)}
+          onDeleteItem={(id) => void handleDeleteItem(id)}
+          onForkItem={handleForkItem}
+          onMoveItem={(it, folderId) => void handleMoveItem(it, folderId)}
+          onExportHtml={handleExportHtml}
+          onExportAll={handleExportAll}
+          onImport={(text) => void handleImport(text)}
           readOnly={!user}
         />
       </div>
@@ -1147,37 +1152,12 @@ export function AppRoot() {
         }
       />
       <div className="flex flex-1 min-h-0 w-full">
-        {/* Icon rail is desktop-only — the mobile layout (§03) is a single tabbed pane
-            with no rail (matches the design's phone mock). */}
-        <div className="hidden md:flex">
-          <Sidebar
-            onOpenTemplates={() => openModal('createNew')}
-            onOpenHelp={() => openModal('help')}
-          />
-        </div>
+        {/* Hub model (Approach A): "no rail" — Library is the Home page, the editor is
+            focused. The Sidebar icon rail (Editor/Library/Templates) is intentionally
+            absent; navigation back to the library uses the "← Your diagrams" breadcrumb. */}
         <Layout
           editor={
-            activePanel === 'library' ? (
-              <LibraryPanel
-                items={items}
-                folders={folders}
-                onOpen={handleOpenItem}
-                onFork={handleForkItem}
-                onDelete={(id) => void handleDeleteItem(id)}
-                onMove={(it, folderId) => void handleMoveItem(it, folderId)}
-                onExportAll={handleExportAll}
-                onImport={(text) => void handleImport(text)}
-                onExportHtml={handleExportHtml}
-                onCreateFolder={(name) => void createFolder(name)}
-                onRenameFolder={(id, name) => void renameFolder(id, name)}
-                onDeleteFolder={(id) => void deleteFolder(id)}
-                // §04 empty-state CTAs: New diagram → fresh item + jump to the editor;
-                // Browse templates → the visual CreateNewModal (which IS the templates panel).
-                onNewDiagram={() => { useEditorStore.getState().newItem(); setActivePanel('editor'); }}
-                onBrowseTemplates={() => openModal('createNew')}
-                readOnly={!user}
-              />
-            ) : (
+            (
             <div className="flex flex-col h-full">
               {/* Page tabs now live on the RENDERER side (preview slot), above the
                   diagram — pages are a property of the rendered document, not the DSL

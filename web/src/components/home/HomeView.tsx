@@ -39,6 +39,14 @@ export interface HomeViewProps {
   onCreateFolder(name: string): void;
   onRenameFolder(id: string, name: string): void;
   onDeleteFolder(id: string): void;
+  // Per-card actions (card kebab menu — wired but UI pending).
+  onDeleteItem?(id: string): void;
+  onForkItem?(item: Item): void;
+  onMoveItem?(item: Item, folderId: string | null): void;
+  onExportHtml?(item: Item): void;
+  // Toolbar actions.
+  onExportAll?(): void;
+  onImport?(text: string): void;
   readOnly?: boolean;
 }
 

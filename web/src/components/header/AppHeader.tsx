@@ -194,27 +194,43 @@ export function AppHeader({
           paymentEnabled={paymentEnabled}
         />
 
-        {/* Hub breadcrumb — "← Library" shown only when onGoHome is provided (editor mode
-            in the Hub model). Sits between the app-menu logo and the file-name pill so it
-            reads as a navigation parent, not a file action. */}
+        {/* Hub breadcrumb — shown only when onGoHome is provided (Hub editor mode).
+            Design: icon-only back button · "Your diagrams" text button · "/" · [filename ▾]
+            The file menu pill follows immediately after this breadcrumb. */}
         {onGoHome && (
-          <button
-            type="button"
-            data-testid="header-go-home"
-            aria-label="Back to library"
-            onClick={onGoHome}
-            className={cn(
-              'flex items-center gap-1 shrink-0 rounded px-2 py-1',
-              'font-mono text-[12px] text-ondark-muted',
-              'hover:text-ondark-strong hover:bg-white/5',
-              'transition-colors duration-150 ease-draft ring-draft',
-            )}
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-3 w-3" aria-hidden="true">
-              <path d="M10 3L5 8l5 5" />
-            </svg>
-            Library
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0" data-testid="hub-breadcrumb">
+            {/* Back arrow — icon-only affordance */}
+            <button
+              type="button"
+              data-testid="header-go-home"
+              aria-label="Back to your diagrams"
+              onClick={onGoHome}
+              className={cn(
+                'grid place-items-center h-[34px] w-[34px] shrink-0 rounded-lg',
+                'text-ondark-muted hover:text-ondark-strong hover:bg-white/6',
+                'transition-colors duration-150 ease-draft ring-draft',
+              )}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-[18px] w-[18px]" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            {/* "Your diagrams" — clickable text, same action */}
+            <button
+              type="button"
+              onClick={onGoHome}
+              aria-hidden="true"
+              tabIndex={-1}
+              className={cn(
+                'font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
+                'hover:text-ondark-strong transition-colors duration-150 ease-draft',
+              )}
+            >
+              Your diagrams
+            </button>
+            {/* "/" separator */}
+            <span className="text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
+          </div>
         )}
 
         {/* File menu — inline-editable filename + a chevron opening the document
