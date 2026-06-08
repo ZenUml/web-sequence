@@ -56,6 +56,28 @@ function fontTheme(family: string, size: number): Extension {
 // compartment on every render (a fresh [] would change identity each time).
 const NO_DIAGNOSTICS: { lineNumber: number; message: string }[] = [];
 
+// STABLE basicSetup objects — one per `autocompletion` value. @uiw/react-codemirror
+// includes the `basicSetup` prop in its `StateEffect.reconfigure` dependency array
+// (useCodeMirror.js: `defaultBasicSetup`). A fresh object literal on every render
+// therefore dispatches a full `reconfigure` after EVERY keystroke, which REPLACES the
+// whole CM config and WIPES the lazily-appended snippet state (snippetState is added
+// via StateEffect.appendConfig on first snippet apply). That is exactly why slash-command
+// snippet tab stops never activated: insert → setDsl → AppRoot re-renders → new
+// basicSetup identity → reconfigure → .cm-snippetField count drops to 0 before the user
+// can press Tab. Hoisting to stable module-level constants stops the per-keystroke
+// reconfigure so appended snippet state survives.
+const BASIC_SETUP_BASE = {
+  lineNumbers: true,
+  foldGutter: true,
+  bracketMatching: true,
+  closeBrackets: true,
+  highlightActiveLine: true,
+} as const;
+const BASIC_SETUP_WITH_AUTOCOMPLETE = { ...BASIC_SETUP_BASE, autocompletion: true } as const;
+// DSL supplies its own completion source via autocompletion({ override: [...] }), so
+// basicSetup's autocompletion stays off (avoids a second, default completion source).
+const BASIC_SETUP_NO_AUTOCOMPLETE = { ...BASIC_SETUP_BASE, autocompletion: false } as const;
+
 // Builds a linter extension from caller-provided errors. `lineNumber` is 0-based;
 // map it to a 1-based, clamped CM line and mark the whole line as an error.
 function diagnosticsLinter(items: { lineNumber: number; message: string }[]): Extension {
@@ -203,7 +225,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
         onCreateEditor={(view) => {
           viewRef.current = view;
         }}
-        basicSetup={{ lineNumbers: true, foldGutter: true, bracketMatching: true, closeBrackets: true, highlightActiveLine: true, autocompletion: language !== 'dsl' }}
+        basicSetup={language === 'dsl' ? BASIC_SETUP_NO_AUTOCOMPLETE : BASIC_SETUP_WITH_AUTOCOMPLETE}
       />
     </div>
   );

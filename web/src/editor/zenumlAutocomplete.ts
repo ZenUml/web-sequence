@@ -23,6 +23,10 @@ import {
   snippetCompletion,
   acceptCompletion,
   closeCompletion,
+  hasNextSnippetField,
+  hasPrevSnippetField,
+  nextSnippetField,
+  prevSnippetField,
   type Completion,
   type CompletionContext,
   type CompletionResult,
@@ -237,8 +241,22 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
 // 5. Keymap
 // ---------------------------------------------------------------------------
 
+// Tab/Shift-Tab drive snippet field navigation FIRST, then fall through to
+// completion accept. CodeMirror's auto-installed snippet keymap (addSnippetKeymap)
+// does not fire inside this editor's composed/compartment keymap setup — verified
+// in a real browser: Tab did not advance ${1}→${2} even immediately after insert,
+// with no popup open. Without this explicit binding every slash-command snippet's
+// tab stops are dead. acceptCompletion returns false when no popup is open, so a
+// lone Tab outside a snippet does nothing (safe).
 export const zenumlCompletionKeymap: KeyBinding[] = [
-  { key: 'Tab', run: acceptCompletion },
+  {
+    key: 'Tab',
+    run: (view) => (hasNextSnippetField(view.state) ? nextSnippetField(view) : acceptCompletion(view)),
+  },
+  {
+    key: 'Shift-Tab',
+    run: (view) => (hasPrevSnippetField(view.state) ? prevSnippetField(view) : false),
+  },
   { key: 'Enter', run: acceptCompletion },
   { key: 'Escape', run: closeCompletion },
 ]

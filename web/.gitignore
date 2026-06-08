@@ -6,3 +6,7 @@ coverage/
 # M05: extension build artifacts (assembled dir + zip) — produced by build:extension.
 extension/
 extension.zip
+# Playwright e2e run artifacts (the specs themselves under e2e/ ARE tracked).
+test-results/
+playwright-report/
+.playwright/

@@ -1,4 +1,10 @@
-import { LRLanguage, LanguageSupport, type StreamParser } from '@codemirror/language'
+import {
+  LRLanguage,
+  LanguageSupport,
+  delimitedIndent,
+  indentNodeProp,
+  type StreamParser,
+} from '@codemirror/language'
 import { styleTags, tags as t } from '@lezer/highlight'
 import { parser } from './grammar/zenuml-parser.js'
 
@@ -104,9 +110,25 @@ const zenumlHighlighting = styleTags({
   Identifier: t.variableName,
 })
 
+// Indentation. `indentOnInput` (below) only gates WHEN the editor re-indents
+// (on typing `{` / `}`); it computes nothing on its own — without an
+// `indentNodeProp` the indent amount falls back to CM6's default (which keeps
+// the previous line's indent, so pressing Enter inside `A.run() {` did NOT add a
+// level and typing `}` did NOT dedent). `delimitedIndent({ closing: '}' })` makes
+// each brace-block body indent one unit (the editor's indentUnit, default 2
+// spaces) and aligns the closing `}` with the line that opened the block.
+//
+// StatementBraceBlock = sync-message / control-flow bodies (`A.run() { … }`,
+// `if(...) { … }`). GroupBraceBlock = a `group { … }` participant box. Both are
+// real node names in grammar/zenuml-parser.terms.js.
+const zenumlIndentation = indentNodeProp.add({
+  StatementBraceBlock: delimitedIndent({ closing: '}' }),
+  GroupBraceBlock: delimitedIndent({ closing: '}' }),
+})
+
 export const zenumlLanguage = LRLanguage.define({
   name: 'zenuml',
-  parser: parser.configure({ props: [zenumlHighlighting] }),
+  parser: parser.configure({ props: [zenumlHighlighting, zenumlIndentation] }),
   languageData: {
     commentTokens: { line: '//' },
     // CodeMirror's closeBrackets extension (enabled by basicSetup) reads this

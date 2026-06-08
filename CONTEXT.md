@@ -158,10 +158,24 @@ precedence has global blast radius).
    the `/participant` template omits the label (emits `@Type Name #color`, which parses clean).
 2. **Quoted method names.** `A."Get order by id"()` — ANTLR `methodName : name` accepts CSTRING;
    Lezer `MethodName { Identifier }` does not. Used by the shipped blue/black-white templates.
-3. **Head greedily absorbs a bare message source.** `@Actor A` then `A->B: msg` errors because
-   `Head { (Participant ST?)+ }` reads the message's bare-Name `From` as another Participant.
-   Breaks the declare-then-message shape AND starves participant-aware autocomplete. The grammar
-   build agent flagged this; fixing it needs a Head/Statement disambiguation decision.
+3. **Head greedily absorbs the declare-then-message shape — HIGHEST PRIORITY.**
+   `@Actor Alice` then `Alice->Bob: Hello` does NOT parse as a message: `Head { (Participant ST?)+ }`
+   swallows the message line, mis-parsing `Bob`/`Hello` as further Participants. Proven (adversarial
+   Playwright + direct `parser.parse()`) to degrade THREE runtime behaviours on the single most
+   common diagram shape — and they all look fine in screenshots because the RENDERER (ANTLR) draws
+   it correctly while the editor's Lezer layer is wrong underneath:
+   - **Highlighting goes flat.** Async content is green only for a lone `A->B: msg`; once any
+     declaration precedes it, `Hello` is mis-tagged `Participant/Name/Identifier` → base `#E8EEF7`
+     (the message structure isn't recognized at all). 4/4 reproducible.
+   - **Participant set is contaminated.** `@Actor Alice` + `Alice->Bob: Hello` collects
+     `["Alice","Alice","Bob","HelloMsg"]` — message labels + undeclared targets wrongly collected,
+     real names duplicated. Autocomplete "works" only because the real name happens to survive in
+     the polluted set.
+   - **First-mention participants** (`A.method()`, no declaration) never reach autocomplete.
+   This single Head/Statement disambiguation is the root of all three. It needs a dedicated,
+   test-first grammar milestone — NOT a hurried precedence edit (the `label`-vs-`participant`
+   precedence reorder was attempted and reverted; it has global blast radius and the bare-vs-quoted
+   cases conflict differently). This is the next grammar work to schedule.
 
 ### Extensions layer rewrite (grammar kept)
 The Lezer grammar is sound and kept as-is (minor fixes for `Content` node and `Divider`
