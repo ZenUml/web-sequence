@@ -149,6 +149,24 @@ test.describe('participant autocomplete', () => {
     expect(joined).toContain('Alice');
     expect(joined).toContain('participant');
   });
+
+  // Bug regression: the slot right after `@Actor ` is the participant NAME, so
+  // typing a name there must NOT pop the `as` keyword (a label modifier that only
+  // follows a complete name). Before the fix, typing `a` matched `as`.
+  test("typing a name after '@Actor ' does NOT offer the 'as' keyword", async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor ');
+    await page.keyboard.type('a'); // this is the participant NAME, not `as`
+    await page.waitForTimeout(300); // give the completion source a chance to fire
+
+    // The `as` keyword row carries this distinctive detail — it must be absent.
+    const asKeyword = page.locator('.cm-tooltip-autocomplete li', {
+      hasText: 'Alias / label a participant',
+    });
+    await expect(asKeyword).toHaveCount(0);
+
+    await expect.poll(() => getEditorText(page)).toContain('@Actor a');
+  });
 });
 
 // ---------------------------------------------------------------------------

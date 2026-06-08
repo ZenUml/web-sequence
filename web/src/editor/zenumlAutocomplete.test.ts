@@ -185,6 +185,31 @@ describe('normal completions — zone-gated keywords', () => {
     expect(ls).not.toContain('if')
     expect(ls).not.toContain('while')
   })
+
+  // Bug: the NAME slot of an annotated participant must not offer keywords. After
+  // `@Actor ` a participant NAME is expected — offering `as` (a label modifier) or
+  // title/group there is wrong (`as` only follows a complete name).
+  it('does NOT offer "as"/title/group while typing the name after @Actor', () => {
+    const doc = '@Actor a'
+    const ls = labels(completeAt(doc, doc.length))
+    expect(ls).not.toContain('as')
+    expect(ls).not.toContain('title')
+    expect(ls).not.toContain('group')
+  })
+
+  it('does NOT offer keywords after a bare annotation with no name yet ("@Actor ")', () => {
+    const doc = '@Actor '
+    const ls = labels(completeAt(doc, doc.length, true))
+    expect(ls).not.toContain('as')
+    expect(ls).not.toContain('title')
+    expect(ls).not.toContain('group')
+  })
+
+  it('STILL offers "as" after a complete participant name (the modifier slot)', () => {
+    const doc = '@Actor Alice '
+    const ls = labels(completeAt(doc, doc.length, true))
+    expect(ls).toContain('as')
+  })
 })
 
 describe('normal completions — annotations', () => {

@@ -74,6 +74,26 @@ export function resolveZone(state: EditorState, pos: number): SlashZone {
   return 'head'
 }
 
+/**
+ * True when the cursor sits in the NAME slot of a participant that already has a
+ * leading `@annotation` or `<<stereotype>>` — i.e. right after `@Actor`, where a
+ * participant NAME is expected. In that slot the head keywords (title/group/as)
+ * must NOT be offered: `as` is a label modifier that only follows a complete
+ * name, and title/group are statement-start keywords. Once the cursor moves past
+ * the name (the modifier slot), those keywords are valid again.
+ */
+function isNamingPrefixedParticipant(state: EditorState, pos: number): boolean {
+  let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1)
+  while (node && node.name !== 'Participant') node = node.parent
+  if (!node) return false
+  const hasPrefix = !!(node.getChild('ParticipantType') || node.getChild('Stereotype'))
+  if (!hasPrefix) return false
+  const nameNode = node.getChild('Name')
+  // No name yet (`@Actor ` parses as ParticipantType + error), or the cursor is
+  // within/at the end of the name being typed → still NAMING.
+  return !nameNode || pos <= nameNode.to
+}
+
 // ---------------------------------------------------------------------------
 // 2. Participant names
 // ---------------------------------------------------------------------------
@@ -224,8 +244,12 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
         options.push({ label: name, type: 'variable', detail: 'participant', boost: 50 })
       }
     }
-    // Zone-gated keywords.
-    options.push(...keywordsForZone(zone))
+    // Zone-gated keywords — but NOT while typing the name of an annotated
+    // participant (`@Actor a`): that slot is the participant NAME, not a keyword,
+    // so title/group/as must stay out of it.
+    if (!(zone === 'head' && isNamingPrefixedParticipant(state, pos))) {
+      options.push(...keywordsForZone(zone))
+    }
   }
 
   if (!options.length) return null
