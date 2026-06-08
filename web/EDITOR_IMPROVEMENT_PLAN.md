@@ -167,3 +167,4 @@ label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-au
   (~2h). CJK autocorrect thread CLOSED (arrow → skipped: not keyboard-typable; 「」 skipped: ambiguous).
   Campaign deliverables complete: 11 bugs (#803-813) + CJK autocorrect feature; 189 e2e + 277 unit
   green; 19 commits; tree clean. HOLDING for user's next direction (wrap up / new direction / mine more).
+- 2026-06-09 9th check: All-models weekly **61%** (flat — idle, holding for direction). UNDER → continue.
