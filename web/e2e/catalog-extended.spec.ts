@@ -1341,3 +1341,103 @@ test.describe('W. i18n / quotes / special chars / long DSL', () => {
     expect((await options(page)).join('\n')).toContain('P20');
   });
 });
+
+// ── X. Authoring journeys (real-user editing flows) ─────────────────────────
+// End-to-end editing flows a real user performs: forward references, renames,
+// inserts, first-mention chains. Participant collection is a pure reparse, so these
+// SHOULD all work — these lock that behavior through the real browser + completion.
+test.describe('X. authoring journeys', () => {
+  test('X1 — a forward-referenced participant (used before declared) is offered', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: hi'); // B first mentioned here
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor B'); // declared AFTER its use
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('A.');
+    expect((await options(page)).join('\n')).toContain('B');
+  });
+
+  test('X2 — a first-mention message chain offers every endpoint downstream', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('Client->OrderSvc: create');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('OrderSvc->DB: save');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Client.');
+    const j = (await options(page)).join('\n');
+    expect(j).toContain('OrderSvc');
+    expect(j).toContain('DB');
+  });
+
+  test('X3 — renaming a participant updates what completion offers', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alice->Bob: hi');
+    // Rename Alice→Alicia on line 1: go to line 1 end, backspace 'Alice', type 'Alicia'.
+    await page.keyboard.press('ControlOrMeta+Home');
+    await page.keyboard.press('End');
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Backspace'); // delete "Alice"
+    await page.keyboard.type('Alicia');
+    await page.waitForTimeout(300);
+    // On a fresh line, the renamed participant is offered; the old name is gone.
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alic');
+    await page.keyboard.press('Control+Space');
+    const j = (await options(page)).join('\n');
+    expect(j).toContain('Alicia');
+  });
+
+  test('X4 — a duplicate declaration is offered only once', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Account');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Account'); // duplicate
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Acc');
+    await page.keyboard.press('Control+Space');
+    const rows = (await options(page)).filter((r) => r.includes('Account'));
+    expect(rows.length).toBe(1); // deduped, not offered twice
+  });
+
+  test('X5 — a self-message participant is collected and offered', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('Worker->Worker: poll');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Worker.');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+  });
+
+  test('X6 — completion reflects a participant added live, mid-session', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Foo');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('F');
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Foo');
+    // Add a second participant; completion must pick it up without a reload.
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.type('@Actor Bar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('B');
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Bar');
+  });
+
+  test('X7 — a participant introduced by `new` is offered downstream', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('Factory.build() {');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('new Widget()');
+    await page.keyboard.press('Enter');
+    // Widget (anonymous new target) is a participant; offered after a dot.
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Wid');
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Widget');
+  });
+});
