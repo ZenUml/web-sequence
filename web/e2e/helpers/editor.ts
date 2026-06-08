@@ -135,3 +135,39 @@ export async function openBlockWithoutAutoClose(page: Page): Promise<void> {
   await page.keyboard.type('A.run() {');
   await page.keyboard.press('Delete'); // remove the auto-inserted matching `}`
 }
+
+/**
+ * Clear, then open a `par { }` block and land the cursor on its indented body
+ * line (a real StatementBraceBlock → zone 'block'). `par` avoids the `.`/`(`
+ * that other openers need, so the body is deterministic. Leaves no popup open.
+ */
+export async function enterParBlock(page: Page): Promise<void> {
+  await clearEditor(page);
+  await page.keyboard.type('par {'); // closeBrackets auto-pairs `}`
+  await page.keyboard.press('Enter'); // split into an indented body line, cursor inside
+}
+
+/** (text, color) for every styled token span on the editor's lines. */
+export async function tokenSpans(page: Page): Promise<{ text: string; color: string }[]> {
+  return editorContent(page)
+    .locator('.cm-line span')
+    .evaluateAll((els) =>
+      els.map((e) => ({ text: e.textContent ?? '', color: getComputedStyle(e).color })),
+    );
+}
+
+/** The editor's base foreground color (to compare token colors against). */
+export async function baseColor(page: Page): Promise<string> {
+  return editorContent(page).evaluate((e) => getComputedStyle(e).color);
+}
+
+/**
+ * The Hint Bar command ids currently shown (e.g. ['hint-participant','hint-group']
+ * in the head, ['hint-sync','hint-if',…] in a block). The bar is `role="toolbar"`
+ * and each entry carries `data-testid="hint-<command>"`.
+ */
+export async function hintBarIds(page: Page): Promise<string[]> {
+  return page
+    .locator('[role="toolbar"] [data-testid^="hint-"]')
+    .evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? ''));
+}
