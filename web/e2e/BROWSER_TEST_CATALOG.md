@@ -231,3 +231,49 @@ All 51 cases are implemented in `catalog.spec.ts` and pass under Playwright
 | I hint bar | 2 | 2 |
 | J negative / edge | 6 | 6 |
 | **Total** | **51** | **51** |
+
+---
+
+## Extended catalog (campaign, areas K–W) — `catalog-extended.spec.ts`
+
+A second wave beyond the original 51 (A–J). Authored to probe the editor-intelligence
+layer adversarially, with **expected behavior grounded in the ANTLR renderer (the
+`conformance/oracle.ts` parser), not the editor's own logic** — so the tests can catch
+bugs rather than ratify current behavior. Result: **10 real bugs found + fixed.**
+
+| Area | Theme |
+|---|---|
+| K | Annotation completion (deep): 24-type catalog, fuzzy subsequence, zone gating |
+| L | Slash commands: all 14, zone gating, every template's literal text |
+| M | Snippet placeholders / tab-stops: field counts, forward/back nav, `$0` body |
+| N | Participant completion + ORACLE parity (exposed #804) |
+| O | Trigger-context completion `.` / `->` / Ctrl+Space (exposed #803) |
+| P | Head-keyword sub-positions / naming guard (exposed #806) |
+| Q | Block keyword zone gating |
+| R | Syntax-highlighting tags |
+| S | Auto-indentation |
+| T | Keymap / accept mechanics |
+| U | Negative / edge / comments / no-false-positives (exposed #805, #807) |
+| V | Hint Bar |
+| W | i18n / quotes / special chars / long DSL (exposed #808, #809) |
+
+### Bugs found + fixed by the campaign
+| # | Bug | Fix |
+|---|---|---|
+| #803 | keyword/@annotation pollution after `.`/`->` | `afterTrigger` gates keyword+annotation branches |
+| #804 | message-introduced participants missing | collect From/To/Construct endpoints |
+| #805 | annotations inside a message label `A->B: @` | `isInsideMessageContent` guard |
+| #806 | block keyword leaks into the name slot | same-line naming text guard |
+| #807 | keyword-prefixed names (`ifService`→`Service`) | grammar `@specialize` keywords |
+| #808 | string labels `as "The User"` rejected | `Label { AsKeyword (Identifier\|String) }` |
+| #809 | non-ASCII (Chinese) names rejected | grammar Unicode ranges + Unicode-aware completion regexes |
+| #810 | quoted method names `A."some method"()` | `MethodName { (Identifier\|String) }` |
+| #811 | async/loop/@Starter-arg/method-arg-literal under-accepts | rule additions (LoopKeyword, AsyncMessage, Head, Parameter) |
+| #812 | bare `return` (no value) rejected | `Return { … \| ReturnKeyword !statement }` |
+
+### Conformance guards (unit, `src/editor/conformance/`)
+- `conformance.test.ts` — editor participant set ⊆ ANTLR oracle (no fabrication).
+- `noFalsePositive.test.ts` — every renderer-valid input parses with **zero** Lezer error
+  nodes (the property the disabled linter in `modes.ts` needs). Both modes.ts-named
+  false-positive blockers (declare-then-message, quoted method names) are now clear; bare
+  `A:B` remains a known minor under-accept.

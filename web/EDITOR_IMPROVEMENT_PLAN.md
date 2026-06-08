@@ -132,3 +132,6 @@ Added `src/editor/conformance/noFalsePositive.test.ts` — 38 renderer-valid inp
 0 Lezer error nodes (the linter-safety property). Both named blockers now clear. Bugs total: 9.
 NEXT options: (a) more gap-hunting + enable linter via ANTLR oracle (no false-positive by
 construction); (b) more authoring-journey find rounds.
+- 2026-06-09 3rd check: All-models weekly **57%**, Sonnet-only 18%, session 25%. +1% over ~1h
+  despite 2 grammar subagents + e2e cycles → Sonnet routing + script verification very efficient.
+  UNDER cap → continue.

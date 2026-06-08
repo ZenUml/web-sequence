@@ -56,6 +56,7 @@ const zenumlHighlighting = styleTags({
   IfKeyword: t.controlKeyword,
   ElseKeyword: t.controlKeyword,
   WhileKeyword: t.controlKeyword,
+  LoopKeyword: t.controlKeyword,
   ParKeyword: t.controlKeyword,
   OptKeyword: t.controlKeyword,
   CriticalKeyword: t.controlKeyword,

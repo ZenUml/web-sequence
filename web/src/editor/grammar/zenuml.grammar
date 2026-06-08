@@ -117,6 +117,7 @@ AsyncKeyword { @specialize[@name=AsyncKeyword]<Identifier, "async"> }
 UndefinedKeyword { @specialize[@name=UndefinedKeyword]<Identifier, "undefined"> }
 TitleKeyword { @specialize[@name=TitleKeyword]<Identifier, "title"> }
 GroupKeyword { @specialize[@name=GroupKeyword]<Identifier, "group"> }
+LoopKeyword { @specialize[@name=LoopKeyword]<Identifier, "loop"> }
 AsKeyword { @specialize[@name=AsKeyword]<Identifier, "as"> }
 ParKeyword { @specialize[@name=ParKeyword]<Identifier, "par"> }
 OptKeyword { @specialize[@name=OptKeyword]<Identifier, "opt"> }
@@ -138,7 +139,7 @@ StatementTerminator { SemiColon | Newline }
 // participants. Annotated/grouped declarations still chain (their lookahead is an
 // Annotation/`group`, not a bare Identifier, so this boundary never triggers), and a
 // lone bare `Client` still parses as a one-Participant Head.
-Head { StarterExp | (Group | (Participant StatementTerminator?))+ !headReduce }
+Head { StarterExp StatementTerminator? | (Group | (Participant StatementTerminator?))+ !headReduce }
 
 Name { !name Identifier }
 
@@ -264,6 +265,8 @@ AssignmentPart {
 }
 
 AsyncMessage {
+  !message AsyncKeyword From ArrowOp To Colon Content StatementTerminator? |
+  !message AsyncKeyword From ArrowOp To StatementTerminator? |
   !message From ArrowOp To Colon Content StatementTerminator? |
   !message From ArrowOp To StatementTerminator?
 }
@@ -277,6 +280,9 @@ Reference {
 Return {
   ReturnKeyword Expression !statement SemiColon |
   ReturnKeyword Expression |
+  // Bare `return` with no value — a return arrow with no label. The renderer accepts
+  // this; the editor must too (#812).
+  ReturnKeyword !statement |
   ReturnAnnotation AsyncMessage
 }
 
@@ -289,7 +295,16 @@ Parameters {
 }
 
 Parameter {
-  Declaration | Name
+  Declaration | Literal | Name
+}
+
+Literal {
+  Number |
+  String |
+  TrueKeyword |
+  FalseKeyword |
+  NullKeyword |
+  UndefinedKeyword
 }
 
 Declaration {
@@ -358,7 +373,7 @@ Atom {
 
 Type { !message Identifier }
 Construct { !member Identifier }
-MethodName { !call Identifier }
+MethodName { !call (Identifier | String) }
 Assignee { !message Identifier }
 
-Loop { !statement WhileKeyword Condition StatementBraceBlock }
+Loop { !statement (WhileKeyword | LoopKeyword) Condition StatementBraceBlock }
