@@ -159,3 +159,7 @@ label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-au
   CJK autocorrect: real-browser integration test caught that the transactionFilter dropped the
   userEvent → autocomplete stopped firing after an auto-corrected dot. Fixed by re-attaching
   userEvent; +Z4 e2e (autocorrect ∘ autocomplete). Feature now bulletproof: 21 unit + 4 e2e.
+- 2026-06-09 7th check: All-models weekly **60%**, Sonnet 18%, session 13%. +1% (~2.5h runway to cap).
+  Added 『』〖〗→{} CJK corner/lenticular brackets to autocorrect (user request); 「」 deliberately
+  left out (ambiguous quote vs brace). +2 unit +Z5 e2e. NOTE: tighten verification (fewer full reruns)
+  as we approach the 65% cap.

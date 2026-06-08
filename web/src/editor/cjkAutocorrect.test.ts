@@ -120,4 +120,16 @@ describe('cjkPunctuationAutocorrect', () => {
     })
   })
 
+
+  describe('CJK corner/lenticular brackets → braces', () => {
+    it('『』 → {} opening a block', () => {
+      expect(type('A.run() ', 8, '『')).toBe('A.run() {')
+      expect(type('A.run() {\n  B.c()\n', 'A.run() {\n  B.c()\n'.length, '』')).toBe('A.run() {\n  B.c()\n}')
+    })
+    it('preserves 『』 inside a message label', () => {
+      const doc = 'A->B: 引用'
+      expect(type(doc, doc.length, '『内容』')).toBe('A->B: 引用『内容』')
+    })
+  })
+
 })

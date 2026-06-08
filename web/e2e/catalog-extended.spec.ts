@@ -1520,4 +1520,19 @@ test.describe('Z. CJK punctuation autocorrect', () => {
     expect((await options(page)).join('\n')).toContain('库存服务');
   });
 
+
+  test('Z5 — CJK corner brackets 『』 become block braces {}', async ({ page }) => {
+    await clearEditor(page);
+    // A CJK user builds a sync-message block using 『』 instead of {}.
+    await page.keyboard.type('订单服务.创建（）『');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('库存服务.检查（）');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('』');
+    await page.waitForTimeout(300);
+    // 『』→{}, （）→(): a valid, auto-indented sync-message block.
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.创建(){\n  库存服务.检查()\n}');
+    expect(await errorMarkerCount(page)).toBe(0);
+  });
+
 });
