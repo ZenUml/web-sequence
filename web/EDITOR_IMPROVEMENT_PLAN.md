@@ -120,3 +120,15 @@ Readings log:
   Commit 1beb7f4. 7 bugs total. Suite: 172 e2e + 214 unit green. Screenshot web/tmp/chinese-render.png.
   Guardrail 56% at last check. NEXT P6 round-2: authoring journeys (rename/insert participant),
   control-flow nesting/fragments, undo/redo, paste — find→verify→fix.
+
+## P6 round 2 — grammar-gap hunt toward error feedback
+modes.ts disables the Lezer linter because the editor grammar under-accepts vs the renderer
+(2 named false-positive cases: declare-then-message [now resolved] + quoted method names).
+Closing gaps is the team's stated path to enabling error feedback. Found+fixed:
+- #810 quoted method names `A."some method"()` — `MethodName { (Identifier | String) }`.
+- #811 four under-accept gaps: `async A->B`, `loop (N){}` (new LoopKeyword), `@Starter(arg)`
+  then statement (Head termination), method-arg literals `A.b(1,"two",true)` (Parameter Literal).
+Added `src/editor/conformance/noFalsePositive.test.ts` — 38 renderer-valid inputs must parse with
+0 Lezer error nodes (the linter-safety property). Both named blockers now clear. Bugs total: 9.
+NEXT options: (a) more gap-hunting + enable linter via ANTLR oracle (no false-positive by
+construction); (b) more authoring-journey find rounds.
