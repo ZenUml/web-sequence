@@ -1482,3 +1482,28 @@ test('Y5 — a string-label word that prefixes a keyword offers NO keyword (#813
   });
 
 });
+
+// ── Z. CJK / full-width punctuation auto-correction (#809 follow-up) ─────────
+test.describe('Z. CJK punctuation autocorrect', () => {
+  test('Z1 — full-width punctuation in code is corrected to ASCII', async ({ page }) => {
+    await clearEditor(page);
+    // A CJK-IME user types a method call with full-width punctuation.
+    await page.keyboard.type('订单服务。save（）');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save()');
+  });
+
+  test('Z2 — full-width punctuation in a free-text label is PRESERVED', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: 创建订单。完成（确认）');
+    // Inside the label, CJK punctuation is legitimate content — left untouched.
+    await expect.poll(() => getEditorText(page)).toBe('A->B: 创建订单。完成（确认）');
+  });
+
+  test('Z3 — corrected code actually parses (no error markers)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('用户。下单（）');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toBe('用户.下单()');
+  });
+});

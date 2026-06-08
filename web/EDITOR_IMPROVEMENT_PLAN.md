@@ -141,3 +141,13 @@ construction); (b) more authoring-journey find rounds.
   free-text-span guard (Content/LineContent/Label/String → no completions); endpoint completion
   preserved. +area Y (5 cases). Commits e8af92a (X), e9a3738 (#813). Bugs total: 11 (#803-813).
   Remaining minor edges (not fixed): `#titl` invalid-color noise, `A."titl` quoted-method noise.
+
+## P6 round 4 — FEATURE: CJK/full-width punctuation auto-correction (user-requested)
+A CJK-IME user accidentally types full-width punctuation (。，：；（）｛｝＃＠…) where ZenUML needs
+ASCII (`.` `,` `:` `;` `()` `{}` `#` `@`). New `src/editor/cjkAutocorrect.ts`: a transactionFilter
+(robust to IME-committed input) rewrites these to ASCII AS TYPED — but only in CODE positions, never
+inside a free-text label/title/comment/string (Content/LineContent/String/Comment/Label guard,
+mirrors #813), where CJK punctuation is legitimate content. Wired into the DSL language only (modes.ts).
+Tests: 14 unit (cjkAutocorrect.test.ts) + e2e area Z (3). e.g. `订单服务。save（）`→`订单服务.save()`,
+label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-author support.
+- 2026-06-09 4th check: All-models weekly **58%**, Sonnet 18%, session reset to 3%. +1%. UNDER → continue.

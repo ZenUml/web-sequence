@@ -3,6 +3,7 @@ import { css } from '@codemirror/lang-css';
 import type { Extension } from '@codemirror/state';
 import { zenumlSupport } from './zenumlLanguage';
 import { zenumlParticipantField } from './participantManager';
+import { cjkPunctuationAutocorrect } from './cjkAutocorrect';
 export type EditorLanguage = 'dsl' | 'css';
 export function languageExtension(lang: EditorLanguage): Extension[] {
   if (lang === 'css') return [css()];
@@ -18,5 +19,9 @@ export function languageExtension(lang: EditorLanguage): Extension[] {
   // quoted-method-name templates. The DSL editor showed NO inline diagnostics
   // before this rewrite; adding wrong ones is a regression. zenumlLinter stays
   // built+tested and returns once the grammar matches the renderer.
-  return [zenumlSupport(), zenumlParticipantField];
+  // cjkPunctuationAutocorrect rewrites full-width/CJK punctuation (。，：（）…) typed by
+  // a CJK-IME user into the ASCII forms ZenUML syntax needs — except inside free-text
+  // labels/strings/comments, where it reads the same (post-language) syntax tree the
+  // participant field does, so it must come AFTER zenumlSupport() too.
+  return [zenumlSupport(), zenumlParticipantField, cjkPunctuationAutocorrect];
 }
