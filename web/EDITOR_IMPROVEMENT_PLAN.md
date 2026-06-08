@@ -168,3 +168,10 @@ label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-au
   Campaign deliverables complete: 11 bugs (#803-813) + CJK autocorrect feature; 189 e2e + 277 unit
   green; 19 commits; tree clean. HOLDING for user's next direction (wrap up / new direction / mine more).
 - 2026-06-09 9th check: All-models weekly **61%** (flat — idle, holding for direction). UNDER → continue.
+
+## State at pause (2026-06-09, usage 61%)
+CJK autocorrect feature COMPLETE incl. variant-completeness audit (found 。 was the only period
+variant → added ． U+FF0E, halfwidth ｡､, angle 〈〉, white parens ｟｠). Final: 280 editor unit +
+189 e2e green; tree clean; 21 campaign commits. Deliverables done: 11 bugs (#803-813) + CJK
+autocorrect. PAUSED for user direction (budget ~4% from the 65% cap; user away, guardrails auto-firing).
+Resume options offered: wrap-up / new direction / more mining.
