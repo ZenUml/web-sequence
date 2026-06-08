@@ -82,7 +82,7 @@ export function AppMenu({
       <MenuTrigger asChild>
         <button
           type="button"
-          data-testid="app-menu-trigger"
+          data-testid="header-menu"
           aria-label="App menu"
           className={cn(
             'flex items-center gap-1.5 shrink-0 rounded-lg px-1.5 h-9',
@@ -104,33 +104,33 @@ export function AppMenu({
         </button>
       </MenuTrigger>
       <MenuContent align="start">
-        <MenuItem data-testid="app-menu-new" onSelect={() => onNew()}>
+        <MenuItem data-testid="header-new" onSelect={() => onNew()}>
           New
         </MenuItem>
-        <MenuItem data-testid="app-menu-create-new" onSelect={() => onOpenCreateNew?.()}>
+        <MenuItem data-testid="header-create-new" onSelect={() => onOpenCreateNew?.()}>
           New from template…
         </MenuItem>
         <MenuSeparator />
-        <MenuItem data-testid="app-menu-settings" onSelect={() => onOpenSettings?.()}>
+        <MenuItem data-testid="header-settings" onSelect={() => onOpenSettings?.()}>
           Settings
         </MenuItem>
-        <MenuItem data-testid="app-menu-shortcuts" onSelect={() => onOpenShortcuts?.()}>
+        <MenuItem data-testid="header-shortcuts" onSelect={() => onOpenShortcuts?.()}>
           Keyboard shortcuts
         </MenuItem>
-        <MenuItem data-testid="app-menu-cheatsheet" onSelect={() => onOpenCheatSheet?.()}>
+        <MenuItem data-testid="header-cheatsheet" onSelect={() => onOpenCheatSheet?.()}>
           DSL cheat sheet
         </MenuItem>
-        <MenuItem data-testid="app-menu-help" onSelect={() => onOpenHelp?.()}>
+        <MenuItem data-testid="header-help" onSelect={() => onOpenHelp?.()}>
           Help
         </MenuItem>
         {paymentEnabled && (
-          <MenuItem data-testid="app-menu-pricing" onSelect={() => onOpenPricing?.()}>
+          <MenuItem data-testid="header-pricing" onSelect={() => onOpenPricing?.()}>
             Pricing
           </MenuItem>
         )}
         <MenuSeparator />
         <MenuItem
-          data-testid="app-menu-save"
+          data-testid="header-save"
           onSelect={() => onSave()}
           className="flex items-center"
         >

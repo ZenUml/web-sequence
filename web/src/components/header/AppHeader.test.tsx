@@ -84,16 +84,16 @@ describe('AppHeader', () => {
   it('app menu Save item calls onSave', async () => {
     const onSave = vi.fn();
     render(<AppHeader {...baseProps} onSave={onSave} />);
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-save'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-save'));
     expect(onSave).toHaveBeenCalled();
   });
 
   it('app menu New fires onNew immediately when there are no unsaved changes', async () => {
     const onNew = vi.fn();
     render(<AppHeader {...baseProps} unsavedCount={0} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-new'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-new'));
     expect(onNew).toHaveBeenCalled();
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument();
   });
@@ -102,8 +102,8 @@ describe('AppHeader', () => {
   it('app menu New opens a discard-confirm (not onNew) when unsavedCount > 0', async () => {
     const onNew = vi.fn();
     render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-new'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-new'));
     expect(onNew).not.toHaveBeenCalled();
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Discard unsaved changes?');
@@ -114,14 +114,14 @@ describe('AppHeader', () => {
     const onNew = vi.fn();
     const { rerender } = render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
 
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-new'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-new'));
     await userEvent.click(await screen.findByTestId('confirm-cancel'));
     expect(onNew).not.toHaveBeenCalled();
 
     rerender(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-new'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-new'));
     await userEvent.click(await screen.findByTestId('confirm-ok'));
     expect(onNew).toHaveBeenCalledTimes(1);
   });
@@ -138,16 +138,16 @@ describe('AppHeader', () => {
         onOpenHelp={onOpenHelp}
       />,
     );
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-settings'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-settings'));
     expect(onOpenSettings).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-create-new'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-create-new'));
     expect(onOpenCreateNew).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-help'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-help'));
     expect(onOpenHelp).toHaveBeenCalled();
   });
 
@@ -157,12 +157,12 @@ describe('AppHeader', () => {
     render(
       <AppHeader {...baseProps} onOpenCheatSheet={onOpenCheatSheet} onOpenShortcuts={onOpenShortcuts} />,
     );
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-cheatsheet'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-cheatsheet'));
     expect(onOpenCheatSheet).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-shortcuts'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-shortcuts'));
     expect(onOpenShortcuts).toHaveBeenCalled();
   });
 
@@ -172,13 +172,13 @@ describe('AppHeader', () => {
     const { rerender } = render(
       <AppHeader {...baseProps} paymentEnabled={false} onOpenPricing={onOpenPricing} />,
     );
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    expect(screen.queryByTestId('app-menu-pricing')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('header-menu'));
+    expect(screen.queryByTestId('header-pricing')).not.toBeInTheDocument();
     await closeMenu();
 
     rerender(<AppHeader {...baseProps} paymentEnabled onOpenPricing={onOpenPricing} />);
-    await userEvent.click(screen.getByTestId('app-menu-trigger'));
-    await userEvent.click(await screen.findByTestId('app-menu-pricing'));
+    await userEvent.click(screen.getByTestId('header-menu'));
+    await userEvent.click(await screen.findByTestId('header-pricing'));
     expect(onOpenPricing).toHaveBeenCalled();
   });
 
@@ -302,7 +302,7 @@ describe('AppHeader', () => {
   // stay in the tree at every width (the condense only touches Share/Present labels).
   it('keeps logo + filename + savestate + account in the tree (not responsively removed)', () => {
     render(<AppHeader {...baseProps} user={mockUser} />);
-    expect(screen.getByTestId('app-menu-trigger')).toBeInTheDocument();
+    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
     expect(screen.getByTestId('filemenu-trigger')).toBeInTheDocument();
     expect(screen.getByTestId('header-title')).toBeInTheDocument();
     expect(screen.getByTestId('header-savestate')).toBeInTheDocument();

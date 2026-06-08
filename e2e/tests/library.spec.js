@@ -117,6 +117,8 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
+  // Save lives inside the header-menu dropdown — open it first.
+  await page.locator('[data-testid="header-menu"]').click();
   await page.locator('[data-testid="header-save"]').click();
   await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
@@ -147,7 +149,8 @@ test('library lists local items and SearchInput filters them', async ({ page }) 
     firstSave: true,
   });
 
-  // New diagram, then seed item 2 (distinct title so search can discriminate).
+  // New lives inside the header-menu dropdown — open it first.
+  await page.locator('[data-testid="header-menu"]').click();
   await page.locator('[data-testid="header-new"]').click();
   await expect(editorLocator(page)).toBeVisible();
   await seedItem(page, {
