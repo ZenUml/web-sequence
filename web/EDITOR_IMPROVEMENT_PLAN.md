@@ -46,9 +46,12 @@ yarn typecheck && yarn lint
       e2e/_failures.json, e2e/_failures_enriched.json.
 - [x] P4 **Verify+file** — DONE. 11 = known #803/#804. Of 7 candidates: 3 new real bugs
       filed (#805 K7, #806 P9, #807 U6); 4 bad tests (L4,M7,V4,V7) corrected in the spec.
-- [~] P5 **Fix** — #804, #803, #805(K7), #806(P9) FIXED in src/editor/ + unit tests; bad
-      tests corrected. e2e 160/163 @workers4 (L1/M1 flake under parallel only — green
-      @workers1); U6 fixme'd pending #807. NEXT: U6 grammar @specialize. Then un-fixme + commit.
+- [x] P5 **Fix** — ALL 5 bugs fixed. #804/#803/#805/#806 committed `33a4010`. #807 (U6) via
+      grammar @specialize (per-keyword named, node names preserved → no styleTags churn).
+      CAUGHT a self-regression: my #804 Construct collection broke the `creation` conformance
+      gate (`a = new A()` oracle = `a:A`, not bare `A`) — fixed to collect Construct ONLY for
+      the anonymous `new X()` form. 194 unit pass. Final e2e (workers=1) running, then commit.
+- [ ] P6 **UX improvement rounds** — broader real-user improvements (see backlog).
 - [ ] P6 **UX improvement rounds** — see backlog; design→implement→test→commit, looping.
 - [ ] P7 **Docs** — update BROWSER_TEST_CATALOG.md, CONTEXT/ADR, this plan.
 
@@ -93,6 +96,7 @@ models" weekly. Sonnet-only weekly has far more headroom → route fan-out subag
 to Sonnet (`model:'sonnet'`) to extend runway; keep main loop (Opus) for judgment.
 Readings log:
 - 2026-06-09 first check: All-models weekly **55%**, Sonnet-only 17%, session 17%. UNDER cap → continue.
+- 2026-06-09 2nd check (~30m later): All-models **56%**, Sonnet-only 18%. +1%/30m despite 2 design + 1 verify workflow + grammar agent → Sonnet routing effective. UNDER cap → continue.
 
 ## Progress log (append-only, newest last)
 - 2026-06-09 — P0/P1 done. Filed #803, #804. Built+served :4399. Launched Workflow 1

@@ -62,11 +62,19 @@ function collectParticipants(state: EditorState): Set<string> {
         return
       }
 
-      // 3. CONSTRUCTOR target — `new X()` introduces participant `X`. Unlike From/To,
-      // `Construct` wraps its `Identifier` directly (no intervening `Name` node).
+      // 3. CONSTRUCTOR target — the ANONYMOUS `new X()` introduces participant `X`
+      // (Construct wraps its `Identifier` directly). The ASSIGNED form `a = new X()`
+      // is represented by the ANTLR oracle as the qualified instance `a:X`, NOT bare
+      // `X`, so collecting `X` there would fabricate a participant outside the oracle
+      // set (the conformance subset gate). Skip Construct when a sibling Assignment is
+      // present; the assigned instance has no single-token editor name to offer yet.
       if (nodeRef.name === 'Construct') {
-        const idNode = nodeRef.node.getChild('Identifier')
-        if (idNode) names.add(state.doc.sliceString(idNode.from, idNode.to))
+        const creationBody = nodeRef.node.parent
+        const assigned = !!creationBody && !!creationBody.getChild('Assignment')
+        if (!assigned) {
+          const idNode = nodeRef.node.getChild('Identifier')
+          if (idNode) names.add(state.doc.sliceString(idNode.from, idNode.to))
+        }
         return
       }
     },

@@ -69,30 +69,6 @@ TitleContent { !title LineContent }
   MinusOp { "-" }
   ArrowOp { "->" }
 
-  // Keywords
-  IfKeyword { "if" }
-  ElseKeyword { "else" }
-  WhileKeyword { "while" }
-  TryKeyword { "try" }
-  CatchKeyword { "catch" }
-  FinallyKeyword { "finally" }
-  NewKeyword { "new" }
-  ReturnKeyword { "return" }
-  TrueKeyword { "true" }
-  FalseKeyword { "false" }
-  NullKeyword { "null" }
-  AsyncKeyword { "async" }
-  UndefinedKeyword { "undefined" }
-  TitleKeyword { "title" }
-  GroupKeyword { "group" }
-  AsKeyword { "as" }
-  ParKeyword { "par" }
-  OptKeyword { "opt" }
-  CriticalKeyword { "critical" }
-  SectionKeyword { "section" }
-  FrameKeyword { "frame" }
-  RefKeyword { "ref" }
-
   // Numbers must be defined before Dot and be more specific
   Number { $[0-9]+ "." $[0-9]+ | $[0-9]+ }
 
@@ -104,30 +80,8 @@ TitleContent { !title LineContent }
   @precedence {
     Comment,
     StarterAnnotation,
-    TitleKeyword,
     ReturnAnnotation,
     Annotation,
-    IfKeyword,
-    ElseKeyword,
-    WhileKeyword,
-    TryKeyword,
-    CatchKeyword,
-    FinallyKeyword,
-    NewKeyword,
-    ReturnKeyword,
-    TrueKeyword,
-    FalseKeyword,
-    NullKeyword,
-    GroupKeyword,
-    AsKeyword,
-    ParKeyword,
-    OptKeyword,
-    CriticalKeyword,
-    SectionKeyword,
-    FrameKeyword,
-    RefKeyword,
-    AsyncKeyword,
-    UndefinedKeyword,
     Identifier,
     String,
     Number,
@@ -141,6 +95,32 @@ TitleContent { !title LineContent }
     Newline
   }
 }
+
+// Keywords derived from Identifier via @specialize so that "ifService" lexes as
+// a single Identifier — the specialize only fires when the FULL token equals the
+// keyword string, fixing #807 (keyword-prefix participant names were mangled).
+IfKeyword { @specialize[@name=IfKeyword]<Identifier, "if"> }
+ElseKeyword { @specialize[@name=ElseKeyword]<Identifier, "else"> }
+WhileKeyword { @specialize[@name=WhileKeyword]<Identifier, "while"> }
+TryKeyword { @specialize[@name=TryKeyword]<Identifier, "try"> }
+CatchKeyword { @specialize[@name=CatchKeyword]<Identifier, "catch"> }
+FinallyKeyword { @specialize[@name=FinallyKeyword]<Identifier, "finally"> }
+NewKeyword { @specialize[@name=NewKeyword]<Identifier, "new"> }
+ReturnKeyword { @specialize[@name=ReturnKeyword]<Identifier, "return"> }
+TrueKeyword { @specialize[@name=TrueKeyword]<Identifier, "true"> }
+FalseKeyword { @specialize[@name=FalseKeyword]<Identifier, "false"> }
+NullKeyword { @specialize[@name=NullKeyword]<Identifier, "null"> }
+AsyncKeyword { @specialize[@name=AsyncKeyword]<Identifier, "async"> }
+UndefinedKeyword { @specialize[@name=UndefinedKeyword]<Identifier, "undefined"> }
+TitleKeyword { @specialize[@name=TitleKeyword]<Identifier, "title"> }
+GroupKeyword { @specialize[@name=GroupKeyword]<Identifier, "group"> }
+AsKeyword { @specialize[@name=AsKeyword]<Identifier, "as"> }
+ParKeyword { @specialize[@name=ParKeyword]<Identifier, "par"> }
+OptKeyword { @specialize[@name=OptKeyword]<Identifier, "opt"> }
+CriticalKeyword { @specialize[@name=CriticalKeyword]<Identifier, "critical"> }
+SectionKeyword { @specialize[@name=SectionKeyword]<Identifier, "section"> }
+FrameKeyword { @specialize[@name=FrameKeyword]<Identifier, "frame"> }
+RefKeyword { @specialize[@name=RefKeyword]<Identifier, "ref"> }
 
 // After the tokens section but before other rules
 StatementTerminator { SemiColon | Newline }

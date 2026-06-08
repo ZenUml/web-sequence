@@ -136,8 +136,18 @@ describe('zenumlParticipantField + getParticipants', () => {
       expect(getParticipants(stateFor('Alice->Bob: hi'))).toEqual(new Set(['Alice', 'Bob']))
     })
 
-    it('collects the constructor target of new X()', () => {
-      expect(getParticipants(stateFor('x = new Order()'))).toEqual(new Set(['Order']))
+    it('collects the target of an anonymous new X()', () => {
+      // Anonymous creation: the oracle's participant set is {Order}, so the editor
+      // may offer `Order`.
+      expect(getParticipants(stateFor('new Order()'))).toEqual(new Set(['Order']))
+    })
+
+    it('does NOT fabricate a bare class name from an ASSIGNED creation a = new A()', () => {
+      // The oracle represents `a = new A()` as the qualified instance `a:A`, never bare
+      // `A`. Collecting `A` would violate the conformance subset gate, so we collect
+      // nothing here rather than fabricate.
+      const p = getParticipants(stateFor('a = new A()'))
+      expect(p.has('A')).toBe(false)
     })
 
     it('unions declared and message-introduced participants', () => {

@@ -112,6 +112,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L1 — accept /participant inserts @Actor Name #FFEBE6 (3 fields)', async ({ page }) => {
       await openSlashPopup(page, 'head'); // empty doc = top zone, offers head commands incl. /participant
       await page.keyboard.type('participant');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
       await expect.poll(() => getEditorText(page)).toContain('@Actor Name #FFEBE6');
@@ -120,6 +121,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L2 — accept /group inserts `group Name {` (1 field)', async ({ page }) => {
       await openSlashPopup(page, 'head'); // top zone offers head commands incl. /group
       await page.keyboard.type('group');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(1);
       await expect.poll(() => getEditorText(page)).toContain('group Name {');
@@ -128,6 +130,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L3 — accept /async inserts A->B: message (3 fields)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('async');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
       await expect.poll(() => getEditorText(page)).toContain('A->B: message');
@@ -136,6 +139,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L4 — accept /return inserts `return value`; single-field snippet paints NO .cm-snippetField', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('return');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       // CodeMirror's snippet() only activates the ActiveSnippet field decoration when a
       // template has MORE THAN ONE field (ranges.some(r => r.field > 0)). `return ${1:value}`
@@ -148,6 +152,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L5 — accept /reply inserts `@Return B->A: value` (3 fields, distinct from /return)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('reply');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
       const t = await getEditorText(page);
@@ -158,6 +163,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L6 — accept /new inserts `a = new A()` (2 fields)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('new');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(2);
       await expect.poll(() => getEditorText(page)).toContain('a = new A()');
@@ -166,6 +172,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L7 — accept /while inserts `while(condition) {` (1 field)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('while');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(1);
       await expect.poll(() => getEditorText(page)).toContain('while(condition) {');
@@ -174,6 +181,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L8 — accept /par inserts `par {` (0 snippet fields)', async ({ page }) => {
       await openSlashPopup(page, 'block'); // block zone: /participant absent, so `par` cannot fuzzy-match it
       await page.keyboard.type('par');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       // par template has only ${0} (final cursor), no numbered placeholders → 0 fields.
       // Assert text too: count 0 is also true if accept silently no-op'd.
@@ -184,6 +192,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L9 — accept /section inserts `section(name) {` (1 field)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('section');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(1);
       await expect.poll(() => getEditorText(page)).toContain('section(name) {');
@@ -192,6 +201,7 @@ test.describe("L. Slash command coverage (all 14)", () => {
   test('L10 — accept /ref inserts `ref(A, B)` (2 fields)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('ref');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(2);
       await expect.poll(() => getEditorText(page)).toContain('ref(A, B)');
@@ -231,6 +241,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M1 — /async exposes 3 snippet fields (no $0)', async ({ page }) => {
       await openSlashPopup(page, 'head'); // empty doc = 'top' zone = head ∪ block, offers /async
       await page.keyboard.type('async');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
     });
@@ -238,6 +249,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M2 — /async initial field is selected and typed over', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('async');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('User');
       await page.keyboard.press('Tab');
@@ -250,6 +262,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M3 — /participant 3-field template navigated fully', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('participant');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('@Database');
       await page.keyboard.press('Tab');
@@ -262,6 +275,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M4 — /participant exposes exactly 3 fields (no $0)', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('participant');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
     });
@@ -269,6 +283,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M5 — /try field 1 is the catch var, $0 is the body', async ({ page }) => {
       await openSlashPopup(page, 'head'); // top zone offers /try; literal template indent only
       await page.keyboard.type('try');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('err');
       await page.keyboard.press('Tab');
@@ -281,6 +296,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M6 — /section lands $0 in the body after Tab', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('section');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('auth');
       await page.keyboard.press('Tab');
@@ -293,6 +309,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M7 — /reply Tab forward fills all 3 fields in order', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('reply');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('B');
       await page.keyboard.press('Tab');
@@ -309,6 +326,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M8 — /ref fills both fields in order', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('ref');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(2);
       await page.keyboard.type('Auth');
@@ -320,6 +338,7 @@ test.describe("M. Snippet placeholders / tab-stops", () => {
   test('M9 — Tab past the last /async field ends the session', async ({ page }) => {
       await openSlashPopup(page, 'head');
       await page.keyboard.type('async');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(3);
       await page.keyboard.press('Tab'); // 1 -> 2
@@ -932,6 +951,7 @@ test.describe("T", () => {
   test('T4 — Tab advances the snippet field after the popup is dismissed', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('sync');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(2);
       await page.keyboard.type('Svc');
@@ -945,6 +965,7 @@ test.describe("T", () => {
   test('T5 — Enter inside an active snippet inserts a newline, not a field jump', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('if');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(1);
       await page.keyboard.type('ready');
@@ -958,6 +979,7 @@ test.describe("T", () => {
   test('T6 — Tab indents in a final-stop-only snippet (no numbered field to advance)', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('par');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.waitForTimeout(200);
       await expect(editorRoot(page).locator('.cm-snippetField')).toHaveCount(0);
@@ -970,6 +992,7 @@ test.describe("T", () => {
   test('T7 — Escape during an active snippet leaves the template text intact', async ({ page }) => {
       await openSlashPopup(page, 'block');
       await page.keyboard.type('sync');
+      await page.waitForTimeout(180); // settle past CM interactionDelay before accept (anti-flake)
       await page.keyboard.press('Enter');
       await page.keyboard.type('Svc');
       await page.keyboard.press('Escape');
@@ -1054,10 +1077,9 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       expect(await errorMarkerCount(page)).toBe(0);
     });
 
-  // FIXME(#807): the Lezer lexer splits keyword-prefixed names (`ifService` → `if` +
-  // `Service`), so getParticipants yields {Service, Worker}. Un-fixme when the grammar
-  // @specialize fix lands.
-  test.fixme('U6 — participant `ifService` (keyword-prefixed name) is offered after a dot', async ({ page }) => {
+  // #807 FIXED: keywords are now @specialize'd from Identifier, so keyword-prefixed
+  // names (`ifService`) lex as a single Identifier and collect fully.
+  test('U6 — participant `ifService` (keyword-prefixed name) is offered after a dot', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('@Actor ifService');
       await page.keyboard.press('Enter');
