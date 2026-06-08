@@ -52,12 +52,11 @@ const ink = createTheme({
     { tag: [t.string, t.special(t.string)], color: '#2FA56B' }, // ok — calm green
     { tag: t.number, color: '#E8EEF7' }, // neutral
     { tag: [t.bool, t.null], color: '#7AA2FF' },
-    // Teal for call-like names. NOTE: the ZenUML DSL StreamLanguage emits a bare
-    // "function" token string, which is a lezer *modifier* (not a base tag) and
-    // therefore resolves to nothing — DSL calls render neutral (still on-brand
-    // for the "mostly neutral" goal). These styles DO apply in the CSS editor
-    // (@codemirror/lang-css), which emits real function tags. zenumlLanguage.ts
-    // is out of scope to change here.
+    // Teal for call-like names. The ZenUML DSL LRLanguage maps
+    // `MethodName/Identifier → t.function(t.variableName)` (zenumlLanguage.ts), so
+    // DSL method calls now reach this teal style — the old StreamLanguage emitted a
+    // bare "function" modifier string that resolved to nothing. These styles also
+    // apply in the CSS editor (@codemirror/lang-css), which emits real function tags.
     { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#5CC8C0' }, // teal calls
     { tag: t.variableName, color: '#E8EEF7' }, // neutral identifiers
     { tag: t.propertyName, color: '#E8EEF7' },
@@ -65,6 +64,10 @@ const ink = createTheme({
     { tag: t.className, color: '#E8EEF7' },
     { tag: t.operator, color: '#8A99AE' }, // ondark-muted — recessed punctuation
     { tag: [t.punctuation, t.separator, t.bracket], color: '#8A99AE' },
+    // t.meta — ZenUML annotations (@Actor, @Database, @return). Cobalt reuses the
+    // keyword/marker signal hue (no new palette colour); the @-prefixed role marker
+    // now pops on every participant line instead of reading as plain text.
+    { tag: t.meta, color: '#7AA2FF' },
     { tag: t.invalid, color: '#E0524A' }, // danger
   ],
 });

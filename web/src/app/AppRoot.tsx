@@ -12,7 +12,7 @@ import { computeCss } from '../preview/transpilers';
 import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
 import { Sidebar } from '../components/Sidebar';
 import { Layout } from '../components/Layout';
-import { Toolbox } from '../components/Toolbox';
+import { HintBar } from '../components/HintBar';
 import { PageTabs } from '../components/pages/PageTabs';
 import { RendererHeader } from '../components/preview/RendererHeader';
 import { CssPanel } from '../components/editor/CssPanel';
@@ -20,6 +20,7 @@ import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
 import { AskToImportModal } from '../components/modals/AskToImportModal';
 import { addCode } from '../editor/snippets';
+import type { SlashZone } from '../editor/slashCommands';
 import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useBootItem } from '../hooks/useBootItem';
@@ -63,6 +64,15 @@ import { SupportPledgeModal } from '../components/modals/SupportPledgeModal';
 import { AtomicCssSettingsModal, type CssSettings } from '../components/modals/AtomicCssSettingsModal';
 import { PricingModal, type BillingPeriod } from '../components/subscription/PricingModal';
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
+
+// Convert a CodeMirror snippet template (e.g. `if(${1:condition}) {\n  ${0}\n}`)
+// into a plain DSL literal for the Hint Bar's CLICK insertion, which appends via
+// addCode rather than driving the in-editor snippet machinery (the slash command
+// covers the interactive tab-stop UX). `${1:condition}` → `condition`, bare
+// `${1}` / `${0}` placeholders collapse to empty.
+function templateToLiteral(template: string): string {
+  return template.replace(/\$\{\d+:([^}]*)\}/g, '$1').replace(/\$\{\d+\}/g, '');
+}
 
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
@@ -315,6 +325,12 @@ export function AppRoot() {
   const [transpiledCss, setTranspiledCss] = useState(item?.css ?? '');
   // REQ-ED-7: transpile errors surface as inline lint markers in the CSS editor.
   const [cssErrors, setCssErrors] = useState<{ lineNumber: number; message: string }[]>([]);
+  // Current parse zone of the DSL editor cursor (head vs block), fed by the
+  // CodeEditor onZoneChange callback. Drives which slash commands the Hint Bar
+  // shows. Defaults to 'head' — resolveZone() returns 'head' for an empty/new
+  // document, and a fresh diagram starts in the participant-declaration zone; the
+  // callback flips it to 'block' as soon as the cursor enters a statement body.
+  const [zone, setZone] = useState<SlashZone>('head');
   useEffect(() => {
     if (!item || item.cssMode === 'css') { setCssErrors([]); return; }
     let cancelled = false;
@@ -1014,7 +1030,10 @@ export function AppRoot() {
                   when empty, expanding to the editor + its pre-processor Select. CSS
                   modes are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
-              <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
+              <HintBar
+                zone={zone}
+                onInsert={(template) => setDsl(addCode(item.js, templateToLiteral(template)))}
+              />
               <div className="flex flex-1 min-h-0 flex-col">
                 {/* DSL pane header — primary surface marker */}
                 <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
@@ -1023,7 +1042,7 @@ export function AppRoot() {
                     DSL
                   </span>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} onZoneChange={setZone} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
                   default re-derives from the new page's CSS emptiness (matches the

@@ -1,0 +1,244 @@
+// Context-aware autocomplete + slash commands for the ZenUML DSL editor.
+//
+// Three exports:
+//   1. resolveZone(state, pos)      — derive the cursor's parse zone ('head' | 'block')
+//   2. zenumlCompletions(context)   — the CodeMirror completion source
+//   3. zenumlCompletionKeymap       — Tab/Enter/Escape bindings for the popup
+//
+// Design notes (lessons from the reference impl ZenUml/codemirror-extensions):
+//   - We NEVER call parser.parse() ourselves. Zones and participant names come
+//     from syntaxTree(state), the tree CodeMirror already maintains.
+//   - Completions are parse-context aware: slash commands and keywords are gated
+//     by zone, and participant names are boosted only where a message endpoint is
+//     plausible. The reference impl showed one flat list everywhere — a bug.
+//   - The participant currently under the cursor is excluded by POSITION, not by
+//     Set insertion order (the reference impl's `slice(0, size-1)` was a bug:
+//     Set order != cursor position).
+//
+// Only REAL node names from grammar/zenuml-parser.terms.js are referenced.
+
+import { syntaxTree } from '@codemirror/language'
+import type { EditorState } from '@codemirror/state'
+import {
+  snippetCompletion,
+  acceptCompletion,
+  closeCompletion,
+  type Completion,
+  type CompletionContext,
+  type CompletionResult,
+} from '@codemirror/autocomplete'
+import type { KeyBinding } from '@codemirror/view'
+import type { SyntaxNode } from '@lezer/common'
+import { commandsForZone, type SlashZone } from './slashCommands'
+import { getParticipants } from './participantManager'
+import { CLOUD_ANNOTATIONS, CORE_ANNOTATIONS } from './annotations'
+
+// ---------------------------------------------------------------------------
+// 1. Zone resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive the cursor's zone from the syntax tree.
+ *
+ *  - inside a StatementBraceBlock (the body of a sync message / control-flow
+ *    block) => 'block'
+ *  - everywhere else — the document Head, a group's participant list, or before
+ *    the first statement => 'head'
+ *
+ * Robust to partial/empty docs: an empty or whitespace-only document, or a
+ * cursor that resolves to no meaningful container, defaults to 'head' (the
+ * place you start a diagram — declaring participants).
+ */
+export function resolveZone(state: EditorState, pos: number): SlashZone {
+  const tree = syntaxTree(state)
+  // resolveInner(pos, -1): bias toward the node ending at pos, so that a cursor
+  // sitting just inside a freshly-typed `{` lands in the brace block, and a
+  // cursor at the very end of a token is associated with that token.
+  let node: SyntaxNode | null = tree.resolveInner(pos, -1)
+  while (node) {
+    // The body of a message/control-flow block. This is the authoritative
+    // 'block' container. (Group's body is GroupBraceBlock — still 'head',
+    // because only participant declarations live there.)
+    if (node.name === 'StatementBraceBlock') return 'block'
+    // Once we hit the document Head or a group's participant list, we're in
+    // 'head' territory and can stop climbing.
+    if (node.name === 'Head' || node.name === 'GroupBraceBlock' || node.name === 'Group') {
+      return 'head'
+    }
+    node = node.parent
+  }
+  return 'head'
+}
+
+// ---------------------------------------------------------------------------
+// 2. Participant names
+// ---------------------------------------------------------------------------
+//
+// The single source of truth is participantManager.getParticipants(state),
+// which reads the SHARED syntax tree via a StateField (no independent parse).
+// We deliberately do NOT re-walk the tree here: the Hint Bar and this popup
+// must show the SAME participant set, so both consume getParticipants(). Any
+// gap in that set (first-mention message endpoints, method-name pollution from
+// the Head-greedy grammar gap) is participantManager's scope to close, not
+// ours to paper over with a divergent second definition.
+
+/**
+ * Participant names to offer, with the identifier currently under the cursor
+ * removed (excluded by the cursor token's text — the `[from,to]` slice — not by
+ * Set insertion order, which was the reference impl's `slice(0, size-1)` bug).
+ */
+function participantOptions(state: EditorState, cursorToken: string): string[] {
+  const all = getParticipants(state)
+  const out: string[] = []
+  for (const name of all) {
+    if (cursorToken && name === cursorToken) continue
+    out.push(name)
+  }
+  return out
+}
+
+// ---------------------------------------------------------------------------
+// 3. Keyword catalogs, gated by zone
+// ---------------------------------------------------------------------------
+
+const HEAD_KEYWORDS: Completion[] = [
+  { label: 'title', type: 'keyword', detail: 'Diagram title' },
+  { label: 'group', type: 'keyword', detail: 'Group participants under a box' },
+  { label: 'as', type: 'keyword', detail: 'Alias / label a participant' },
+]
+
+const BLOCK_KEYWORDS: Completion[] = [
+  { label: 'if', type: 'keyword', detail: 'Conditional (alt) block' },
+  { label: 'else', type: 'keyword', detail: 'Else / else-if branch' },
+  { label: 'while', type: 'keyword', detail: 'Loop block' },
+  { label: 'par', type: 'keyword', detail: 'Parallel block' },
+  { label: 'opt', type: 'keyword', detail: 'Optional block' },
+  { label: 'critical', type: 'keyword', detail: 'Critical block' },
+  { label: 'section', type: 'keyword', detail: 'Named section' },
+  { label: 'frame', type: 'keyword', detail: 'Named frame' },
+  { label: 'ref', type: 'keyword', detail: 'Reference to another diagram' },
+  { label: 'try', type: 'keyword', detail: 'Try / catch / finally' },
+  { label: 'catch', type: 'keyword', detail: 'Catch branch' },
+  { label: 'finally', type: 'keyword', detail: 'Finally branch' },
+  { label: 'return', type: 'keyword', detail: 'Return a value to the caller' },
+  { label: 'new', type: 'keyword', detail: 'Create a new instance' },
+  { label: 'async', type: 'keyword', detail: 'Async message' },
+]
+
+function keywordsForZone(zone: SlashZone): Completion[] {
+  return zone === 'head' ? HEAD_KEYWORDS : BLOCK_KEYWORDS
+}
+
+// Annotations (@Actor, @Database, ...) are only valid where a ParticipantType
+// is — i.e. the head. The full catalog lives in ./annotations.
+function annotationCompletions(): Completion[] {
+  return [...CORE_ANNOTATIONS, ...CLOUD_ANNOTATIONS].map((name) => ({
+    label: name,
+    type: 'type',
+    detail: 'Participant annotation',
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// 4. The completion source
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert slash commands for a zone into snippet completions. The `/` and the
+ * typed name are both replaced by the snippet (apply spans [from, pos]), so the
+ * template's `${1:..}` placeholders become real tab stops.
+ */
+function slashCompletions(zone: SlashZone): Completion[] {
+  return commandsForZone(zone).map((cmd) =>
+    snippetCompletion(cmd.template, {
+      label: '/' + cmd.name,
+      detail: cmd.detail,
+      type: 'keyword',
+    }),
+  )
+}
+
+/** True when the cursor is in a position where a message endpoint is plausible. */
+function atMessageEndpoint(state: EditorState, pos: number): boolean {
+  const before = state.doc.sliceString(Math.max(0, pos - 40), pos)
+  // After an arrow ("A->"), after a dot following a name ("Order."), or at the
+  // start of a line in a block (message source position).
+  if (/->\s*\w*$/.test(before)) return true
+  if (/[A-Za-z_]\w*\.\w*$/.test(before)) return true
+  // Start of a fresh statement line (only leading whitespace since newline).
+  if (/(^|\n)\s*\w*$/.test(before)) return true
+  return false
+}
+
+export function zenumlCompletions(context: CompletionContext): CompletionResult | null {
+  const { state, pos } = context
+
+  // ---- SLASH MODE -------------------------------------------------------
+  // Match a `/word` immediately before the cursor. The `/` must be the trigger;
+  // we anchor on it so `A.b()/2` (a stray slash) inside text doesn't pop the
+  // command menu unless the slash directly precedes the (partial) command.
+  const slash = context.matchBefore(/\/\w*/)
+  if (slash) {
+    const zone = resolveZone(state, slash.from)
+    const options = slashCompletions(zone)
+    if (!options.length) return null
+    return {
+      from: slash.from,
+      to: pos,
+      options,
+      // Re-query while the user keeps typing the command name.
+      validFor: /^\/\w*$/,
+    }
+  }
+
+  // ---- NORMAL MODE ------------------------------------------------------
+  const word = context.matchBefore(/[\w@]*/)
+  if (!word) return null
+  // Nothing typed and not explicitly invoked: stay quiet — UNLESS the cursor
+  // sits immediately after a trigger (`.` or `->`), where offering participant
+  // names with an empty word is exactly the point. The gate stays narrow on
+  // purpose: a line-start trigger would fire the popup on every newline.
+  const beforeWord = state.doc.sliceString(Math.max(0, word.from - 3), word.from)
+  const afterTrigger = /(->|\.)\s*$/.test(beforeWord)
+  if (word.from === word.to && !context.explicit && !afterTrigger) return null
+
+  const from = word.from
+  const typed = word.text
+  const zone = resolveZone(state, from)
+  const options: Completion[] = []
+
+  // Annotations are ONLY valid where a ParticipantType is — the head. Gate the
+  // whole branch on zone so typing "@A" inside a block does NOT offer @Actor etc.
+  if (zone === 'head' && (typed.startsWith('@') || context.explicit)) {
+    options.push(...annotationCompletions())
+  }
+
+  if (!typed.startsWith('@')) {
+    // Participant names — boosted where a message endpoint is plausible.
+    if (zone === 'block' || atMessageEndpoint(state, pos)) {
+      for (const name of participantOptions(state, typed)) {
+        options.push({ label: name, type: 'variable', detail: 'participant', boost: 50 })
+      }
+    }
+    // Zone-gated keywords.
+    options.push(...keywordsForZone(zone))
+  }
+
+  if (!options.length) return null
+  return {
+    from,
+    to: word.to,
+    options,
+    validFor: /^[\w@]*$/,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 5. Keymap
+// ---------------------------------------------------------------------------
+
+export const zenumlCompletionKeymap: KeyBinding[] = [
+  { key: 'Tab', run: acceptCompletion },
+  { key: 'Enter', run: acceptCompletion },
+  { key: 'Escape', run: closeCompletion },
+]

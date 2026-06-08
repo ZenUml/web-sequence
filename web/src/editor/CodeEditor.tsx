@@ -3,12 +3,15 @@ import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import { Compartment, type Extension } from '@codemirror/state';
 import { linter, lintGutter, type Diagnostic } from '@codemirror/lint';
+import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_THEME, resolveTheme } from './themes';
 import { languageExtension, type EditorLanguage } from './modes';
 import { editorKeymap, formatCss } from './keymap';
+import { resolveZone, zenumlCompletions, zenumlCompletionKeymap } from './zenumlAutocomplete';
+import type { SlashZone } from './slashCommands';
 
 export interface CodeEditorProps {
   value: string;
@@ -21,6 +24,9 @@ export interface CodeEditorProps {
   fontSize?: number;              // default 16 (DEFAULT_SETTINGS.fontSize)
   keymap?: 'sublime' | 'vim';     // default 'sublime' (CM6 default keymap, no vim)
   diagnostics?: { lineNumber: number; message: string }[]; // REQ-ED-7: inline error markers
+  // DSL only: fires when the cursor's parse zone (head vs block) changes. Feeds the
+  // context-sensitive Hint Bar. Ignored for CSS.
+  onZoneChange?: (zone: SlashZone) => void;
 }
 
 // Resolve a stored editor-font setting to a real CSS font stack that ALWAYS ends in a
@@ -74,6 +80,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     fontSize = 16,
     keymap: keymapMode = 'sublime',
     diagnostics = NO_DIAGNOSTICS,
+    onZoneChange,
   },
   ref,
 ) {
@@ -85,11 +92,42 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  // Keep latest onZoneChange without rebuilding extensions — the updateListener
+  // reads through this ref, so the `extensions` memo can stay keyed on `language`.
+  const onZoneChangeRef = useRef(onZoneChange);
+  onZoneChangeRef.current = onZoneChange;
+  // Last zone emitted, so the listener only fires onZoneChange on an actual change.
+  const lastZoneRef = useRef<SlashZone | null>(null);
 
   // Built once; theme/font/keymap are swapped via compartment reconfigure (no remount).
   const extensions = useMemo(() => {
     const bindings: KeyBinding[] = [...editorKeymap];
     const languageExtensions: Extension[] = [...languageExtension(language)];
+
+    // The DSL gets the purpose-built, context-aware completion source (slash
+    // commands + participant-aware + zone-gated keywords). basicSetup keeps its
+    // `autocompletion: false` for DSL (see below) so this is the sole source.
+    // completionKeymap gives ArrowUp/Down popup navigation; zenumlCompletionKeymap
+    // adds Tab-to-accept. The default snippet field keymap (Tab between ${1}/${2})
+    // is installed by autocompletion()/snippet() automatically on first use.
+    if (language === 'dsl') {
+      languageExtensions.push(autocompletion({ override: [zenumlCompletions] }));
+      bindings.push(...zenumlCompletionKeymap, ...completionKeymap);
+      // Emit the cursor's parse zone (head | block) when the selection or doc
+      // changes — feeds the context-sensitive Hint Bar. Reads onZoneChange via a
+      // ref so the memo can stay keyed on `language`.
+      languageExtensions.push(
+        EditorView.updateListener.of((update) => {
+          if (!update.selectionSet && !update.docChanged) return;
+          const cb = onZoneChangeRef.current;
+          if (!cb) return;
+          const zone = resolveZone(update.state, update.state.selection.main.head);
+          if (zone === lastZoneRef.current) return;
+          lastZoneRef.current = zone;
+          cb(zone);
+        }),
+      );
+    }
 
     // Emmet + Prettier are CSS-ONLY. The ZenUML DSL editor must never receive them
     // (DSL is not JS/CSS — Emmet expansion and Prettier formatting would corrupt it).

@@ -173,10 +173,15 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="js-mode-select"]')).toBeNull();
   });
 
-  it('renders the snippet toolbox', async () => {
+  it('renders the slash-command hint bar above the DSL editor', async () => {
     const { container } = render(<AppRoot />);
     await screen.findByTestId('editor-region');
-    expect(container.querySelector('[data-testid="snippet-participant"]')).toBeTruthy();
+    // The Toolbox snippet grid was replaced by the context-sensitive HintBar
+    // (role=toolbar, aria-label="Insert slash command"). Assert the toolbar and
+    // at least one command chip render, without depending on the current zone.
+    const bar = container.querySelector('[aria-label="Insert slash command"]');
+    expect(bar).toBeTruthy();
+    expect(bar!.querySelectorAll('[data-testid^="hint-"]').length).toBeGreaterThan(0);
   });
 
   it('renders the console panel', async () => {

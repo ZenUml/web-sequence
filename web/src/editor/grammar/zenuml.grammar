@@ -1,0 +1,368 @@
+@top Program { StatementTerminator* Title? expression* }
+
+@precedence {
+  starter @left,
+  title @left,
+  name @left,
+  member @left,
+  call @left,
+  prefix @right,
+  times @left,
+  plus @left,
+  rel @left,
+  eq @left,
+  and @left,
+  or @left,
+  statement @left,
+  group @left,
+  stereotype @left,
+  message @left,
+  participant @left,
+  creation @left,
+  reference @left,
+  divider @left,
+  label @left
+}
+
+@skip { whitespace | Comment }
+
+expression {
+  !statement (
+    Head |
+    Statement StatementTerminator*
+  )
+}
+
+Title { !title TitleKeyword TitleContent StatementTerminator* }
+
+TitleContent { !title LineContent }
+
+@tokens {
+  LineContent { ![ \t/\n] (![\n/] | "/" ![\n/])* }
+  whitespace { $[ \t]+ }
+  Newline { $[\n]+ }
+  OpenBrace { "{" }
+  CloseBrace { "}" }
+  OpenParen { "(" }
+  CloseParen { ")" }
+  Dot { "." }
+  Comma { "," }
+  SemiColon { ";" }
+  Colon { ":" }
+
+  Color { "#" $[0-9a-fA-F]+ }
+
+  // Special annotations
+  StarterAnnotation { "@Starter" | "@starter" }
+  ReturnAnnotation { "@Return" | "@return" | "@Reply" | "@reply" }
+
+  // Regular annotations (must come after special annotations)
+  Annotation { "@" $[a-zA-Z_0-9]+ }
+
+  // Comments must be defined before division operator
+  Comment { "//" ![\n]* }
+
+  // Operators
+  DivideOp { "/" }
+  MultiplyOp { "*" }
+  ModuloOp { "%" }
+  PlusOp { "+" }
+  MinusOp { "-" }
+  ArrowOp { "->" }
+
+  // Keywords
+  IfKeyword { "if" }
+  ElseKeyword { "else" }
+  WhileKeyword { "while" }
+  TryKeyword { "try" }
+  CatchKeyword { "catch" }
+  FinallyKeyword { "finally" }
+  NewKeyword { "new" }
+  ReturnKeyword { "return" }
+  TrueKeyword { "true" }
+  FalseKeyword { "false" }
+  NullKeyword { "null" }
+  AsyncKeyword { "async" }
+  UndefinedKeyword { "undefined" }
+  TitleKeyword { "title" }
+  GroupKeyword { "group" }
+  AsKeyword { "as" }
+  ParKeyword { "par" }
+  OptKeyword { "opt" }
+  CriticalKeyword { "critical" }
+  SectionKeyword { "section" }
+  FrameKeyword { "frame" }
+  RefKeyword { "ref" }
+
+  // Numbers must be defined before Dot and be more specific
+  Number { $[0-9]+ "." $[0-9]+ | $[0-9]+ }
+
+  Identifier { $[a-zA-Z_] $[a-zA-Z_0-9]* }
+  String { '"' (!["\\] | "\\" _)* '"' }
+
+  Equals { "=" }
+
+  @precedence {
+    Comment,
+    StarterAnnotation,
+    TitleKeyword,
+    ReturnAnnotation,
+    Annotation,
+    IfKeyword,
+    ElseKeyword,
+    WhileKeyword,
+    TryKeyword,
+    CatchKeyword,
+    FinallyKeyword,
+    NewKeyword,
+    ReturnKeyword,
+    TrueKeyword,
+    FalseKeyword,
+    NullKeyword,
+    GroupKeyword,
+    AsKeyword,
+    ParKeyword,
+    OptKeyword,
+    CriticalKeyword,
+    SectionKeyword,
+    FrameKeyword,
+    RefKeyword,
+    AsyncKeyword,
+    UndefinedKeyword,
+    Identifier,
+    String,
+    Number,
+    DivideOp,
+    ArrowOp,
+    MultiplyOp,
+    ModuloOp,
+    PlusOp,
+    MinusOp,
+    Equals,
+    Newline
+  }
+}
+
+// After the tokens section but before other rules
+StatementTerminator { SemiColon | Newline }
+
+Head { !statement StarterExp | (Group | (Participant StatementTerminator?))+ }
+
+Name { !name Identifier  }
+
+Group {
+  !group GroupKeyword Name? GroupBraceBlock |
+  !group GroupKeyword Name? !statement
+}
+
+StarterExp {
+  !starter StarterAnnotation (OpenParen Starter? CloseParen)?
+}
+
+Starter { Identifier | String }
+
+Participant {
+  !participant ParticipantType Stereotype Name Width? Label? Color? StatementTerminator? |
+  !participant ParticipantType Name Width? Label? Color? StatementTerminator? |
+  !participant Stereotype Name Width? Label? Color? StatementTerminator? |
+  !participant Name Width? Label? Color? StatementTerminator?
+}
+
+ParticipantType { Annotation }
+
+OpenStereotype { "<<" | "<" }
+CloseStereotype { ">>" | ">" }
+Stereotype {
+  !stereotype OpenStereotype Name CloseStereotype |
+  !stereotype OpenStereotype Name CloseStereotype |
+  !stereotype OpenStereotype Name CloseStereotype
+}
+
+Label { !label AsKeyword Identifier? }
+
+Width { Number }
+
+Statement {
+  !statement (
+    Alternative |
+    Parallel |
+    Optional |
+    Critical |
+    Section |
+    Reference |
+    Loop |
+    Creation |
+    Message |
+    AsyncMessage |
+    Return |
+    Divider |
+    TryCatchFinally
+  )
+}
+
+Parallel { !statement ParKeyword StatementBraceBlock | !statement ParKeyword }
+Optional { !statement OptKeyword StatementBraceBlock | !statement OptKeyword }
+
+Critical {
+  !statement CriticalKeyword (OpenParen Atom? CloseParen)? StatementBraceBlock |
+  !statement CriticalKeyword
+}
+
+Section {
+  !statement (SectionKeyword | FrameKeyword) (OpenParen Atom? CloseParen)? StatementBraceBlock |
+  !statement (SectionKeyword | FrameKeyword)
+}
+
+Creation {
+  !creation CreationBody (SemiColon | StatementBraceBlock)?
+}
+
+CreationBody {
+  !creation NewKeyword Construct (OpenParen Parameters? CloseParen)? |
+  !creation NewKeyword Identifier |
+  !creation Assignment NewKeyword Construct (OpenParen Parameters? CloseParen)? |
+  !creation Assignment NewKeyword Identifier
+}
+
+Message {
+  !message MessageBody (SemiColon | StatementBraceBlock)?
+}
+
+MessageBody {
+  !message AssignmentPart |
+  !message MessagePart
+}
+
+MessagePart {
+  !message FromToPart? Function |
+  !message FromToPart Dot Function
+}
+
+From { !message Name | String }
+To { !message Name | String }
+
+FromToPart {
+  !message From ArrowOp To Dot |
+  !message From ArrowOp To Function |
+  !message To
+}
+
+Function {
+  !call Signature (Dot Signature)*
+}
+
+Signature {
+  !call MethodName InvocationExp?
+}
+
+InvocationExp {
+  OpenParen Parameters? CloseParen
+}
+
+Assignment {
+  !creation Type? Assignee Equals
+}
+
+AssignmentPart {
+  !message Type? Assignee Equals MessagePart
+}
+
+AsyncMessage {
+  !message From ArrowOp To Colon Content StatementTerminator? |
+  !message From ArrowOp To StatementTerminator?
+}
+
+Content { !message LineContent }
+
+Reference {
+  !reference RefKeyword OpenParen (Identifier (Comma Identifier)*)? CloseParen SemiColon?
+}
+
+Return {
+  ReturnKeyword Expression !statement SemiColon |
+  ReturnKeyword Expression |
+  ReturnAnnotation AsyncMessage
+}
+
+Divider {
+  !divider "==" LineContent
+}
+
+Parameters {
+  Parameter (Comma Parameter)* Comma?
+}
+
+Parameter {
+  Declaration | Name
+}
+
+Declaration {
+  Type Identifier
+}
+
+TryCatchFinally {
+  TryBlock CatchBlock* FinallyBlock?
+}
+
+TryBlock { TryKeyword StatementBraceBlock }
+CatchBlock { CatchKeyword InvocationExp? StatementBraceBlock }
+FinallyBlock { FinallyKeyword StatementBraceBlock }
+
+Alternative {
+  IfBlock ElseIfBlock* ElseBlock?
+}
+
+IfBlock { IfKeyword Condition StatementBraceBlock }
+ElseIfBlock { ElseKeyword IfKeyword Condition StatementBraceBlock }
+ElseBlock { ElseKeyword StatementBraceBlock }
+
+Condition { OpenParen Expression CloseParen }
+StatementBraceBlock { OpenBrace StatementTerminator* (Statement StatementTerminator*)* CloseBrace }
+GroupBraceBlock { OpenBrace StatementTerminator* (Participant StatementTerminator*)* CloseBrace }
+
+Expression {
+  Atom |
+  UnaryExpression |
+  BinaryExpression |
+  FunctionExpression |
+  ParenthesizedExpression
+}
+
+UnaryExpression {
+  !prefix ("-" | "!") Expression
+}
+
+BinaryExpression {
+  Expression !times (MultiplyOp | DivideOp | ModuloOp) Expression |
+  Expression !plus (PlusOp | MinusOp) Expression |
+  Expression !rel ("<=" | ">=" | "<" | ">") Expression |
+  Expression !eq ("==" | "!=") Expression |
+  Expression !and "&&" Expression |
+  Expression !or "||" Expression
+}
+
+FunctionExpression {
+  !member (To Dot)? Function
+}
+
+ParenthesizedExpression {
+  OpenParen Expression CloseParen
+}
+
+Atom {
+  Identifier |
+  Number |
+  String |
+  TrueKeyword |
+  FalseKeyword |
+  NullKeyword |
+  AsyncKeyword |
+  UndefinedKeyword
+}
+
+Type { !message Identifier }
+Construct { !member Identifier }
+MethodName { !call Identifier }
+Assignee { !message Identifier }
+
+Loop { !statement WhileKeyword Condition StatementBraceBlock }

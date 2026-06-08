@@ -1,0 +1,237 @@
+import { describe, it, expect } from 'vitest'
+import { EditorState } from '@codemirror/state'
+import { LRLanguage, LanguageSupport } from '@codemirror/language'
+import { CompletionContext, type Completion } from '@codemirror/autocomplete'
+import { parser } from './grammar/zenuml-parser.js'
+import { zenumlParticipantField } from './participantManager'
+import {
+  resolveZone,
+  zenumlCompletions,
+  zenumlCompletionKeymap,
+} from './zenumlAutocomplete'
+
+// ---------------------------------------------------------------------------
+// Test harness: install the Lezer grammar as a language so syntaxTree(state)
+// returns the real parse tree (the production language wiring is a sibling
+// phase; here we build a minimal LRLanguage straight from the generated parser).
+// ---------------------------------------------------------------------------
+
+const zenumlLanguage = LRLanguage.define({ parser })
+const zenuml = () => new LanguageSupport(zenumlLanguage)
+
+function stateAt(doc: string): EditorState {
+  // zenumlParticipantField must come AFTER the language so it reads the parsed
+  // tree — this mirrors the real integration wiring participantManager documents.
+  return EditorState.create({ doc, extensions: [zenuml(), zenumlParticipantField] })
+}
+
+/** Build the completion result at a cursor offset within `doc`. */
+function completeAt(doc: string, pos: number, explicit = false) {
+  const state = stateAt(doc)
+  const ctx = new CompletionContext(state, pos, explicit)
+  return zenumlCompletions(ctx)
+}
+
+function labels(result: { options: readonly Completion[] } | null): string[] {
+  return result ? result.options.map((o) => o.label) : []
+}
+
+describe('resolveZone', () => {
+  it("returns 'head' at the very top of a document", () => {
+    const doc = '@Actor A\nB.m(){}'
+    expect(resolveZone(stateAt(doc), 0)).toBe('head')
+  })
+
+  it("returns 'head' inside a participant declaration", () => {
+    const doc = '@Actor Alice\n@Boundary Bob'
+    // cursor on the second declaration
+    expect(resolveZone(stateAt(doc), doc.indexOf('Bob'))).toBe('head')
+  })
+
+  it("returns 'block' inside a StatementBraceBlock", () => {
+    const doc = 'A.method() {\n  \n}'
+    const pos = doc.indexOf('{') + 4 // inside the braces, on the blank line
+    expect(resolveZone(stateAt(doc), pos)).toBe('block')
+  })
+
+  it("returns 'block' inside an if block", () => {
+    const doc = 'if (x) {\n  \n}'
+    const pos = doc.indexOf('{') + 3
+    expect(resolveZone(stateAt(doc), pos)).toBe('block')
+  })
+
+  it("returns 'head' inside a group's participant list", () => {
+    const doc = 'group G {\n  \n}'
+    const pos = doc.indexOf('{') + 3
+    expect(resolveZone(stateAt(doc), pos)).toBe('head')
+  })
+
+  it('defaults to head on an empty document', () => {
+    expect(resolveZone(stateAt(''), 0)).toBe('head')
+  })
+
+  it('defaults to head on a whitespace-only document', () => {
+    expect(resolveZone(stateAt('   \n  '), 3)).toBe('head')
+  })
+})
+
+describe('slash commands', () => {
+  it('offers /if (a block command) when typing "/i" inside a block', () => {
+    const doc = 'A.m() {\n  /i\n}'
+    const pos = doc.indexOf('/i') + 2
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).toContain('/if')
+  })
+
+  it('does NOT offer /if in the head', () => {
+    const doc = '/i'
+    const ls = labels(completeAt(doc, 2))
+    expect(ls).not.toContain('/if')
+  })
+
+  it('offers /participant and /group for "/" in the head', () => {
+    const doc = '/'
+    const ls = labels(completeAt(doc, 1))
+    expect(ls).toContain('/participant')
+    expect(ls).toContain('/group')
+  })
+
+  it('does NOT offer head commands inside a block', () => {
+    const doc = 'A.m() {\n  /\n}'
+    const pos = doc.indexOf('/') + 1 // just after the "/"
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).not.toContain('/participant')
+    expect(ls).not.toContain('/group')
+    expect(ls).toContain('/if')
+  })
+
+  it('replaces the slash + typed name (from is at the slash)', () => {
+    const doc = 'A.m() {\n  /if\n}'
+    const slashPos = doc.indexOf('/if')
+    const result = completeAt(doc, slashPos + 3)
+    expect(result).not.toBeNull()
+    expect(result!.from).toBe(slashPos)
+    expect(result!.to).toBe(slashPos + 3)
+  })
+
+  it("a slash completion's apply is a snippet (has an apply function)", () => {
+    const doc = '/'
+    const result = completeAt(doc, 1)
+    const participant = result!.options.find((o) => o.label === '/participant')
+    expect(participant).toBeDefined()
+    // snippetCompletion attaches a function apply that drives the snippet
+    // (placeholders -> tab stops). A plain insert would be a string or absent.
+    expect(typeof participant!.apply).toBe('function')
+    expect(participant!.detail).toBeTruthy()
+  })
+})
+
+describe('normal completions — participant names', () => {
+  // Participant names come from participantManager.getParticipants, which tracks
+  // DECLARED participants (Participant>Name). The docs below declare them in a
+  // Head so the source is populated; first-mention-only diagrams are a documented
+  // participantManager gap, not this module's concern.
+
+  it('offers declared participant names after a "Name." method position', () => {
+    const doc = '@Actor OrderController\n@Boundary Web\nOrderController.'
+    const pos = doc.length
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).toContain('Web')
+    expect(ls).toContain('OrderController')
+  })
+
+  it('offers participant names at message start inside a block', () => {
+    // A control-flow block (while) keeps the cursor in a real StatementBraceBlock
+    // — verified zero-error, zone 'block'. (A `Name.method(){}` block would be
+    // swallowed by the Head-greedy grammar gap and produce no block here.)
+    const doc = '@Actor B\n@Actor C\nwhile (x) {\n  \n}'
+    const pos = doc.indexOf('{') + 3 // blank statement line inside the block
+    expect(resolveZone(stateAt(doc), pos)).toBe('block')
+    const ls = labels(completeAt(doc, pos, true))
+    expect(ls).toContain('B')
+    expect(ls).toContain('C')
+  })
+
+  it('excludes the participant token currently under the cursor', () => {
+    // The cursor sits on a fresh "Ali" token. The Head-greedy grammar gap makes
+    // getParticipants include "Ali" (it parses as a bare Participant>Name), so
+    // this genuinely exercises the by-text exclusion against the real source:
+    // "Ali" (the cursor token) is dropped; the other declared names remain.
+    const doc = '@Actor Alice\n@Boundary Bob\nAli'
+    const pos = doc.length
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).toContain('Alice')
+    expect(ls).toContain('Bob')
+    expect(ls).not.toContain('Ali')
+  })
+})
+
+describe('normal completions — zone-gated keywords', () => {
+  it('offers block keywords (if/while/try) inside a block, not head keywords', () => {
+    const doc = 'A.run() {\n  \n}'
+    const pos = doc.indexOf('{') + 3
+    const ls = labels(completeAt(doc, pos, true))
+    expect(ls).toContain('if')
+    expect(ls).toContain('while')
+    expect(ls).toContain('try')
+    expect(ls).not.toContain('title')
+  })
+
+  it('offers head keywords (title/group) in the head, not block keywords', () => {
+    const doc = '@Actor A\n'
+    const ls = labels(completeAt(doc, doc.length, true))
+    expect(ls).toContain('group')
+    expect(ls).toContain('title')
+    expect(ls).not.toContain('if')
+    expect(ls).not.toContain('while')
+  })
+})
+
+describe('normal completions — annotations', () => {
+  it('offers @-annotations when the typed token starts with "@"', () => {
+    const doc = '@Ac'
+    const ls = labels(completeAt(doc, 3))
+    expect(ls).toContain('@Actor')
+    expect(ls).toContain('@Database')
+  })
+
+  it('offers cloud annotations too', () => {
+    const doc = '@'
+    const ls = labels(completeAt(doc, 1))
+    expect(ls).toContain('@Lambda')
+    expect(ls).toContain('@S3')
+  })
+
+  it('does NOT offer annotations inside a block on a plain word', () => {
+    const doc = 'A.run() {\n  i\n}'
+    const pos = doc.indexOf('  i') + 3
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).not.toContain('@Actor')
+  })
+
+  it('does NOT offer annotations when typing "@" inside a block', () => {
+    // Annotations are head-only; a "@" inside a StatementBraceBlock must not pop
+    // @Actor/@Database (those declare participants, which only live in the head).
+    const doc = 'while (x) {\n  @\n}'
+    const pos = doc.indexOf('@') + 1
+    expect(resolveZone(stateAt(doc), pos)).toBe('block')
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).not.toContain('@Actor')
+    expect(ls).not.toContain('@Database')
+  })
+})
+
+describe('zenumlCompletionKeymap', () => {
+  it('binds Tab, Enter, and Escape', () => {
+    const keys = zenumlCompletionKeymap.map((k) => k.key)
+    expect(keys).toContain('Tab')
+    expect(keys).toContain('Enter')
+    expect(keys).toContain('Escape')
+  })
+
+  it('every binding has a run command', () => {
+    for (const b of zenumlCompletionKeymap) {
+      expect(typeof b.run).toBe('function')
+    }
+  })
+})
