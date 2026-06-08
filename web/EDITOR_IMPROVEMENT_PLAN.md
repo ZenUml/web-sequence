@@ -135,3 +135,9 @@ construction); (b) more authoring-journey find rounds.
 - 2026-06-09 3rd check: All-models weekly **57%**, Sonnet-only 18%, session 25%. +1% over ~1h
   despite 2 grammar subagents + e2e cycles → Sonnet routing + script verification very efficient.
   UNDER cap → continue.
+- 2026-06-09 — P6 round 3: authoring-journey e2e (area X, 7 cases, all green — journeys robust).
+  Dogfooding (think-as-user) found #813 completion NOISE: typing a free-text label/title/alias
+  whose word prefixes a keyword pops that keyword (`A->B: title screen` → `title`). Fixed with a
+  free-text-span guard (Content/LineContent/Label/String → no completions); endpoint completion
+  preserved. +area Y (5 cases). Commits e8af92a (X), e9a3738 (#813). Bugs total: 11 (#803-813).
+  Remaining minor edges (not fixed): `#titl` invalid-color noise, `A."titl` quoted-method noise.
