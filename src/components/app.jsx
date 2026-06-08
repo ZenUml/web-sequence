@@ -58,7 +58,6 @@ const LocalStorageKeys = {
   ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
 };
 
-const isExtension = typeof chrome !== 'undefined' && !!chrome?.runtime?.id;
 const UNSAVED_WARNING_COUNT = 15;
 const version = '3.6.1';
 
@@ -503,7 +502,7 @@ BookLibService.Borrow(id) {
       return;
     }
 
-    if (this.state.user || window.zenumlDesktop || isExtension) {
+    if (this.state.user || window.zenumlDesktop) {
       this.saveItem();
       const numOfItems = Object.keys(this.state.savedItems).length;
       mixpanel.track({
@@ -845,8 +844,7 @@ BookLibService.Borrow(id) {
     if (
       !window.user &&
       !window.localStorage[LocalStorageKeys.LOGIN_AND_SAVE_MESSAGE_SEEN] &&
-      !window.zenumlDesktop &&
-      !isExtension
+      !window.zenumlDesktop
     ) {
       const answer = confirm(
         'Saving without signing in will save your work only on this machine and this browser. If you want it to be secure & available anywhere, please login in your account and then save.\n\nDo you still want to continue saving locally?',
@@ -1021,7 +1019,6 @@ BookLibService.Borrow(id) {
   }
 
   loginBtnClickHandler() {
-    if (isExtension) return;
     this.setState({ isLoginModalOpen: true });
   }
 
@@ -1121,7 +1118,7 @@ BookLibService.Borrow(id) {
   }
 
   async openBtnClickHandler() {
-    if (!window.user && !isExtension) {
+    if (!window.user) {
       this.loginBtnClickHandler();
       return;
     }
@@ -1662,7 +1659,7 @@ BookLibService.Borrow(id) {
               onUpdateImage={this.onUpdateImage.bind(this)}
               currentItem={this.state.currentItem}
               onLogin={this.loginBtnClickHandler.bind(this)}
-              showLoginBtn={!isExtension}
+
               externalLibCount={this.state.externalLibCount}
               openBtnHandler={this.openBtnClickHandler.bind(this)}
               newBtnHandler={this.newBtnClickHandler.bind(this)}

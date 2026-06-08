@@ -46,10 +46,10 @@ export function MainHeader(props) {
   const handleProfileClick = useCallback(() => {
     if (props.user) {
       props.profileBtnHandler();
-    } else if (props.showLoginBtn !== false) {
+    } else {
       props.loginBtnHandler();
     }
-  }, [props.user, props.showLoginBtn]);
+  }, [props.user]);
 
   const onBlur = (e) => {
     exitEditing();
@@ -113,15 +113,13 @@ export function MainHeader(props) {
 
 
         {!window.user ? (
-          props.showLoginBtn !== false ? (
-            <button
-              className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
-              aria-label="Share diagram link"
-              onClick={props.onLogin.bind(this)}
-            >
-              <span>Share Link</span>
-            </button>
-          ) : null
+          <button
+            className="hidden lg:inline h-10 px-4 bg-primary rounded-lg text-gray-100 font-normal hover:opacity-80 duration-200"
+            aria-label="Share diagram link"
+            onClick={props.onLogin.bind(this)}
+          >
+            <span>Share Link</span>
+          </button>
         ) : (
           <Popover
             closeOnBlur={true}
