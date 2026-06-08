@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
 import { Console, type ConsoleEntry } from '../preview/Console';
@@ -64,6 +66,8 @@ import { SupportPledgeModal } from '../components/modals/SupportPledgeModal';
 import { AtomicCssSettingsModal, type CssSettings } from '../components/modals/AtomicCssSettingsModal';
 import { PricingModal, type BillingPeriod } from '../components/subscription/PricingModal';
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
+import { LoginModal } from '../components/auth/LoginModal';
+import { HomeView } from '../components/home/HomeView';
 
 // Convert a CodeMirror snippet template (e.g. `if(${1:condition}) {\n  ${0}\n}`)
 // into a plain DSL literal for the Hint Bar's CLICK insertion, which appends via
@@ -89,6 +93,9 @@ export function AppRoot() {
   // reads window.location.search/protocol + window.IS_EXTENSION/zenumlDesktop.
   const runtime = detectFromEnv();
   const isEmbed = runtime.isEmbed;
+
+  // Hub (Approach A): imperative navigation between home (library grid) and editor.
+  const navigate = useNavigate();
 
   // Auth + online status side-effects (no return value needed from useOnlineStatus)
   const { login, logout, loginError } = useAuth();
@@ -359,10 +366,15 @@ export function AppRoot() {
   const { pending: importPending, count: importCount, doImport, dismiss: dismissImport } =
     useImportOnLogin(itemService.saveItems);
 
-  // Read URL params — following existing stickyOffset pattern (no router hook, safe in bare tests)
-  const params = new URLSearchParams(window.location.search);
-  const idParam = params.get('id');
-  const shareToken = params.get('share-token');
+  // Read URL params reactively via TanStack Router so navigation (e.g. goHome) triggers a re-render.
+  const search = useSearch({ from: indexRoute.id });
+  const idParam = search.id ?? null;
+  const shareToken = search['share-token'] ?? null;
+
+  // Hub (Approach A): no id + no share + not an embed → home view shows the library grid.
+  // When true, useBootItem is skipped (no newItem seeded) and HomeView renders instead of
+  // the editor layout.
+  const isHomeMode = !idParam && !shareToken && !runtime.embedCode && !isEmbed;
 
   // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
   // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
@@ -386,7 +398,8 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
-  }, authReady, embedByValue);
+  // Hub: skip boot when on home — we don't want newItem() seeding a blank diagram there.
+  }, authReady, isHomeMode || embedByValue);
 
   // M05 (REQ-EMB-1): seed the embed-by-value item from the inline DSL exactly once.
   // The item is read-only (embed has no save/auth UI) and never persisted. Runs
@@ -633,9 +646,57 @@ export function AppRoot() {
   }
 
   // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
+  // Hub: also navigates to /?id= so the URL reflects which diagram is open.
   function handleOpenItem(it: Item) {
     useEditorStore.getState().loadItem(migrateToPages(it));
     setActivePanel('editor');
+    void navigate({ to: '/', search: (prev) => ({
+      id: it.id,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
+  // Hub: create a blank diagram from the home view and navigate to the editor.
+  function handleNewDiagramFromHome() {
+    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID() : String(Date.now());
+    useEditorStore.getState().loadItem(migrateToPages({
+      id: newId,
+      title: 'Untitled',
+      js: '', css: '', html: '',
+      htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+      pages: [], currentPageId: '',
+      isReadOnly: false,
+    } as Item));
+    setActivePanel('editor');
+    void navigate({ to: '/', search: (prev) => ({
+      id: newId,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
+  // Hub: return to home/library view by clearing the ?id= param.
+  function goHome() {
+    void navigate({
+      to: '/',
+      search: (prev) => ({
+        ...prev,
+        id: undefined,
+        'share-token': undefined,
+        embed: undefined,
+        code: undefined,
+        title: undefined,
+        stickyOffset: undefined,
+      }),
+    });
   }
 
   async function handleDeleteItem(id: string) {
@@ -726,9 +787,8 @@ export function AppRoot() {
   const shareRequiresAuth = !shareReadOnly && !user;
 
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
-  // real location; only the iframe is srcdoc). Read once from window.location.search
-  // and pass into the render message. (M00's router also validates this param.)
-  const stickyOffset = Number(params.get('stickyOffset') ?? 0) || 0;
+  // real location; only the iframe is srcdoc). validateSearch already coerces to Number.
+  const stickyOffset = search.stickyOffset ?? 0;
 
   // ─── M05 (RM-2 / REQ-EMB-1): embed branch ────────────────────────────────────
   // A minimal, read-mostly view: NO main header, NO sidebar, NO modals, shortcuts off
@@ -807,6 +867,101 @@ export function AppRoot() {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // Hub: home mode — render the library grid; no item is needed here. All modals that
+  // can fire from the home view (CreateNew, Settings, Login) are included so they remain
+  // accessible even though AppHeader (which normally hosts them) is absent.
+  if (isHomeMode) {
+    return (
+      <div className="flex flex-col h-full w-full">
+        <ConfirmDialog
+          open={noticeOpen}
+          onOpenChange={setNoticeOpen}
+          title="Saved on this device"
+          message="Sign in to save and sync across devices."
+          confirmLabel="Sign in"
+          cancelLabel="Not now"
+          onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
+        />
+        <ConfirmDialog
+          open={importError != null}
+          onOpenChange={(o) => { if (!o) setImportError(null); }}
+          title="Import failed"
+          message={importError ?? ''}
+          confirmLabel="OK"
+          cancelLabel="Dismiss"
+          onConfirm={() => setImportError(null)}
+        />
+        <AskToImportModal
+          open={importPending}
+          onOpenChange={(o) => { if (!o) void dismissImport(); }}
+          count={importCount}
+          onImport={() => void doImport()}
+          onDismiss={() => void dismissImport()}
+        />
+        <SettingsModal
+          open={activeModal === 'settings'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          settings={settings}
+          onChange={handleSettingChange}
+          isExtension={detectFromEnv().isExtension}
+        />
+        <CreateNewModal
+          open={activeModal === 'createNew'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          onSelect={(partial) => {
+            handleCreateNew(partial);
+            const newId = useEditorStore.getState().currentItem?.id;
+            if (newId) void navigate({ to: '/', search: (prev) => ({
+              id: newId,
+              'share-token': prev['share-token'],
+              embed: prev.embed,
+              code: prev.code,
+              title: prev.title,
+              stickyOffset: prev.stickyOffset,
+            }) });
+          }}
+        />
+        <HelpModal
+          open={activeModal === 'help'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          version={APP_VERSION}
+        />
+        {paymentEnabled && (
+          <PricingModal
+            open={activeModal === 'pricing'}
+            onOpenChange={(o) => { if (!o) closeModal(); }}
+            currentPlanType={planType}
+            billingPeriod={billingPeriod}
+            onPeriodChange={setBillingPeriod}
+            onUpgrade={handleUpgrade}
+            onContactEnterprise={() => window.open('https://zenuml.com/docs/about/contact-us', '_blank', 'noopener')}
+          />
+        )}
+        <LoginModal
+          open={loginModalOpen}
+          onOpenChange={setLoginModalOpen}
+          onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); login(provider); }}
+          lastProvider={lastProvider}
+          error={loginError}
+        />
+        <HomeView
+          items={items}
+          folders={folders}
+          user={user}
+          onOpen={handleOpenItem}
+          onNewDiagram={handleNewDiagramFromHome}
+          onBrowseTemplates={() => openModal('createNew')}
+          onOpenSignIn={() => setLoginModalOpen(true)}
+          onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+          onCreateFolder={(name) => void createFolder(name)}
+          onRenameFolder={(id, name) => void renameFolder(id, name)}
+          onDeleteFolder={(id) => void deleteFolder(id)}
+          readOnly={!user}
+        />
+      </div>
+    );
+  }
+
   // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
   // surface the error here at the guard instead of silently returning null. Start
   // fresh clears the flag and seeds a blank diagram.
@@ -822,6 +977,7 @@ export function AppRoot() {
     ) : null;
   }
 
+  // item is non-null here — the isHomeMode and !item early returns above guard this.
   const previewCss = item.cssMode === 'css' ? item.css : transpiledCss;
 
   // Editor chrome driven by the user's Settings (REQ-SET). The Settings modal writes
@@ -918,12 +1074,14 @@ export function AppRoot() {
           closeModal();
         }}
       />
-      <AtomicCssSettingsModal
-        open={activeModal === 'acss'}
-        onOpenChange={(o) => { if (!o) closeModal(); }}
-        value={(item.cssSettings as CssSettings | undefined) ?? {}}
-        onChange={(next) => { useEditorStore.getState().setCssSettings(next); closeModal(); }}
-      />
+      {item && (
+        <AtomicCssSettingsModal
+          open={activeModal === 'acss'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          value={(item.cssSettings as CssSettings | undefined) ?? {}}
+          onChange={(next) => { useEditorStore.getState().setCssSettings(next); closeModal(); }}
+        />
+      )}
       {paymentEnabled && (
         <PricingModal
           open={activeModal === 'pricing'}
@@ -971,6 +1129,7 @@ export function AppRoot() {
         onOpenPricing={() => openModal('pricing')}
         onOpenCheatSheet={() => openModal('cheatsheet')}
         onOpenShortcuts={() => openModal('shortcuts')}
+        onGoHome={goHome}
         actions={
           <ShareButton
             disabled={shareReadOnly}

@@ -60,6 +60,9 @@ export interface AppHeaderProps {
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
+  // Hub (Approach A): when provided, renders a "← Library" breadcrumb left of the
+  // title so the user can return to the home/library view. Omitted in classic mode.
+  onGoHome?(): void;
 }
 
 function Chevron({ className }: { className?: string }) {
@@ -136,6 +139,7 @@ export function AppHeader({
   loginOpen: loginOpenProp,
   onLoginOpenChange,
   actions,
+  onGoHome,
 }: AppHeaderProps) {
   const [loginOpenInternal, setLoginOpenInternal] = useState(false);
   // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
@@ -189,6 +193,29 @@ export function AppHeader({
           onSave={onSave}
           paymentEnabled={paymentEnabled}
         />
+
+        {/* Hub breadcrumb — "← Library" shown only when onGoHome is provided (editor mode
+            in the Hub model). Sits between the app-menu logo and the file-name pill so it
+            reads as a navigation parent, not a file action. */}
+        {onGoHome && (
+          <button
+            type="button"
+            data-testid="header-go-home"
+            aria-label="Back to library"
+            onClick={onGoHome}
+            className={cn(
+              'flex items-center gap-1 shrink-0 rounded px-2 py-1',
+              'font-mono text-[12px] text-ondark-muted',
+              'hover:text-ondark-strong hover:bg-white/5',
+              'transition-colors duration-150 ease-draft ring-draft',
+            )}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-3 w-3" aria-hidden="true">
+              <path d="M10 3L5 8l5 5" />
+            </svg>
+            Library
+          </button>
+        )}
 
         {/* File menu — inline-editable filename + a chevron opening the document
             menu (Rename / Duplicate). The name + chevron sit together in a quiet
