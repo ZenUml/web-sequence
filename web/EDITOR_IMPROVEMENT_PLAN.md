@@ -155,3 +155,7 @@ label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-au
   CJK autocorrect (round 4) complete: punctuation + full-width space/digits + free-text preservation
   incl. the empty-first-char label/title edge (AsyncMessage-past-Colon / Title-past-keyword guard).
   21 unit + 3 e2e + demo (web/tmp/cjk-autocorrect-demo.png). Commits e986cba, +edge.
+- 2026-06-09 6th check: All-models weekly **59%** (flat), Sonnet 18%, session 9%. UNDER → continue.
+  CJK autocorrect: real-browser integration test caught that the transactionFilter dropped the
+  userEvent → autocomplete stopped firing after an auto-corrected dot. Fixed by re-attaching
+  userEvent; +Z4 e2e (autocorrect ∘ autocomplete). Feature now bulletproof: 21 unit + 4 e2e.

@@ -153,7 +153,19 @@ export const cjkPunctuationAutocorrect: Extension = EditorState.transactionFilte
       specs.push({ from: fromA, to: toA, insert: text })
     })
     if (!changed) return tr
-    // 1:1 remaps preserve every position, so the original selection stays valid.
-    return [{ changes: specs, selection: tr.selection, scrollIntoView: tr.scrollIntoView }]
+    // 1:1 remaps preserve every position, so the original selection stays valid. CRUCIAL:
+    // re-attach the original userEvent — a transactionFilter that returns a fresh spec
+    // otherwise drops it, and CodeMirror's autocompletion (activateOnTyping) and other
+    // input-driven behaviour key off `input.type`. Without this, the popup would not open
+    // after an auto-corrected `.` (e.g. `订单服务。` → `订单服务.` with no participant popup).
+    const userEvent = tr.annotation(Transaction.userEvent)
+    return [
+      {
+        changes: specs,
+        selection: tr.selection,
+        scrollIntoView: tr.scrollIntoView,
+        ...(userEvent ? { userEvent } : {}),
+      },
+    ]
   },
 )

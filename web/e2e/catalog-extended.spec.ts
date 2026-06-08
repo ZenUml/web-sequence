@@ -1506,4 +1506,18 @@ test.describe('Z. CJK punctuation autocorrect', () => {
     expect(await errorMarkerCount(page)).toBe(0);
     await expect.poll(() => getEditorText(page)).toBe('用户.下单()');
   });
+
+  test('Z4 — autocorrect composes with autocomplete: full-width dot still triggers the popup', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('订单服务');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('库存服务');
+    await page.keyboard.press('Enter');
+    // A CJK-IME user types the dot as full-width 。; it auto-corrects to `.` AND the
+    // participant popup still opens (the userEvent must survive the autocorrect filter).
+    await page.keyboard.type('订单服务。');
+    await expect.poll(() => getEditorText(page)).toContain('订单服务.');
+    expect((await options(page)).join('\n')).toContain('库存服务');
+  });
+
 });
