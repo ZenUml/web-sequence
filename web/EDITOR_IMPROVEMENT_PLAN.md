@@ -115,3 +115,8 @@ Readings log:
 - 2026-06-09 — Set usage-guardrail cron e876aa05 (30 min). First reading 55% all-models
   weekly → continue. Decision: run future fan-out subagents on Sonnet (budget). Resuming
   campaign: waiting on Workflow 1, then assemble+run find phase.
+- 2026-06-09 — P5 complete (5 bugs, commits 33a4010, c00501f). P6 round-1 (i18n, user-requested):
+  found+fixed #808 (string labels) + #809 (Unicode/Chinese names, grammar + completion layers).
+  Commit 1beb7f4. 7 bugs total. Suite: 172 e2e + 214 unit green. Screenshot web/tmp/chinese-render.png.
+  Guardrail 56% at last check. NEXT P6 round-2: authoring journeys (rename/insert participant),
+  control-flow nesting/fragments, undo/redo, paste — find→verify→fix.
