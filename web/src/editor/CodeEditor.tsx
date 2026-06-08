@@ -1,7 +1,7 @@
 import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
-import { Compartment, type Extension } from '@codemirror/state';
+import { Compartment, Prec, type Extension } from '@codemirror/state';
 import { linter, lintGutter, type Diagnostic } from '@codemirror/lint';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
@@ -134,7 +134,15 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     // is installed by autocompletion()/snippet() automatically on first use.
     if (language === 'dsl') {
       languageExtensions.push(autocompletion({ override: [zenumlCompletions] }));
-      bindings.push(...zenumlCompletionKeymap, ...completionKeymap);
+      // zenumlCompletionKeymap (Tab/Shift-Tab/Enter/Escape) MUST outrank @uiw's
+      // indentWithTab, which @uiw/react-codemirror unshifts at HIGH precedence. Left
+      // in the shared keymap.of([...bindings]) below it lives in props.extensions —
+      // LOWER than @uiw's defaults — so Tab reached indentMore (inserting spaces in
+      // front of `@`) instead of acceptCompletion. Prec.highest lifts accept +
+      // snippet-field nav above indentWithTab; when neither applies the run returns
+      // false and Tab falls through to indentWithTab, so plain Tab-indent still works.
+      languageExtensions.push(Prec.highest(keymap.of(zenumlCompletionKeymap)));
+      bindings.push(...completionKeymap);
       // Emit the cursor's parse zone (head | block) when the selection or doc
       // changes — feeds the context-sensitive Hint Bar. Reads onZoneChange via a
       // ref so the memo can stay keyed on `language`.

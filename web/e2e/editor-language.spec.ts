@@ -170,6 +170,37 @@ test.describe('participant autocomplete', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Journey 3b — Tab ACCEPTS the highlighted completion (it must outrank @uiw's
+// indentWithTab). Regression: @uiw/react-codemirror unshifts indentWithTab at
+// high precedence, so Tab hit indentMore and inserted spaces in front of `@`
+// instead of accepting @Actor. The completion keymap is now Prec.highest.
+// ---------------------------------------------------------------------------
+test.describe('Tab accepts completions (outranks indentWithTab)', () => {
+  test("Tab accepts the highlighted @-annotation — no indentation in front of '@'", async ({
+    page,
+  }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@');
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.keyboard.press('Tab');
+    // Tab must ACCEPT @Actor (the selected option), not indent: the result is
+    // exactly "@Actor" with NO leading whitespace.
+    await expect.poll(() => getEditorText(page)).toBe('@Actor');
+  });
+
+  test('Tab still indents when no completion is active (fall-through preserved)', async ({
+    page,
+  }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A.b()'); // after ')', no completion popup is open
+    await page.keyboard.press('Escape'); // belt-and-braces: ensure no popup
+    await page.keyboard.press('Home'); // cursor to column 0
+    await page.keyboard.press('Tab'); // with nothing to accept, Tab indents
+    await expect.poll(() => getEditorText(page)).toMatch(/^\s+A\.b\(\)/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Journey 4 — NO false error markers on renderer-valid DSL.
 // NOTE: the DSL editor wires no linter (the Lezer linter is intentionally
 // disabled because the editor grammar under-accepts vs the renderer's ANTLR
