@@ -5,7 +5,7 @@ name: Deploy to Stage
 
 on:
   push:
-    branches: [master]
+    branches: ['**']
   pull_request:
 
 concurrency:
@@ -34,6 +34,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile && pnpm build
+      # Cutover (M05): build the React rewrite artifact that firebase.json now
+      # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
+      # needs its own install. The legacy `pnpm build` above still produces the
+      # extension's dist/app/ assembly (retained for rollback).
+      - name: Build web/dist (cutover hosting artifact)
+        # --ignore-workspace forces pnpm to create a local web/node_modules instead of
+        # hoisting into the root (pnpm-workspace.yaml exists at repo root). Without it,
+        # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
+        working-directory: web
+        run: pnpm install --no-frozen-lockfile --ignore-workspace && pnpm build
       # Pre-deploy guard: serve the built dist statically and verify the diagram
       # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
       # path) that the dev-server suite can't see, BEFORE anything ships to
@@ -71,15 +81,15 @@ jobs:
           cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
       - name: Setup Firebase service account
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
-      # Staging is a shared environment — only the master branch deploys to it.
-      # PRs build + package + upload artifacts for validation but never deploy.
+      # Every branch deploys to staging (conf-app parity). The staging-gate and
+      # draft-release jobs remain master-only so releases only cut from master.
       - name: Deploy functions config (staging)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           cd functions && npm install && pnpm deploy:config:staging
       - name: Deploy to staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
           pnpm deploy:staging

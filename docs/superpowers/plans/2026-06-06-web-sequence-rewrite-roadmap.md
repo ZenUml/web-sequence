@@ -1,0 +1,411 @@
+# ZenUML Web-Sequence Frontend Rewrite — Roadmap & Shared Architecture
+
+> **For agentic workers:** This is the **index + shared contract** for the rewrite. Each milestone has its own plan file (`…-NN-<name>.md`) authored just-in-time. The canonical types and service interfaces here are the single source of truth — every milestone plan imports these names verbatim. REQUIRED SUB-SKILL for executing each milestone plan: `superpowers:subagent-driven-development`.
+
+**Goal:** Replace the entire web-sequence frontend with a modern, typed, modular app that reaches feature parity (per the approved requirements spec) while working unchanged against the existing Firebase backend (per the approved contract spec).
+
+**Source specs:**
+- `docs/superpowers/specs/2026-06-06-web-sequence-rewrite-requirements.md`
+- `docs/superpowers/specs/2026-06-06-web-sequence-rewrite-frontend-backend-contract.md`
+
+---
+
+## 1. Locked Architecture Decisions
+
+| Area | Decision | Notes / veto-flag |
+|---|---|---|
+| Framework | **React 19** | per approved stack |
+| Language | **TypeScript** (strict) | per approved stack |
+| Build | **Vite 6** | keep current bundler |
+| Package manager | **pnpm** | rewrite standardizes on pnpm (E2E already used it; repo has `pnpm-lock.yaml`). Replaces Yarn. |
+| Routing | **TanStack Router** (SPA, single `/` route with typed **search params**) | The app is one screen driven by query params (`id`, `share-token`, `embed`, `code`, `title`, `stickyOffset`) — Router's search-param validation fits exactly; no SSR. |
+| Server state | **TanStack Query** | items, item, folders, subscription; `onSnapshot` bridged into the query cache |
+| Client/UI state | **Zustand** | many independent UI toggles + editor/preview state + prefs. ⚠️ *Veto-flag: not part of "TanStack"; if you prefer, swap for React Context — but Zustand is the recommended pick.* |
+| Editor | **CodeMirror 6** via `@uiw/react-codemirror` + `@codemirror/*` | ZenUML DSL gets a lightweight CM6 language (see Milestone 01) |
+| Renderer | **iframe + `postMessage`** (unchanged boundary, decision OQ-6) wrapping `@zenuml/core` | reuse the asset-URL shim approach |
+| Firebase SDK | **Modular SDK v10+** | contract is SDK-agnostic (CQ-5); modular = tree-shaking + types. Same project/rules/shapes. ⚠️ *Veto-flag: big jump from v7; data contract is identical.* |
+| UI primitives | **Radix UI** (+ Headless UI where already idiomatic) + **Tailwind CSS** | Radix is first-class React now — drop `preact/compat` shims |
+| Unit tests | **Vitest** + React Testing Library | Vite-native; replaces Jest. ⚠️ *Veto-flag: tooling change (Jest→Vitest).* |
+| E2E | **Playwright** (existing specs retained) | re-pointed/greened at Milestone 01; add `data-testid` hooks |
+| Icons/styling assets | keep `static/`, Tailwind config, PostCSS | reuse existing visual assets where possible |
+
+### 1.1 Source layout & cutover strategy
+
+- Work happens on a **feature branch** (`rewrite/frontend`), never on `master`.
+- The **new app is a self-contained project in `web/`** — its own `package.json`, `pnpm-lock.yaml`, `node_modules`, and Vite/TS/Vitest config — isolated from the legacy Preact/Jest/Yarn toolchain at the repo root. This avoids dependency/config collisions between the two stacks.
+- The **legacy app in `src/` is left untouched and keeps building/running** throughout the rewrite (its E2E stays green). No upfront archive/move.
+- **Conventional Vite layout** inside `web/`: `web/index.html` + `web/src/**` + `web/vite.config.ts`; build output `web/dist/`.
+- **Build-critical seams replicated** in `web/vite.config.ts`: dev **port 3000** + the six function proxies, and the **`@zenuml/core` asset-URL shim** (dev `/@fs/` vs build hashed asset). A `web/`-specific Playwright asset spec (added in M01) guards the shim.
+- **Cutover (Milestone 05):** repoint the production build / Firebase hosting from the legacy `src/→dist/→app/` pipeline to `web/`'s output, then retire the legacy `src/` + old configs. Until then nothing legacy is deleted.
+
+### 1.2 Directory structure (inside `web/`)
+
+```
+web/                              # self-contained pnpm project (package.json, vite.config.ts, tsconfig.json, ...)
+  index.html                      # Vite entry (mounts #app)
+src/                              # i.e. web/src
+
+  main.tsx                      # entry: mount React root, router
+  app/
+    router.tsx                  # TanStack Router: single route, typed search params
+    AppRoot.tsx                 # top-level layout shell
+    runtimeMode.ts              # RM-1..RM-6 detection (embed, extension, desktop, debug, shared)
+  domain/
+    types.ts                    # CANONICAL domain types (see §3)
+    item.ts                     # item helpers: migrateToPages, dual-write, page ops
+    plan.ts                     # plan-type derivation from subscription
+  config/
+    firebaseConfig.ts           # host→config map + staging fallback (from contract §1)
+    constants.ts                # AUTO_SAVE_INTERVAL, UNSAVED_WARNING_COUNT, limits, etc.
+  services/                     # backend contract layer (see §4) — framework-agnostic
+    firebase.ts                 # SDK init, auth, firestore handle, persistence
+    storage.ts                  # local vs chrome.storage.sync abstraction
+    itemService.ts
+    folderService.ts
+    subscriptionService.ts
+    syncService.ts              # /create-share
+    analytics.ts                # /track + GTM/Mixpanel/Clarity conditional load
+    cloudFunctions.ts           # typed fetch wrappers for the 6 rewritten endpoints
+  hooks/                        # React/TanStack bindings over services
+    useAuth.ts  useItems.ts  useItem.ts  useFolders.ts  useSubscription.ts
+    useSettings.ts  useFirestoreSubscription.ts  useKeyboardShortcuts.ts
+    useOnlineStatus.ts  usePreview.ts  useExportPng.ts
+  state/
+    uiStore.ts                  # Zustand: modals, panels, console open, etc.
+    editorStore.ts              # Zustand: current item, pages, unsaved count, dirty
+  editor/
+    CodeEditor.tsx              # CM6 wrapper (theme, keymap, modes, lint)
+    zenumlLanguage.ts           # lightweight CM6 language/highlight for ZenUML DSL
+    themes.ts                   # curated theme set (default monokai)
+    snippets.ts                 # toolbox snippet inserts
+    emmet.ts  prettier.ts
+  preview/
+    PreviewFrame.tsx            # iframe host
+    previewProtocol.ts          # typed postMessage protocol (see §5)
+    previewHtml.ts              # getCompleteHtml() equivalent (injects @zenuml/core)
+    transpilers.ts              # lazy mode transpilers
+    Console.tsx
+  components/                   # presentational + feature components
+    header/ sidebar/ library/ modals/ subscription/ pages/ share/ embed/
+  styles/                       # Tailwind entry, globals
+  test/                         # vitest setup, RTL utils, msw handlers
+```
+
+---
+
+## 2. Milestone Plans (each ships working, testable software)
+
+> Plans are authored just-in-time before execution to avoid drift. Each lists the requirements it satisfies and ends green (unit + relevant E2E).
+
+| # | Plan file | Delivers | Key reqs |
+|---|---|---|---|
+| **00** | `…-00-foundation.md` | Branch, create self-contained `web/` project (Vite+React19+TS+pnpm+Tailwind+Router+Query+Zustand+Vitest), Firebase init (multi-tab cache), **canonical types + pure helpers with tests**, config/runtime-mode/storage layers, app shell that renders an empty split layout and boots. App runs at :3000, builds to `web/dist`, asset-shim check clean. Legacy `src/` untouched. | NFR-1..9, RM-1..6, §1, §3, §4 |
+| **01** | `…-01-editor-preview.md` | CodeMirror 6 ZenUML editor + CSS editor (modes, curated themes, keymap, snippets, Emmet, find/replace, errors); iframe preview via postMessage rendering `@zenuml/core`; console; CSS-only fast path; fullscreen; lazy transpilers. **Re-green smoke + dsl-spot-check E2E.** | REQ-ED-*, REQ-PRV-*, REQ-LAY-1 |
+| **02** | `…-02-persistence-auth.md` | Item domain (create/open/save/fork/delete) with dual-write + pages migration; multi-page tabs (create/switch/delete/**rename**); local + cloud persistence; auth (4 OAuth providers, anonymous, import-on-login); offline + multi-tab warning; last-code restore; auto-save. | REQ-DM-*, REQ-PG-*, REQ-PST-*, REQ-AC-*, REQ-SHR-3 (fork) |
+| **03** | `…-03-library-sharing.md` | Library browsing (search, item actions, real-time list), folders CRUD (transactions), move-to-folder, import/export JSON + standalone HTML; create-share link + share panel; open shared read-only. | REQ-LIB-*, REQ-SHR-1/2/4 |
+| **04** | `…-04-subscription-settings-modals.md` | Paddle Classic checkout + cancellation + pricing modal; plan gating (3/20/∞, Plus-only CSS, softened limit notice); payment feature flag; full settings (load-once) with live application; modal inventory + one-time prompts + templates; analytics events. | REQ-SUB-*, REQ-SET-*, REQ-MOD-*, REQ-ANL-1 |
+| **05** | `…-05-extension-embed.md` (**Phase 2**) | Embed mode polish; Chrome/Edge MV3 extension (background worker, options page, chrome.storage, new-tab override); extension build/package; final **cutover** (repoint production build/hosting to `web/`, retire legacy `src/` + old config). | RM-2/4/5, REQ-EMB-1, REQ-EXT-1, §16 |
+
+**Definition of done per milestone:** its requirements demonstrably work; unit tests green; the E2E it owns green; committed in small steps; no placeholder code.
+
+---
+
+## 3. Canonical Domain Types (`src/domain/types.ts`)
+
+> Every milestone plan uses these exact names. This is the contract between plans.
+
+```ts
+export type HtmlMode = 'html' | 'markdown' | 'jade';
+export type CssMode = 'css' | 'scss' | 'sass' | 'less' | 'stylus' | 'acss';
+export type JsMode = 'js' | 'es6' | 'coffeescript' | 'typescript';
+
+export interface Page {
+  id: string;
+  title: string;
+  js: string;
+  css: string;
+  isDefault?: boolean;
+}
+
+export interface Item {
+  id: string;
+  title: string;
+  // Content (item-level; current page mirror-written here — REQ-DM-1)
+  js: string;
+  css: string;
+  html: string;
+  htmlMode: HtmlMode;
+  cssMode: CssMode;
+  jsMode: JsMode;
+  cssSettings?: unknown;            // Atomic-CSS config when cssMode === 'acss'
+  // Pages (REQ-PG-*)
+  pages: Page[];
+  currentPageId: string;
+  // Layout
+  sizes?: number[];                 // code sub-pane split
+  mainSizes?: number[];             // editor/preview split
+  // Ownership / meta
+  createdBy?: string;               // owner uid — stamped on every cloud write
+  updatedOn?: number;
+  folderId?: string;
+  // Sharing (written by backend create_share only)
+  isShared?: boolean;
+  shareToken?: string;
+  sharedAt?: unknown;
+  // Runtime-only (from get_shared_item; never persisted by client)
+  isReadOnly?: boolean;
+  // Legacy (preserve on round-trip; not surfaced/edited — REQ-DM-3)
+  externalLibs?: { js: string; css: string };
+}
+
+export interface Folder {
+  id: string;                       // "folder-<randomId>"
+  name: string;
+  createdOn: number;
+  updatedOn: number;
+}
+
+export type PlanType =
+  | 'free' | 'basic-monthly' | 'basic-yearly'
+  | 'plus-monthly' | 'plus-yearly' | 'enterprise';
+
+export interface Subscription {
+  status: string;                   // 'active' | 'trialing' | 'cancelled' | ...
+  passthrough: string;              // JSON {userId, planType} OR legacy plain userId
+  subscription_id?: string;
+  subscription_plan_id?: string;
+  cancel_url?: string;
+  update_url?: string;
+  next_bill_date?: string;
+  cancellation_effective_date?: string;
+  [k: string]: unknown;             // other Paddle fields preserved verbatim
+}
+
+export interface AppUser {
+  uid: string;
+  displayName?: string | null;
+  photoURL?: string | null;
+  email?: string | null;
+  items?: Record<string, true>;
+  subscription?: Subscription | null;
+}
+
+export interface Settings {
+  preserveLastCode: boolean;
+  replaceNewTab: boolean;           // extension
+  htmlMode: HtmlMode;
+  jsMode: JsMode;
+  cssMode: CssMode;
+  editorTheme: string;              // default 'monokai'
+  keymap: 'sublime' | 'vim';
+  fontSize: number;                 // 12–18, default 16
+  editorFont: string;              // 'FiraCode' | 'Inconsolata' | 'Monoid' | 'FixedSys' | 'other'
+  editorCustomFont: string;
+  indentWith: 'spaces' | 'tabs';
+  indentSize: number;
+  lineWrap: boolean;
+  autoCloseTags: boolean;
+  autoComplete: boolean;
+  autoPreview: boolean;
+  autoSave: boolean;
+  preserveConsoleLogs: boolean;
+  refreshOnResize: boolean;
+  lightVersion: boolean;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  preserveLastCode: true, replaceNewTab: false,
+  htmlMode: 'html', jsMode: 'js', cssMode: 'css',
+  editorTheme: 'monokai', keymap: 'sublime', fontSize: 16,
+  editorFont: 'FiraCode', editorCustomFont: '',
+  indentWith: 'spaces', indentSize: 2,
+  lineWrap: true, autoCloseTags: true, autoComplete: true,
+  autoPreview: true, autoSave: false, preserveConsoleLogs: true,
+  refreshOnResize: false, lightVersion: false,
+};
+```
+
+> **Dropped vs current** (decisions): `infiniteLoopTimeout`, `isCodeBlastOn`, `isJs13kModeOn`, `layoutMode` are removed from `Settings`. Unknown keys already in a user's stored `settings` map are left untouched (we only write keys we own).
+
+---
+
+## 4. Canonical Service-Layer Interfaces (`src/services/*`)
+
+> Framework-agnostic; React/TanStack bindings live in `src/hooks/*`. Signatures are fixed across plans.
+
+```ts
+// cloudFunctions.ts — typed wrappers over the 6 hosting-rewritten endpoints
+export function createShare(input: {
+  id: string; name: string; content: string; description: string; origin: string;
+}): Promise<{ page_share: string; md5: string }>;            // POST /create-share (auth via ID token in body)
+export function getSharedItem(id: string, shareToken: string): Promise<Item>; // GET /get-shared-item
+export function trackEvent(payload: Record<string, unknown> & { event: string; userId: string | null }): Promise<void>; // POST /track
+
+// itemService.ts
+export interface ItemService {
+  getItem(id: string, shareToken?: string | null): Promise<Item>;
+  setItem(id: string, item: Item): Promise<void>;     // local always + cloud(merge) when signed-in+online; strips imageBase64; ensures pages; stamps createdBy
+  saveItems(items: Record<string, Item>): Promise<void>;  // batch import
+  removeItem(id: string): Promise<void>;
+  setItemForUser(itemId: string): Promise<void>;
+  unsetItemForUser(itemId: string): Promise<void>;
+  subscribeAllItems(uid: string, cb: (items: Item[]) => void): () => void; // onSnapshot where createdBy==uid
+  saveLastCode(item: Item): void;                     // local 'code' slot, never cloud
+  stopSharing(id: string): Promise<void>;             // CQ-2: owner sets isShared:false + clears shareToken (client write); next share mints a fresh token
+}
+
+// folderService.ts (transactions on users/{uid}.folders array)
+export interface FolderService {
+  createFolder(name: string): Promise<Folder>;
+  getFolders(): Promise<Folder[]>;
+  renameFolder(folderId: string, newName: string): Promise<void>;
+  deleteFolder(folderId: string): Promise<void>;      // CQ-3: removes folder only; NO item rewrite. Items with an orphaned folderId render "Unfiled" via the existence-check grouping.
+}
+
+// subscriptionService.ts
+export function retrieveSubscription(uid: string): Promise<Subscription | null>; // user_subscriptions/user-<uid>
+
+// plan.ts (pure)
+export function isSubscribed(s: Subscription | null | undefined): boolean;       // active|trialing
+export function getPlanType(s: Subscription | null | undefined): PlanType;       // passthrough → planType; legacy → 'basic-monthly'
+export function isPlus(s: Subscription | null | undefined): boolean;
+export function isBasic(s: Subscription | null | undefined): boolean;
+
+// auth (firebase.ts)
+export type ProviderName = 'google' | 'github' | 'facebook' | 'twitter';
+export function login(provider: ProviderName): Promise<void>;                    // signInWithPopup
+export function logout(): Promise<void>;
+export function onAuthChange(cb: (user: AppUser | null) => void): () => void;
+export function getIdToken(): Promise<string>;
+
+// storage.ts (local vs chrome.storage.sync)
+export interface KvStore {
+  get<T>(key: string, fallback: T): Promise<T>;
+  set(key: string, value: unknown): Promise<void>;
+  remove(key: string): Promise<void>;
+}
+export const localStore: KvStore;     // localStorage (web) — item cache, flags
+export const syncStore: KvStore;      // chrome.storage.sync on extension, else localStorage — settings
+
+// item.ts (pure domain helpers)
+export function migrateToPages(item: Item): Item;     // single canonical path (REQ-DM-2)
+export function applyPageEdit(item: Item, pageId: string, patch: Partial<Pick<Page,'js'|'css'|'title'>>): Item; // dual-write (REQ-DM-1)
+export function addPage(item: Item, title?: string): Item;
+export function deletePage(item: Item, pageId: string): Item;     // guards default/last page
+export function switchPage(item: Item, pageId: string): Item;
+```
+
+---
+
+## 5. Preview Protocol (`src/preview/previewProtocol.ts`)
+
+```ts
+export interface RenderOptions {
+  enableMultiTheme: false;
+  theme: 'theme-default';
+  stickyOffset?: number;            // from URL
+}
+// host → iframe
+export type HostMessage =
+  | { type: 'render'; code: string; options: RenderOptions }
+  | { type: 'getPng' }
+  | { type: 'evalConsole'; expr: string };
+// iframe → host
+export type FrameMessage =
+  | { type: 'png'; dataUrl: string }
+  | { type: 'console'; level: string; args: unknown[] }
+  | { type: 'ready' };
+```
+
+The iframe document is assembled by `previewHtml.getCompleteHtml()`, which injects the `@zenuml/core` bundle (via the Vite asset-URL shim) and a small bootstrap that instantiates the engine on `#mounting-point`, listens for `render`/`getPng`, and posts results back. **This boundary is unchanged from today** (decision OQ-6).
+
+---
+
+## 6. Testing Strategy
+
+- **Unit (Vitest + RTL):** pure domain helpers (`item.ts`, `plan.ts`, settings merge), service logic (with Firebase mocked / MSW for fetch endpoints), Zustand stores, editor adapters, preview protocol.
+- **Component (RTL):** editor, modals, library, pricing, page tabs — behavior not implementation.
+- **E2E (Playwright, retained):** `smoke.spec.js`, `dsl-spot-check.spec.js`, `production-build.spec.js`. Re-greened at Milestone 01; selectors moved to `data-testid`. The production-build spec guards the `@zenuml/core` asset-URL shim.
+- **No weakening of tests to pass.** Red E2E during early milestones is expected on the branch and is fixed by real functionality, not by editing assertions.
+
+---
+
+## 7. Conventions
+
+- TS `strict: true`; no `any` except at untyped Firebase boundaries (localized + commented).
+- One responsibility per file; prefer small files (NFR-3).
+- TDD per the bite-sized task format; commit after each green step; one-line commit messages.
+- No `window.*` globals as the integration mechanism (replace `window.user`/`window.db`/`window._app` with hooks/stores). A tiny dev-only test hook may be exposed behind an env guard.
+- Keep `data-testid` on elements E2E targets.
+
+---
+
+## 8. Contract questions — resolved (grilled 2026-06-06)
+
+- **CQ-1 Drop LaraSite.** Wire only `/create-share`; `/sync-diagram` is never called (already true today). [M03]
+- **CQ-2 Add "Stop sharing" (frontend-only).** Owner sets `isShared:false` + clears `shareToken` via client write; next share mints a fresh token, killing old links. `ItemService.stopSharing`. [M03, REQ-SHR-5]
+- **CQ-3 Keep parity on folder delete.** Remove folder only; no item rewrite; orphaned `folderId` → "Unfiled" via existence-check grouping. [M03]
+- **CQ-4 Load all items.** No pagination (breaks search/grouping, can't cut download cost without a backend index); add render virtualization only if a large library lags. [M03]
+- **CQ-5 Modular SDK v10+, multi-tab supported.** `persistentLocalCache({ tabManager: persistentMultipleTabManager() })`; the legacy multi-tab warning is **removed**; fall back to memory cache if IndexedDB is unavailable. [M00 init / M02 behavior, REQ-PST-4]
+
+---
+
+## 9. Adversarial-review carry-forward (M00 → later milestones)
+
+> Raised by the M00 adversarial-review panel (2026-06-06); deferred deliberately, not forgotten. Each must be addressed in the milestone noted.
+
+- **M02 — `firebase.ts` HMR/double-init safety.** `initializeApp` runs at module load with no guard; under HMR or a second import it throws `Firebase App named [DEFAULT] already exists`. When the module is first wired up, use `getApps().length ? getApp() : initializeApp(config.firebase)`.
+- **M02 — `firebase.ts` persistence fallback.** `persistentLocalCache` accesses IndexedDB lazily (no synchronous throw at init), but the first Firestore op fails in private browsing / when IndexedDB is unavailable. Wrap with a try/catch fallback to `memoryLocalCache()` (per CQ-5).
+- **M02 — login-side behaviors not in the foundation service.** Legacy `login()` also: fires `trackEvent('fn','loggedIn',provider)`, persists `lastAuthProvider` (LS_KEYS), and alerts the user on `auth/account-exists-with-different-credential`. The foundation `login()` only does `signInWithPopup` and propagates errors — reimplement these at the UI/analytics call sites so UX is preserved.
+- **M01+ — `web/public` static assets.** `vite.config.ts` sets `publicDir: 'public'`, which does not yet exist (Vite silently skips it). Legacy served favicons/fonts/animations from `../static`; migrate them into `web/public` before cutover or the app ships without icons/fonts.
+- **M04 — editor modals deferred from M01.** REQ-ED-6 cheat sheet, the Atomic-CSS settings modal (edits `cssSettings`), and REQ-KB-1 shortcuts-help modal are built in M04 (modal inventory). Consequence: in M01, ACSS mode renders against existing `cssSettings` but they are not editable until M04 (CSS editor is read-only in ACSS, matching legacy).
+- **DESIGN SYSTEM "Drafting Table" (adopted 2026-06-07, applies M02→M05).** All app-chrome UI is built from `web/src/ui/` primitives + Tailwind semantic tokens per `docs/superpowers/specs/2026-06-07-design-system.md` (established via the `frontend-design` skill at the user's request). Direction: precision-instrument — ink dark editor surface + warm-paper preview surface, one cobalt `accent` (+ sparing amber), Hanken Grotesk / IBM Plex Mono / Instrument Serif, blueprint-grid texture, crisp small radii, `ease-draft` motion. **Rule for every milestone UI task (M02 Tasks 11/14/16; M03 library+share UI; M04 settings/subscription/modal inventory):** run UI-bearing work through this system — extend `web/src/ui/` (wrapping Radix) before building the feature; no `gray-*`/raw hex/ad-hoc fonts; keep `data-testid`s. Foundation committed in M02: tokens (`tailwind.config.js`), globals (`src/styles/globals.css`), fonts (`index.html`), primitives (`Button`/`IconButton`/`Dialog`/`cn`), and a restyle of the existing rail/toolbox/gutter.
+- **M02 scope boundaries (recorded).** Library/saved-items panel UI → M03. Full settings UI → M04 (M02 only loads `users/{uid}.settings` + honors preserveLastCode/autoSave/autoPreview). Plan-limit enforcement (3/20/∞) → M04 (M02 leaves a `// M04: enforce plan limit` seam in save). create-share/share-panel/stopSharing → M03 (M02 wires only getSharedItem + fork). Analytics `/track` + GTM/Mixpanel → M04 (M02 leaves `// M04: trackEvent` seams). Firebase anonymous-auth is intentionally NOT added — "anonymous" = full local-only operation when signed out (legacy parity).
+- **M02 adversarial-review deferrals (2026-06-07).** The Task-18 panel fixed 8 real findings (boot-auth race, read-only last-code poisoning, fork-not-dirty, loadItem counter reset, Layout mainSizes stale-closure mutation, ensureUser first-save race, login unhandled-rejection, switchPage dirty). DEFERRED, not lost:
+  - **M03** — `saveItems` batch import uses `batch.set` without `{merge:true}`; when sharing lands, re-importing a previously-shared item would clobber backend sharing fields (`isShared`/`shareToken`/`sharedAt`). Use `batch.set(ref, data, {merge:true})` once sharing fields exist. Also: `subscribeAllItems` onSnapshot error path silently does `cb([])` (empty list indistinguishable from a real error) — the M03 library panel should surface a load error + retry (pass the error through, e.g. `cb([], err)`).
+  - **M03/polish** — `useItems` does not reset `loading=true` on a uid transition (signed-in items can flash briefly after logout before the signed-out list loads). `isDefault`-absent edge: a pre-existing item whose `pages[0]` lacks `isDefault` could expose a delete control on the first page (migrateToPages stamps it for synthesized pages, but pre-existing arrays pass through) — harden the PageTabs guard to also treat index 0 as non-deletable.
+  - **NFR-3 debt** — `AppRoot` reads `?id`/`share-token`/`stickyOffset` via `new URLSearchParams(window.location.search)` instead of the TanStack Router `useSearch()` (which has `validateSearch`). Works for the single index route; revisit (use the injected router hook) if routing grows or SPA navigation is added.
+  - **M04** — `useAuth.login` now swallows+logs non-account-exists OAuth errors (legacy parity); M04 should surface them in the UI (error state in the login modal) instead of console-only. `window.alert` for account-exists is likewise a console/alert stopgap → replace with a design-system notice in M04. `import-on-login` `doImport` re-reads `localItems.list()` at click time (tiny TOCTOU vs the displayed count) — snapshot the set when the modal opens if it ever matters.
+  - **Cleanup** — dead `currentPageId:''` literal in `newItem`'s pre-migrate object; dead `detectFromEnv()` export (`window.IS_EXTENSION`/`window.zenumlDesktop`) unused in the M02 path; M01 editor block in AppRoot still uses `gray-*` (mode selects/console) — fold into the design system in a polish pass.
+- **M05 — extension share-link origin.** `createShare` now sends `origin: window.location.origin` (contract §5.1). In the web app this is correct (`https://app.zenuml.com` etc). Once the extension lands (M05), `window.location.origin` is `chrome-extension://<id>` — a share URL on that host is unreachable. The extension build must override the origin sent to `/create-share` (e.g. pass the canonical `https://app.zenuml.com`) so minted links point at the web app, not the extension. (Backend env fallback would also produce a valid host if origin were omitted, but the contract obligation is to send it — override rather than drop.)
+- **M03 adversarial-review deferral (2026-06-07).** `ConfirmDialog` hardcodes the `confirm-ok`/`confirm-cancel` data-testids and is instantiated multiple times (AppRoot: saved-locally notice + import-error notice; LibraryItemRow delete; FolderList delete). NOT fixed: Radix `Dialog` is modal by default (`web/src/ui/Dialog.tsx` passes no `modal={false}`), so the open overlay blocks opening a second ConfirmDialog through the UI — two `confirm-ok` testids are never simultaneously live in any real user flow, and the only way to force the collision (set two `open` booleans true at once) is unreachable, so there is no honest discriminating regression test. Optional hardening for a later polish pass: add a per-instance testid-suffix prop to `ConfirmDialog` (e.g. `testIdSuffix`) so concurrently-mounted instances are unambiguous to E2E/unit helpers, and re-check if any future flow can stack two non-modal confirms.
+- **M03 adversarial-review deferral — role=button + nested interactive controls (2026-06-07).** `FolderList` folder rows (`web/src/components/library/FolderList.tsx` div role="button" wrapping the delete `IconButton` and the rename `TextInput`) and `LibraryItemRow` rows (`web/src/components/library/LibraryItemRow.tsx` div role="button" wrapping the kebab `Menu`) nest focusable/interactive descendants inside an element with `role="button"`, which is invalid ARIA (a button must not contain interactive children) and is the root cause of the keydown-bubbling class of defects. NOT fixed structurally here: the honest fix is a markup refactor (drop role=button on the container; make the row label/hit-area its own button so the controls are siblings, not descendants) and the honest test is axe-core, which is not wired up in this repo. Functionally mitigated today (`focus:opacity-100` reveals the delete button; `stopPropagation` guards activation; the one concrete behavioral symptom — keyboard menu-item activation bubbling to the row's onOpen — WAS fixed this pass via `MenuContent onKeyDown stopPropagation`, with a discriminating test). Later a11y-hardening pass: wire axe-core into the component test setup, then refactor the two row components so no interactive element is a descendant of a `role="button"`, removing the need for the `stopPropagation` patches.
+- **M03 adversarial-review triage (2026-06-07, second pass).** Panel raised 7 findings; 3 FIXED with discriminating regression tests, 4 SKIPPED/deferred with rationale:
+  - **FIXED #1** — `parseImportJson` now drops items without a real string `id` so a foreign/hand-edited file can never write `items/undefined` or collapse multiple id-less items (legacy parity; `exportImport.ts` filter). Test in `exportImport.test.ts`.
+  - **FIXED #4** — folder rename is now keyboard-reachable via **F2** on the focused folder row (parity with the focusable Delete button), added to the existing row `onKeyDown` so it introduces no new nested interactive element (keeps #5 deferral clean). Test in `FolderList.test.tsx`.
+  - **FIXED #7** — signed-out library list is now reactive. `localItems.subscribe/notifyChange` emits a same-tab change signal from the signed-out branches of `setItem`/`removeItem`/`saveItems`; `useItems` subscribes in its signed-out branch and re-lists. Emit fires even when the index is unchanged (move-to-folder), which a `storage` event or index-diff approach would miss. Tests drive create/delete/move through the real service in `useItems.test.tsx`.
+  - **SKIPPED #2 (stopSharing client write)** — deliberate, not a bug. Contract §3.1 "never by client" governs share *creation* (token minting); owner *revocation* is permitted by `firestore.rules:16` (`allow update if createdBy == uid`), and the backend is FROZEN (NFR-1) so a client write is the only available path. Documented inline in `itemService.stopSharing`.
+  - **SKIPPED #3 (migrateToPages asymmetry)** — benign. No signed-out consumer renders `.pages` off the un-migrated stored copy: `LibraryItemRow` reads only title/updatedOn/folderId, and `AppRoot` `pages={item.pages}` reads the editor-store item which always passes through `getItem`→`migrateToPages` on open. Fixing it would require an internals-only assertion.
+  - **SKIPPED #6 (ask-to-import Escape/overlay dismiss)** — spec-correct. REQ-AC-5 ("offer **once** … so it isn't repeated") and REQ-MOD-3 ("appear at most once") mandate marking-as-asked on dismissal; re-offering on next login would violate "isn't repeated."
+  - **#5 (role=button nesting)** — already recorded above (line: role=button + nested interactive controls deferral); confirmed still deferred — the keydown-bubbling behavioral tests genuinely depend on the `role="button"` row structure, and the honest fix (wire axe-core + markup-refactor both row components so no interactive control is a descendant of role=button) is larger than this triage pass. The F2 fix (#4) was added to the existing row onKeyDown specifically so it introduces no new nested control, keeping this deferral clean.
+- **M03 scope boundaries (recorded).** Settings UI / subscription + plan-limit gating / analytics `/track` + GTM/Mixpanel / remaining modal inventory → M04 (M03 leaves `// M04:` seams at gate/track points). Extension + embed + production cutover → M05. `/sync-diagram` stays unused (CQ-1) — only `/create-share` is wired. Folder delete intentionally does NOT rewrite item docs (CQ-3) — orphaned `folderId` renders "Unfiled" via existence check. (Advisor pre-exec fixes baked into the M03 plan: `setItem` strips backend-owned sharing fields; `moveToFolder` takes the held Item, not a localStore re-fetch.)
+- **M04 scope boundaries (recorded).** Extension + embed surfaces + production cutover + extension-bundled Paddle (`/lib/paddle.js`) → M05 (M04 builds the conditional structure: skip-CDN-under-extension in `analytics.ts`/`usePaddle.ts`, `syncStore` already abstracts the settings backend). Settings are **load-once** (OQ-5) — written to `syncStore` + cloud on change but no remote settings subscription; the item list stays live. Plan-limit softening (REQ-SUB-5): enforcement preserved (cloud write SKIPPED for an over-cap save, local save kept) with a non-blocking `LimitReachedNotice` + inline upgrade — NOT `alert()`+forced modal. Limit predicate is **legacy-exact** — `ownedIds.length > limitFor(sub)` over the PRE-INSERT ownership map (matching legacy `checkItemsLimit`, which runs before `setItemForUser` and admits the (limit+1)-th NEW item). Legacy blocks purely on count with NO `includes`/new-vs-resave branch: an over-cap re-save is blocked exactly as a new save is. The save-seam additionally **gates enforcement on `!useSubscription().loading`** (auth-resolved-before-read race guard): while the subscription read is in flight the user transiently derives to `'free'`, so enforcing would falsely block a paying user AND silently skip their cloud write — therefore an unresolved subscription is treated as not-yet-known and the cloud write proceeds. Paddle stays **Classic** (vendor 39343, `{userId, planType}` passthrough — contract C-PAY-1). LoginModal OAuth-error surfacing + the account-exists notice replace the M02 console/`window.alert` stopgaps. Dropped from `Settings`: `layoutMode`, `infiniteLoopTimeout`, `isCodeBlastOn`, `isJs13kModeOn`.
+- **M04 integration decisions (Task 16, recorded for Task 18).** (1) **Custom-CSS Plus-gate is ALL-CSS, not custom-modes-only.** Legacy `onCodeChange`/`app.jsx` has NO CSS Plus-gate (grep confirmed: the only `isPlusOrAdvanced` use is `checkItemsLimit`); the gate is a NEW rewrite requirement (REQ-SUB-5 bullet 2 / plan §8). Following the plan as written, AppRoot gates BOTH the CSS-editor `onChange` AND selecting a non-plain `css-mode` (`mode !== 'css'`): anonymous → open `LoginModal` (via new `uiStore.loginModalOpen`); signed-in non-Plus → open pricing + `track('Free Limit',{category:'custom-css'})`; mid-subscription-load → NOT gated (same `!loading` race guard as the save-seam); Plus → applies. Flagged for Task 18 to confirm all-CSS vs custom-modes-only is the intended product scope. (2) **Analytics emit-inventory wired** (plan §5): `pageView` (hook mount), `saveBtnClick`, `Free Limit` (over-cap save + custom-css gate), `loggedIn`/`loggedOut` (+provider), `shareLink`, `itemsImported`, `exportItems`, `openSettingsModal`, `updatePref-<key>`, `onboardModalSeen` (Onboarding dismiss), `pledgeModalSeen` (pledge dismiss). (3) **`APP_VERSION` constant** added to `config/constants.ts` (tracks legacy `1.0.25`); the rewrite owns release versioning in M05. (4) **Settings load-once** is performed by `useAuth`'s `onAuthChange` handler (`getUserSettings`→`settingsStore.merge`); M04 adds only the per-change persist split (`syncStore.set` + `setUserSetting`). (5) **`itemService.setItem` gained `{ skipCloud }`** for the softened over-cap path (local write kept, cloud `setDoc`+membership withheld); the cloud-level proof lives in `itemService.test.ts`, the seam-decision proof in `AppRoot.test.tsx`.
+- **M04 adversarial-review triage (2026-06-07, M04 panel).** Panel raised 4 findings; 2 FIXED with discriminating regression tests, 2 DEFERRED with rationale:
+  - **FIXED #1 (boot settings-load race could clobber cloud settings).** The boot `syncStore` local loop (`AppRoot.tsx`) and `useAuth`'s `getUserSettings` merge had NO ordering guarantee, yet the comment claimed "cloud wins". If the cloud merge resolved first, the serial local loop's plain `merge` would overwrite fresh cloud values key-by-key (REQ-SET cross-device regression). Fix: order-independent layering in `settingsStore` — `mergeCloud(partial)` applies cloud values AND records cloud-owned keys in a `cloudKeys` Set (authoritative layer); `mergeLocalBase(partial)` applies ONLY keys cloud has not claimed (base layer). `useAuth`→`mergeCloud`, boot loop→`mergeLocalBase`, live `handleSettingChange`→plain `merge` (post-boot always wins). Cloud wins regardless of arrival order; an empty cloud doc claims zero keys so a no-cloud-settings user still gets full local base. Tests in `settingsStore.test.ts` (revert→fail verified).
+  - **FIXED #2 (support-pledge re-shows once for legacy migrators).** Legacy gates the pledge on `lastSeenVersion && semverCompare<0 && !pledgeModalSeen` (app.jsx:329-331); legacy bumps `lastSeenVersion` only on new-user onboarding / notification-click, NOT on pledge dismiss — so a legacy user who already dismissed the pledge has `pledgeModalSeen=true` + a still-behind `lastSeenVersion` in the SAME localStorage the rewrite reads. The rewrite ignored `pledgeModalSeen` and re-fired on the semver compare alone → a one-time spurious upgrade prompt to the wrong audience (REQ-MOD-3), and `pledgeModalSeen` was dead state. Fix: read `pledgeModalSeen` in the pledge trigger (`AppRoot.tsx`) and `return` early if seen — `pledgeModalSeen` is now a live latch. Test in `AppRoot.test.tsx` (revert→fail verified).
+  - **DEFERRED #3 → M05 (one-time-prompt flags + settings use plain localStorage, not sync, in the extension).** Real cross-surface parity gap but extension-only (Phase 2/M05). On the web app this is functionally equivalent (both `localStore` and `syncStore` back to localStorage); only the MV3 extension's `chrome.storage.sync` carries these flags cross-device. **UPDATED 2026-06-07 (second M04 adversarial pass): `lastSeenVersion` RESOLVED this pass; the rest remain deferred.** Carve-out:
+    - **`lastSeenVersion` local/sync backend → RESOLVED.** Routed through `syncStore` (reads `AppRoot.tsx` new-user probe + pledge trigger; writes new-user stamp + pledge dismiss), matching legacy `db.sync = chrome.storage.sync` (`src/db.js:131-140`) and contract §7.2 (which lists `lastSeenVersion` among the extension sync keys). The prior deferral's blocker — "no extension harness to write an honest discriminating test" — was dissolved: `localStore` and `syncStore` are two DISTINCT objects (`storage.ts:32-33`) even though both fall back to `window.localStorage` on web, so `vi.spyOn` on each verifies the routing decision directly. Discriminating test in `AppRoot.test.tsx` ("reads AND writes lastSeenVersion via syncStore"), revert→fail verified for BOTH full-revert and reads-only-revert.
+    - **`lastSeenVersion` Firestore `users/{uid}` mirror → still open, M05.** Legacy also writes the `users/{uid}.lastSeenVersion` field when logged in (`db.js:141-146`); the rewrite does not. Out of scope for this finding (which was backend-routing only); deferred.
+    - **`onboarded` → still localStore, revisit M05.** Legacy persists onboarding completion as a **cookie** (`app.jsx:318` `document.cookie = 'onboarded=1'`), NOT `chrome.storage.sync`; §7.2 does not list it. localStore is the closest web-equivalent. M05 confirms the extension cross-device story.
+    - **`pledgeModalSeen` → INTENTIONALLY on localStore (not an oversight).** Legacy uses `window.localStorage.pledgeModalSeen` (`app.jsx:334`), a per-device latch; §7.2 does NOT list it among sync keys. Do NOT "fix" this to `syncStore` — that would contradict both legacy and the frozen contract.
+  - **DEFERRED #4 → analytics-stub implementer (latent Mixpanel double-count).** `analytics.emit` POSTs to `/track` (server-side Mixpanel, contract §5.5/§6.3) AND, on the non-extension client path, pushes to `window.mixpanel.track` if present. Verified NO-OP today: `loadClientAnalytics` is a documented stub, so `window.mixpanel` is never defined and the push is skipped (legacy Mixpanel was server-ONLY via POST /track). The risk activates only when the stub injects a Mixpanel CDN snippet — every event would then double-count into the SAME project token. NOT fixed: REQ-ANL-1 intends a client channel and contract §6.3 lists client-side Mixpanel as conditionally loaded, so deleting the `window.mixpanel.track` push would contradict the requirement; and the defect does not exist until a stub lands, so no honest discriminating test can be written now. Constraint recorded for whoever implements `loadClientAnalytics`: use a DISTINCT client token, gate one channel off, or de-dupe — do NOT load a CDN snippet that reuses the server-side project token without de-duping. **RE-CONFIRMED 2026-06-07 (second M04 adversarial pass):** still a verified no-op (`loadClientAnalytics` remains a stub, `window.mixpanel` never set); no honest discriminating test exists until the snippet lands, so still deferred to the stub implementer. **RE-CONFIRMED 2026-06-07 (third M04 adversarial pass, finding 5):** unchanged — still a stub, still deferred to the `loadClientAnalytics` implementer under the same constraint.
+- **M04 adversarial-review triage (2026-06-07, third pass — analytics envelope + onboarding parity).** Panel raised 5 findings; 2 FIXED with discriminating regression tests (revert→fail verified), 2 SKIPPED (already-tracked RISKs), 1 already-recorded deferral re-confirmed.
+  - **FIXED (findings 3 + 4) — analytics envelope parity (REQ-ANL-1).** The M04 emit-inventory (this §9 line 383(2)) initially shipped re-implemented events with DIVERGENT `{category,label}` envelopes vs the legacy ground truth, which silently routes them to different Mixpanel segments (the legacy backend forwards `category` as a real property — contract §5.5 — and saved reports/funnels filter on it). Corrected to legacy-exact in `AppRoot.tsx`: `Free Limit` save-path `{category:'3 diagrams limit', label:'Save'}` (was `storage`/planType — app.jsx:496-500); the two custom-CSS `Free Limit` calls REMOVED (no legacy analog — a custom-css gate event would be a NEW analytics requirement, out of scope); `shareLink`→`ui` (app.jsx:1041), `exportItems`→`fn` no label (app.jsx:1211), `itemsImported`→`fn`+count (app.jsx:1300), `loggedIn`→`fn`+provider (auth.js:26), `loggedOut`→`fn` (app.jsx:1053), `updatePref-*`→`ui`+value (app.jsx:989). Discriminating envelope tests in `AppRoot.test.tsx` ("analytics envelope parity").
+  - **FIXED (finding 2) — migrating-legacy-user re-onboarding (REQ-MOD-3).** The onboarding gate keyed only on the localStorage `onboarded` flag, which legacy NEVER wrote (legacy used a cookie for analytics dedupe and gated the modal on `!lastSeenVersion` — app.jsx:314). A user migrating from the legacy app has `lastSeenVersion` (via `syncStore`/chrome.storage.sync) but no `onboarded` key, so they were re-onboarded. Fixed in `AppRoot.tsx`: also suppress onboarding when a stored `lastSeenVersion` is present (mirror legacy `!lastSeenVersion`). Discriminating test in `AppRoot.test.tsx` ("does NOT re-onboard a migrating legacy user").
+  - **SKIPPED (finding 1) — over-cap fail-open during the subscription-load window.** Documented design choice (the `!subLoading` race guard — §9 line 382), does NOT violate the frozen contract (firestore.rules never enforce the 3/20 count — C-RULES-1), transient + bounded to a single subscription read. Already tracked (Task 16). No discriminating-test target.
+  - **SKIPPED (finding 5) — client-side `window.mixpanel.track` double-count.** Already recorded above as DEFERRED #4 (dormant; `loadClientAnalytics` is a stub). Re-confirmed; no change.
+  - **Side note (loggedIn timing, not among the 5 findings).** Legacy fires `loggedIn` on auth SUCCESS (auth.js:26, inside `signInWithPopup.then`); the rewrite fires it on the login-button CLICK (before `login(provider)`). A "same conditions" gap under REQ-ANL-1 strictly read, but out of the reported findings' scope (which was `category`); left as-is. Revisit if the loggedIn funnel needs success-only counting.
+- **M05 scope boundaries (recorded).** Embed mode (RM-2/REQ-EMB-1) + MV3 extension (RM-4/REQ-EXT-1) + share-link origin override (resolves the prior "M05 — extension share-link origin" deferral) + production cutover (config-only repoint of `firebase.json hosting.public` → `web/dist`, delivered as a reversible manual runbook — NO deploy performed). DEFERRED beyond M05: Desktop host RM-5 injected item service (no desktop product in scope — `isDesktop` is detected + hides the header, but no injected service ships). `loadClientAnalytics` un-stub + GTM-local-for-extension (contract §6.3) stays the M04 deferral — the extension runs with the analytics stub (server-side `/track` still fires). `lastSeenVersion` Firestore `users/{uid}` mirror stays deferred (legacy `db.js` write, not required for extension parity; `chrome.storage.sync` covers cross-device prefs). Legacy `src/` deletion + old-config retirement is a follow-up AFTER the user confirms the cutover is live — NOT performed in M05.
+- **createShare body: §5.1-vs-shipped divergence (recorded, OUT OF SCOPE for M05).** Contract §5.1 describes a `/create-share` body of `{ token, id, name, content, description, origin }`, but the shipped M03 client (`web/src/services/cloudFunctions.ts`) sends ONLY `{ id, token, origin }`. M05 changes ONLY the `origin` SOURCE (canonical-origin override for the extension) and intentionally does NOT add `name`/`content`/`description` — adding them would be unverified scope creep and a silent body-shape mutation. Whether the client should grow to match §5.1 (or §5.1 should be corrected to the shipped shape) is a SEPARATE client-vs-contract reconciliation, deferred. Flagged here so a later implementer does not "fix" it inside M05.
+- **M05 adversarial-review triage (2026-06-07, M05 panel).** Panel raised 4 findings; 3 FIXED with discriminating regression tests (revert→fail verified), 1 SKIPPED (out-of-scope runbook gap, recorded below).
+  - **FIXED #1 (extension preview blank under MV3 CSP).** `getCompleteHtml` baked the `PREVIEW_BOOTSTRAP` render pipeline into an INLINE `<script>` block inside the `srcDoc` iframe. Under `chrome-extension://` the default MV3 extension-page CSP is `script-src 'self'` (and MV3 forbids relaxing it with `'unsafe-inline'`), and a no-`sandbox` `srcDoc` iframe inherits the embedder CSP — so the inline bootstrap was CSP-blocked, the `message` listener never registered, and the preview stayed blank in the packaged extension. Fix: externalize the bootstrap to a Vite-emitted asset (`previewBootstrapAsset.ts` `?url` import) and load it via `<script src="…">`, so the document contains NO inline executable script and is `'self'`-only / same-origin in both web and extension contexts (correct-by-construction; verifiable by inspection — no opaque-origin sandbox, no `web_accessible_resources` needed). Discriminating test in `previewHtml.test.ts` ("contains no inline executable script block").
+  - **FIXED #2 (extension version regressed below the published store version).** `APP_VERSION` was `1.0.25`; the published Chrome extension is `2026.6.4` (legacy `static/manifest.json`). Chrome compares versions as dot-separated INTEGER tuples (`1 < 2026`), so the store would reject any `1.0.25` upload. Bumped `APP_VERSION` to `2026.6.7` (legacy YYYY.M.D scheme, strictly greater). Discriminating test in `web/scripts/manifest.test.ts` encodes the store rule (parse → integer-tuple compare > `[2026,6,4]`).
+  - **FIXED #3 (legacy JSON-item embed links misrender post-cutover).** Legacy minted embed links as `?code=${JSON.stringify(currentItem)}` — a JSON-encoded item, NOT raw DSL (contract §8). Such links already exist in the wild. The rewrite fed `?code=` straight into `item.js`, so a legacy link would render the JSON blob as DSL. Fix: `parseEmbedCode` (`runtimeMode.ts`) accepts BOTH shapes — a JSON object with a string `.js` → extract js/css/html/title; anything else → treat verbatim as DSL (contract §8 still honored; JSON is an ADDITIONAL accepted form). Discriminating tests in `runtimeMode.test.ts` + `AppRoot.test.tsx`.
+  - **SKIPPED #4 (dropped legacy same-origin static routes) — NOT a code fix; out of scope, recorded.** After the cutover repoints `firebase.json hosting.public` `app` → `web/dist`, legacy same-origin static URLs gulp assembled (`/privacy-policy/…`, `/End-User-License-Agreement/…`, `/help.html`, `/manifest.json`, `/templates/…`, `/animation/…`, `/lib/…`, `/detached-window.js`, `/preview.html`, fonts) 404. The rewrite app does NOT link any of them same-origin (`grep` over `web/src` is clean — Help already points at cross-origin `https://www.zenuml.com/help.html`; templates are bundled via `domain/templates.ts`), so the app's own UX is unaffected and there is no in-scope code target to fix. The residual risk is EXTERNAL (Chrome Web Store listing's required privacy-policy URL, in-the-wild bookmarks/legal links) and `firebase.json` is FROZEN (NFR-1) — so the honest remedy is a cutover-runbook checklist item, not a unit test. Added to the Task-13 production-cutover runbook pre-deploy checklist (confirm/redirect privacy-policy + EULA + manifest.json, or document them as intentionally retired). Inventing a unit test here would be a proxy-green with no behavior to assert.
+- **M05 adversarial-review triage (2026-06-07, M05 panel SECOND pass).** Panel raised 3 findings; 1 FIXED with a discriminating regression test (revert→fail verified), 1 FIXED as a docs correction (runbook — no code test applies), 1 SKIPPED + deferred below.
+  - **FIXED #1 (embed "Open in ZenUML" silently dropped the diagram).** The by-value embed's only affordance builds `${CANONICAL_APP_ORIGIN}/?code=<dsl>&title=<title>` WITHOUT `?embed`, so the destination boots the FULL app (`isEmbed=false` → `embedByValue=false` → the embed-seed effect never runs). But the full-app boot resolver `resolveBootItem` had NO `?code=` branch (only shareToken+id / id / preserveLastCode→lastcode / else→new), so the user landed on last-code or a blank diagram — a parity regression vs legacy `app.jsx:205-218` which read `?code=` UNCONDITIONALLY at boot. Fix: `useBootItem` gained a `codeParam`/`codeTitle` dep and `resolveBootItem` a `{kind:'code'}` branch placed BEFORE the preserveLastCode branch (explicit inline payload wins over stale last-code, matching legacy `urlCode || result.code`); the seeded item is `isReadOnly:false` (EDITABLE — read-only would defeat the affordance: `save()` early-returns and ShareButton is disabled for read-only items) and reuses `parseEmbedCode` so forwarded legacy JSON-item links still unwrap. `AppRoot` passes `codeParam` only when NOT embed (the embed path keeps its own skip-seed). Discriminating tests in `useBootItem.test.tsx` (raw-DSL editable, legacy-JSON unwrap, precedence over last-code, empty ignored, hook seeds editable; revert→fail verified — all 4 resolver/hook tests fail when the branch is removed).
+  - **FIXED #2 (durable rollback path used the broken `yarn release`).** Rollback Path (2) in both cutover runbooks instructed `yarn release` to rebuild the legacy `app/` artifact. `yarn release` = `gulp --gulpfile gulpfile.cjs release`, which (a) the project's OWN CI declares "incompatible with Node 20+" (deploy-prod.yml:33 / deploy-staging.yml:48 — why CI replaced it with inline rsync/cp) and (b) only COPIES a pre-existing `dist/` (`copyFiles` = `gulp.src('dist/**/*')`, gulpfile.cjs:78) without ever running `vite build`; post-cutover the root `dist/` is stale/absent (.gitignore'd, only `pnpm -C web build` runs), so `yarn release` would assemble `app/` from empty/stale output → a broken artifact. Fix (docs, not code — finding targets the runbooks): corrected Path (2) step 2 in `2026-06-06-web-sequence-production-cutover.md` and the Reversibility step 2 in `2026-06-06-web-sequence-cutover-config-diff.md` to mirror the CI assembly — `pnpm install --no-frozen-lockfile && pnpm build` (legacy vite build → `dist/`) FIRST, then the inline rsync/cp into `app/` from deploy-prod.yml:32-55. Path (1) `firebase hosting:rollback` was already correct and is unaffected. (No discriminating unit test — the finding is prose; the load-bearing claims were verified directly against package.json, gulpfile.cjs:78/170-180, and deploy-prod.yml.)
+  - **SKIPPED #3 → DEFERRED (replaceNewTab inert without the "tabs" permission).** `eventPage.js handleTabCreated` reads `tab.url` in `chrome.tabs.onCreated`, but the MV3 manifest requests only `["storage"]` — `tab.url` is populated in `onCreated` only with the `"tabs"` (or host) permission, so the `tab.url === 'chrome://newtab/'` check never matches and the Replace-new-tab feature is inert. PRE-EXISTING parity, NOT a rewrite defect: legacy `static/manifest.json` ships the IDENTICAL storage-only permission and legacy `eventPage.js` has the IDENTICAL handler — the rewrite faithfully reproduces legacy behavior. Deliberately NOT fixed in M05: (a) adding `"tabs"` triggers a Chrome Web Store re-review and forces existing users to RE-CONSENT to a broadened permission — outside the "reversible config diff" cutover scope; (b) a feature inert for years suddenly hijacking the new-tab page is a BEHAVIOR CHANGE, not parity restoration. Deferred to a post-cutover extension-feature pass: either request `"tabs"` (accepting the re-review/re-consent) and verify the override end-to-end, or remove the dead `handleTabCreated`/`replaceNewTab` setting if the feature is abandoned.
+- **M05 adversarial-review triage (2026-06-07, M05 panel THIRD pass — extension shipping path).** Panel raised 2 findings; both REAL, both SKIPPED as code-fixes because every lever lives in a FROZEN file (NFR-1), deferred below. The runbook flag was added (`2026-06-06-web-sequence-cutover-config-diff.md`, Diff 3 WARNING).
+  - **DEFERRED (findings 1 + 2 — ONE root cause: the extension release path still targets the LEGACY bundle).** Both findings are facets of the same wiring gap: after the cutover repoints **only** `firebase.json hosting.public` → `web/dist` (web app → React), the Chrome-extension release path is untouched and ships the **legacy Preact** bundle. Ground truth: `deploy-prod.yml` (Package Chrome extension step + `publish-extension` job) assembles + uploads `extension.zip` from the legacy `dist/`/`app/` rsync-cp flow using `static/manifest.json` (still `version 2026.6.4`); root `package.json` `upload`/`pub` (lines 22-23) target the ROOT `extension.zip`, NOT `web/extension.zip`; and NO CI workflow invokes `build:extension`/`web/scripts/build-extension.mjs` (`grep build:extension .github/workflows` is empty). Consequences: (1) the M05 React extension artifact (`web/extension.zip`, version-stamped from `APP_VERSION = 2026.6.7`) reaches the store through NO path — it is effectively dead code w.r.t. shipping; after cutover app.zenuml.com serves React while the Web Store stays Preact (silent product divergence). (2) `web/scripts/manifest.test.ts`'s strictly-greater version guard (and `web/extension-src/manifest.json @ 2026.6.7`) defends an artifact that never ships, while the artifact that DOES ship carries the unbumped `2026.6.4`; a real `yarn pub` on the unchanged path would re-upload `2026.6.4` and be REJECTED by the store (not strictly greater) — the exact failure the guard claims to prevent is unprevented on the live path. NOT fixed in M05 (no in-scope code target): every lever is FROZEN under NFR-1 and outside the rewrite's `web/**` scope — `deploy-prod.yml` (Package + `publish-extension`), root `package.json` `upload`/`pub` (lines 22-23), and `static/manifest.json` (the legacy version source). An agent editing them would decouple the extension change from the user-applied cutover commit (defeating the atomic-cutover design, since `deploy-staging.yml` fires on every master push). No discriminating regression test exists in scope either — a test asserting "CI ships `web/extension.zip`" would be RED and unfixable within `web/src + extension-src + scripts`, i.e. a proxy-red with no in-scope behavior to flip. **Frozen-file change set the USER applies at cutover (do this to actually ship the React extension):** (a) repoint `deploy-prod.yml`'s Package-Chrome-extension step to run `pnpm -C web build:extension` and the `publish-extension` job to upload `web/extension.zip` (instead of assembling/uploading the legacy `dist/`/`app/` zip); (b) repoint root `package.json` `upload`'s `--source` (line 22) at `web/extension.zip` (`pub`, line 23, is publish-by-`--extension-id` with no `--source` arg — it just needs `upload` to have staged the right zip first); (c) retire `static/manifest.json` as the version source (or re-stamp it from `APP_VERSION`) so the shipped manifest carries the strictly-greater version. Until that lands, treat the extension as **intentionally still legacy** post-cutover — the web-app cutover is independently safe + reversible; this is an additive follow-up, not a blocker.

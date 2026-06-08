@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   Design system "Drafting Table" — global tokens + base.
+   Full reference: docs/superpowers/specs/2026-06-07-design-system.md
+   Tailwind config holds the palette; these vars mirror the few values raw CSS
+   needs (scrollbars, blueprint grid, selection).
+   ========================================================================== */
+:root {
+  --ink-950: #0b0e13;
+  --ink-900: #10141b;
+  --ink-800: #1a2130;
+  --ink-700: #2a3447;
+  --ink-line: #33405a;
+  --paper-50: #faf7f1;
+  --paper-100: #f2ece0;
+  --paper-line: #e2d8c5;
+  --accent: #2f6bff;
+  --accent-press: #1e50d8;
+  --amber: #e59a2b;
+  --ondark-strong: #e8eef7;
+  --ondark-muted: #8a99ae;
+  --onlight-strong: #1b2330;
+  --onlight-muted: #5a6473;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--ink-950);
+  color: var(--ondark-strong);
+}
+
+/* The cobalt signal carries through to text selection. */
+::selection {
+  background: rgba(47, 107, 255, 0.28);
+}
+
+@layer components {
+  /* Two named surfaces components compose onto. */
+  .surface-ink {
+    background: var(--ink-900);
+    color: var(--ondark-strong);
+  }
+  .surface-paper {
+    background: var(--paper-50);
+    color: var(--onlight-strong);
+  }
+}
+
+@layer utilities {
+  /* Faint blueprint grid — atmosphere on dark chrome (header, empty states).
+     Two layered gridlines; deliberately low-contrast so it reads as texture. */
+  .bg-blueprint {
+    background-color: var(--ink-900);
+    background-image:
+      linear-gradient(rgba(47, 107, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(47, 107, 255, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  /* Vellum grain for light empty states. */
+  .bg-vellum {
+    background-color: var(--paper-50);
+    background-image: radial-gradient(rgba(120, 100, 60, 0.05) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+  /* Consistent keyboard focus ring across the design system. */
+  .ring-draft:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ink-900), 0 0 0 4px var(--accent);
+  }
+  .ring-draft-light:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--paper-50), 0 0 0 4px var(--accent);
+  }
+}
+
+/* Design rule 6 — respect prefers-reduced-motion. The "Drafting Table" entrance
+   animations (rise-in / pop-in / overlay-in) are non-essential motion: when the
+   user has asked the OS to minimise motion, neutralise them so menus, popovers,
+   selects, dialogs and overlays appear instantly rather than sliding/scaling in.
+   We collapse the animation to a zero-duration end-state (not `animation:none`,
+   which would replay the keyframes' 0% start frame and flash the pre-animation
+   transform). The `both` fill already holds the 100% frame, so a near-zero
+   duration lands on the final state with no perceptible motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in,
+  .animate-pop-in,
+  .animate-overlay-in {
+    animation-duration: 0.01ms !important;
+    animation-timing-function: linear !important;
+  }
+  /* Also neutralise any incidental transitions so nothing eases on reduced-motion. */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* split.js gutter — a thin drafting seam between editor and preview. */
+.gutter {
+  background: var(--ink-900);
+  position: relative;
+  cursor: col-resize;
+}
+.gutter::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--ink-line);
+  transition: background 0.15s ease;
+}
+.gutter:hover::after {
+  background: var(--accent);
+}
+.gutter.gutter-horizontal {
+  cursor: col-resize;
+}
+
+/* Slim, on-brand scrollbars (dark chrome). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-700) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-700);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-line);
+  background-clip: content-box;
+}

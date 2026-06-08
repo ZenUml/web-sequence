@@ -1,0 +1,81 @@
+import { forwardRef } from 'react';
+import { cn } from './cn';
+
+// Design-system Button ("Drafting Table"). Variants map to intent, not color names.
+// Default surface is the dark ink chrome (the app header lives there). For the
+// light paper surface, pass `surface="light"` so the focus ring contrasts.
+type Variant = 'primary' | 'subtle' | 'ghost' | 'danger';
+type Size = 'sm' | 'md';
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
+  surface?: 'dark' | 'light';
+}
+
+const base =
+  'inline-flex items-center justify-center gap-1.5 font-medium select-none ' +
+  'rounded transition-colors duration-150 ease-draft disabled:opacity-40 ' +
+  'disabled:pointer-events-none whitespace-nowrap';
+
+const sizes: Record<Size, string> = {
+  sm: 'h-7 px-2.5 text-[12px]',
+  md: 'h-9 px-3.5 text-[13px]',
+};
+
+// Variants are surface-aware: the same intent reads correctly on the dark `ink`
+// chrome and on the light `paper` surface (modals/menus). `primary` (the cobalt
+// signal) is identical on both; the quiet variants flip their neutrals.
+const variants: Record<'dark' | 'light', Record<Variant, string>> = {
+  dark: {
+    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
+    subtle: 'bg-ink-700/70 text-ondark-strong hover:bg-ink-700 border border-ink-line/50',
+    ghost: 'bg-transparent text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
+    danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
+  },
+  light: {
+    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
+    subtle: 'bg-paper-100 text-onlight-strong hover:bg-paper-200 border border-paper-line',
+    ghost: 'bg-transparent text-onlight-muted hover:text-onlight-strong hover:bg-black/5',
+    // On the light paper surface the DEFAULT danger red (#E0524A) is only ~3.6:1 on
+    // paper-50 — fails WCAG AA for button TEXT. Use danger-strong (#B23A33, ~5.5:1)
+    // for the label/border so the quiet outlined style still reads accessibly.
+    // (dark.danger keeps DEFAULT: it sits on ink and passes AA.)
+    danger:
+      'bg-transparent text-danger-strong hover:bg-danger/10 border border-danger-strong/40',
+  },
+};
+
+// Shared class computation so non-button elements (e.g. an <a> that must LOOK like
+// a button) can adopt identical design-system styling WITHOUT nesting a <button>
+// inside another interactive element (invalid HTML / a11y defect). Used by the
+// Support-pledge "Sponsor" link, which is semantically an anchor, not a button.
+export function buttonClassName(opts?: {
+  variant?: Variant;
+  size?: Size;
+  surface?: 'dark' | 'light';
+  className?: string;
+}): string {
+  const { variant = 'subtle', size = 'md', surface = 'dark', className } = opts ?? {};
+  return cn(
+    base,
+    sizes[size],
+    variants[surface][variant],
+    surface === 'light' ? 'ring-draft-light' : 'ring-draft',
+    className,
+  );
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = 'subtle', size = 'md', surface = 'dark', className, type = 'button', ...rest },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={buttonClassName({ variant, size, surface, className })}
+      {...rest}
+    />
+  );
+});

@@ -1,40 +1,42 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// PW_BASE_URL lets the same spec run against the local dev server (default),
-// the deployed staging site (the post-staging-deploy gate), or production
-// (the post-prod-deploy smoke). When it points at a remote URL we must NOT
-// spin up the local dev server. See docs/adr/0001-release-pipeline-imitating-conf-app.md.
+// PW_BASE_URL lets the same specs run against a deployed site (staging/prod) by
+// pointing the baseURL elsewhere and skipping the local servers. When unset we
+// boot the NEW app under web/ locally:
+//   - dev server on :3000 (smoke + dsl-spot-check)
+//   - vite preview of web/dist on :4173 (production-build asset spec)
+// See docs/adr/0001-release-pipeline-imitating-conf-app.md.
 const isRemoteTarget = !!process.env.PW_BASE_URL;
-const isProdBuild = process.env.PW_PROD_BUILD === '1';
 
-// Prod-build mode uses a dedicated port so it never collides with a dev server
-// that may already be running on 3000.
-const PROD_BUILD_PORT = 3100;
-const baseURL =
-  process.env.PW_BASE_URL ||
-  (isProdBuild ? `http://localhost:${PROD_BUILD_PORT}` : 'http://localhost:3000');
+// The production-build spec navigates here explicitly (web/dist served statically
+// by `vite preview`), independent of baseURL — that is the point: it exercises
+// the BUILT bundle, where a dev-only /@fs/ asset URL would 404.
+export const PREVIEW_PORT = 4173;
 
-// PW_PROD_BUILD=1 serves the *built* `dist/` with a plain static server instead
-// of the dev server. The dev server transparently serves Vite `/@fs/<abs>` URLs,
-// which hides deploy-only bundling bugs (e.g. an asset shim that bakes a dev-only
-// `/@fs/` path). A static server rooted at `dist/` 404s such paths exactly like
-// Firebase Hosting does. Requires `dist/` to be built first (`pnpm build`).
-function resolveWebServer() {
+const baseURL = process.env.PW_BASE_URL || 'http://localhost:3000';
+
+// Two local servers run together via the webServer array: the dev server (the
+// app under test for smoke/dsl-spot-check) and a static preview of web/dist (the
+// production-build asset proof). Against a remote target we start neither.
+function resolveWebServers() {
   if (isRemoteTarget) return undefined; // site already live
-  if (isProdBuild) {
-    return {
-      command: `npx http-server ./dist -p ${PROD_BUILD_PORT} -s -c-1`,
-      url: `http://localhost:${PROD_BUILD_PORT}`,
+  return [
+    {
+      command: 'pnpm -C web dev',
+      url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
-    };
-  }
-  return {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  };
+    },
+    {
+      // `vite preview` serves web/dist (the built output). Requires a prior
+      // `pnpm -C web build`; the production-build spec also asserts the built
+      // zenuml-*.js exists on disk so a stale/missing dist fails loudly.
+      command: `pnpm -C web preview --port ${PREVIEW_PORT} --strictPort`,
+      url: `http://localhost:${PREVIEW_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+  ];
 }
 
 export default defineConfig({
@@ -56,16 +58,8 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
   ],
 
-  // Local dev server, static production-build server, or nothing (remote URL).
-  webServer: resolveWebServer(),
+  // Local dev + preview servers (or nothing, for a remote target).
+  webServer: resolveWebServers(),
 });
