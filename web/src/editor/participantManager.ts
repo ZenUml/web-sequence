@@ -38,14 +38,36 @@ function collectParticipants(state: EditorState): Set<string> {
 
   tree.iterate({
     enter(nodeRef) {
-      if (nodeRef.name !== 'Participant') return
+      // 1. DECLARED participants: `@Type Name`, bare `Name`, `group { }` members.
       // getChild performs a direct-children-only scan — it will NOT descend into
       // Stereotype's own Name child even though Stereotype is also a child of
       // Participant. This is safe because Lezer's getChild matches the first
       // direct child of the requested type at depth 1 only.
-      const nameNode = nodeRef.node.getChild('Name')
-      if (nameNode) {
-        names.add(state.doc.sliceString(nameNode.from, nameNode.to))
+      if (nodeRef.name === 'Participant') {
+        const nameNode = nodeRef.node.getChild('Name')
+        if (nameNode) names.add(state.doc.sliceString(nameNode.from, nameNode.to))
+        return
+      }
+
+      // 2. MESSAGE-INTRODUCED participants — the From/To endpoints of every message
+      // (`A.m()` → To `A`; `A->B` → From `A`, To `B`). The ANTLR oracle counts these
+      // as participants (conformance/oracle.ts → ToCollector.onTo), and the renderer
+      // draws a participant box for each, so autocomplete MUST offer them too. Without
+      // this, a participant first mentioned in a message is invisible to completion
+      // even though it renders (#804). A message LABEL lives in `Content`, never in
+      // From/To, so no label/method-name is ever fabricated as a participant.
+      if (nodeRef.name === 'From' || nodeRef.name === 'To') {
+        const nameNode = nodeRef.node.getChild('Name')
+        if (nameNode) names.add(state.doc.sliceString(nameNode.from, nameNode.to))
+        return
+      }
+
+      // 3. CONSTRUCTOR target — `new X()` introduces participant `X`. Unlike From/To,
+      // `Construct` wraps its `Identifier` directly (no intervening `Name` node).
+      if (nodeRef.name === 'Construct') {
+        const idNode = nodeRef.node.getChild('Identifier')
+        if (idNode) names.add(state.doc.sliceString(idNode.from, idNode.to))
+        return
       }
     },
   })

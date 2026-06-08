@@ -123,6 +123,43 @@ describe('zenumlParticipantField + getParticipants', () => {
     })
   })
 
+  // ---- Message-introduced participants (#804) ------------------------------
+  // A participant first mentioned in a MESSAGE (never via @Type / bare decl) must
+  // still be collected — the ANTLR oracle counts message From/To endpoints and
+  // constructor targets as participants, and the renderer draws a box for each.
+  describe('message-introduced participants (#804)', () => {
+    it('collects the target of a sync message A.m()', () => {
+      expect(getParticipants(stateFor('Alice.save()'))).toEqual(new Set(['Alice']))
+    })
+
+    it('collects both endpoints of an async message A->B', () => {
+      expect(getParticipants(stateFor('Alice->Bob: hi'))).toEqual(new Set(['Alice', 'Bob']))
+    })
+
+    it('collects the constructor target of new X()', () => {
+      expect(getParticipants(stateFor('x = new Order()'))).toEqual(new Set(['Order']))
+    })
+
+    it('unions declared and message-introduced participants', () => {
+      const s = stateFor('@Actor Alice\nAlice->Bob: hi')
+      const p = getParticipants(s)
+      expect(p.has('Alice')).toBe(true)
+      expect(p.has('Bob')).toBe(true)
+    })
+
+    it('does NOT fabricate a participant from a message label', () => {
+      // `Hello` is the message Content/label, not a From/To endpoint.
+      const p = getParticipants(stateFor('Alice->Bob: Hello'))
+      expect(p.has('Hello')).toBe(false)
+    })
+
+    it('does NOT fabricate a participant from a method name', () => {
+      // `save` is a MethodName, not an endpoint.
+      const p = getParticipants(stateFor('Alice.save()'))
+      expect(p.has('save')).toBe(false)
+    })
+  })
+
   // ---- Reference stability -------------------------------------------------
   describe('reference stability (no needless recompute)', () => {
     it('returns the same Set reference when the doc changes but participants do not', () => {

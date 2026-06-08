@@ -89,6 +89,18 @@ export function resolveZone(state: EditorState, pos: number): SlashZone {
  * (the modifier slot, or a group's `{ }` body) the keywords are valid again.
  */
 function isNamingDeclaration(state: EditorState, pos: number): boolean {
+  // Text guard FIRST: when the name being typed is itself a reserved keyword
+  // (`group if`, `@Actor while`), the lexer emits a keyword token that escapes the
+  // Participant/Group subtree, so the tree walk below finds no declaration ancestor
+  // and wrongly reports "not naming" — leaking block keywords into the name slot
+  // (#806). A same-line marker (`group `/`@Annotation `/`<<stereo>> `) immediately
+  // before the cursor word is an unambiguous NAME slot regardless of how the token
+  // lexed. The line-start anchor keeps a NEXT-line `group\nif` (a real top-level `if`
+  // statement) offering keywords. The marker must be the FIRST word on the line, so a
+  // completed name + modifier slot (`@Actor Alice a`) does NOT match (Alice intervenes).
+  const before = state.doc.sliceString(Math.max(0, pos - 80), pos)
+  if (/(?:^|\n)[ \t]*(?:group|@\w+|<<[^>]+>>)[ \t]+\w*$/.test(before)) return true
+
   let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1)
   while (node && node.name !== 'Participant' && node.name !== 'Group') node = node.parent
   if (!node) return false
@@ -208,6 +220,18 @@ function atMessageEndpoint(state: EditorState, pos: number): boolean {
   return false
 }
 
+// True when the cursor sits inside an async-message LABEL (the free-text Content of
+// `A->B: …`). A label is neither a declaration nor a statement-start, so participant
+// annotations (`@Actor`, …) must never be offered there — even though the label sits
+// at document top level where `resolveZone` returns 'top' (#805). Walks ancestors
+// for a Content / AsyncMessage node.
+function isInsideMessageContent(state: EditorState, pos: number): boolean {
+  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
+    if (n.name === 'Content' || n.name === 'AsyncMessage') return true
+  }
+  return false
+}
+
 export function zenumlCompletions(context: CompletionContext): CompletionResult | null {
   const { state, pos } = context
 
@@ -255,7 +279,15 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
 
   // Annotations are ONLY valid where a ParticipantType is — the head. Gate the
   // whole branch on zone so typing "@A" inside a block does NOT offer @Actor etc.
-  if ((zone === 'head' || zone === 'top') && (typed.startsWith('@') || context.explicit)) {
+  // Also suppressed (a) immediately after a `.`/`->` trigger — that slot is a message
+  // endpoint, not a declaration, so an explicit Ctrl+Space must not surface @Actor
+  // (#803); and (b) inside an async-message label `A->B: @` (#805).
+  if (
+    !afterTrigger &&
+    !isInsideMessageContent(state, pos) &&
+    (zone === 'head' || zone === 'top') &&
+    (typed.startsWith('@') || context.explicit)
+  ) {
     options.push(...annotationCompletions())
   }
 
@@ -266,10 +298,15 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
         options.push({ label: name, type: 'variable', detail: 'participant', boost: 50 })
       }
     }
-    // Zone-gated keywords — but NOT while typing the name of an annotated
-    // participant (`@Actor a`): that slot is the participant NAME, not a keyword,
-    // so title/group/as must stay out of it.
-    if (!((zone === 'head' || zone === 'top') && isNamingDeclaration(state, pos))) {
+    // Zone-gated keywords — but NOT (a) while typing the name of an annotated
+    // participant (`@Actor a`): that slot is the participant NAME, not a keyword, so
+    // title/group/as must stay out of it; and NOT (b) immediately after a `.`/`->`
+    // trigger, where only a message endpoint participant is legal, never a keyword
+    // (#803).
+    if (
+      !afterTrigger &&
+      !((zone === 'head' || zone === 'top') && isNamingDeclaration(state, pos))
+    ) {
       options.push(...keywordsForZone(zone))
     }
   }
