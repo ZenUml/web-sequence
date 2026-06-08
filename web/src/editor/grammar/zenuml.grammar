@@ -17,12 +17,12 @@
   statement @left,
   group @left,
   stereotype @left,
+  label @left,
   message @left,
   participant @left,
   creation @left,
   reference @left,
-  divider @left,
-  label @left
+  divider @left
 }
 
 @skip { whitespace | Comment }
@@ -72,7 +72,10 @@ TitleContent { !title LineContent }
   // Numbers must be defined before Dot and be more specific
   Number { $[0-9]+ "." $[0-9]+ | $[0-9]+ }
 
-  Identifier { $[a-zA-Z_] $[a-zA-Z_0-9]* }
+  // Unicode letter ranges mirroring ANTLR's \p{L} (letters only; excludes ×÷ in Latin-1,
+  // symbols in Greek 0374-0375/0384-0387, and Katakana/Hiragana punctuation).
+  // lezer-generator does not support \p{L} — explicit \u{...} ranges used instead.
+  Identifier { $[a-zA-Z_\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{00FF}\u{0100}-\u{024F}\u{0370}-\u{03FF}\u{0400}-\u{04FF}\u{05D0}-\u{05EA}\u{0620}-\u{064A}\u{3040}-\u{309F}\u{30A0}-\u{30FF}\u{3400}-\u{4DBF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7A3}\u{FF21}-\u{FF3A}\u{FF41}-\u{FF5A}] $[a-zA-Z_0-9\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{00FF}\u{0100}-\u{024F}\u{0370}-\u{03FF}\u{0400}-\u{04FF}\u{05D0}-\u{05EA}\u{0620}-\u{064A}\u{3040}-\u{309F}\u{30A0}-\u{30FF}\u{3400}-\u{4DBF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7A3}\u{FF21}-\u{FF3A}\u{FF41}-\u{FF5A}]* }
   String { '"' (!["\\] | "\\" _)* '"' }
 
   Equals { "=" }
@@ -171,7 +174,7 @@ Stereotype {
   !stereotype OpenStereotype Name CloseStereotype
 }
 
-Label { !label AsKeyword Identifier? }
+Label { !label AsKeyword (Identifier | String) }
 
 Width { Number }
 

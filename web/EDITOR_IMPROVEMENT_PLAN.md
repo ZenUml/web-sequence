@@ -64,11 +64,22 @@ yarn typecheck && yarn lint
 | 4 | [#806](https://github.com/ZenUml/web-sequence/issues/806) | P9: block keyword leaks into name slot when typed token IS a reserved keyword | zenumlAutocomplete isNamingDeclaration | filed. Fix: same-line text guard |
 | 5 | [#805](https://github.com/ZenUml/web-sequence/issues/805) | K7: `@` inside a message label (`A->B: @`) offers participant annotations | zenumlAutocomplete:258 | filed. Fix: isInsideMessageContent guard |
 
+| 6 | [#808](https://github.com/ZenUml/web-sequence/issues/808) | editor grammar rejects string labels `as "The User"` the renderer accepts | grammar Label rule | FIXED (Label arg required, accepts Identifier\|String) |
+| 7 | [#809](https://github.com/ZenUml/web-sequence/issues/809) | editor rejects non-ASCII (Chinese) names the renderer accepts | grammar Identifier + autocomplete regexes | FIXED in 2 layers: grammar Unicode ranges + Unicode-aware completion (atMessageEndpoint/word/validFor) |
+
 **Bad tests (verified — fix the SPEC, not the product):** L4 (single-field snippet paints 0
 `.cm-snippetField` by CM design → assert 0 + `return value`), M7 (Shift-Tab no-op past last
 field w/o `$0` → assert `B->A: msgCaller`), V4 (pos 0 = `top` union, correct → assert
 hint-participant present, don't assert hint-sync absent), V7 (`}` line stays `block` by
 left-bias → press Enter to a new line first, then assert hint-participant).
+
+**P6 round 1 (i18n/quotes/special/scale — user-requested):** probed editor vs ANTLR oracle.
+Found #808 (string labels) + #809 (Unicode names, 2 layers). NOT bugs (editor correctly
+matches renderer): single-quote labels (`as 'x'`), emoji-led names — both rejected by the
+renderer too. Added: 9 unit tests (participantManager i18n/scale incl. 100-participant doc) +
+e2e area W (9 cases: Chinese completion, string/color labels, quotes, special chars, emoji
+no-crash, 40-msg long DSL). Screenshot proof: web/tmp/chinese-render.png (Chinese diagram
+renders end-to-end). 7 distinct bugs found+fixed total.
 
 ## Improvement backlog (real-user lens — refine as tests surface evidence)
 Priority H/M/L. These are hypotheses; the find-run + user-journey thinking promote them.

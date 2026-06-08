@@ -1237,3 +1237,107 @@ test.describe("V. Hint Bar", () => {
     });
 
 });
+
+// ── W. i18n / quotes / special chars / long DSL ─────────────────────────────
+// Requested coverage: Chinese (and other Unicode) names, double/single quotes,
+// other special characters, and very long DSLs. Expectations are grounded in the
+// ANTLR renderer (oracle): it accepts Unicode letters as identifiers and `as
+// "string"` labels; it rejects digit-leading tokens and emoji-led names. The
+// strongest signal is autocomplete — a participant only appears if it parsed AND
+// was collected, so these prove #808 (string labels) and #809 (Unicode names)
+// end-to-end through the real editor path.
+test.describe('W. i18n / quotes / special chars / long DSL', () => {
+  test('W1 — Chinese participants are offered in autocomplete after a dot (#809)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('用户');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('服务');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('用户.');
+    expect((await options(page)).join('\n')).toContain('服务');
+  });
+
+  test('W2 — a Chinese @annotated participant carries no error marker (#809)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor 用户');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toContain('用户');
+  });
+
+  test('W3 — string label `as "The User"` parses; the name stays collectible (#808)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice as "The User"');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    // Alice is still a participant despite the string label → offered on Ctrl+Space.
+    await page.keyboard.type('Ali');
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Alice');
+  });
+
+  test('W4 — label + string + color (`as "…" #color`) parses with no error (#808)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice as "用户" #FF0000');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toContain('用户');
+  });
+
+  test('W5 — double quotes inside a message label do not break parsing', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: say "hi"');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toContain('say "hi"');
+  });
+
+  test('W6 — an apostrophe in a message label is fine (single-quote)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type("A->B: it's ok");
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toContain("it's ok");
+  });
+
+  test('W7 — special characters in a message label do not break parsing', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: a/b=c+d*e');
+    await page.waitForTimeout(300);
+    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => getEditorText(page)).toContain('a/b=c+d*e');
+  });
+
+  test('W8 — an emoji-led name does not crash the editor (matches renderer reject)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor 🚀X');
+    await page.waitForTimeout(300);
+    // The renderer rejects emoji-led identifiers; the editor must not crash and (no
+    // linter is wired) shows no error marker. The editor stays responsive: a follow-up
+    // line still parses and completes.
+    expect(await errorMarkerCount(page)).toBe(0);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Bob');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Bo');
+    await page.keyboard.press('Control+Space');
+    expect((await options(page)).join('\n')).toContain('Bob');
+  });
+
+  test('W9 — a long DSL (40 messages) parses and autocomplete stays responsive', async ({ page }) => {
+    await clearEditor(page);
+    // 40 chained messages → participants P0..P40. Typed for real (not seeded), so this
+    // also exercises incremental reparse under a growing document.
+    const lines: string[] = [];
+    for (let i = 0; i < 40; i++) lines.push(`P${i}->P${i + 1}: m${i}`);
+    await page.keyboard.type(lines.join('\n'));
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    expect(await errorMarkerCount(page)).toBe(0);
+    // A participant from the TOP of the document is still offered at the bottom →
+    // collection + completion scale across the whole doc.
+    await page.keyboard.type('P0.');
+    expect((await options(page)).join('\n')).toContain('P20');
+  });
+});

@@ -170,6 +170,57 @@ describe('zenumlParticipantField + getParticipants', () => {
     })
   })
 
+  // ---- i18n / Unicode names, string labels, special chars, scale (#808/#809) ---
+  // Expected sets are grounded in the ANTLR oracle (oracleParticipants): the renderer
+  // accepts Unicode letters (CJK/kana/hangul/accented/Greek/Cyrillic) as identifiers
+  // and `as "string"` labels. The editor must agree.
+  describe('Unicode / quotes / special chars / scale', () => {
+    it('collects a bare Chinese participant name', () => {
+      expect(getParticipants(stateFor('用户'))).toEqual(new Set(['用户']))
+    })
+
+    it('collects Chinese message endpoints (用户->服务)', () => {
+      expect(getParticipants(stateFor('用户->服务: 请求'))).toEqual(new Set(['用户', '服务']))
+    })
+
+    it('collects a Chinese @annotated participant', () => {
+      expect(getParticipants(stateFor('@Actor 用户'))).toEqual(new Set(['用户']))
+    })
+
+    it('collects mixed ASCII+CJK+digit identifiers (user用户2)', () => {
+      expect(getParticipants(stateFor('user用户2'))).toEqual(new Set(['user用户2']))
+    })
+
+    it('collects names across scripts (kana, hangul, accented, Cyrillic)', () => {
+      expect(getParticipants(stateFor('ひらがな'))).toEqual(new Set(['ひらがな']))
+      expect(getParticipants(stateFor('한국'))).toEqual(new Set(['한국']))
+      expect(getParticipants(stateFor('café'))).toEqual(new Set(['café']))
+      expect(getParticipants(stateFor('Привет'))).toEqual(new Set(['Привет']))
+    })
+
+    it('a string label (as "…") does not add a participant — only the name is collected', () => {
+      // `Alice as "The User"` declares participant Alice with label "The User".
+      expect(getParticipants(stateFor('Alice as "The User"'))).toEqual(new Set(['Alice']))
+      expect(getParticipants(stateFor('@Actor Alice as "用户" #FF0000'))).toEqual(new Set(['Alice']))
+    })
+
+    it('does NOT fabricate from a digit-leading token (matches the renderer)', () => {
+      // `2fast` is not a valid identifier in the ANTLR renderer either.
+      expect(getParticipants(stateFor('2fast')).has('2fast')).toBe(false)
+    })
+
+    it('scales to a large diagram — collects all 100 message-introduced participants', () => {
+      // 100 messages P0->P1, P1->P2, … plus a trailing endpoint = participants P0..P100.
+      const lines: string[] = []
+      for (let i = 0; i < 100; i++) lines.push(`P${i}->P${i + 1}: m${i}`)
+      const set = getParticipants(stateFor(lines.join('\n')))
+      expect(set.size).toBe(101) // P0..P100
+      expect(set.has('P0')).toBe(true)
+      expect(set.has('P100')).toBe(true)
+      expect(set.has('m0')).toBe(false) // labels never fabricated, even at scale
+    })
+  })
+
   // ---- Reference stability -------------------------------------------------
   describe('reference stability (no needless recompute)', () => {
     it('returns the same Set reference when the doc changes but participants do not', () => {

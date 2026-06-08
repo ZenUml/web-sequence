@@ -212,11 +212,13 @@ function slashCompletions(zone: SlashZone): Completion[] {
 function atMessageEndpoint(state: EditorState, pos: number): boolean {
   const before = state.doc.sliceString(Math.max(0, pos - 40), pos)
   // After an arrow ("A->"), after a dot following a name ("Order."), or at the
-  // start of a line in a block (message source position).
-  if (/->\s*\w*$/.test(before)) return true
-  if (/[A-Za-z_]\w*\.\w*$/.test(before)) return true
+  // start of a line in a block (message source position). Identifier chars are
+  // Unicode-aware (`\p{L}\p{N}_`, not ASCII `\w`) so CJK / accented names like
+  // `用户.` are recognised as endpoints too (#809 — completion layer).
+  if (/->\s*[\p{L}\p{N}_]*$/u.test(before)) return true
+  if (/[\p{L}_][\p{L}\p{N}_]*\.[\p{L}\p{N}_]*$/u.test(before)) return true
   // Start of a fresh statement line (only leading whitespace since newline).
-  if (/(^|\n)\s*\w*$/.test(before)) return true
+  if (/(^|\n)\s*[\p{L}\p{N}_]*$/u.test(before)) return true
   return false
 }
 
@@ -262,7 +264,9 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   }
 
   // ---- NORMAL MODE ------------------------------------------------------
-  const word = context.matchBefore(/[\w@]*/)
+  // Unicode-aware word match (`\p{L}\p{N}_`, not ASCII `\w`) so the popup fires while
+  // typing CJK / accented participant names like `用户` (#809 — completion layer).
+  const word = context.matchBefore(/[\p{L}\p{N}_@]*/u)
   if (!word) return null
   // Nothing typed and not explicitly invoked: stay quiet — UNLESS the cursor
   // sits immediately after a trigger (`.` or `->`), where offering participant
@@ -316,7 +320,9 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
     from,
     to: word.to,
     options,
-    validFor: /^[\w@]*$/,
+    // Unicode-aware so the popup stays valid as the user keeps typing a CJK / accented
+    // name (#809).
+    validFor: /^[\p{L}\p{N}_@]*$/u,
   }
 }
 
