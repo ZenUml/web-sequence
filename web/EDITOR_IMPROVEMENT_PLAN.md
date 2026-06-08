@@ -151,3 +151,7 @@ mirrors #813), where CJK punctuation is legitimate content. Wired into the DSL l
 Tests: 14 unit (cjkAutocorrect.test.ts) + e2e area Z (3). e.g. `订单服务。save（）`→`订单服务.save()`,
 label `创建订单。完成（确认）` preserved. Extends the #809 Chinese-author support.
 - 2026-06-09 4th check: All-models weekly **58%**, Sonnet 18%, session reset to 3%. +1%. UNDER → continue.
+- 2026-06-09 5th check: All-models weekly **59%**, Sonnet 18%, session 6%. +1%. UNDER → continue.
+  CJK autocorrect (round 4) complete: punctuation + full-width space/digits + free-text preservation
+  incl. the empty-first-char label/title edge (AsyncMessage-past-Colon / Title-past-keyword guard).
+  21 unit + 3 e2e + demo (web/tmp/cjk-autocorrect-demo.png). Commits e986cba, +edge.

@@ -103,4 +103,21 @@ describe('cjkPunctuationAutocorrect', () => {
     })
   })
 
+
+  describe('empty free-text regions (first label/title char)', () => {
+    it('preserves 。 typed as the FIRST char of a message label', () => {
+      expect(type('A->B: ', 'A->B: '.length, '。')).toBe('A->B: 。')
+    })
+    it('preserves 。 typed immediately after the message colon', () => {
+      expect(type('A->B:', 5, '。')).toBe('A->B:。')
+    })
+    it('preserves 。 typed as the FIRST char of a title', () => {
+      expect(type('title ', 'title '.length, '。')).toBe('title 。')
+    })
+    it('still corrects 。 in the To-endpoint region (before the colon)', () => {
+      // Before the `:` is code (the To endpoint), so punctuation is corrected there.
+      expect(type('A->', 3, '。')).toBe('A->.')
+    })
+  })
+
 })

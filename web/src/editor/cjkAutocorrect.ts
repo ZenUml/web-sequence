@@ -109,6 +109,21 @@ export function isFreeTextSpan(state: EditorState, pos: number): boolean {
       nm === 'Label'
     )
       return true
+    // EMPTY free-text regions, where the Content/LineContent node does not exist yet
+    // (the user is typing the FIRST char of a label/title). Distinguish the label
+    // region from the From/To endpoints (both live under AsyncMessage) by the Colon:
+    // the cursor is in the label only once it is PAST the message's `:`.
+    if (nm === 'AsyncMessage') {
+      const colon = n.getChild('Colon')
+      if (colon && pos > colon.from) return true
+    }
+    // Title text begins after the `title` keyword.
+    if (nm === 'Title') {
+      const kw = n.getChild('TitleKeyword')
+      if (kw && pos > kw.to) return true
+    }
+    // Divider text (`== … ==`) is free text throughout.
+    if (nm === 'Divider') return true
   }
   return false
 }
