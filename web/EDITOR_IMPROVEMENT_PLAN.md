@@ -177,3 +177,5 @@ autocorrect. PAUSED for user direction (budget ~4% from the 65% cap; user away, 
 Resume options offered: wrap-up / new direction / more mining.
 - 2026-06-09 10th check: All-models weekly **62%**, Sonnet 18%. ~3% headroom. UNDER → continue.
   Still PAUSED for direction (deliverables complete; conserving budget while user away).
+- 2026-06-09 — Usage-guardrail cron e876aa05 CANCELLED by user. No scheduled jobs remain; no more
+  automated usage checks. Campaign complete + paused; awaiting direction.
