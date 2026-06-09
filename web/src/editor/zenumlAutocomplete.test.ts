@@ -141,12 +141,37 @@ describe('normal completions — participant names', () => {
   // Head so the source is populated; first-mention-only diagrams are a documented
   // participantManager gap, not this module's concern.
 
-  it('offers declared participant names after a "Name." method position', () => {
+  // The slot right after `Name.` is a METHOD-NAME slot (the renderer stores it as
+  // free-text Content, never a participant endpoint). So participant names must NOT
+  // be offered there — not the OTHER declared participants, and especially not the
+  // receiver itself (`OrderController.OrderController` is nonsense). Contrast `A->`,
+  // where the next token genuinely IS a participant (see the arrow test below).
+  it('does NOT offer participant names after a "Name." method slot', () => {
     const doc = '@Actor OrderController\n@Boundary Web\nOrderController.'
     const pos = doc.length
     const ls = labels(completeAt(doc, pos))
-    expect(ls).toContain('Web')
-    expect(ls).toContain('OrderController')
+    expect(ls).not.toContain('Web')
+    expect(ls).not.toContain('OrderController')
+  })
+
+  // The reported repro (#dot-method-slot): `A.m { B }`, type `.` after B. The cursor
+  // lands in B's method-name slot — offering participants A/B (incl. B itself → `B.B`)
+  // was the bug. After the dot the popup must stay empty.
+  it('suppresses participants right after the dot inside a block (A.m { B. })', () => {
+    const doc = 'A.m {\n  B.\n}'
+    const pos = doc.indexOf('B.') + 2 // cursor immediately after the dot
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).not.toContain('A')
+    expect(ls).not.toContain('B')
+  })
+
+  // BOUNDARY: the dot suppression must NOT bleed into the arrow endpoint. After `A->`
+  // the next token IS a participant, so names stay offered there.
+  it('STILL offers participant names after an arrow (A->) — a participant IS expected', () => {
+    const doc = '@Actor B\n@Actor C\nB->'
+    const pos = doc.length
+    const ls = labels(completeAt(doc, pos))
+    expect(ls).toContain('C')
   })
 
   it('offers participant names at message start inside a block', () => {

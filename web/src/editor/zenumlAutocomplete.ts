@@ -211,12 +211,12 @@ function slashCompletions(zone: SlashZone): Completion[] {
 /** True when the cursor is in a position where a message endpoint is plausible. */
 function atMessageEndpoint(state: EditorState, pos: number): boolean {
   const before = state.doc.sliceString(Math.max(0, pos - 40), pos)
-  // After an arrow ("A->"), after a dot following a name ("Order."), or at the
-  // start of a line in a block (message source position). Identifier chars are
-  // Unicode-aware (`\p{L}\p{N}_`, not ASCII `\w`) so CJK / accented names like
-  // `用户.` are recognised as endpoints too (#809 — completion layer).
+  // After an arrow ("A->"), or at the start of a line in a block (message source
+  // position). Identifier chars are Unicode-aware (`\p{L}\p{N}_`, not ASCII `\w`) so
+  // CJK / accented names are recognised too (#809 — completion layer). NOTE: a dot
+  // ("Order.") is deliberately NOT an endpoint — the slot after a dot is a free-text
+  // method name, and the caller suppresses participant names there via `afterDot`.
   if (/->\s*[\p{L}\p{N}_]*$/u.test(before)) return true
-  if (/[\p{L}_][\p{L}\p{N}_]*\.[\p{L}\p{N}_]*$/u.test(before)) return true
   // Start of a fresh statement line (only leading whitespace since newline).
   if (/(^|\n)\s*[\p{L}\p{N}_]*$/u.test(before)) return true
   return false
@@ -288,7 +288,17 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   // names with an empty word is exactly the point. The gate stays narrow on
   // purpose: a line-start trigger would fire the popup on every newline.
   const beforeWord = state.doc.sliceString(Math.max(0, word.from - 3), word.from)
-  const afterTrigger = /(->|\.)\s*$/.test(beforeWord)
+  // Two structurally different triggers sit before the word, and they want OPPOSITE
+  // completions:
+  //   - `A->`  : the next token IS a participant (the message To) → offer names.
+  //   - `Name.`: the next token is a free-text METHOD name (the renderer stores it as
+  //              Content, never a participant) → offer NOTHING. Participant names — and
+  //              especially the receiver itself (`B.B`) — are noise here.
+  // `afterTrigger` (either) still gates keyword/annotation suppression; `afterDot`
+  // additionally suppresses participant names.
+  const afterArrow = /->\s*$/.test(beforeWord)
+  const afterDot = /\.\s*$/.test(beforeWord)
+  const afterTrigger = afterArrow || afterDot
   if (word.from === word.to && !context.explicit && !afterTrigger) return null
 
   const from = word.from
@@ -311,8 +321,10 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   }
 
   if (!typed.startsWith('@')) {
-    // Participant names — boosted where a message endpoint is plausible.
-    if (zone === 'block' || atMessageEndpoint(state, pos)) {
+    // Participant names — boosted where a message endpoint is plausible. NEVER after a
+    // `.`: that slot is a free-text method name, not a participant endpoint (block zone
+    // would otherwise offer names there unconditionally).
+    if (!afterDot && (zone === 'block' || atMessageEndpoint(state, pos))) {
       for (const name of participantOptions(state, typed)) {
         options.push({ label: name, type: 'variable', detail: 'participant', boost: 50 })
       }

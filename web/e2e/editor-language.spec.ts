@@ -183,6 +183,25 @@ test.describe('participant autocomplete', () => {
 
     await expect.poll(() => getEditorText(page)).toContain('group a');
   });
+
+  // Bug regression: typing `.` after a name (`A.m { B }` -> `B.`) lands the cursor
+  // in B's METHOD-NAME slot. That slot expects a free-text method name, NOT a
+  // participant — so the participant popup must not appear (before the fix it
+  // offered A and B, including the receiver B itself -> `B.B`).
+  test('typing "." after a name in a block does NOT pop the participant popup', async ({ page }) => {
+    await clearEditor(page);
+    // Build `A.m { B }` via real keystrokes ({ auto-closes; Enter splits the body).
+    await page.keyboard.type('A.m {');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('B');
+    // THE keystroke under report:
+    await page.keyboard.type('.');
+    await page.waitForTimeout(300); // give the completion source a chance to fire
+
+    // No autocomplete popup at all after the dot (no participant rows to show).
+    await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
+    await expect.poll(() => getEditorText(page)).toContain('B.');
+  });
 });
 
 // ---------------------------------------------------------------------------
