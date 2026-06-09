@@ -175,3 +175,5 @@ variant → added ． U+FF0E, halfwidth ｡､, angle 〈〉, white parens ｟�
 189 e2e green; tree clean; 21 campaign commits. Deliverables done: 11 bugs (#803-813) + CJK
 autocorrect. PAUSED for user direction (budget ~4% from the 65% cap; user away, guardrails auto-firing).
 Resume options offered: wrap-up / new direction / more mining.
+- 2026-06-09 10th check: All-models weekly **62%**, Sonnet 18%. ~3% headroom. UNDER → continue.
+  Still PAUSED for direction (deliverables complete; conserving budget while user away).
