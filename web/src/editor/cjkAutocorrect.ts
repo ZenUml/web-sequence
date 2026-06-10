@@ -16,11 +16,19 @@
 // committed input: a transactionFilter sees every document change, whereas an
 // inputHandler can be bypassed by composition.
 
-import { EditorState, Transaction, type Extension, type TransactionSpec } from '@codemirror/state'
+import {
+  EditorSelection,
+  EditorState,
+  Transaction,
+  type Extension,
+  type TransactionSpec,
+} from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
 
-// Full-width / CJK punctuation → ASCII. Every entry is 1 codepoint → 1 codepoint, so
-// applying the remap never shifts any cursor/selection position.
+// Full-width / CJK punctuation → ASCII. Almost every entry is 1 codepoint → 1 codepoint;
+// the lone exception is `→` → `->` (1 → 2). When any replacement changes length, the
+// filter re-maps the selection explicitly (see the delta logic below) instead of relying
+// on positions being preserved.
 const CJK_TO_ASCII: Record<string, string> = {
   // Periods: ideographic (U+3002), fullwidth (U+FF0E), halfwidth katakana (U+FF61).
   '。': '.',
@@ -49,6 +57,9 @@ const CJK_TO_ASCII: Record<string, string> = {
   '】': ']',
   '〔': '[',
   '〕': ']',
+  // Fullwidth square brackets (U+FF3B/FF3D) — siblings of 【】〔〕 above (#815).
+  '［': '[',
+  '］': ']',
   '〖': '{',
   '〗': '}',
   '＜': '<',
@@ -60,6 +71,8 @@ const CJK_TO_ASCII: Record<string, string> = {
   '＂': '"',
   '‘': "'",
   '’': "'",
+  // Fullwidth apostrophe (U+FF07) — sibling of ‘’ above (#815).
+  '＇': "'",
   '＃': '#',
   '＠': '@',
   '＝': '=',
@@ -77,6 +90,14 @@ const CJK_TO_ASCII: Record<string, string> = {
   '＾': '^',
   '｀': '`',
   '＼': '\\',
+  // Fullwidth low line (U+FF3F) — unlike fullwidth LETTERS, the grammar's Identifier
+  // does NOT accept U+FF3F, so an uncorrected ＿ inside an identifier breaks the
+  // parse (#815).
+  '＿': '_',
+  // Rightwards arrow (U+2192) — what an IME's "→" candidate or a symbol picker emits
+  // where the DSL needs the two-char `->`. The ONLY multi-char replacement in the map;
+  // the filter's selection remap below keeps the cursor after the inserted `->`.
+  '→': '->',
   // Ideographic (full-width) space — between code tokens it is not whitespace to the
   // lexer and breaks the parse; ASCII-space it. (In a label it is preserved.)
   '　': ' ',
@@ -156,29 +177,47 @@ export const cjkPunctuationAutocorrect: Extension = EditorState.transactionFilte
 
     let changed = false
     const specs: { from: number; to: number; insert: string }[] = []
-    tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    // Length deltas of remapped inserts, keyed by the insert's END position in the
+    // ORIGINAL transaction's new-doc coords (toB). Almost every remap is 1:1 (delta 0);
+    // `→` → `->` is +1 and shifts every selection position at/after it.
+    const deltas: { toB: number; delta: number }[] = []
+    tr.changes.iterChanges((fromA, toA, _fromB, toB, inserted) => {
       const text = inserted.toString()
       if (text && hasCjkPunct(text) && !isFreeTextSpan(tr.startState, fromA)) {
         const out = remap(text)
         if (out !== text) {
           changed = true
           specs.push({ from: fromA, to: toA, insert: out })
+          if (out.length !== text.length) deltas.push({ toB, delta: out.length - text.length })
           return
         }
       }
       specs.push({ from: fromA, to: toA, insert: text })
     })
     if (!changed) return tr
-    // 1:1 remaps preserve every position, so the original selection stays valid. CRUCIAL:
-    // re-attach the original userEvent — a transactionFilter that returns a fresh spec
-    // otherwise drops it, and CodeMirror's autocompletion (activateOnTyping) and other
-    // input-driven behaviour key off `input.type`. Without this, the popup would not open
-    // after an auto-corrected `.` (e.g. `订单服务。` → `订单服务.` with no participant popup).
+    // 1:1 remaps preserve every position, so the original selection is usually valid
+    // as-is. A length-changing remap (`→` → `->`) shifts everything at/after the
+    // rewritten insert: re-map each selection position by the cumulative delta of the
+    // remapped inserts that end at or before it (typing cursors sit exactly at an
+    // insert's end, so `<=` keeps them after the replacement text).
+    let selection = tr.selection
+    if (selection && deltas.length) {
+      const adj = (p: number) => deltas.reduce((acc, d) => acc + (d.toB <= p ? d.delta : 0), p)
+      selection = EditorSelection.create(
+        selection.ranges.map((r) => EditorSelection.range(adj(r.anchor), adj(r.head))),
+        selection.mainIndex,
+      )
+    }
+    // CRUCIAL: re-attach the original userEvent — a transactionFilter that returns a
+    // fresh spec otherwise drops it, and CodeMirror's autocompletion (activateOnTyping)
+    // and other input-driven behaviour key off `input.type`. Without this, the popup
+    // would not open after an auto-corrected `.` (e.g. `订单服务。` → `订单服务.` with
+    // no participant popup).
     const userEvent = tr.annotation(Transaction.userEvent)
     return [
       {
         changes: specs,
-        selection: tr.selection,
+        selection,
         scrollIntoView: tr.scrollIntoView,
         ...(userEvent ? { userEvent } : {}),
       },

@@ -51,9 +51,34 @@ describe('cjkPunctuationAutocorrect', () => {
     it('corrects a whole pasted run of full-width punctuation in code', () => {
       expect(type('A', 1, '。b（）', 'input.paste')).toBe('A.b()')
     })
+
+    // `→` → `->` is the map's only 1→2 replacement (feature, TEST_TREES.md gap 19 /
+    // TT-A9 class): an IME arrow candidate becomes the DSL's two-char arrow, and the
+    // selection remap must land the cursor AFTER the `->`, not between `-` and `>`.
+    it('→ corrects to -> in a code position', () => {
+      expect(type('A', 1, '→')).toBe('A->')
+    })
+
+    it('→ correction moves the typing cursor past the inserted ->', () => {
+      const tr = stateFor('A').update({
+        changes: { from: 1, insert: '→' },
+        selection: { anchor: 2 }, // where a real typing transaction puts the cursor
+        userEvent: 'input.type',
+      })
+      expect(tr.state.doc.toString()).toBe('A->')
+      expect(tr.state.selection.main.head).toBe(3) // after `->`, shifted by the remap
+    })
+
+    it('→ corrects inside a pasted mixed run (with the cursor shift compounding)', () => {
+      expect(type('A', 1, '→B：hi', 'input.paste')).toBe('A->B:hi')
+    })
   })
 
   describe('preserves CJK punctuation in free-text', () => {
+    it('keeps → inside a message label (no arrow correction in free text)', () => {
+      expect(type('A->B: x', 'A->B: x'.length, '→')).toBe('A->B: x→')
+    })
+
     it('keeps 。 inside a message label', () => {
       // `A->B: 你好` then type `。` at the end (inside the Content label).
       expect(type('A->B: 你好', 'A->B: 你好'.length, '。')).toBe('A->B: 你好。')
@@ -172,17 +197,10 @@ describe('cjkPunctuationAutocorrect', () => {
       return !isLetter(cp) && !isDigit(cp)
     })
 
-    // CANDIDATE BUG #815 TT-A22 (TEST_TREES.md): four fullwidth punctuation chars are
-    // NOT corrected at HEAD — ＇ U+FF07 (→ '), ［ U+FF3B (→ [), ］ U+FF3D (→ ]),
-    // ＿ U+FF3F (→ _) — even though the map corrects their close siblings
-    // (‘’ → ', 【】〔〕 → [], and the grammar's Identifier does NOT accept ＿ the
-    // way it accepts fullwidth letters). it.fails documents the divergence from
-    // the independent table; flip into the green test when the map is completed.
-    const DIVERGENT_AT_HEAD = new Set(['＇', '［', '］', '＿'])
-
-    it('every fullwidth punctuation char (except known-divergent) corrects to cp − 0xFEE0', () => {
+    // #815 TT-A22 (TEST_TREES.md): FIXED — ＇ ［ ］ ＿ joined the map, so the
+    // independent table now holds for the WHOLE punctuation subset, no exclusions.
+    it('every fullwidth punctuation char corrects to cp − 0xFEE0', () => {
       for (const ch of punctuation) {
-        if (DIVERGENT_AT_HEAD.has(ch)) continue
         expect(
           type('Order', 5, ch),
           `U+${ch.codePointAt(0)!.toString(16).toUpperCase()} ${ch} should correct to ${toAscii(ch)}`,
@@ -190,8 +208,10 @@ describe('cjkPunctuationAutocorrect', () => {
       }
     })
 
-    it.fails('＇ ［ ］ ＿ correct to their ASCII counterparts (divergent at HEAD — see comment)', () => {
-      for (const ch of DIVERGENT_AT_HEAD) {
+    // Regression guard for #815 specifically (subsumed by the enumeration above,
+    // kept as the named record of the gap class).
+    it('＇ ［ ］ ＿ correct to their ASCII counterparts (#815)', () => {
+      for (const ch of ['＇', '［', '］', '＿']) {
         expect(
           type('Order', 5, ch),
           `U+${ch.codePointAt(0)!.toString(16).toUpperCase()} ${ch} should correct to ${toAscii(ch)}`,
