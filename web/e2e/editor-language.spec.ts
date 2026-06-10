@@ -21,6 +21,9 @@ import {
   acceptCompletion,
   errorMarkerCount,
   openBlockWithoutAutoClose,
+  snippetFieldCount,
+  tokenSpans,
+  baseColor,
 } from './helpers/editor';
 
 test.beforeEach(async ({ page }) => {
@@ -205,6 +208,119 @@ test.describe('participant autocomplete', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Journey 3a — popup filter lifecycle under Backspace (TT-A14) and mouse
+// acceptance (TT-A31): the popup must be drivable BACKWARD (Backspace) and by
+// POINTER, not just by forward typing + Enter.
+// ---------------------------------------------------------------------------
+test.describe('popup Backspace lifecycle + mouse acceptance', () => {
+  // TT-A14 — Backspace with the popup open WIDENS the filter (rows the narrower
+  // prefix excluded come back); Backspace past the word start closes the popup.
+  test('TT-A14 — Backspace widens the popup filter; Backspace past the word start closes it', async ({
+    page,
+  }) => {
+    await clearEditor(page);
+    // `Adam` matches the 1-char prefix `A` but NOT `Al` (no `l` anywhere), so the
+    // Al -> A Backspace observably WIDENS the row set. (CM matches by SUBSEQUENCE,
+    // not prefix, so the pair must differ on a char's presence, not its position.)
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Adam');
+    await page.keyboard.press('Enter');
+
+    await page.keyboard.type('Al');
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(300); // let the source settle past CM's 75ms interactionDelay
+    const narrowed = await completionOptionTexts(page);
+    expect(narrowed.join('\n')).toContain('Alice');
+    expect(narrowed.join('\n')).not.toContain('Adam'); // filtered out by the `l`
+
+    await page.keyboard.press('Backspace'); // `Al` -> `A`: refilter, wider
+    await expect
+      .poll(async () => (await completionOptionTexts(page)).join('\n'))
+      .toContain('Adam'); // re-entered the row set
+    const widened = await completionOptionTexts(page);
+    expect(widened.join('\n')).toContain('Alice'); // still there
+    expect(widened.length).toBeGreaterThan(narrowed.length); // strictly MORE rows
+
+    await page.keyboard.press('Backspace'); // past the word start (typed trigger)
+    await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
+  });
+
+  // TT-A31 — clicking a popup row with the MOUSE accepts it identically to Enter.
+  test('TT-A31 — clicking the @Actor row inserts @Actor (identical to Enter)', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@');
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(300);
+    await page.locator('.cm-tooltip-autocomplete li', { hasText: '@Actor' }).first().click();
+    await expect.poll(() => getEditorText(page)).toBe('@Actor');
+  });
+
+  // TT-A31 — for a slash-SNIPPET row, mouse accept must also activate the tab stops
+  // (the b05e795 identity regression killed exactly this snippetState).
+  test('TT-A31 — clicking the /sync row applies the snippet WITH live tab stops', async ({ page }) => {
+    await openSlashPopup(page, 'block');
+    await page.keyboard.type('sync'); // narrow to /sync
+    await page.waitForTimeout(300);
+    await page.locator('.cm-tooltip-autocomplete li', { hasText: '/sync' }).first().click();
+    // Template applied (placeholders in place) AND its tab stops are LIVE.
+    await expect.poll(() => getEditorText(page)).toContain('A.method() {');
+    expect(await snippetFieldCount(page)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Journey 3c — keyword rows insert bare words; participants outrank keywords
+// in a mixed popup (TT-A19).
+// ---------------------------------------------------------------------------
+test.describe('keyword acceptance + mixed-popup ordering', () => {
+  // TT-A19 — accepting a KEYWORD row inserts the bare word: no snippet template,
+  // no tab stops, no placeholder artifacts.
+  test('TT-A19 — Tab on the `title` keyword row inserts the bare word `title`', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('ti');
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(300);
+    // `title` is the top row (word-start match outranks scattered subsequences
+    // like criTIcal), so Tab accepts it.
+    const rows = await completionOptionTexts(page);
+    expect(rows[0]).toContain('title');
+    await page.keyboard.press('Tab');
+    await expect.poll(() => getEditorText(page)).toBe('title');
+    expect(await snippetFieldCount(page)).toBe(0); // bare word — no snippet artifacts
+  });
+
+  // TT-A19 — in a mixed popup (participants + keywords), participant rows sort
+  // ABOVE keyword rows (boost 50).
+  test('TT-A19 — participant rows sort above keyword rows in a mixed block popup', async ({
+    page,
+  }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Bob');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alice.run() {');
+    await page.keyboard.press('Enter'); // cursor on the indented body line (block zone)
+    await page.keyboard.press('Control+Space'); // explicit: mixed participants + keywords
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(300);
+
+    const rows = await completionOptionTexts(page);
+    const idxAlice = rows.findIndex((r) => r.includes('Alice') && r.includes('participant'));
+    const idxBob = rows.findIndex((r) => r.includes('Bob') && r.includes('participant'));
+    // First keyword row, identified by a keyword detail string (label+detail concat).
+    const idxKeyword = rows.findIndex((r) => /Conditional \(alt\) block|Loop block|Parallel block/.test(r));
+    expect(idxAlice).toBeGreaterThanOrEqual(0);
+    expect(idxBob).toBeGreaterThanOrEqual(0);
+    expect(idxKeyword).toBeGreaterThanOrEqual(0);
+    // Boost 50 puts EVERY participant row above the first keyword row.
+    expect(idxAlice).toBeLessThan(idxKeyword);
+    expect(idxBob).toBeLessThan(idxKeyword);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Journey 3b — Tab ACCEPTS the highlighted completion (it must outrank @uiw's
 // indentWithTab). Regression: @uiw/react-codemirror unshifts indentWithTab at
 // high precedence, so Tab hit indentMore and inserted spaces in front of `@`
@@ -337,6 +453,55 @@ test.describe('syntax highlighting', () => {
     // Identical colour proves the message is parsed structurally the same with or
     // without a preceding declaration — the editor-integration payoff of the fix.
     expect(declaredColor, 'declare-then-message should colour "Hello" as content').toBe(loneColor);
+  });
+
+  // TT-H14 (vanilla half) — undo reverts text AND its highlight spans together (no
+  // orphaned token spans); redo restores both. The autocorrect-undo half is owned by
+  // catalog-extended Z7.
+  test('TT-H14 — undo/redo revert and restore text + token highlights atomically', async ({
+    page,
+  }) => {
+    await clearEditor(page);
+    // Let history's newGroupDelay (500ms) lapse so the typed run below does NOT
+    // merge into clearEditor's delete event (same caveat as catalog-extended Z7).
+    await page.waitForTimeout(600);
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Escape'); // popup hygiene
+    await page.waitForTimeout(300); // let the tree + highlight settle
+
+    const before = (await tokenSpans(page)).find((s) => s.text === '@Actor');
+    expect(before, 'expected a styled span for @Actor').toBeTruthy();
+    expect(before!.color).not.toBe(await baseColor(page)); // genuinely highlighted
+
+    await page.keyboard.press('ControlOrMeta+z'); // the typed run is ONE history group
+    // Text gone (an empty CM doc's .cm-content innerText is a lone '\n')…
+    await expect.poll(() => getEditorText(page)).toBe('\n');
+    // …and NO orphaned highlight spans survive it.
+    expect(await tokenSpans(page)).toEqual([]);
+
+    await page.keyboard.press('ControlOrMeta+Shift+z'); // redo restores both
+    await expect.poll(() => getEditorText(page)).toBe('@Actor Alice');
+    await page.waitForTimeout(300);
+    const after = (await tokenSpans(page)).find((s) => s.text === '@Actor');
+    expect(after, 'expected the @Actor span restored by redo').toBeTruthy();
+    expect(after!.color).toBe(before!.color); // identical highlight, not just text
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Journey 5b — editor chrome: the code font (TT-H34).
+// ---------------------------------------------------------------------------
+test.describe('editor chrome', () => {
+  // TT-H34 — regression gate for 42136b9: `font-family: FiraCode` (camel-cased
+  // setting, no fallback, no bundled web font) fell back to the browser's
+  // PROPORTIONAL serif-ish default. The resolved .cm-content font-family must end
+  // in a monospace stack and must not name any serif fallback.
+  test('TT-H34 — .cm-content resolves to a monospace font stack, not a serif fallback', async ({
+    page,
+  }) => {
+    const family = await editorContent(page).evaluate((e) => getComputedStyle(e).fontFamily);
+    expect(family).toMatch(/monospace\s*$/i); // generic monospace terminates the stack
+    expect(family).not.toMatch(/serif/i); // no serif / sans-serif anywhere in it
   });
 });
 

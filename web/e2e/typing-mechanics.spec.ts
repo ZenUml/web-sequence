@@ -1,7 +1,9 @@
 // typing-mechanics.spec.ts — TEST_TREES.md typing/indent mechanics gaps
-// (TT-I1, TT-I3, TT-I9, TT-I10, TT-I11, TT-I12, TT-I20), driven at KEYSTROKE
-// level against the real preview build, asserting OBSERVABLE end state (final
-// editor text) only — same contract as editor-language.spec.ts.
+// (TT-I1, TT-I3, TT-I9, TT-I10, TT-I11, TT-I12, TT-I20; TT-A16 selection
+// type-over; decision pins D5/D6), driven at KEYSTROKE level against the real
+// preview build, asserting OBSERVABLE end state (final editor text; for TT-A16a
+// also the popup rows, an equally observable end state) — same contract as
+// editor-language.spec.ts.
 //
 // Mechanics under test live in CodeMirror extensions the unit layer cannot run
 // faithfully (jsdom has no real keymap/closeBrackets dispatch — taxonomy class 7
@@ -14,7 +16,13 @@
 //     editor's Enter binding accepts an open popup instead of inserting \n.
 
 import { test, expect } from '@playwright/test';
-import { seedAndOpen, clearEditor, getEditorText, enterParBlock } from './helpers/editor';
+import {
+  seedAndOpen,
+  clearEditor,
+  getEditorText,
+  enterParBlock,
+  completionOptionTexts,
+} from './helpers/editor';
 
 test.beforeEach(async ({ page }) => {
   await seedAndOpen(page);
@@ -135,5 +143,87 @@ test.describe('indentation mechanics', () => {
     await expect.poll(() => getEditorText(page)).toBe('  A->B: one\n  C->D: two');
     await page.keyboard.press('Shift+Tab');
     await expect.poll(() => getEditorText(page)).toBe('A->B: one\nC->D: two');
+  });
+
+  // D5 (TEST_TREES.md decisions): Tab mid-line = line indent, declared intended
+  // With no popup and no snippet active, Tab anywhere INSIDE a statement falls
+  // through the completion keymap to indentWithTab/indentMore — the WHOLE line
+  // shifts one unit; no literal tab/spaces are injected at the cursor.
+  test('D5 — Tab mid-line (inside a label, no popup/snippet) indents the whole line one unit', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: hello');
+    await page.keyboard.press('Escape'); // ensure no popup: Tab must hit the indent path
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft'); // cursor inside `hello`
+    await page.keyboard.press('Tab');
+    // One unit (2 spaces) at the LINE head — nothing inserted mid-word.
+    await expect.poll(() => getEditorText(page)).toBe('  A->B: hello');
+  });
+});
+
+test.describe('selection type-over (TT-A16)', () => {
+  // TT-A16a — typing a letter over a selected message ENDPOINT replaces the
+  // selection, and the endpoint popup reflects the COLLAPSED cursor's new prefix
+  // (the replaced word is gone; the popup filters on the fresh char).
+  test('TT-A16 — letter over a selected endpoint: selection replaced, popup tracks the collapsed cursor', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('@Actor Alice');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('@Actor Bob');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Alice->Bob: hi');
+    await page.keyboard.press('Escape'); // popup hygiene before navigating
+    // Select the To endpoint `Bob` (Home, 7 right past `Alice->`, 3 shift-right).
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowRight');
+    for (let i = 0; i < 3; i++) await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.type('A'); // type-over: replaces the selection
+    await expect.poll(() => getEditorText(page)).toContain('Alice->A: hi');
+    // The popup fired at the collapsed cursor after `->A`: Alice matches the new
+    // prefix; Bob (the just-replaced token) does not subsequence-match `A`.
+    await page.locator('.cm-tooltip-autocomplete').first().waitFor({ timeout: 5000 });
+    await page.waitForTimeout(300);
+    const rows = (await completionOptionTexts(page)).join('\n');
+    expect(rows).toContain('Alice');
+    expect(rows).not.toContain('Bob');
+  });
+
+  // TT-A16b — a CJK `。` typed OVER a selected word in a CODE position: the
+  // replacement is classified at the range START (left context = code, per-change
+  // classification in cjkAutocorrect.ts) → corrected to `.`.
+  test('TT-A16 — 。 typed over a selected code word corrects to `.`', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('OrderService');
+    await page.keyboard.press('Escape');
+    for (let i = 0; i < 7; i++) await page.keyboard.press('Shift+ArrowLeft'); // select `Service`
+    await page.keyboard.type('。'); // insertText path (Playwright types CJK as input)
+    await expect.poll(() => getEditorText(page)).toBe('Order.');
+  });
+
+  // TT-A16c — the same type-over INSIDE a label (free text): the `。` is content
+  // and must be PRESERVED.
+  test('TT-A16 — 。 typed over selected label text is preserved', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('A->B: hello there');
+    await page.keyboard.press('Escape');
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft'); // select `there`
+    await page.keyboard.type('。');
+    await expect.poll(() => getEditorText(page)).toBe('A->B: hello 。');
+  });
+});
+
+test.describe('paste mechanics', () => {
+  // D6 (TEST_TREES.md decisions): paste re-indentation is DEFERRED — verbatim
+  // paste is the contract; pin it. ASCII-only content so the CJK autocorrect
+  // classification cannot interact with this contract.
+  test('D6 — pasting a 2-line block with foreign 6-space indentation inserts it verbatim', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await clearEditor(page);
+    await page.evaluate(() =>
+      navigator.clipboard.writeText('      A->B: one\n      C->D: two'),
+    );
+    await page.keyboard.press('ControlOrMeta+v'); // paste at column 0 of the empty doc
+    // VERBATIM: the foreign 6-space indentation survives on BOTH lines — no
+    // re-indent to this editor's 2-space unit, no trim.
+    await expect.poll(() => getEditorText(page)).toBe('      A->B: one\n      C->D: two');
   });
 });

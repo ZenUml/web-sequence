@@ -262,6 +262,32 @@ describe('normal completions — zone-gated keywords', () => {
     expect(ls).toContain('title')
     expect(ls).toContain('group')
   })
+
+  // TT-A19 — accepting a keyword row inserts the BARE word. A keyword Completion
+  // carries no `apply` (and is not a snippetCompletion), so CodeMirror's default
+  // accept inserts exactly the label — no template, no tab stops, no artifacts.
+  it('TT-A19 — keyword completions carry no apply/snippet (bare-word insert)', () => {
+    const result = completeAt('ti', 2)
+    const title = result!.options.find((o) => o.label === 'title')
+    expect(title).toBeTruthy()
+    expect(title!.type).toBe('keyword')
+    expect(title!.apply).toBeUndefined()
+  })
+
+  // TT-A19 — in a mixed popup (participants + keywords, e.g. an empty word inside
+  // a block), participant rows carry boost 50 and keyword rows carry none, so
+  // participants sort ABOVE keywords (CM ranks by boost at equal match score).
+  it('TT-A19 — participant rows boost 50 above unboosted keyword rows (mixed popup)', () => {
+    const doc = '@Actor Alice\nwhile (x) {\n  \n}'
+    const pos = doc.indexOf('{') + 3 // blank statement line inside the block
+    const result = completeAt(doc, pos, true)
+    const alice = result!.options.find((o) => o.label === 'Alice')
+    const keyword = result!.options.find((o) => o.type === 'keyword')
+    expect(alice).toBeTruthy()
+    expect(keyword).toBeTruthy()
+    expect(alice!.boost).toBe(50)
+    expect(keyword!.boost ?? 0).toBeLessThan(50)
+  })
 })
 
 describe('normal completions — annotations', () => {
