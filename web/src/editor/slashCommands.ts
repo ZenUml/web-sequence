@@ -2,7 +2,7 @@
 //
 // Pure data — the single source of truth shared by the autocomplete source
 // (`zenumlAutocomplete.ts`, which turns these into a `/`-triggered completion
-// source) and the Hint Bar (`HintBar.tsx`, which lists the commands available at
+// source (the in-editor '/' popup; the former HintBar strip was removed at
 // the cursor's current zone). Keep this JSX-free and dependency-free.
 //
 // `template` uses CodeMirror's snippet syntax (`@codemirror/autocomplete`'s

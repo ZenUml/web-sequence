@@ -144,7 +144,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       languageExtensions.push(Prec.highest(keymap.of(zenumlCompletionKeymap)));
       bindings.push(...completionKeymap);
       // Emit the cursor's parse zone (head | block) when the selection or doc
-      // changes — feeds the context-sensitive Hint Bar. Reads onZoneChange via a
+      // changes — lets the host react to cursor zone changes. Reads onZoneChange via a
       // ref so the memo can stay keyed on `language`.
       languageExtensions.push(
         EditorView.updateListener.of((update) => {

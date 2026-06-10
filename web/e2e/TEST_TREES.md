@@ -931,6 +931,10 @@ CONTRACTS — tests pin them; changing one is a product decision, not a refactor
 
 ## Status updates (2026-06-10, same day as authoring)
 
+> **Update 5 (later same day): HintBar REMOVED** at the product owner's request — tree leaves
+> referencing the Hint Bar (and catalog areas I/V) are retired; the `/` popup remains the sole
+> slash-command surface. AppRoot.test.tsx guards the panel's absence.
+
 First implementation tranche landed (unit: `npx vitest run src/editor/`; e2e: `typing-mechanics.spec.ts`):
 
 - **Implemented → covered**: TT-H1, TT-H9/H36 (free-text keyword-color suite, `zenumlLanguage.test.ts`); TT-A22 (anti-mirroring enumeration, `cjkAutocorrect.test.ts`); TT-I42 (indent invariant gate, NEW `indentInvariant.test.ts` — `group` covered at depth 1 only, head-level by grammar); TT-I1, I3, I9, I10, I11, I12, I20 (NEW `e2e/typing-mechanics.spec.ts`, 7 tests).

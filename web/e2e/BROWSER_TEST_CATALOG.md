@@ -303,3 +303,8 @@ leaf marked covered/GAP/DEBATABLE with refs back to these area IDs and the unit 
 (pair-deletion, type-over, Enter-continuation/closer-column indent, Shift-Tab, multi-line
 Tab) + unit suites (free-text keyword colors, half-typed states, CJK anti-mirror
 enumeration, indent invariant gate). Bugs found: #814, #815.
+
+> **2026-06-10 — HintBar removed.** Areas **I** (Hint Bar, 2 cases) and **V** (extended Hint Bar)
+> are retired with the feature: the strip above the editor was removed at the product owner's
+> request ("remove the command panel and related code"). Slash commands remain fully covered
+> by the in-editor `/` popup (areas B, L, M). `AppRoot.test.tsx` now guards the panel's ABSENCE.

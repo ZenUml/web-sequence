@@ -19,7 +19,6 @@ import {
   enterParBlock,
   tokenSpans,
   baseColor,
-  hintBarIds,
   errorMarkerCount,
 } from './helpers/editor';
 
@@ -1160,108 +1159,7 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
 
 });
 
-test.describe("V. Hint Bar", () => {
-  test('V1 — group body shows only participant/group hints', async ({ page }) => {
-      await clearEditor(page);
-      await page.keyboard.type('group G {');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(300); // let the zone updateListener settle the bar
-      const ids = await hintBarIds(page);
-      expect(ids).toContain('hint-participant');
-      expect(ids).toContain('hint-group');
-      expect(ids).not.toContain('hint-sync');
-    });
-
-  test('V2 — block bar exposes the full block command set', async ({ page }) => {
-      await enterParBlock(page);
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      for (const id of [
-        'hint-sync', 'hint-async', 'hint-return', 'hint-reply', 'hint-new',
-        'hint-if', 'hint-while', 'hint-par', 'hint-try', 'hint-section',
-        'hint-ref', 'hint-note',
-      ]) {
-        expect(ids).toContain(id);
-      }
-    });
-
-  test('V3 — block bar excludes both head commands', async ({ page }) => {
-      await enterParBlock(page);
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      expect(ids).not.toContain('hint-participant');
-      expect(ids).not.toContain('hint-group');
-    });
-
-  test('V4 — bar updates as the cursor leaves the block', async ({ page }) => {
-      await clearEditor(page);
-      await page.keyboard.type('@Actor Alice');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('par {');
-      await page.keyboard.press('Enter'); // cursor in StatementBraceBlock body
-      await page.waitForTimeout(300);
-      expect(await hintBarIds(page)).toContain('hint-sync');
-      // Move INTO the @Actor declaration text (Home→pos0 is the doc boundary, which
-      // resolves to the 'top' union; a position ON the declaration token resolves to
-      // 'head'). End of line 1 sits inside the Participant node → zone 'head'.
-      await page.keyboard.press('ControlOrMeta+Home');
-      await page.keyboard.press('End');
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      expect(ids).not.toContain('hint-sync'); // head zone: no block commands
-      expect(ids).toContain('hint-participant');
-    });
-
-  test('V5 — top level shows the union of declaration + message hints', async ({ page }) => {
-      await clearEditor(page);
-      await page.keyboard.type('A->B: hi');
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      expect(ids).toContain('hint-participant');
-      expect(ids).toContain('hint-sync');
-    });
-
-  test('V6 — block bar renders exactly 12 chips', async ({ page }) => {
-      await enterParBlock(page);
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      expect(ids).toHaveLength(12);
-      expect(ids).not.toContain('hint-participant');
-    });
-
-  test('V7 — opening a line below the block restores top-level hints', async ({ page }) => {
-      await enterParBlock(page); // par {\n  |\n}
-      await page.waitForTimeout(300);
-      expect(await hintBarIds(page)).toContain('hint-sync');
-      // The `}` delimiter is structurally INSIDE the StatementBraceBlock (left-bias
-      // resolveInner keeps the close brace in 'block'), so landing on the `}` line is
-      // still 'block'. Open a fresh line BELOW the block to genuinely return to top level.
-      await page.keyboard.press('ControlOrMeta+End'); // doc end (after `}`)
-      await page.keyboard.press('Enter'); // new top-level line below the block
-      await page.waitForTimeout(300);
-      expect(await hintBarIds(page)).toContain('hint-participant');
-    });
-
-  test('V8 — group body excludes every block id', async ({ page }) => {
-      await clearEditor(page);
-      await page.keyboard.type('group G {');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      for (const id of ['hint-sync', 'hint-if', 'hint-while', 'hint-try', 'hint-return', 'hint-note']) {
-        expect(ids).not.toContain(id);
-      }
-    });
-
-  test('V9 — block bar surfaces both return and reply', async ({ page }) => {
-      await enterParBlock(page);
-      await page.waitForTimeout(300);
-      const ids = await hintBarIds(page);
-      expect(ids).toContain('hint-return');
-      expect(ids).toContain('hint-reply');
-    });
-
-});
+// ── V. Hint Bar — REMOVED 2026-06-10 with the panel itself. ──────────────────
 
 // ── W. i18n / quotes / special chars / long DSL ─────────────────────────────
 // Requested coverage: Chinese (and other Unicode) names, double/single quotes,

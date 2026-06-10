@@ -2,7 +2,7 @@
 // 1:1 (A1…J6). Drives the real built app on :4399 (see playwright.config.ts).
 //
 // Reads are observable end-state only: popup option rows, editor text, token
-// colors, error markers, hint-bar ids. The two documented gaps (B4 top-level
+// colors, error markers. The two documented gaps (B4 top-level
 // slash zone, J6 slash-in-comment) are `test.fixme` — desired behavior, known
 // unimplemented (ADR 0002). Everything else asserts current, correct behavior.
 
@@ -17,7 +17,6 @@ import {
   enterParBlock,
   tokenSpans,
   baseColor,
-  hintBarIds,
   errorMarkerCount,
 } from './helpers/editor';
 
@@ -451,22 +450,8 @@ test.describe('H. auto-indentation', () => {
   });
 });
 
-// ── I. Hint Bar ─────────────────────────────────────────────────────────────
-test.describe('I. hint bar', () => {
-  test('I1 — head shows participant/group hints', async ({ page }) => {
-    await clearEditor(page);
-    const ids = await hintBarIds(page);
-    expect(ids).toContain('hint-participant');
-    expect(ids).toContain('hint-group');
-  });
-
-  test('I2 — block shows message/control hints, not participant', async ({ page }) => {
-    await enterParBlock(page);
-    const ids = await hintBarIds(page);
-    expect(ids).toContain('hint-sync');
-    expect(ids).not.toContain('hint-participant');
-  });
-});
+// ── I. Hint Bar — REMOVED 2026-06-10 with the panel itself (slash popup covers the
+// same commands in-editor; see catalog notes). ─────────────────────────────
 
 // ── J. Negative / edge / no-false-positives ─────────────────────────────────
 test.describe('J. negative / edge', () => {
