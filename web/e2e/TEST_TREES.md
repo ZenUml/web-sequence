@@ -914,6 +914,21 @@ Named incidents not mapped above: 42136b9 (computed styles) — out of this tree
 
 ---
 
+## Product decisions (2026-06-10, user-ratified)
+
+Seven needs-spec/DEBATABLE questions were answered by the product owner. These are now
+CONTRACTS — tests pin them; changing one is a product decision, not a refactor:
+
+| # | Question | Decision |
+|---|---|---|
+| D1 | IME composition vs autocorrect | **Correct on commit only** — never rewrite during an active composition session; unblocks TT-A24 |
+| D2 | Undo after autocorrect | **First undo restores the typed original** (`。`/`→` come back); second undo removes it — correction is its own history step |
+| D3 | Auto-corrected full-width openers | **Pair them** — `（` → `()` cursor-inside, `｛『〖` → `{}` etc.; Z1/Z3/Z5's ratifying assertions flip deliberately |
+| D4 | `[`/`'` in closeBrackets | **Keep excluded, document** — correction stays (arg positions), pairing would inject closers the grammar never consumes |
+| D5 | Tab mid-line | **Keep indentMore** (whole-line indent); pin with a test declaring it intended |
+| D6 | Paste re-indentation | **Defer — verbatim paste is the contract**; pin with a test; revisit on user feedback |
+| D7 | Bare method-name slot | **Code for autocorrect** (divergence from completion's free-text view is INTENDED; quoted `A."支付。"()` is the escape hatch); reconciling comment + test |
+
 ## Status updates (2026-06-10, same day as authoring)
 
 First implementation tranche landed (unit: `npx vitest run src/editor/`; e2e: `typing-mechanics.spec.ts`):
