@@ -5,8 +5,8 @@
 // spec proves the embed surface:
 //   - the embed header (embed-header + embed-open-link) is shown;
 //   - the full-app CHROME is suppressed — the real header (header-title/header-menu),
-//     the sidebar panels (sidebar-editor/sidebar-library) and the editor (dsl-editor)
-//     are all ABSENT;
+//     the editor work surface (editor-region) and the editor (dsl-editor) are all
+//     ABSENT;
 //   - the inline `?code=` diagram renders its CONTENT in the preview iframe
 //     (embed mode hides @zenuml/core's footer chrome — incl. its only svgs — so we
 //     assert the diagram body's message label / participant, not `#mounting-point svg`);
@@ -14,19 +14,29 @@
 //
 // DISCRIMINATING-ID CONTRACT (ground truth — verified against the source, NOT
 // invented). The chrome ids used for the ABSENCE assertions all EXIST in normal
-// (non-embed) mode, so their absence in embed is a genuine revert→fail signal:
+// (non-embed) editor mode, so their absence in embed is a genuine revert→fail
+// signal:
 //   - AppHeader.tsx exposes `header-title` + `header-menu` (there is NO `app-header`).
-//   - Sidebar.tsx renders `sidebar-editor` + `sidebar-library` unconditionally
-//     (there is NO bare `sidebar` id).
+//   - Layout.tsx exposes `editor-region` — the split-pane editor work surface.
 //   - The editor is `dsl-editor`.
-// A CONTROL test below pins these against normal mode so the discriminator is
-// observable: reverting AppRoot's `if (isEmbed)` short-circuit makes the header /
-// sidebar / editor reappear under `?embed`, failing the embed test.
+// The Sidebar icon rail this contract previously leaned on (`sidebar-editor` /
+// `sidebar-library`) was deliberately removed app-wide by f023f89 ("feat(hub):
+// no-rail layout…") — sidebar-* ids no longer exist in ANY mode and cannot ground
+// the normal-vs-embed contrast (mirrors the same re-ground in
+// web/src/app/AppRoot.test.tsx, "AppRoot — embed mode" describe).
+// A CONTROL test below pins these against normal editor mode so the discriminator
+// is observable: reverting AppRoot's `if (isEmbed)` short-circuit makes the header
+// / editor surface reappear under `?embed`, failing the embed test.
+//
+// Hub (PRs #800/#801): bare '/' now renders the HomeView library, so "normal
+// (non-embed) mode" — the CONTROL's subject — lives at an editor URL, reached by
+// clicking through the hub's New CTA (openEditor helper).
 //
 // The webServer (playwright.config.js) boots `pnpm -C web dev` on :3000.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 const CANONICAL_APP_ORIGIN = 'https://app.zenuml.com';
 const EMBED_URL = '/?embed&code=A.method()&title=Demo';
@@ -47,18 +57,26 @@ test.beforeEach(async ({ page }) => {
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CONTROL — pin the discriminator: the chrome ids the embed test asserts ABSENT
-// are genuinely PRESENT in normal (non-embed) mode. Normal-mode boot opens the
-// one-time onboarding modal, so suppress it (embed mode skips those effects and
-// therefore needs no suppression — see the embed tests below).
+// are genuinely PRESENT in normal (non-embed) editor mode. Normal-mode boot opens
+// the one-time onboarding modal, so suppress it (embed mode skips those effects
+// and therefore needs no suppression — see the embed tests below).
 // ──────────────────────────────────────────────────────────────────────────────
-test('CONTROL: normal (non-embed) mode renders the real header, sidebar, and editor', async ({ page }) => {
+test('CONTROL: normal (non-embed) editor mode renders the real header and editor surface', async ({ page }) => {
   await suppressOneTimeModals(page);
-  await page.goto('/');
+  // Hub (PRs #800/#801): '/' renders the HomeView library, so normal editor mode
+  // is reached by clicking through the hub's New CTA.
+  await openEditor(page);
 
   await expect(page.getByTestId('header-title')).toBeVisible();
   await expect(page.getByTestId('header-menu')).toBeVisible();
-  // Sidebar rail buttons render unconditionally in normal mode (editor + library + templates + help = 4).
-  await expect(page.getByTestId(/^sidebar-/)).toHaveCount(4);
+  // f023f89 ("feat(hub): no-rail layout…") removed the Sidebar icon rail app-wide,
+  // so the old `getByTestId(/^sidebar-/)` count-4 check could only fail; sidebar-*
+  // ids exist in NO mode and can no longer ground the normal-vs-embed contrast.
+  // Re-grounded on `editor-region` (Layout.tsx): present in normal editor mode,
+  // and the embed branch returns before Layout ever mounts, so its absence under
+  // ?embed (asserted below) genuinely discriminates. Mirrors the unit-level
+  // re-ground in web/src/app/AppRoot.test.tsx ("AppRoot — embed mode" describe).
+  await expect(page.getByTestId('editor-region')).toBeVisible();
   await expect(page.getByTestId('dsl-editor')).toBeVisible();
   // The embed shell is NOT present in normal mode.
   await expect(page.getByTestId('embed-header')).toHaveCount(0);
@@ -67,7 +85,7 @@ test('CONTROL: normal (non-embed) mode renders the real header, sidebar, and edi
 // ──────────────────────────────────────────────────────────────────────────────
 // Embed suppresses the full-app chrome and shows the minimal embed header.
 // ──────────────────────────────────────────────────────────────────────────────
-test('?embed hides the real header, sidebar, and editor; shows the embed header', async ({ page }) => {
+test('?embed hides the real header and editor surface; shows the embed header', async ({ page }) => {
   await page.goto(EMBED_URL);
 
   // The embed shell is present.
@@ -79,10 +97,14 @@ test('?embed hides the real header, sidebar, and editor; shows the embed header'
   // this fails — code rendering alone would NOT catch a dropped ?title).
   await expect(page.getByTestId('embed-title')).toHaveText('Demo');
 
-  // The full-app chrome (ids that EXIST in normal mode, per the control) is gone.
+  // The full-app chrome (ids that EXIST in normal editor mode, per the control)
+  // is gone. The old `sidebar-*` count-0 check was removed: f023f89 deleted the
+  // Sidebar rail app-wide, so that assertion had become vacuously true (it could
+  // never fail and so guarded nothing); `editor-region` — pinned PRESENT by the
+  // control — is the chrome element the embed branch genuinely suppresses.
   await expect(page.getByTestId('header-title')).toHaveCount(0);
   await expect(page.getByTestId('header-menu')).toHaveCount(0);
-  await expect(page.getByTestId(/^sidebar-/)).toHaveCount(0);
+  await expect(page.getByTestId('editor-region')).toHaveCount(0);
   await expect(page.getByTestId('dsl-editor')).toHaveCount(0);
 });
 
