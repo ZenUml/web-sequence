@@ -1572,15 +1572,96 @@ test.describe('Z. CJK punctuation autocorrect', () => {
   test('Z5 — CJK corner brackets 『』 become block braces {}', async ({ page }) => {
     await clearEditor(page);
     // A CJK user builds a sync-message block using 『』 instead of {}.
-    await page.keyboard.type('订单服务.创建（）『');
+    // D3 (TEST_TREES.md decisions): corrected openers now pair — the corrected `『`
+    // injects its `}` (no hand-typed `』` needed), and the corrected `）`/`』` type
+    // over pending injected closers instead of doubling.
+    await page.keyboard.type('订单服务.创建（）『』');
+    // （ paired + ） typed over; 『 paired + 』 typed over — no doubled closers.
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.创建(){}');
+    // Re-enter the block and give it a body: Enter inside the pair drops the closer
+    // onto its own line (TT-I10 mechanics compose with the corrected pair).
+    await page.keyboard.press('ArrowLeft'); // back inside the {}
     await page.keyboard.press('Enter');
     await page.keyboard.type('库存服务.检查（）');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('』');
+    await page.keyboard.press('Escape'); // popup hygiene
     await page.waitForTimeout(300);
     // 『』→{}, （）→(): a valid, auto-indented sync-message block.
     await expect.poll(() => getEditorText(page)).toBe('订单服务.创建(){\n  库存服务.检查()\n}');
     expect(await errorMarkerCount(page)).toBe(0);
+  });
+
+  // ── D3 (TEST_TREES.md product decisions): corrected openers auto-pair ────────
+  test('Z6 — corrected （ pairs; ） types over; Backspace pair-deletes', async ({ page }) => {
+    await clearEditor(page);
+    // Lone corrected opener injects the closer with the cursor inside.
+    await page.keyboard.type('订单服务.save（');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save()');
+    // A subsequently typed full-width closer TYPES OVER the injected one (no doubling)…
+    await page.keyboard.type('）');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save()');
+    // …and the cursor moved past it (an `x` lands AFTER the pair, not inside).
+    await page.keyboard.type('x');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save()x');
+
+    // Backspace between the corrected pair deletes both chars (deleteBracketPair).
+    await clearEditor(page);
+    await page.keyboard.type('订单服务.save（');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save()');
+    await page.keyboard.press('Backspace');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.save');
+  });
+
+  // ── D2 (TEST_TREES.md product decisions): undo restores the typed original ───
+  test('Z7 — first undo after an autocorrect restores the typed 。; redo replays', async ({ page }) => {
+    await clearEditor(page);
+    // Let history's newGroupDelay (500ms) lapse so the typed run below does NOT merge
+    // into clearEditor's delete event (adjacent changes within the window join, and
+    // undo #2 would then restore the pre-clear doc instead of emptying the run).
+    await page.waitForTimeout(600);
+    await page.keyboard.type('订单服务。');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.');
+    // Undo #1: the correction (its own isolated history step) reverts — the literal
+    // typed 。 comes back.
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务。');
+    // Undo #2: the typed run itself reverts (。 merged with the preceding fast typing,
+    // standard history grouping). NOTE: an empty CM doc's .cm-content innerText is a
+    // lone '\n' (the empty line's filler <br>), not ''.
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect.poll(() => getEditorText(page)).toBe('\n');
+    // Redo is symmetric: typed original first, correction second.
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务。');
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.');
+  });
+
+  // ── TT-I14 (TEST_TREES.md product decisions): paste classifies per region ────
+  test('Z8 — mixed multi-line paste keeps the label 。 and corrects the code 。', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await clearEditor(page);
+    await page.evaluate(() => navigator.clipboard.writeText('A->B: 你好。\nC。d（）'));
+    await page.keyboard.press('ControlOrMeta+v');
+    // Per-region classification of the PASTED content: the label's 。 is free text and
+    // survives; the code line's 。（） correct. (Pre-fix, classification happened once
+    // at the insertion point and corrupted the label.)
+    await expect.poll(() => getEditorText(page)).toBe('A->B: 你好。\nC.d()');
+  });
+
+  // ── D1 (TEST_TREES.md product decisions): composition-safe ───────────────────
+  test('Z9 — no rewrite during IME composition; correction lands on commit', async ({ page }) => {
+    await clearEditor(page);
+    await page.keyboard.type('订单服务');
+    // Drive a real IME session over CDP: set an active composition, then commit it.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.imeSetComposition', { text: '。', selectionStart: 1, selectionEnd: 1 });
+    // Mid-session: the composition text is visible and MUST NOT be rewritten (the IME
+    // owns it; rewriting desyncs the composition string).
+    await expect.poll(() => getEditorText(page)).toBe('订单服务。');
+    await cdp.send('Input.insertText', { text: '。' }); // IME commit
+    // On commit the correction applies.
+    await expect.poll(() => getEditorText(page)).toBe('订单服务.');
+    await cdp.detach();
   });
 
 });

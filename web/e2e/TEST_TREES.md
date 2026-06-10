@@ -953,6 +953,42 @@ First implementation tranche landed (unit: `npx vitest run src/editor/`; e2e: `t
   (`key:"", ctrlKey:false`) — explicit-invoke journeys must dispatch a synthetic
   `KeyboardEvent` instead, with a positive control proving the trigger fires.
 
+### Update 3 (2026-06-10, later): D1 + D2 + D3 + D7 + TT-I14 IMPLEMENTED
+
+The autocorrect moved from an `EditorState.transactionFilter` to an
+`EditorView.updateListener` + `compositionend` handler (cjkAutocorrect.ts): the typed
+original now COMMITS (doc + history) and the correction dispatches as its own
+`isolateHistory('full')` transaction carrying a user-input userEvent.
+
+- **D2**: first undo restores the typed `。`/`→`/`（`; second removes it; redo symmetric.
+  Unit (3, incl. the paired-opener case) + e2e Z7.
+- **D1**: compose-flagged transactions while `view.compositionStarted` only accumulate
+  the composed region (WeakMap per view); correction applies on commit (the
+  post-compositionend change, or a deferred `compositionend` flush). Unit (4, synthetic
+  composition events drive CM's real bookkeeping) + e2e Z9 via CDP
+  `Input.imeSetComposition`/`Input.insertText` (works headless — no caveat needed).
+- **D3**: a corrected lone opener routes through `insertBracket`
+  (@codemirror/autocomplete) — closer injected, cursor inside, pending-closer state set;
+  corrected `）`/`』` type over; Backspace pair-deletes; paste runs never pair; `[`/`'`
+  stay unpaired (D4); declines exactly where ASCII declines (word char after cursor).
+  Unit (7 incl. flips) + e2e Z6. **Assertion flips, all citing D3**: unit `｛`/`『`
+  opening tests + enumeration entries `（ ｛ ｟ 『 〖` now expect the injected closer;
+  e2e Z5 rewritten (no hand-typed `』`; types-over `）』` instead). Z1/Z3 needed NO flip —
+  type-over keeps their final text identical.
+- **TT-I14**: classification is now PER CHAR of the inserted content against the
+  POST-insert parse (char START, side -1 — left context, same semantics as before for
+  single chars); a mixed multi-line paste keeps the label/comment `。` and corrects the
+  code-line `。（）`. Unit (3) + e2e Z8 (real clipboard paste).
+- **D7**: reconciling comment at `isFreeTextSpan` + 2 tests (bare slot corrects; quoted
+  escape hatch preserves — note: only the CLOSED quoted form `A."支付"` has a String
+  node; the editor grammar's error recovery gives a dangling `A."支付` none, the same
+  under-acceptance documented in modes.ts).
+- Invariants re-verified: free-text matrix incl. empty regions, Z4 popup-after-correction,
+  `→` cursor placement, `isFreeTextSpan(state, pos)` signature for zenumlCompletions
+  (#814), programmatic/undo/redo never corrected. Unit 351 green (`src/editor/`), e2e
+  217/217 (catalog + catalog-extended + typing-mechanics + editor-language, chromium,
+  fresh build).
+
 ## Priority shortlist (top 25)
 
 Consolidated from all three gap ledgers (124 items: TT-H1–37, TT-A1–43, TT-I1–44), ordered by value = (likelihood a real user hits it daily) × (severity if regressed) ÷ cost. Unit-feasible items rank above e2e at equal value (cheaper to run forever). Items marked **needs-spec-first** have genuinely undecided expected behavior and must NOT be implemented as tests until the product decision lands.
