@@ -192,3 +192,11 @@ Resume options offered: wrap-up / new direction / more mining.
   Suites: 329 unit (incl. 4 it.fails) + 196 e2e green. NEXT: fix #814/#815 test-first; shortlist
   items 7+ (TT-A9 fullwidth arrow e2e, TT-A14 backspace-refilter, TT-H34 font gate); needs-spec
   decisions (IME composition, undo-after-autocorrect, fullwidth-opener autopair).
+- 2026-06-10 (cont.) — FIX ROUND: #814 fixed (completion guard now shares isFreeTextSpan with
+  autocorrect — empty label/title/divider slots silent; 3 it.fails→green). #815 fixed
+  (＇［］＿ added; enumeration exclusion-free). FEATURE: → U+2192 → '->' (first 1→2 map entry,
+  selection remap keeps cursor after arrow, userEvent preserved → popup auto-fires; label →
+  preserved; +5 unit). Both issues closed with evidence. Gates: unit 333×2 + tsc, e2e 213/213
+  (fresh build), agent-browser live journeys (mandated) — incl. discovery that agent-browser
+  `press Control+Space` emits a malformed keydown; synthetic KeyboardEvent + positive control
+  is the working recipe (recorded in TEST_TREES.md update 2).

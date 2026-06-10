@@ -922,6 +922,22 @@ First implementation tranche landed (unit: `npx vitest run src/editor/`; e2e: `t
 - **Confirmed bugs, filed + documented as `it.fails`**: TT-A1/TT-A2/TT-A34 → [#814](https://github.com/ZenUml/web-sequence/issues/814) (empty free-text regions leak completions); TT-A22 disagreements (`＇ ［ ］ ＿`) → [#815](https://github.com/ZenUml/web-sequence/issues/815).
 - **Stale-test reconciliation after 76bddeb (TT-A7/TT-A8)**: 15 catalog tests (not 12 — N1/U7/U8 were also dot-vehicle) reconciled: 5 flipped to assert post-dot suppression (E1, N9, O1, O3, Z4), 10 re-grounded on `->`/line-start triggers preserving their original guard concern (N1, O5, U6, U7, U8, U10, W1, W9, X1, X2).
 
+### Update 2 (2026-06-10, later): #814 + #815 FIXED, `→` feature shipped
+
+- **#814 closed** — zenumlCompletions now uses the shared `isFreeTextSpan` classifier; the
+  3 `it.fails` flipped to green (TT-A1/A2/A34 → covered). One source of truth for
+  "is this slot free text?" across completion + autocorrect.
+- **#815 closed** — `＇ ［ ］ ＿` joined the map; the TT-A22 enumeration now holds with no
+  exclusions (`it.fails` flipped).
+- **Feature (gap 19 class)**: `→` U+2192 → `->` — the map's first 1→2 replacement, with
+  explicit selection remap (cursor lands after `->`); userEvent preserved so the endpoint
+  popup auto-fires. Label `→` preserved. +5 unit.
+- All verified three ways: unit (333), Playwright e2e (213/213 on a fresh build), and
+  **live agent-browser journeys** (popup JSON + corrected-text evals + screenshots).
+  agent-browser caveat discovered: its `press Control+Space` emits a malformed keydown
+  (`key:"", ctrlKey:false`) — explicit-invoke journeys must dispatch a synthetic
+  `KeyboardEvent` instead, with a positive control proving the trigger fires.
+
 ## Priority shortlist (top 25)
 
 Consolidated from all three gap ledgers (124 items: TT-H1–37, TT-A1–43, TT-I1–44), ordered by value = (likelihood a real user hits it daily) × (severity if regressed) ÷ cost. Unit-feasible items rank above e2e at equal value (cheaper to run forever). Items marked **needs-spec-first** have genuinely undecided expected behavior and must NOT be implemented as tests until the product decision lands.
