@@ -235,16 +235,24 @@ test.describe('D. block keywords', () => {
 
 // ── E. Participant-name completion ──────────────────────────────────────────
 test.describe('E. participant names', () => {
-  test('E1 — after Name. offers declared participants', async ({ page }) => {
+  test('E1 — after Name. the popup is suppressed; declared participants live on ->', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('@Actor OrderController');
     await page.keyboard.press('Enter');
     await page.keyboard.type('@Boundary Web');
     await page.keyboard.press('Enter');
     await page.keyboard.type('OrderController.');
+    // 76bddeb: post-dot slot is a method name — suppression is the contract (TEST_TREES.md TT-A7).
+    // This also locks receiver-exclusion: the `OrderController.OrderController` self-suggest
+    // noise this test used to ASSERT is exactly what 76bddeb removed.
+    await page.waitForTimeout(300);
+    await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
+    // Re-grounded (TT-A8): "declared participants are offered at a message endpoint"
+    // now rides the still-valid `->` trigger.
+    await page.keyboard.press('Backspace'); // drop the `.`
+    await page.keyboard.type('->');
     const j = (await options(page)).join('\n');
     expect(j).toContain('Web');
-    expect(j).toContain('OrderController');
   });
 
   test('E2 — partial in a block offers the matching declared name', async ({ page }) => {

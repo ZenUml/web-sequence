@@ -354,7 +354,10 @@ test.describe("N. Participant-name completion + ORACLE parity", () => {
       await clearEditor(page);
       await page.keyboard.type('Alice.run()');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Bob.');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+      // `->` endpoint trigger so this keeps guarding its ORIGINAL concern — the source
+      // of a sync call (`Alice.run()`) is collected as a participant (#804 class).
+      await page.keyboard.type('Bob->');
       await page.keyboard.press('Control+Space');
       expect((await options(page)).join('\n')).toContain('Alice');
     });
@@ -448,31 +451,33 @@ test.describe("N. Participant-name completion + ORACLE parity", () => {
       expect((await options(page)).join('\n')).not.toContain('processOrder');
     });
 
-  test('N9 — the To endpoint of A->B is a participant offered after a dot trigger', async ({ page }) => {
+  test('N9 — Name. offers nothing, even on explicit Ctrl+Space (post-dot suppression)', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('Hermes->Iris: ping');
       await page.keyboard.press('Enter');
       await page.keyboard.type('Iris.');
       await page.keyboard.press('Control+Space');
-      const j = (await options(page)).join('\n');
-      expect(j).toContain('Hermes');
+      // 76bddeb: post-dot slot is a method name — suppression is the contract (TEST_TREES.md TT-A7).
+      // Explicit invoke is suppressed too; the endpoint-offering this test used to assert
+      // lives on `->` (see N2, which already covers both endpoints of a first-mention arrow).
+      await page.waitForTimeout(300);
+      await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
     });
 
 });
 
 test.describe("O. Trigger-context completion (. -> Ctrl+Space)", () => {
-  test('O1 — after Name. offers participant names only, no keywords (exposes #803)', async ({ page }) => {
+  test('O1 — after Name. the popup does not open at all (post-dot suppression)', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('@Actor Alice');
       await page.keyboard.press('Enter');
       await page.keyboard.type('@Actor Bob');
       await page.keyboard.press('Enter');
       await page.keyboard.type('Alice.');
-      const j = (await options(page)).join('\n');
-      expect(j).toContain('Bob');
-      expect(j).not.toContain('Return a value to the caller');
-      expect(j).not.toContain('Create a new instance');
-      expect(j).not.toContain('Conditional (alt) block');
+      // 76bddeb: post-dot slot is a method name — suppression is the contract (TEST_TREES.md TT-A7).
+      // No popup at all subsumes the original #803 concern (no keyword rows after the dot).
+      await page.waitForTimeout(300);
+      await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
     });
 
   test('O2 — after Name-> offers participant names only, no @annotations (exposes #803)', async ({ page }) => {
@@ -488,17 +493,19 @@ test.describe("O. Trigger-context completion (. -> Ctrl+Space)", () => {
       expect(j).not.toContain('Participant annotation');
     });
 
-  test('O3 — after Name. omits head keywords as/title at top level (exposes #803)', async ({ page }) => {
+  test('O3 — Ctrl+Space after Name. at top level offers nothing (post-dot suppression)', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('@Actor Alice');
       await page.keyboard.press('Enter');
       await page.keyboard.type('@Actor Bob');
       await page.keyboard.press('Enter');
       await page.keyboard.type('Alice.');
-      const j = (await options(page)).join('\n');
-      expect(j).toContain('Bob');
-      expect(j).not.toContain(AS_ROW);
-      expect(j).not.toContain('Diagram title');
+      await page.keyboard.press('Control+Space');
+      // 76bddeb: post-dot slot is a method name — suppression is the contract (TEST_TREES.md TT-A7).
+      // Even an explicit invoke at the top level surfaces no head keywords (as/title) and no
+      // participants — the empty popup never opens (subsumes the original #803 concern).
+      await page.waitForTimeout(300);
+      await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
     });
 
   test('O4 — message-introduced source participant appears after a trigger (exposes #804)', async ({ page }) => {
@@ -515,7 +522,10 @@ test.describe("O. Trigger-context completion (. -> Ctrl+Space)", () => {
       await clearEditor(page);
       await page.keyboard.type('A->B: hi');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('A.');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+      // `->` endpoint trigger so this keeps guarding its ORIGINAL concern — B, introduced
+      // only as an arrow TARGET, is collected as a participant (#804).
+      await page.keyboard.type('A->');
       await page.keyboard.press('Control+Space');
       const j = (await options(page)).join('\n');
       expect(j).toContain('B');
@@ -1079,13 +1089,17 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
 
   // #807 FIXED: keywords are now @specialize'd from Identifier, so keyword-prefixed
   // names (`ifService`) lex as a single Identifier and collect fully.
-  test('U6 — participant `ifService` (keyword-prefixed name) is offered after a dot', async ({ page }) => {
+  test('U6 — participant `ifService` (keyword-prefixed name) is offered after an arrow', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('@Actor ifService');
       await page.keyboard.press('Enter');
       await page.keyboard.type('@Actor whileWorker');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('ifService.');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+      // `->` endpoint trigger so this keeps guarding its ORIGINAL concern (#807) — a
+      // keyword-prefixed name lexes as ONE Identifier, is collected, and is offered.
+      await page.keyboard.type('ifService->');
+      await page.keyboard.press('Control+Space');
       expect((await options(page)).join('\n')).toContain('whileWorker');
     });
 
@@ -1095,8 +1109,12 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       await page.keyboard.press('Enter');
       await page.keyboard.type('@Actor Bob');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Alice.');
-      expect((await options(page)).join('\n')).toContain('Bob');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+      // `->` endpoint trigger — and now asserts ALICE (the trailing-whitespace declaration)
+      // directly, which is the ORIGINAL concern this test existed to guard.
+      await page.keyboard.type('Bob->');
+      await page.keyboard.press('Control+Space');
+      expect((await options(page)).join('\n')).toContain('Alice');
     });
 
   test('U8 — blank lines between statements keep participants intact', async ({ page }) => {
@@ -1107,7 +1125,11 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       await page.keyboard.type('@Actor Bob');
       await page.keyboard.press('Enter');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Alice.');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+      // `->` endpoint trigger so this keeps guarding its ORIGINAL concern — blank lines
+      // between statements do not break participant collection.
+      await page.keyboard.type('Alice->');
+      await page.keyboard.press('Control+Space');
       expect((await options(page)).join('\n')).toContain('Bob');
     });
 
@@ -1125,11 +1147,14 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       expect(j).not.toContain('Conditional (alt) block');
     });
 
-  test('U10 — dangling Bob. at EOF offers message-introduced Alice [#804]', async ({ page }) => {
+  test('U10 — dangling Bob-> at EOF offers message-introduced Alice [#804]', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('Alice->Bob: hi');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Bob.');
+      // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on a
+      // dangling `->` at EOF — still guards BOTH original concerns: first-mention
+      // collection (#804) and an incomplete trailing statement not killing completion.
+      await page.keyboard.type('Bob->');
       expect((await options(page)).join('\n')).toContain('Alice');
     });
 
@@ -1247,13 +1272,17 @@ test.describe("V. Hint Bar", () => {
 // was collected, so these prove #808 (string labels) and #809 (Unicode names)
 // end-to-end through the real editor path.
 test.describe('W. i18n / quotes / special chars / long DSL', () => {
-  test('W1 — Chinese participants are offered in autocomplete after a dot (#809)', async ({ page }) => {
+  test('W1 — Chinese participants are offered in autocomplete after an arrow (#809)', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('用户');
     await page.keyboard.press('Enter');
     await page.keyboard.type('服务');
     await page.keyboard.press('Enter');
-    await page.keyboard.type('用户.');
+    // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+    // `->` endpoint trigger so this keeps guarding its ORIGINAL concern (#809) — CJK
+    // participant names are collected and offered at an endpoint position.
+    await page.keyboard.type('用户->');
+    await page.keyboard.press('Control+Space');
     expect((await options(page)).join('\n')).toContain('服务');
   });
 
@@ -1337,7 +1366,10 @@ test.describe('W. i18n / quotes / special chars / long DSL', () => {
     expect(await errorMarkerCount(page)).toBe(0);
     // A participant from the TOP of the document is still offered at the bottom →
     // collection + completion scale across the whole doc.
-    await page.keyboard.type('P0.');
+    // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+    // `->` endpoint trigger so this keeps guarding its ORIGINAL concern — scale.
+    await page.keyboard.type('P0->');
+    await page.keyboard.press('Control+Space');
     expect((await options(page)).join('\n')).toContain('P20');
   });
 });
@@ -1353,7 +1385,11 @@ test.describe('X. authoring journeys', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('@Actor B'); // declared AFTER its use
     await page.keyboard.press('Enter');
-    await page.keyboard.type('A.');
+    // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+    // `->` endpoint trigger so this keeps guarding its ORIGINAL concern — a participant
+    // used BEFORE its declaration is still collected and offered.
+    await page.keyboard.type('A->');
+    await page.keyboard.press('Control+Space');
     expect((await options(page)).join('\n')).toContain('B');
   });
 
@@ -1363,7 +1399,11 @@ test.describe('X. authoring journeys', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('OrderSvc->DB: save');
     await page.keyboard.press('Enter');
-    await page.keyboard.type('Client.');
+    // 76bddeb: post-dot popup is suppressed (TEST_TREES.md TT-A7); re-grounded on the
+    // `->` endpoint trigger so this keeps guarding its ORIGINAL concern (#804) — every
+    // endpoint of a first-mention message chain is collected and offered downstream.
+    await page.keyboard.type('Client->');
+    await page.keyboard.press('Control+Space');
     const j = (await options(page)).join('\n');
     expect(j).toContain('OrderSvc');
     expect(j).toContain('DB');
@@ -1507,16 +1547,24 @@ test.describe('Z. CJK punctuation autocorrect', () => {
     await expect.poll(() => getEditorText(page)).toBe('用户.下单()');
   });
 
-  test('Z4 — autocorrect composes with autocomplete: full-width dot still triggers the popup', async ({ page }) => {
+  test('Z4 — autocorrect composes with autocomplete: full-width arrow triggers the popup; full-width dot stays silent', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('订单服务');
     await page.keyboard.press('Enter');
     await page.keyboard.type('库存服务');
     await page.keyboard.press('Enter');
-    // A CJK-IME user types the dot as full-width 。; it auto-corrects to `.` AND the
-    // participant popup still opens (the userEvent must survive the autocorrect filter).
+    // 76bddeb: post-dot slot is a method name — suppression is the contract (TEST_TREES.md TT-A7).
+    // The full-width 。 still autocorrects to `.`, but NO popup may open after it.
     await page.keyboard.type('订单服务。');
     await expect.poll(() => getEditorText(page)).toContain('订单服务.');
+    await page.waitForTimeout(300);
+    await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
+    // Re-grounded (TT-A8): the ORIGINAL concern — the userEvent surviving the autocorrect
+    // transactionFilter so completion still triggers — now rides the `->` trigger: a
+    // full-width －＞ autocorrects to `->` AND the endpoint popup opens.
+    await page.keyboard.press('Backspace'); // drop the corrected `.`
+    await page.keyboard.type('－＞');
+    await expect.poll(() => getEditorText(page)).toContain('订单服务->');
     expect((await options(page)).join('\n')).toContain('库存服务');
   });
 
