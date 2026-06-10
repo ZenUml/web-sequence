@@ -275,6 +275,114 @@ describe('Context-path tagging: Name → tok-className, MethodName → tok-varia
   })
 })
 
+// ── Keyword words inside free-text spans (TT-H9 + TT-H36) ─────────────────────
+// A word that happens to be a DSL keyword ("if", "while", "new", "title") inside a
+// free-text span must take the SPAN's class, never tok-keyword. #813's lesson: the
+// guard must enumerate ALL free-text node types, not just message Content — a
+// partial guard recurs. Each case asserts (a) the containing span carries its own
+// class and NOT tok-keyword, and (b) no keyword word inside the span surfaces as a
+// standalone tok-keyword token.
+
+describe('Keyword words inside free-text spans take the span class, never tok-keyword', () => {
+  const FREE_TEXT_CASES: Array<{
+    label: string
+    src: string
+    node: string // parse-tree node guarding against false-pass
+    spanText: string // the highlighted span enclosing the keyword words
+    words: string[] // keyword words embedded in the span
+    ownClass: string
+  }> = [
+    {
+      label: 'message label Content',
+      src: 'A->B: if while new',
+      node: 'Content',
+      spanText: 'if while new',
+      words: ['if', 'while', 'new'],
+      ownClass: 'tok-string',
+    },
+    {
+      label: 'title TitleContent',
+      src: 'title while loading',
+      node: 'TitleContent',
+      spanText: 'while loading',
+      words: ['while'],
+      ownClass: 'tok-string',
+    },
+    {
+      label: 'comment',
+      src: '// if x',
+      node: 'Comment',
+      spanText: '// if x',
+      words: ['if'],
+      ownClass: 'tok-comment',
+    },
+    {
+      label: 'alias Label String',
+      src: '@Actor A as "title screen"',
+      node: 'String',
+      spanText: '"title screen"',
+      words: ['title'],
+      ownClass: 'tok-string',
+    },
+    {
+      label: 'quoted MethodName',
+      src: 'A."if order"()',
+      node: 'MethodName',
+      spanText: '"if order"',
+      words: ['if'],
+      ownClass: 'tok-string',
+    },
+  ]
+
+  for (const c of FREE_TEXT_CASES) {
+    it(`${c.label}: keyword word(s) ${c.words.join('/')} stay ${c.ownClass}, never tok-keyword`, () => {
+      assertNodeExists(c.src, c.node)
+      const span = tokenFor(c.src, c.spanText)
+      expect(span, `free-text span "${c.spanText}" should be highlighted in: ${c.src}`).toBeDefined()
+      expect(span!.classes, `span "${c.spanText}" must carry its own class`).toContain(c.ownClass)
+      expect(span!.classes, `span "${c.spanText}" must NOT carry tok-keyword`).not.toContain('tok-keyword')
+      // No keyword word inside the span may escape as its own tok-keyword token.
+      const tokens = highlightedTokens(c.src)
+      for (const word of c.words) {
+        const leaked = tokens.find((tok) => tok.text === word && tok.classes.includes('tok-keyword'))
+        expect(leaked, `"${word}" must not surface as a standalone tok-keyword token in: ${c.src}`).toBeUndefined()
+      }
+    })
+  }
+})
+
+// ── Transient half-typed states (TT-H1) ───────────────────────────────────────
+// While the user is mid-keystroke the document passes through broken states
+// (dangling arrow, empty label, unmatched brace). Parsing/highlighting must never
+// throw, and the COMPLETE tokens already typed keep their lexical classes. No
+// class assertions on the partial/error tokens themselves — only on completed ones.
+
+describe('Transient half-typed states keep completed-token classes and never throw', () => {
+  const HALF_TYPED = ['A-', 'A->', 'A->B: ', '}', '@', '/']
+
+  it('parsing + highlighting never throw on any half-typed doc', () => {
+    for (const src of HALF_TYPED) {
+      expect(() => highlightedTokens(src), `should not throw for: ${JSON.stringify(src)}`).not.toThrow()
+    }
+  })
+
+  it('"A-": A keeps its Name class (tok-className)', () => {
+    expectTag('A-', 'A', 'tok-className')
+  })
+
+  it('"A->": A keeps tok-className and the completed arrow keeps tok-operator', () => {
+    expectTag('A->', 'A', 'tok-className')
+    expectTag('A->', '->', 'tok-operator')
+  })
+
+  it('"A->B: " (empty label): endpoints, arrow, and colon all keep their classes', () => {
+    expectTag('A->B: ', 'A', 'tok-className')
+    expectTag('A->B: ', 'B', 'tok-className')
+    expectTag('A->B: ', '->', 'tok-operator')
+    expectTag('A->B: ', ':', 'tok-punctuation')
+  })
+})
+
 // ── Legacy stream export (backwards-compat until modes.ts migration) ──────────
 
 describe('zenumlStream (legacy export — kept until modes.ts migration)', () => {

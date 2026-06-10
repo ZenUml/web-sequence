@@ -310,6 +310,34 @@ describe('no completions inside a comment', () => {
   })
 })
 
+describe('EMPTY free-text regions must offer NO completions (degenerate-region class)', () => {
+  // The populated free-text guard (Content/LineContent/Comment/Label/String) only
+  // fires once the node EXISTS; at the zero-width state right after `: ` / `title ` /
+  // `== ` the cursor sits in an error-recovery region and completions leak. This is
+  // the exact empty-parse-region class that bit cjkAutocorrect (961a221) — its
+  // isFreeTextSpan grew AsyncMessage/Colon + Title + Divider branches; the completion
+  // guard did not.
+
+  // CANDIDATE BUG #814 TT-A1 (TEST_TREES.md): empty free-text region leaks completions —
+  // it.fails documents the defect; flip to it() when fixed. (18 keywords at HEAD.)
+  it.fails('offers nothing in an EMPTY message label ("A->B: " + Ctrl+Space)', () => {
+    expect(completeAt('A->B: ', 'A->B: '.length, true)).toBeNull()
+  })
+
+  // CANDIDATE BUG #814 TT-A2 (TEST_TREES.md): empty free-text region leaks completions —
+  // it.fails documents the defect; flip to it() when fixed. (42 options at HEAD.)
+  it.fails('offers nothing in an EMPTY title ("title " + Ctrl+Space)', () => {
+    expect(completeAt('title ', 'title '.length, true)).toBeNull()
+  })
+
+  // CANDIDATE BUG #814 TT-A34 (TEST_TREES.md): empty free-text region leaks completions —
+  // it.fails documents the defect; flip to it() when fixed. (42 options at HEAD;
+  // third instance of the degenerate-region class — the divider slot.)
+  it.fails('offers nothing in an EMPTY divider ("== " + Ctrl+Space)', () => {
+    expect(completeAt('== ', '== '.length, true)).toBeNull()
+  })
+})
+
 describe('zenumlCompletionKeymap', () => {
   it('binds Tab, Enter, and Escape', () => {
     const keys = zenumlCompletionKeymap.map((k) => k.key)
