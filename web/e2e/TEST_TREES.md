@@ -989,6 +989,23 @@ original now COMMITS (doc + history) and the correction dispatches as its own
   217/217 (catalog + catalog-extended + typing-mechanics + editor-language, chromium,
   fresh build).
 
+### Update 4 (2026-06-10, final round): top-25 shortlist CLOSED
+
+All 25 shortlist items are now resolved. The D1–D7 decisions were implemented
+(commit 930cb36: undo-restores-original, composition-safe correction with a real
+CDP-IME e2e (Z9), corrected-opener autopair with type-over/pair-delete (Z6),
+per-char paste classification with a fail-safe parse frontier (Z8, TT-I14 fixed))
+and the final test batch landed TT-A14/A16/A19/A31, TT-H14/H34, and the D5/D6
+decision pins. Suites: **353 unit + 229 e2e**, zero fixmes, zero candidate bugs.
+Verified additionally via live agent-browser journeys (D2 undo restore, D3
+pair/type-over/pair-delete, TT-I14 mixed paste). agent-browser caveat #2: `press
+Meta+z` is malformed like `Control+Space` — synthetic KeyboardEvent dispatch is
+the working recipe for ALL modifier combos.
+
+Still open: the ~80 lower-priority clear-expectation ledger items, and the
+DEBATABLE items not covered by D1–D7 (comment-inside-label truncation, hex-color
+token colorless, quoted-method-name colored as string, hard-coded indent unit).
+
 ## Priority shortlist (top 25)
 
 Consolidated from all three gap ledgers (124 items: TT-H1–37, TT-A1–43, TT-I1–44), ordered by value = (likelihood a real user hits it daily) × (severity if regressed) ÷ cost. Unit-feasible items rank above e2e at equal value (cheaper to run forever). Items marked **needs-spec-first** have genuinely undecided expected behavior and must NOT be implemented as tests until the product decision lands.

@@ -200,3 +200,11 @@ Resume options offered: wrap-up / new direction / more mining.
   (fresh build), agent-browser live journeys (mandated) — incl. discovery that agent-browser
   `press Control+Space` emits a malformed keydown; synthetic KeyboardEvent + positive control
   is the working recipe (recorded in TEST_TREES.md update 2).
+- 2026-06-10 (final) — DECISION ROUND: user ratified D1-D7 (recorded in TEST_TREES.md). Implemented via
+  worktree subagent + adversarial review (1 minor finding fixed: parse-frontier fail-safe): autocorrect
+  moved to updateListener architecture — undo restores typed original (D2), composition-safe (D1, CDP-IME
+  e2e Z9), corrected openers autopair (D3, Z6), per-char paste classification (TT-I14 fixed, Z8), D7
+  comment+test. Final test batch: TT-A14/A16/A19/A31/H14/H34 + D5/D6 pins. TOP-25 SHORTLIST CLOSED.
+  Suites 353 unit + 229 e2e green; agent-browser live journeys for D2/D3/I14 (Meta+z also broken in
+  agent-browser — synthetic KeyboardEvent recipe). Remaining: ~80 low-priority ledger items + open
+  debatables (comment-in-label, hex-color token, quoted-method color, indent unit).
