@@ -33,12 +33,12 @@ describe('CodeEditor', () => {
     expect(onChange).toHaveBeenCalled();
   });
 
-  it('renders DSL with the zenuml stream highlighter (text still present, tokens emitted)', () => {
+  it('renders DSL with the zenuml Lezer highlighter (text still present, tokens emitted)', () => {
     const { container } = render(
       <CodeEditor value={'if x\nA->B'} language="dsl" onChange={() => {}} testId="dsl-editor" />,
     );
     expect(screen.getByTestId('dsl-editor')).toHaveTextContent(/A->B/);
-    // StreamLanguage emits CM highlight tokens; the keyword `if` becomes a token span.
+    // The LRLanguage builds a real syntax tree; CM emits highlight token spans.
     expect(container.querySelector('.cm-content')).toBeTruthy();
   });
 
@@ -67,6 +67,38 @@ describe('CodeEditor', () => {
     expect(onChange.mock.calls[0][0]).toBe('.a {\n  color: red;\n}\n');
     // The dispatched doc change is the SOLE onChange source — no extra explicit call.
     expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  // The DSL editor's onZoneChange feeds the context-sensitive Hint Bar. It's an
+  // EditorView.updateListener (not keymap-dependent), so it's deterministic under
+  // jsdom: dispatch a selection change and assert the emitted zone. Both docs were
+  // probed against resolveZone(languageExtension('dsl')) to confirm they resolve
+  // where asserted (block body vs head), so neither passes for an accidental reason.
+  it('fires onZoneChange with the cursor parse zone when the selection moves into a block (dsl)', async () => {
+    const onZoneChange = vi.fn();
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value={'A.b() {\n  \n}'} language="dsl" onChange={() => {}}
+        onZoneChange={onZoneChange} testId="dsl-editor" />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    const inside = view.state.doc.line(2).from + 2; // inside the StatementBraceBlock body
+    view.dispatch({ selection: { anchor: inside } });
+    await waitFor(() => expect(onZoneChange).toHaveBeenCalledWith('block'));
+  });
+
+  it('fires onZoneChange with the head zone when the cursor sits in the head (dsl)', async () => {
+    const onZoneChange = vi.fn();
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value={'@Actor A'} language="dsl" onChange={() => {}}
+        onZoneChange={onZoneChange} testId="dsl-editor" />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    view.dispatch({ selection: { anchor: view.state.doc.length } });
+    await waitFor(() => expect(onZoneChange).toHaveBeenCalledWith('head'));
   });
 
   it('Mod-Shift-f does NOT format/mutate a read-only (ACSS) editor (FIX 6a)', async () => {

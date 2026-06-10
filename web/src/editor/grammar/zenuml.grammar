@@ -1,0 +1,379 @@
+@top Program { StatementTerminator* Title? expression* }
+
+@precedence {
+  headReduce @left,
+  starter @left,
+  title @left,
+  name @left,
+  member @left,
+  call @left,
+  prefix @right,
+  times @left,
+  plus @left,
+  rel @left,
+  eq @left,
+  and @left,
+  or @left,
+  statement @left,
+  group @left,
+  stereotype @left,
+  label @left,
+  message @left,
+  participant @left,
+  creation @left,
+  reference @left,
+  divider @left
+}
+
+@skip { whitespace | Comment }
+
+expression {
+  Head |
+  Statement StatementTerminator*
+}
+
+Title { !title TitleKeyword TitleContent StatementTerminator* }
+
+TitleContent { !title LineContent }
+
+@tokens {
+  LineContent { ![ \t/\n] (![\n/] | "/" ![\n/])* }
+  whitespace { $[ \t]+ }
+  Newline { $[\n]+ }
+  OpenBrace { "{" }
+  CloseBrace { "}" }
+  OpenParen { "(" }
+  CloseParen { ")" }
+  Dot { "." }
+  Comma { "," }
+  SemiColon { ";" }
+  Colon { ":" }
+
+  Color { "#" $[0-9a-fA-F]+ }
+
+  // Special annotations
+  StarterAnnotation { "@Starter" | "@starter" }
+  ReturnAnnotation { "@Return" | "@return" | "@Reply" | "@reply" }
+
+  // Regular annotations (must come after special annotations)
+  Annotation { "@" $[a-zA-Z_0-9]+ }
+
+  // Comments must be defined before division operator
+  Comment { "//" ![\n]* }
+
+  // Operators
+  DivideOp { "/" }
+  MultiplyOp { "*" }
+  ModuloOp { "%" }
+  PlusOp { "+" }
+  MinusOp { "-" }
+  ArrowOp { "->" }
+
+  // Numbers must be defined before Dot and be more specific
+  Number { $[0-9]+ "." $[0-9]+ | $[0-9]+ }
+
+  // Unicode letter ranges mirroring ANTLR's \p{L} (letters only; excludes ×÷ in Latin-1,
+  // symbols in Greek 0374-0375/0384-0387, and Katakana/Hiragana punctuation).
+  // lezer-generator does not support \p{L} — explicit \u{...} ranges used instead.
+  Identifier { $[a-zA-Z_\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{00FF}\u{0100}-\u{024F}\u{0370}-\u{03FF}\u{0400}-\u{04FF}\u{05D0}-\u{05EA}\u{0620}-\u{064A}\u{3040}-\u{309F}\u{30A0}-\u{30FF}\u{3400}-\u{4DBF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7A3}\u{FF21}-\u{FF3A}\u{FF41}-\u{FF5A}] $[a-zA-Z_0-9\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{00FF}\u{0100}-\u{024F}\u{0370}-\u{03FF}\u{0400}-\u{04FF}\u{05D0}-\u{05EA}\u{0620}-\u{064A}\u{3040}-\u{309F}\u{30A0}-\u{30FF}\u{3400}-\u{4DBF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7A3}\u{FF21}-\u{FF3A}\u{FF41}-\u{FF5A}]* }
+  String { '"' (!["\\] | "\\" _)* '"' }
+
+  Equals { "=" }
+
+  @precedence {
+    Comment,
+    StarterAnnotation,
+    ReturnAnnotation,
+    Annotation,
+    Identifier,
+    String,
+    Number,
+    DivideOp,
+    ArrowOp,
+    MultiplyOp,
+    ModuloOp,
+    PlusOp,
+    MinusOp,
+    Equals,
+    Newline
+  }
+}
+
+// Keywords derived from Identifier via @specialize so that "ifService" lexes as
+// a single Identifier — the specialize only fires when the FULL token equals the
+// keyword string, fixing #807 (keyword-prefix participant names were mangled).
+IfKeyword { @specialize[@name=IfKeyword]<Identifier, "if"> }
+ElseKeyword { @specialize[@name=ElseKeyword]<Identifier, "else"> }
+WhileKeyword { @specialize[@name=WhileKeyword]<Identifier, "while"> }
+TryKeyword { @specialize[@name=TryKeyword]<Identifier, "try"> }
+CatchKeyword { @specialize[@name=CatchKeyword]<Identifier, "catch"> }
+FinallyKeyword { @specialize[@name=FinallyKeyword]<Identifier, "finally"> }
+NewKeyword { @specialize[@name=NewKeyword]<Identifier, "new"> }
+ReturnKeyword { @specialize[@name=ReturnKeyword]<Identifier, "return"> }
+TrueKeyword { @specialize[@name=TrueKeyword]<Identifier, "true"> }
+FalseKeyword { @specialize[@name=FalseKeyword]<Identifier, "false"> }
+NullKeyword { @specialize[@name=NullKeyword]<Identifier, "null"> }
+AsyncKeyword { @specialize[@name=AsyncKeyword]<Identifier, "async"> }
+UndefinedKeyword { @specialize[@name=UndefinedKeyword]<Identifier, "undefined"> }
+TitleKeyword { @specialize[@name=TitleKeyword]<Identifier, "title"> }
+GroupKeyword { @specialize[@name=GroupKeyword]<Identifier, "group"> }
+LoopKeyword { @specialize[@name=LoopKeyword]<Identifier, "loop"> }
+AsKeyword { @specialize[@name=AsKeyword]<Identifier, "as"> }
+ParKeyword { @specialize[@name=ParKeyword]<Identifier, "par"> }
+OptKeyword { @specialize[@name=OptKeyword]<Identifier, "opt"> }
+CriticalKeyword { @specialize[@name=CriticalKeyword]<Identifier, "critical"> }
+SectionKeyword { @specialize[@name=SectionKeyword]<Identifier, "section"> }
+FrameKeyword { @specialize[@name=FrameKeyword]<Identifier, "frame"> }
+RefKeyword { @specialize[@name=RefKeyword]<Identifier, "ref"> }
+
+// After the tokens section but before other rules
+StatementTerminator { SemiColon | Newline }
+
+// Head/Statement disambiguation (docs/adr/0002 — abstain, don't fabricate).
+// At the boundary `(Participant ST?)+ · Identifier` the parser must choose between
+// CONTINUING the Head with another bare-Name Participant and ENDING the Head so the
+// Identifier can begin a Statement (e.g. the From of a message). The true
+// discriminator is the *next* token (`->`/`.`/`:`), which is LR(2) — beyond a single
+// shift. `!headReduce` (highest precedence) makes the Head REDUCE at that boundary
+// rather than greedily absorb the message's source/target/label tokens as fabricated
+// participants. Annotated/grouped declarations still chain (their lookahead is an
+// Annotation/`group`, not a bare Identifier, so this boundary never triggers), and a
+// lone bare `Client` still parses as a one-Participant Head.
+Head { StarterExp StatementTerminator? | (Group | (Participant StatementTerminator?))+ !headReduce }
+
+Name { !name Identifier }
+
+Group {
+  !group GroupKeyword Name? GroupBraceBlock |
+  !group GroupKeyword Name? !statement
+}
+
+StarterExp {
+  !starter StarterAnnotation (OpenParen Starter? CloseParen)?
+}
+
+Starter { Identifier | String }
+
+Participant {
+  ParticipantType Stereotype Name Width? Label? Color? |
+  ParticipantType Name Width? Label? Color? |
+  Stereotype Name Width? Label? Color? |
+  // ~pm marks the bare-Name reduce/reduce ambiguity with From/To's Name (a bare
+  // identifier can reduce to either a Participant's Name or a message's To/From
+  // Name). The ambiguity is participant-equivalent for collection purposes; the
+  // marker lets the GLR parser keep both stacks so the error-free branch survives.
+  Name ~pm Width? Label? Color?
+}
+
+ParticipantType { Annotation }
+
+OpenStereotype { "<<" | "<" }
+CloseStereotype { ">>" | ">" }
+Stereotype {
+  !stereotype OpenStereotype Name CloseStereotype |
+  !stereotype OpenStereotype Name CloseStereotype |
+  !stereotype OpenStereotype Name CloseStereotype
+}
+
+Label { !label AsKeyword (Identifier | String) }
+
+Width { Number }
+
+Statement {
+  (
+    Alternative |
+    Parallel |
+    Optional |
+    Critical |
+    Section |
+    Reference |
+    Loop |
+    Creation |
+    Message |
+    AsyncMessage |
+    Return |
+    Divider |
+    TryCatchFinally
+  )
+}
+
+Parallel { !statement ParKeyword StatementBraceBlock | !statement ParKeyword }
+Optional { !statement OptKeyword StatementBraceBlock | !statement OptKeyword }
+
+Critical {
+  !statement CriticalKeyword (OpenParen Atom? CloseParen)? StatementBraceBlock |
+  !statement CriticalKeyword
+}
+
+Section {
+  !statement (SectionKeyword | FrameKeyword) (OpenParen Atom? CloseParen)? StatementBraceBlock |
+  !statement (SectionKeyword | FrameKeyword)
+}
+
+Creation {
+  !creation CreationBody (SemiColon | StatementBraceBlock)?
+}
+
+CreationBody {
+  !creation NewKeyword Construct (OpenParen Parameters? CloseParen)? |
+  !creation NewKeyword Identifier |
+  !creation Assignment NewKeyword Construct (OpenParen Parameters? CloseParen)? |
+  !creation Assignment NewKeyword Identifier
+}
+
+Message {
+  !message MessageBody (SemiColon | StatementBraceBlock)?
+}
+
+MessageBody {
+  !message AssignmentPart |
+  !message MessagePart
+}
+
+MessagePart {
+  !message FromToPart? Function |
+  !message FromToPart Dot Function
+}
+
+From { !message Name ~pm | String }
+To { !message Name ~pm | String }
+
+FromToPart {
+  !message From ArrowOp To Dot |
+  !message From ArrowOp To Function |
+  !message To
+}
+
+Function {
+  !call Signature (Dot Signature)*
+}
+
+Signature {
+  !call MethodName InvocationExp?
+}
+
+InvocationExp {
+  OpenParen Parameters? CloseParen
+}
+
+Assignment {
+  !creation Type? Assignee Equals
+}
+
+AssignmentPart {
+  !message Type? Assignee Equals MessagePart
+}
+
+AsyncMessage {
+  !message AsyncKeyword From ArrowOp To Colon Content StatementTerminator? |
+  !message AsyncKeyword From ArrowOp To StatementTerminator? |
+  !message From ArrowOp To Colon Content StatementTerminator? |
+  !message From ArrowOp To StatementTerminator?
+}
+
+Content { !message LineContent }
+
+Reference {
+  !reference RefKeyword OpenParen (Identifier (Comma Identifier)*)? CloseParen SemiColon?
+}
+
+Return {
+  ReturnKeyword Expression !statement SemiColon |
+  ReturnKeyword Expression |
+  // Bare `return` with no value — a return arrow with no label. The renderer accepts
+  // this; the editor must too (#812).
+  ReturnKeyword !statement |
+  ReturnAnnotation AsyncMessage
+}
+
+Divider {
+  !divider "==" LineContent
+}
+
+Parameters {
+  Parameter (Comma Parameter)* Comma?
+}
+
+Parameter {
+  Declaration | Literal | Name
+}
+
+Literal {
+  Number |
+  String |
+  TrueKeyword |
+  FalseKeyword |
+  NullKeyword |
+  UndefinedKeyword
+}
+
+Declaration {
+  Type Identifier
+}
+
+TryCatchFinally {
+  TryBlock CatchBlock* FinallyBlock?
+}
+
+TryBlock { TryKeyword StatementBraceBlock }
+CatchBlock { CatchKeyword InvocationExp? StatementBraceBlock }
+FinallyBlock { FinallyKeyword StatementBraceBlock }
+
+Alternative {
+  IfBlock ElseIfBlock* ElseBlock?
+}
+
+IfBlock { IfKeyword Condition StatementBraceBlock }
+ElseIfBlock { ElseKeyword IfKeyword Condition StatementBraceBlock }
+ElseBlock { ElseKeyword StatementBraceBlock }
+
+Condition { OpenParen Expression CloseParen }
+StatementBraceBlock { OpenBrace StatementTerminator* (Statement StatementTerminator*)* CloseBrace }
+GroupBraceBlock { OpenBrace StatementTerminator* (Participant StatementTerminator*)* CloseBrace }
+
+Expression {
+  Atom |
+  UnaryExpression |
+  BinaryExpression |
+  FunctionExpression |
+  ParenthesizedExpression
+}
+
+UnaryExpression {
+  !prefix ("-" | "!") Expression
+}
+
+BinaryExpression {
+  Expression !times (MultiplyOp | DivideOp | ModuloOp) Expression |
+  Expression !plus (PlusOp | MinusOp) Expression |
+  Expression !rel ("<=" | ">=" | "<" | ">") Expression |
+  Expression !eq ("==" | "!=") Expression |
+  Expression !and "&&" Expression |
+  Expression !or "||" Expression
+}
+
+FunctionExpression {
+  !member (To Dot)? Function
+}
+
+ParenthesizedExpression {
+  OpenParen Expression CloseParen
+}
+
+Atom {
+  Identifier |
+  Number |
+  String |
+  TrueKeyword |
+  FalseKeyword |
+  NullKeyword |
+  AsyncKeyword |
+  UndefinedKeyword
+}
+
+Type { !message Identifier }
+Construct { !member Identifier }
+MethodName { !call (Identifier | String) }
+Assignee { !message Identifier }
+
+Loop { !statement (WhileKeyword | LoopKeyword) Condition StatementBraceBlock }

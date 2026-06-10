@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { readFileSync } from 'fs';
 import { assetsInlineLimit } from './src/preview/assetInlining';
+import { configDefaults } from 'vitest/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -91,5 +92,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // The Playwright e2e suite lives under e2e/ and imports '@playwright/test'.
+    // Vitest's default include matches **/*.spec.ts, so without this exclude
+    // `vitest run` (yarn test) would collect e2e/editor-language.spec.ts and
+    // crash on the Playwright import. Spread configDefaults.exclude so we keep
+    // node_modules/dist/etc. excluded (replacing it would silently re-enable them).
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 } as any);

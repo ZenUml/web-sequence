@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
 import { Console, type ConsoleEntry } from '../preview/Console';
@@ -10,16 +12,14 @@ import { useUiStore } from '../state/uiStore';
 import type { Item, CssMode } from '../domain/types';
 import { computeCss } from '../preview/transpilers';
 import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui';
-import { Sidebar } from '../components/Sidebar';
+// Sidebar removed — Hub (Approach A) uses no icon rail; see "no rail" comment below.
 import { Layout } from '../components/Layout';
-import { Toolbox } from '../components/Toolbox';
 import { PageTabs } from '../components/pages/PageTabs';
 import { RendererHeader } from '../components/preview/RendererHeader';
 import { CssPanel } from '../components/editor/CssPanel';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
 import { AskToImportModal } from '../components/modals/AskToImportModal';
-import { addCode } from '../editor/snippets';
 import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useBootItem } from '../hooks/useBootItem';
@@ -35,7 +35,7 @@ import { useItems } from '../hooks/useItems';
 import { useFolders } from '../hooks/useFolders';
 import { useShare } from '../hooks/useShare';
 import { migrateToPages } from '../domain/item';
-import { LibraryPanel } from '../components/library/LibraryPanel';
+// LibraryPanel removed — Library is now the Home page (isHomeMode), not a side panel.
 import { ShareButton } from '../components/share/ShareButton';
 import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
 import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
@@ -63,6 +63,8 @@ import { SupportPledgeModal } from '../components/modals/SupportPledgeModal';
 import { AtomicCssSettingsModal, type CssSettings } from '../components/modals/AtomicCssSettingsModal';
 import { PricingModal, type BillingPeriod } from '../components/subscription/PricingModal';
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
+import { LoginModal } from '../components/auth/LoginModal';
+import { HomeView } from '../components/home/HomeView';
 
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
@@ -79,6 +81,9 @@ export function AppRoot() {
   // reads window.location.search/protocol + window.IS_EXTENSION/zenumlDesktop.
   const runtime = detectFromEnv();
   const isEmbed = runtime.isEmbed;
+
+  // Hub (Approach A): imperative navigation between home (library grid) and editor.
+  const navigate = useNavigate();
 
   // Auth + online status side-effects (no return value needed from useOnlineStatus)
   const { login, logout, loginError } = useAuth();
@@ -125,7 +130,6 @@ export function AppRoot() {
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
-  const activePanel = useUiStore((s) => s.activePanel);
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
   // M04: single-modal state + open/close. Login modal is separate shared state so
@@ -343,10 +347,15 @@ export function AppRoot() {
   const { pending: importPending, count: importCount, doImport, dismiss: dismissImport } =
     useImportOnLogin(itemService.saveItems);
 
-  // Read URL params — following existing stickyOffset pattern (no router hook, safe in bare tests)
-  const params = new URLSearchParams(window.location.search);
-  const idParam = params.get('id');
-  const shareToken = params.get('share-token');
+  // Read URL params reactively via TanStack Router so navigation (e.g. goHome) triggers a re-render.
+  const search = useSearch({ from: indexRoute.id });
+  const idParam = search.id ?? null;
+  const shareToken = search['share-token'] ?? null;
+
+  // Hub (Approach A): no id + no share + not an embed → home view shows the library grid.
+  // When true, useBootItem is skipped (no newItem seeded) and HomeView renders instead of
+  // the editor layout.
+  const isHomeMode = !idParam && !shareToken && !runtime.embedCode && !isEmbed;
 
   // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
   // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
@@ -370,7 +379,8 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
-  }, authReady, embedByValue);
+  // Hub: skip boot when on home — we don't want newItem() seeding a blank diagram there.
+  }, authReady, isHomeMode || embedByValue);
 
   // M05 (REQ-EMB-1): seed the embed-by-value item from the inline DSL exactly once.
   // The item is read-only (embed has no save/auth UI) and never persisted. Runs
@@ -617,9 +627,57 @@ export function AppRoot() {
   }
 
   // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
+  // Hub: also navigates to /?id= so the URL reflects which diagram is open.
   function handleOpenItem(it: Item) {
     useEditorStore.getState().loadItem(migrateToPages(it));
     setActivePanel('editor');
+    void navigate({ to: '/', search: (prev) => ({
+      id: it.id,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
+  // Hub: create a blank diagram from the home view and navigate to the editor.
+  function handleNewDiagramFromHome() {
+    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID() : String(Date.now());
+    useEditorStore.getState().loadItem(migrateToPages({
+      id: newId,
+      title: 'Untitled',
+      js: '', css: '', html: '',
+      htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+      pages: [], currentPageId: '',
+      isReadOnly: false,
+    } as Item));
+    setActivePanel('editor');
+    void navigate({ to: '/', search: (prev) => ({
+      id: newId,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
+  // Hub: return to home/library view by clearing the ?id= param.
+  function goHome() {
+    void navigate({
+      to: '/',
+      search: (prev) => ({
+        ...prev,
+        id: undefined,
+        'share-token': undefined,
+        embed: undefined,
+        code: undefined,
+        title: undefined,
+        stickyOffset: undefined,
+      }),
+    });
   }
 
   async function handleDeleteItem(id: string) {
@@ -710,9 +768,8 @@ export function AppRoot() {
   const shareRequiresAuth = !shareReadOnly && !user;
 
   // REQ-PRV-3: stickyOffset comes from the HOST's real URL (the main app is at the
-  // real location; only the iframe is srcdoc). Read once from window.location.search
-  // and pass into the render message. (M00's router also validates this param.)
-  const stickyOffset = Number(params.get('stickyOffset') ?? 0) || 0;
+  // real location; only the iframe is srcdoc). validateSearch already coerces to Number.
+  const stickyOffset = search.stickyOffset ?? 0;
 
   // ─── M05 (RM-2 / REQ-EMB-1): embed branch ────────────────────────────────────
   // A minimal, read-mostly view: NO main header, NO sidebar, NO modals, shortcuts off
@@ -791,6 +848,107 @@ export function AppRoot() {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // Hub: home mode — render the library grid; no item is needed here. All modals that
+  // can fire from the home view (CreateNew, Settings, Login) are included so they remain
+  // accessible even though AppHeader (which normally hosts them) is absent.
+  if (isHomeMode) {
+    return (
+      <div className="flex flex-col h-full w-full">
+        <ConfirmDialog
+          open={noticeOpen}
+          onOpenChange={setNoticeOpen}
+          title="Saved on this device"
+          message="Sign in to save and sync across devices."
+          confirmLabel="Sign in"
+          cancelLabel="Not now"
+          onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
+        />
+        <ConfirmDialog
+          open={importError != null}
+          onOpenChange={(o) => { if (!o) setImportError(null); }}
+          title="Import failed"
+          message={importError ?? ''}
+          confirmLabel="OK"
+          cancelLabel="Dismiss"
+          onConfirm={() => setImportError(null)}
+        />
+        <AskToImportModal
+          open={importPending}
+          onOpenChange={(o) => { if (!o) void dismissImport(); }}
+          count={importCount}
+          onImport={() => void doImport()}
+          onDismiss={() => void dismissImport()}
+        />
+        <SettingsModal
+          open={activeModal === 'settings'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          settings={settings}
+          onChange={handleSettingChange}
+          isExtension={detectFromEnv().isExtension}
+        />
+        <CreateNewModal
+          open={activeModal === 'createNew'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          onSelect={(partial) => {
+            handleCreateNew(partial);
+            const newId = useEditorStore.getState().currentItem?.id;
+            if (newId) void navigate({ to: '/', search: (prev) => ({
+              id: newId,
+              'share-token': prev['share-token'],
+              embed: prev.embed,
+              code: prev.code,
+              title: prev.title,
+              stickyOffset: prev.stickyOffset,
+            }) });
+          }}
+        />
+        <HelpModal
+          open={activeModal === 'help'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          version={APP_VERSION}
+        />
+        {paymentEnabled && (
+          <PricingModal
+            open={activeModal === 'pricing'}
+            onOpenChange={(o) => { if (!o) closeModal(); }}
+            currentPlanType={planType}
+            billingPeriod={billingPeriod}
+            onPeriodChange={setBillingPeriod}
+            onUpgrade={handleUpgrade}
+            onContactEnterprise={() => window.open('https://zenuml.com/docs/about/contact-us', '_blank', 'noopener')}
+          />
+        )}
+        <LoginModal
+          open={loginModalOpen}
+          onOpenChange={setLoginModalOpen}
+          onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); login(provider); }}
+          lastProvider={lastProvider}
+          error={loginError}
+        />
+        <HomeView
+          items={items}
+          folders={folders}
+          user={user}
+          onOpen={handleOpenItem}
+          onNewDiagram={handleNewDiagramFromHome}
+          onBrowseTemplates={() => openModal('createNew')}
+          onOpenSignIn={() => setLoginModalOpen(true)}
+          onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+          onCreateFolder={(name) => void createFolder(name)}
+          onRenameFolder={(id, name) => void renameFolder(id, name)}
+          onDeleteFolder={(id) => void deleteFolder(id)}
+          onDeleteItem={(id) => void handleDeleteItem(id)}
+          onForkItem={handleForkItem}
+          onMoveItem={(it, folderId) => void handleMoveItem(it, folderId)}
+          onExportHtml={handleExportHtml}
+          onExportAll={handleExportAll}
+          onImport={(text) => void handleImport(text)}
+          readOnly={!user}
+        />
+      </div>
+    );
+  }
+
   // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
   // surface the error here at the guard instead of silently returning null. Start
   // fresh clears the flag and seeds a blank diagram.
@@ -806,6 +964,7 @@ export function AppRoot() {
     ) : null;
   }
 
+  // item is non-null here — the isHomeMode and !item early returns above guard this.
   const previewCss = item.cssMode === 'css' ? item.css : transpiledCss;
 
   // Editor chrome driven by the user's Settings (REQ-SET). The Settings modal writes
@@ -902,12 +1061,14 @@ export function AppRoot() {
           closeModal();
         }}
       />
-      <AtomicCssSettingsModal
-        open={activeModal === 'acss'}
-        onOpenChange={(o) => { if (!o) closeModal(); }}
-        value={(item.cssSettings as CssSettings | undefined) ?? {}}
-        onChange={(next) => { useEditorStore.getState().setCssSettings(next); closeModal(); }}
-      />
+      {item && (
+        <AtomicCssSettingsModal
+          open={activeModal === 'acss'}
+          onOpenChange={(o) => { if (!o) closeModal(); }}
+          value={(item.cssSettings as CssSettings | undefined) ?? {}}
+          onChange={(next) => { useEditorStore.getState().setCssSettings(next); closeModal(); }}
+        />
+      )}
       {paymentEnabled && (
         <PricingModal
           open={activeModal === 'pricing'}
@@ -955,6 +1116,7 @@ export function AppRoot() {
         onOpenPricing={() => openModal('pricing')}
         onOpenCheatSheet={() => openModal('cheatsheet')}
         onOpenShortcuts={() => openModal('shortcuts')}
+        onGoHome={goHome}
         actions={
           <ShareButton
             disabled={shareReadOnly}
@@ -972,37 +1134,12 @@ export function AppRoot() {
         }
       />
       <div className="flex flex-1 min-h-0 w-full">
-        {/* Icon rail is desktop-only — the mobile layout (§03) is a single tabbed pane
-            with no rail (matches the design's phone mock). */}
-        <div className="hidden md:flex">
-          <Sidebar
-            onOpenTemplates={() => openModal('createNew')}
-            onOpenHelp={() => openModal('help')}
-          />
-        </div>
+        {/* Hub model (Approach A): "no rail" — Library is the Home page, the editor is
+            focused. The Sidebar icon rail (Editor/Library/Templates) is intentionally
+            absent; navigation back to the library uses the "← Your diagrams" breadcrumb. */}
         <Layout
           editor={
-            activePanel === 'library' ? (
-              <LibraryPanel
-                items={items}
-                folders={folders}
-                onOpen={handleOpenItem}
-                onFork={handleForkItem}
-                onDelete={(id) => void handleDeleteItem(id)}
-                onMove={(it, folderId) => void handleMoveItem(it, folderId)}
-                onExportAll={handleExportAll}
-                onImport={(text) => void handleImport(text)}
-                onExportHtml={handleExportHtml}
-                onCreateFolder={(name) => void createFolder(name)}
-                onRenameFolder={(id, name) => void renameFolder(id, name)}
-                onDeleteFolder={(id) => void deleteFolder(id)}
-                // §04 empty-state CTAs: New diagram → fresh item + jump to the editor;
-                // Browse templates → the visual CreateNewModal (which IS the templates panel).
-                onNewDiagram={() => { useEditorStore.getState().newItem(); setActivePanel('editor'); }}
-                onBrowseTemplates={() => openModal('createNew')}
-                readOnly={!user}
-              />
-            ) : (
+            (
             <div className="flex flex-col h-full">
               {/* Page tabs now live on the RENDERER side (preview slot), above the
                   diagram — pages are a property of the rendered document, not the DSL
@@ -1014,7 +1151,6 @@ export function AppRoot() {
                   when empty, expanding to the editor + its pre-processor Select. CSS
                   modes are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
-              <Toolbox onInsert={(code) => setDsl(addCode(item.js, code))} />
               <div className="flex flex-1 min-h-0 flex-col">
                 {/* DSL pane header — primary surface marker */}
                 <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">

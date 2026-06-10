@@ -60,6 +60,9 @@ export interface AppHeaderProps {
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
+  // Hub (Approach A): when provided, renders a "← Library" breadcrumb left of the
+  // title so the user can return to the home/library view. Omitted in classic mode.
+  onGoHome?(): void;
 }
 
 function Chevron({ className }: { className?: string }) {
@@ -136,6 +139,7 @@ export function AppHeader({
   loginOpen: loginOpenProp,
   onLoginOpenChange,
   actions,
+  onGoHome,
 }: AppHeaderProps) {
   const [loginOpenInternal, setLoginOpenInternal] = useState(false);
   // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
@@ -175,7 +179,11 @@ export function AppHeader({
 
   return (
     <>
-      <header className="bg-blueprint border-b border-ink-line/40 h-14 px-3 md:px-4 flex items-center gap-2 md:gap-3.5">
+      <header className={cn(
+        'bg-blueprint border-b border-ink-line/40 px-3 md:px-4 flex items-center gap-2 md:gap-3.5',
+        // Hub mode on mobile: two rows (nav row + title row). Single row on sm+ or outside hub.
+        onGoHome ? 'h-auto sm:h-14 flex-wrap py-1.5 sm:py-0' : 'h-14',
+      )}>
         {/* App menu — the logo brand button (▾). Holds New / New from template /
             Settings / Keyboard shortcuts / DSL cheat sheet / Help / Pricing / Save. */}
         <AppMenu
@@ -190,6 +198,45 @@ export function AppHeader({
           paymentEnabled={paymentEnabled}
         />
 
+        {/* Hub breadcrumb — shown only when onGoHome is provided (Hub editor mode).
+            Design: icon-only back button · "Your diagrams" text button · "/" · [filename ▾]
+            The file menu pill follows immediately after this breadcrumb. */}
+        {onGoHome && (
+          <div className="flex items-center gap-1.5 shrink-0" data-testid="hub-breadcrumb">
+            {/* Back arrow — icon-only affordance */}
+            <button
+              type="button"
+              data-testid="header-go-home"
+              aria-label="Back to your diagrams"
+              onClick={onGoHome}
+              className={cn(
+                'grid place-items-center h-[34px] w-[34px] shrink-0 rounded-lg',
+                'text-ondark-muted hover:text-ondark-strong hover:bg-white/6',
+                'transition-colors duration-150 ease-draft ring-draft',
+              )}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-[18px] w-[18px]" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            {/* "Your diagrams" — text label hidden on mobile, icon-only affordance remains */}
+            <button
+              type="button"
+              onClick={onGoHome}
+              aria-hidden="true"
+              tabIndex={-1}
+              className={cn(
+                'hidden sm:block font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
+                'hover:text-ondark-strong transition-colors duration-150 ease-draft',
+              )}
+            >
+              Your diagrams
+            </button>
+            {/* "/" separator — hidden on mobile too (arrow alone is sufficient) */}
+            <span className="hidden sm:inline text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
+          </div>
+        )}
+
         {/* File menu — inline-editable filename + a chevron opening the document
             menu (Rename / Duplicate). The name + chevron sit together in a quiet
             pill (.filemenu) so "this is the file and its actions" reads as a unit. */}
@@ -197,6 +244,8 @@ export function AppHeader({
           className={cn(
             'flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
             'bg-ink-700/45 border border-ink-line/50',
+            // Hub mode on mobile: drop title to its own row, stretch full width.
+            onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
           )}
         >
           <TextInput
@@ -209,9 +258,11 @@ export function AppHeader({
             // .fname: quiet until hover/focus — transparent fill + borderless until
             // the field is engaged, so the title reads as text, not a form control.
             className={cn(
-              'min-w-0 max-w-[220px] h-7 bg-transparent border-transparent font-sans font-medium',
+              'min-w-0 h-7 bg-transparent border-transparent font-sans font-medium',
               'text-[14px] text-ondark-strong',
               'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
+              // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
+              onGoHome ? 'flex-1 sm:flex-none sm:max-w-[220px]' : 'max-w-[220px]',
             )}
             onChange={(e) => onTitleChange(e.target.value)}
           />
