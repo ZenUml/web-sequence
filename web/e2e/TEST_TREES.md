@@ -914,6 +914,14 @@ Named incidents not mapped above: 42136b9 (computed styles) — out of this tree
 
 ---
 
+## Status updates (2026-06-10, same day as authoring)
+
+First implementation tranche landed (unit: `npx vitest run src/editor/`; e2e: `typing-mechanics.spec.ts`):
+
+- **Implemented → covered**: TT-H1, TT-H9/H36 (free-text keyword-color suite, `zenumlLanguage.test.ts`); TT-A22 (anti-mirroring enumeration, `cjkAutocorrect.test.ts`); TT-I42 (indent invariant gate, NEW `indentInvariant.test.ts` — `group` covered at depth 1 only, head-level by grammar); TT-I1, I3, I9, I10, I11, I12, I20 (NEW `e2e/typing-mechanics.spec.ts`, 7 tests).
+- **Confirmed bugs, filed + documented as `it.fails`**: TT-A1/TT-A2/TT-A34 → [#814](https://github.com/ZenUml/web-sequence/issues/814) (empty free-text regions leak completions); TT-A22 disagreements (`＇ ［ ］ ＿`) → [#815](https://github.com/ZenUml/web-sequence/issues/815).
+- **Stale-test reconciliation after 76bddeb (TT-A7/TT-A8)**: 15 catalog tests (not 12 — N1/U7/U8 were also dot-vehicle) reconciled: 5 flipped to assert post-dot suppression (E1, N9, O1, O3, Z4), 10 re-grounded on `->`/line-start triggers preserving their original guard concern (N1, O5, U6, U7, U8, U10, W1, W9, X1, X2).
+
 ## Priority shortlist (top 25)
 
 Consolidated from all three gap ledgers (124 items: TT-H1–37, TT-A1–43, TT-I1–44), ordered by value = (likelihood a real user hits it daily) × (severity if regressed) ÷ cost. Unit-feasible items rank above e2e at equal value (cheaper to run forever). Items marked **needs-spec-first** have genuinely undecided expected behavior and must NOT be implemented as tests until the product decision lands.

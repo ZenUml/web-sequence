@@ -179,3 +179,16 @@ Resume options offered: wrap-up / new direction / more mining.
   Still PAUSED for direction (deliverables complete; conserving budget while user away).
 - 2026-06-09 — Usage-guardrail cron e876aa05 CANCELLED by user. No scheduled jobs remain; no more
   automated usage checks. Campaign complete + paused; awaiting direction.
+- 2026-06-10 — RESUMED by user request: tree-structured test catalog. (1) Fixed+committed user-reported
+  dot bug (76bddeb: post-`Name.` participant popup suppressed — method-name slot). (2) 10-agent workflow
+  built `e2e/TEST_TREES.md`: keyboard-first typing-path trees, 3 subsystems, 264 leaves
+  (149 covered / 91 GAP / 34 GAP-UNSURE / 24 DEBATABLE / 25 needs-spec), 124-item gap ledger,
+  top-25 shortlist. (3) Tranche 1 implemented: +47 unit (zenumlLanguage free-text keyword colors,
+  half-typed states; cjkAutocorrect anti-mirror enumeration; NEW indentInvariant.test.ts gate) and
+  NEW e2e/typing-mechanics.spec.ts (7: pair-delete, }-type-over, Enter-continuation, closer-column,
+  mid-statement Enter, Shift-Tab dedent, multi-line Tab). (4) Bugs found+filed: #814 (empty free-text
+  regions leak completions — TT-A1/A2/A34, it.fails), #815 (CJK map gaps ＇［］＿ — it.fails).
+  (5) 76bddeb fallout: 15 stale catalog tests reconciled (5 flipped, 10 re-grounded on -> triggers).
+  Suites: 329 unit (incl. 4 it.fails) + 196 e2e green. NEXT: fix #814/#815 test-first; shortlist
+  items 7+ (TT-A9 fullwidth arrow e2e, TT-A14 backspace-refilter, TT-H34 font gate); needs-spec
+  decisions (IME composition, undo-after-autocorrect, fullwidth-opener autopair).

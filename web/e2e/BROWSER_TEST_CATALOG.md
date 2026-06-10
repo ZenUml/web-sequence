@@ -290,3 +290,16 @@ Additional unit guards: `conformance/noFalsePositive.test.ts` (no Lezer error on
 
 Feature: full-width arrow `→`→`->` is a possible future enhancement (1→2 mapping; the renderer also
 rejects bare `→`). Known minor grammar gaps deferred: `A.b(x = 1)` named param, `A:B`.
+
+---
+
+## Tree-structured catalog (2026-06-10) — `TEST_TREES.md`
+
+The linear areas above are complemented by **keyboard-first typing-path trees** in
+[`TEST_TREES.md`](./TEST_TREES.md): per subsystem (highlighting / autocomplete /
+indentation & typing mechanics), 6 root starting states × user-action branches, every
+leaf marked covered/GAP/DEBATABLE with refs back to these area IDs and the unit suites.
+124-item gap ledger + top-25 shortlist. First tranche: `typing-mechanics.spec.ts`
+(pair-deletion, type-over, Enter-continuation/closer-column indent, Shift-Tab, multi-line
+Tab) + unit suites (free-text keyword colors, half-typed states, CJK anti-mirror
+enumeration, indent invariant gate). Bugs found: #814, #815.
