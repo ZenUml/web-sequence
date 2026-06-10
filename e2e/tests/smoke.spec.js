@@ -1,10 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 // Smoke: the NEW app (web/) loads, the editor + preview shells are present, and
 // the preview iframe's srcdoc carries the @zenuml/core mount point. This proves
 // the app boots and the iframe scaffolding is in place — the dsl-spot-check spec
 // proves the editor -> postMessage -> @zenuml/core render path renders an SVG.
+//
+// Hub (PRs #800/#801): '/' renders the HomeView library, not the editor — the
+// editor smokes click through the hub's New CTA via openEditor().
 
 // Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
 // analytics/CDN scripts (GTM, Cloudflare Zaraz, Clarity, Paddle) that throw
@@ -36,7 +40,15 @@ test.beforeEach(async ({ page }) => {
     throw err;
   });
   await suppressOneTimeModals(page); // M04: keep onboarding/pledge from trapping focus
+  // Hub: '/' is the HomeView library; reach the editor through the New CTA.
+  await openEditor(page);
+});
+
+test("'/' renders the HomeView hub library @smoke", async ({ page }) => {
+  // Hub (PRs #800/#801): bare '/' is the library page. Re-navigate there (the
+  // beforeEach clicked through into the editor) and assert the hub surface.
   await page.goto('/');
+  await expect(page.locator('[data-testid="home-view"]')).toBeVisible();
 });
 
 test('app loads with editor and preview iframe @smoke', async ({ page }) => {
@@ -45,10 +57,14 @@ test('app loads with editor and preview iframe @smoke', async ({ page }) => {
 });
 
 test('preview iframe carries the @zenuml/core mounting point @smoke', async ({ page }) => {
-  // CodeMirror 6 editable surface is mounted and shows non-empty default text.
+  // CodeMirror 6 editable surface is mounted and editable. Hub (PRs #800/#801):
+  // the hub's New CTA seeds a BLANK diagram by design (handleNewDiagramFromHome
+  // loads js: ''), so the old "shows non-empty default text" assertion no longer
+  // matches the product — the DEFAULT_STARTER text now only appears via the
+  // in-editor New action (covered by persistence.spec.js test 3).
   const editorContent = page.locator('[data-testid="dsl-editor"] .cm-content');
   await expect(editorContent).toBeVisible();
-  await expect(editorContent).not.toBeEmpty();
+  await expect(editorContent).toHaveAttribute('contenteditable', 'true');
 
   // The preview is a srcdoc iframe; #mounting-point is the fixed scaffold that
   // @zenuml/core renders into. Assert it is ATTACHED (an empty mount div can be

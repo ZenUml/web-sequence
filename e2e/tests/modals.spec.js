@@ -13,6 +13,7 @@
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 const THIRD_PARTY_ERROR_SOURCES = [
   'userscript.js', 'gtm.js', 'googletagmanager', 'google-analytics',
@@ -30,8 +31,10 @@ async function gotoFresh(page) {
   await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  await page.goto('/');
-  await expect(page.locator('[data-testid="dsl-editor"] .cm-content')).toBeVisible({ timeout: 15_000 });
+  // Hub (PRs #800/#801): '/' renders the HomeView library; all the modal triggers
+  // these tests drive live in the EDITOR's header menu — click through the hub's
+  // New CTA to reach it.
+  await openEditor(page);
 }
 
 /** Open an item in the header overflow menu by its trigger testid. */

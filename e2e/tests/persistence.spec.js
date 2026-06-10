@@ -3,12 +3,18 @@
 //
 // Tests the local-persistence layer (localStorage) that survives page reloads
 // and across tabs — without any Firebase auth:
-//   1. last-code restore on reload (preserveLastCode default true)
+//   1. typed DSL survives a reload of the editor URL (hub re-ground — see test 1)
 //   2. per-page content is isolated across multi-page tabs
 //   3. "New" resets to the default starter DSL
+//
+// Hub (PRs #800/#801): bare '/' renders the HomeView library, so every test
+// reaches the editor through the hub's New CTA (openEditor) and the editor lives
+// at /?id=<uuid>. That URL shape changes WHICH boot branch a reload exercises —
+// see the test-1 comment.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 // Default starter DSL, from web/src/state/editorStore.ts DEFAULT_STARTER.
 const STARTER_DSL_FRAGMENT = 'Alice -> Bob: Hello';
@@ -40,24 +46,24 @@ function isThirdPartyError(err) {
 }
 
 /**
- * Navigate to the app with a clean localStorage slate.
- * Uses a two-step approach: navigate to /empty-storage-sentinel (any path the
- * app serves — its own origin), clear localStorage, THEN go to '/'. This avoids
- * addInitScript which re-runs on every page.reload() and would wipe the storage
- * that the reload is supposed to read.
+ * Navigate to the EDITOR with a clean localStorage slate.
+ * Lands on the app origin first to clear storage, then clicks through the hub
+ * (openEditor) — this avoids addInitScript-based clearing, which re-runs on every
+ * page.reload() and would wipe the storage that the reload is supposed to read.
  */
 async function gotoFresh(page) {
   // M04: seed ONLY the one-time-modal flags (onboarded / lastSeenVersion) via an
   // init script so Onboarding/Support-pledge don't trap focus. This is safe with
   // this spec's reload-reads-storage approach: the init script ADDS two unrelated
-  // keys on each navigation but never touches the `code` slot the reload reads.
+  // keys on each navigation but never touches the item/`code` slots reloads read.
   await suppressOneTimeModals(page);
   // Step 1: land on the app origin so we can write to its localStorage.
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // Step 2: reload — localStorage user-data is empty; the init script re-seeds only
-  // the one-time flags. We do NOT re-clear here.
-  await page.goto('/');
+  // Step 2: hub (PRs #800/#801) — '/' is the HomeView library; reach the editor
+  // through the New CTA. User data is empty; the init script re-seeds only the
+  // one-time flags. We do NOT re-clear here.
+  await openEditor(page);
 }
 
 /** Type a replacement DSL into the CM6 editor (select-all → Delete → type). */
@@ -76,9 +82,21 @@ function editorLocator(page) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Test 1: Last-code restore on reload
+// Test 1: Typed DSL survives a page reload of the editor URL.
+//
+// HUB RE-GROUND (PRs #800/#801) — this used to be "last-code restore": reload at
+// '/' booted the preserveLastCode branch, which read localStorage['code'] back
+// into the editor. Under the hub the editor lives at /?id=<uuid> and bare '/'
+// renders the HomeView library, so the boot-time last-code READ branch
+// (resolveBootItem branch 3 — only reachable with NO ?id) can no longer be hit
+// from any editor URL on the web (verified live: reloading /?id= with an unsaved
+// item boots 'new' → starter DSL). The reload-persistence contract the user sees
+// is now: SAVE the diagram → reload /?id=<id> → boot getItem(id) restores the
+// local copy. This test follows that contract; the still-live last-code WRITE
+// path (visibilitychange/beforeunload → 'code' slot, REQ-PST) keeps its
+// assertion below so a regression in the write side stays visible.
 // ──────────────────────────────────────────────────────────────────────────────
-test('last-code restore: typed DSL persists across a page reload', async ({ page }) => {
+test('reload persistence: saved DSL is restored when the editor URL reloads', async ({ page }) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -96,19 +114,15 @@ test('last-code restore: typed DSL persists across a page reload', async ({ page
   // Confirm the text landed in the editor before triggering the reload.
   await expect(editorLocator(page)).toContainText(UNIQUE_PARTICIPANT);
 
-  // Ensure last-code is written to localStorage. The AppRoot writes it on
-  // `beforeunload` AND on `visibilitychange` (document.hidden → true).
-  // Dispatch the visibilitychange event explicitly so the async write resolves
-  // before we check — the storage call is void-ed but localStorage.setItem is
-  // synchronous under localStore, so the value is available immediately after
-  // the event fires.
+  // REQ-PST write path (unchanged by the hub): AppRoot writes the last-code slot
+  // on `beforeunload` AND on `visibilitychange` (document.hidden → true).
+  // Dispatch visibilitychange explicitly and poll until localStorage['code']
+  // contains our token — keeps the write side guarded even though the web boot
+  // no longer reads it back at an editor URL (see header comment).
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-
-  // Poll until localStorage['code'] contains our token — proves the write
-  // happened before we reload (handles any async wrapper overhead).
   await page.waitForFunction(
     (participant) => {
       const raw = localStorage.getItem('code');
@@ -119,8 +133,32 @@ test('last-code restore: typed DSL persists across a page reload', async ({ page
     { timeout: 5_000 },
   );
 
-  // Reload: boot reads localStorage['code'] (preserveLastCode=true by default)
-  // and restores the item — no addInitScript runs this time.
+  // Hub restore contract: SAVE the diagram so the reload's getItem(?id) finds the
+  // local copy. Save lives inside the header-menu dropdown; the FIRST signed-out
+  // save opens the one-time "Saved on this device" notice (fresh slate →
+  // loginAndSaveMessageSeen is false, so it shows with certainty) — dismiss it.
+  await page.locator('[data-testid="header-menu"]').click();
+  await page.locator('[data-testid="header-save"]').click();
+  const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
+  await expect(noticeCancel).toBeVisible();
+  await noticeCancel.click();
+  await expect(noticeCancel).toBeHidden();
+
+  // Guard: poll until the item slot (keyed by the /?id= uuid) holds our token —
+  // proves the save landed before we reload.
+  const itemId = new URL(page.url()).searchParams.get('id');
+  expect(itemId, 'editor URL must carry ?id=<uuid> under the hub').toBeTruthy();
+  await page.waitForFunction(
+    ({ id, participant }) => {
+      const raw = localStorage.getItem(id);
+      return !!raw && raw.includes(participant);
+    },
+    { id: itemId, participant: UNIQUE_PARTICIPANT },
+    { timeout: 5_000 },
+  );
+
+  // Reload: boot resolves ?id= via getItem (signed-out → local copy) and restores
+  // the item — no addInitScript clearing runs this time.
   await page.reload();
 
   // Wait for the editor to re-hydrate with the restored content.
