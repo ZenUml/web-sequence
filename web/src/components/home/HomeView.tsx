@@ -16,6 +16,7 @@ import {
 } from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
 import { FolderList } from '../library/FolderList';
+import { ImportExportBar } from '../library/ImportExportBar';
 import { DiagramCard } from './DiagramCard';
 
 function buildCounts(items: Item[], folders: Folder[]) {
@@ -69,6 +70,8 @@ export function HomeView({
   onDeleteItem,
   onForkItem,
   onExportHtml,
+  onExportAll,
+  onImport,
   readOnly = false,
 }: HomeViewProps) {
   const query = useLibraryStore((s) => s.query);
@@ -150,8 +153,21 @@ export function HomeView({
         {/* Spacer mirrors brand width to keep search centred */}
         <div className="flex-1" />
 
-        {/* Right-hand actions — split New button + avatar/sign-in */}
+        {/* Right-hand actions — import/export · split New button · avatar/sign-in */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Library-level bulk import/export. Re-homed from the retired LibraryPanel
+              (hub transition orphaned it — AppRoot kept passing the handlers but no
+              view rendered them, leaving import/export unreachable). Lives in the
+              ALWAYS-present header row, not the results-gated grid heading, so an
+              empty library can still import. Hidden on mobile (<sm) like Sign-in.
+              NOT gated on readOnly/auth: this is a local-first app — a signed-out
+              user's local library is exactly what import/export backs up (legacy
+              LibraryPanel never auth-gated these either). */}
+          {onExportAll && onImport && (
+            <div className="hidden sm:block">
+              <ImportExportBar onExportAll={onExportAll} onImport={onImport} />
+            </div>
+          )}
           {/* Split New button: primary "New" + caret opening a mini-menu */}
           <div className="flex items-stretch">
             <Button

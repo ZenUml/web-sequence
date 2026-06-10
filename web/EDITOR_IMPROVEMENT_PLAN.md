@@ -208,3 +208,9 @@ Resume options offered: wrap-up / new direction / more mining.
   Suites 353 unit + 229 e2e green; agent-browser live journeys for D2/D3/I14 (Meta+z also broken in
   agent-browser — synthetic KeyboardEvent recipe). Remaining: ~80 low-priority ledger items + open
   debatables (comment-in-label, hex-color token, quoted-method color, indent unit).
+- 2026-06-10 (ship prep) — Rebased onto origin (+10 hub commits #800/#801); HintBar panel REMOVED
+  (user request) incl. e2e areas I/V; seedAndOpen + AppRoot tests caught up with hub routing
+  (53 were red at origin); import/export RE-HOMED into HomeView header (hub transition had
+  orphaned it — unreachable in the app), not auth-gated (local-first); embed/Toolbox tests
+  re-grounded on the no-rail design. Gates: 1018 unit / 0 fail, 214 e2e, tsc clean; agent-browser
+  journeys (panel gone; export→mutate→import cycle live). Proceeding to submit/babysit/land.

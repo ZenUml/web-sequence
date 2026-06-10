@@ -301,22 +301,31 @@ describe('AppRoot', () => {
     expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 
-  it('renders the LibraryPanel (not the old stub) when the library panel is active', async () => {
-    const { useUiStore } = await import('../state/uiStore');
+  it('renders the import/export actions on the Home view', async () => {
+    // Hub (PRs #800/#801) retired the LibraryPanel side panel — the library IS the
+    // Home view now ('/', no ?id=). The bulk import/export controls were re-homed
+    // from the retired panel into HomeView's ALWAYS-present header row (HomeView.tsx
+    // — not auth/readOnly-gated, so an empty or signed-out library can still import).
+    // Route to '/' via the file's existing history.replaceState URL pattern instead
+    // of the retired setActivePanel('library').
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
-    useUiStore.getState().setActivePanel('library');
-    expect(await screen.findByTestId('library-panel')).toBeInTheDocument();
+    expect(await screen.findByTestId('home-view')).toBeInTheDocument();
+    expect(screen.getByTestId('lib-export-all')).toBeInTheDocument();
+    expect(screen.getByTestId('lib-import')).toBeInTheDocument();
+    expect(screen.getByTestId('lib-import-input')).toBeInTheDocument();
   });
 
   it('surfaces an "Import failed" notice when the imported file is malformed (advisor fix #6)', async () => {
     // parseImportJson is mocked to throw. Before the fix handleImport had no
     // try/catch, so the throw became a swallowed unhandled rejection with no UI.
-    const { useUiStore } = await import('../state/uiStore');
+    // Hub (PRs #800/#801): import moved from the retired LibraryPanel to the Home
+    // view header — AppRoot's isHomeMode branch renders the SAME "Import failed"
+    // ConfirmDialog as the editor branch (AppRoot.tsx), so the notice is asserted
+    // on the Home view, where the import control now lives.
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
-    useUiStore.getState().setActivePanel('library');
-    await screen.findByTestId('library-panel');
+    await screen.findByTestId('home-view');
 
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
     const file = new File(['not json'], 'broken.json', { type: 'application/json' });
@@ -887,10 +896,10 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
   });
 
   it("'exportItems' uses legacy category 'fn'", async () => {
-    const { useUiStore } = await import('../state/uiStore');
+    // Hub (PRs #800/#801): export-all moved from the retired LibraryPanel to the
+    // Home view header row (HomeView.tsx) — route to '/' and click it there.
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
-    useUiStore.getState().setActivePanel('library');
     const exportBtn = await screen.findByTestId('lib-export-all');
     await act(async () => { await userEvent.click(exportBtn); });
     const env = lastEnvelope('exportItems');
@@ -907,11 +916,11 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'i1' } as never,
       { id: 'i2' } as never,
     ]);
-    const { useUiStore } = await import('../state/uiStore');
+    // Hub (PRs #800/#801): import moved from the retired LibraryPanel to the Home
+    // view header (HomeView.tsx) — route to '/' and drive the import input there.
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
-    useUiStore.getState().setActivePanel('library');
-    await screen.findByTestId('library-panel');
+    await screen.findByTestId('home-view');
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
@@ -931,7 +940,6 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
   // The bug sent String(parsed.length)=2. Reverting to parsed.length → label '2' → fails.
   it("'itemsImported' label is the newly-added count, not the total parsed count", async () => {
     const { parseImportJson } = await import('../services/exportImport');
-    const { useUiStore } = await import('../state/uiStore');
     // Seed the items list with an item whose id overlaps one of the parsed ids.
     (itemSvc.subscribeAllItems as unknown as {
       mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
@@ -943,17 +951,18 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'existing-1' } as never, // already owned → not newly added
       { id: 'brand-new' } as never,  // newly added
     ]);
+    // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
+    await screen.findByTestId('home-view');
     await act(async () => {
       useAuthStore.setState({
         user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
         authReady: true, online: true,
       });
     });
-    // Wait for the seeded item to populate the live list.
-    useUiStore.getState().setActivePanel('library');
-    await screen.findByTestId('library-panel');
+    // Wait for the seeded item to populate the live list (it renders as a card).
+    await screen.findByTestId('home-grid');
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
@@ -971,7 +980,6 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
   // to an unconditional track makes an event appear here → fails.
   it("'itemsImported' is NOT fired when the import adds no new items", async () => {
     const { parseImportJson } = await import('../services/exportImport');
-    const { useUiStore } = await import('../state/uiStore');
     (itemSvc.subscribeAllItems as unknown as {
       mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
     }).mockImplementation((_uid, cb) => {
@@ -979,16 +987,18 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       return () => {};
     });
     vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup-1' } as never]); // all duplicates
+    // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
+    window.history.replaceState({}, '', '/');
     render(<AppRoot />);
-    await screen.findByTestId('header-title');
+    await screen.findByTestId('home-view');
     await act(async () => {
       useAuthStore.setState({
         user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
         authReady: true, online: true,
       });
     });
-    useUiStore.getState().setActivePanel('library');
-    await screen.findByTestId('library-panel');
+    // Wait for the seeded duplicate item to populate the live list.
+    await screen.findByTestId('home-grid');
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
@@ -1043,23 +1053,30 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // M05 — embed mode (RM-2 / REQ-EMB-1).
 //
 // DISCRIMINATING-TESTID CONTRACT (verified against the code): AppHeader exposes
-// `header-title`/`header-menu`/`header-savestate` and Sidebar exposes `sidebar-editor`/
-// `sidebar-library` — these are PRESENT in normal mode (the CONTROL test pins them),
-// so their ABSENCE in embed is a genuine revert→fail signal (there is no `app-header`
-// / bare `sidebar` id that would pass vacuously). The URL is driven via
-// history.replaceState (NOT location.search =, which triggers jsdom navigation), and
-// the top-level afterEach restores it to '/'.
+// `header-title`/`header-menu`/`header-savestate` and Layout exposes `editor-region`
+// — these are PRESENT in normal editor mode (the CONTROL test pins them), so their
+// ABSENCE in embed is a genuine revert→fail signal (there is no `app-header` /
+// bare `editor` id that would pass vacuously). The Sidebar icon rail this contract
+// previously leaned on (`sidebar-editor`/`sidebar-library`) was deliberately removed
+// app-wide by f023f89 ("feat(hub): no-rail layout…") — Sidebar.tsx is unreferenced —
+// so `sidebar-*` ids no longer exist in ANY mode and cannot ground the contrast.
+// The URL is driven via history.replaceState (NOT location.search =, which triggers
+// jsdom navigation), and the top-level afterEach restores it to '/'.
 // ───────────────────────────────────────────────────────────────────────────
 describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
-  it('CONTROL: normal (non-embed) mode renders the real header + a sidebar panel', async () => {
+  it('CONTROL: normal (non-embed) mode renders the real header + the editor work surface', async () => {
     // Hub (PRs #800/#801): bare '/' is now the HomeView library, so "normal
     // (non-embed) mode" — this control's subject — lives at an editor URL.
     window.history.replaceState({}, '', '/?id=t-boot');
     render(<AppRoot />);
     expect(await screen.findByTestId('header-title')).toBeInTheDocument();
     expect(screen.getByTestId('header-menu')).toBeInTheDocument();
-    // At least one sidebar-<panel> node renders in normal mode.
-    expect(screen.getAllByTestId(/^sidebar-/).length).toBeGreaterThan(0);
+    // f023f89 ("feat(hub): no-rail layout…") removed the Sidebar icon rail app-wide,
+    // so the old `sidebar-*` presence check could only fail. The normal-vs-embed
+    // chrome contrast is re-grounded on `editor-region` (Layout.tsx): the split-pane
+    // editor surface renders in normal mode and the embed branch returns before
+    // Layout ever mounts, so its absence under ?embed (asserted below) discriminates.
+    expect(screen.getByTestId('editor-region')).toBeInTheDocument();
     // The embed shell is NOT present in normal mode.
     expect(screen.queryByTestId('embed-header')).toBeNull();
   });
@@ -1072,7 +1089,10 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
     expect(screen.queryByTestId('header-title')).toBeNull();
     expect(screen.queryByTestId('header-menu')).toBeNull();
-    expect(screen.queryAllByTestId(/^sidebar-/)).toHaveLength(0);
+    // f023f89 removed the Sidebar rail app-wide, making the old `sidebar-*` absence
+    // check vacuously true; `editor-region` (pinned present by the control) is the
+    // current chrome element the embed branch genuinely suppresses.
+    expect(screen.queryByTestId('editor-region')).toBeNull();
     // No save/auth controls in embed.
     expect(screen.queryByTestId('header-savestate')).toBeNull();
     expect(screen.queryByTestId('header-login')).toBeNull();
