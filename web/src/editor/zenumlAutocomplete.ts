@@ -35,6 +35,7 @@ import type { KeyBinding } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { commandsForZone, type SlashZone } from './slashCommands'
 import { getParticipants } from './participantManager'
+import { isFreeTextSpan } from './cjkAutocorrect'
 import { CLOUD_ANNOTATIONS, CORE_ANNOTATIONS } from './annotations'
 
 // ---------------------------------------------------------------------------
@@ -249,16 +250,13 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   //    (a quoted string or a bare label name); typing `as "title screen"` must not pop
   //    the `title` keyword (#813). The `as` keyword itself is offered BEFORE the Label
   //    node exists, so head-keyword completion of `as` is unaffected.
-  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
-    if (
-      n.name === 'Comment' ||
-      n.name === 'Content' ||
-      n.name === 'LineContent' ||
-      n.name === 'Label' ||
-      n.name === 'String'
-    )
-      return null
-  }
+  //  - an EMPTY free-text region (#814): right after `A->B: ` / `title ` / `== ` the
+  //    Content node does not exist yet, so a plain ancestor walk finds nothing and
+  //    completions leak into a slot the user is about to fill with prose. The shared
+  //    classifier isFreeTextSpan (cjkAutocorrect.ts, grown for the same empty-region
+  //    class in 961a221) covers the node set above PLUS those zero-width regions —
+  //    one source of truth for "is this slot free text?".
+  if (isFreeTextSpan(state, pos)) return null
 
   // ---- SLASH MODE -------------------------------------------------------
   // Match a `/word` immediately before the cursor. The `/` must be the trigger;
