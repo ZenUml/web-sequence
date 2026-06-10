@@ -37,15 +37,28 @@ export function editorRoot(page: Page): Locator {
 
 /**
  * Seed onboarding flags, open the app at baseURL, and wait until the editor is
- * interactive (header rendered + content focusable). Uses a relative URL so the
- * config's baseURL drives where we point.
+ * interactive (content focusable). Uses a relative URL so the config's baseURL
+ * drives where we point.
+ *
+ * Hub routing (PR #800/#801): "/" lands on the HomeView library when no diagram
+ * id is in the URL — the editor is one "New" click away. Mirrors the same
+ * click-through the root production-build spec uses; tolerant of flows that
+ * land directly in the editor (?id= / embed) where home-view never appears.
  */
 export async function seedAndOpen(page: Page): Promise<void> {
   await page.addInitScript((flags: Record<string, string>) => {
     for (const [k, v] of Object.entries(flags)) localStorage.setItem(k, v);
   }, SEED_FLAGS);
   await page.goto('/', { waitUntil: 'networkidle' });
-  await page.getByTestId('header-title').waitFor({ timeout: 15000 });
+  const homeView = page.getByTestId('home-view');
+  if (await homeView.isVisible({ timeout: 3000 }).catch(() => false)) {
+    const emptyCta = page.getByTestId('home-empty-new');
+    if (await emptyCta.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await emptyCta.click();
+    } else {
+      await page.getByTestId('home-new').click();
+    }
+  }
   await editorContent(page).waitFor({ timeout: 15000 });
 }
 
@@ -161,13 +174,3 @@ export async function baseColor(page: Page): Promise<string> {
   return editorContent(page).evaluate((e) => getComputedStyle(e).color);
 }
 
-/**
- * The Hint Bar command ids currently shown (e.g. ['hint-participant','hint-group']
- * in the head, ['hint-sync','hint-if',…] in a block). The bar is `role="toolbar"`
- * and each entry carries `data-testid="hint-<command>"`.
- */
-export async function hintBarIds(page: Page): Promise<string[]> {
-  return page
-    .locator('[role="toolbar"] [data-testid^="hint-"]')
-    .evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? ''));
-}

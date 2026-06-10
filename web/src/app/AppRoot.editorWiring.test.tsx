@@ -21,6 +21,30 @@ vi.mock('../editor/CodeEditor', () => ({
 // ─── Boot harness (mirrors AppRoot.test.tsx) ──────────────────────────────────
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
+// Router harness (hub PRs #800/#801) — same partial mock as AppRoot.test.tsx:
+// AppRoot reads the URL via useSearch/useNavigate, which crash without a
+// RouterProvider. useSearch parses window.location.search in the shape of
+// router.tsx's indexRoute validateSearch; useNavigate is exercised nowhere here
+// but must exist. See AppRoot.test.tsx for the full rationale.
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    useSearch: () => {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        id: p.get('id') ?? undefined,
+        'share-token': p.get('share-token') ?? undefined,
+        embed: p.has('embed') ? true : undefined,
+        code: p.get('code') ?? undefined,
+        title: p.get('title') ?? undefined,
+        stickyOffset: p.has('stickyOffset') ? Number(p.get('stickyOffset')) : undefined,
+      };
+    },
+    useNavigate: () => () => Promise.resolve(),
+  };
+});
+
 vi.mock('../services/firebase', () => ({
   login: vi.fn(async () => {}),
   logout: vi.fn(async () => {}),
@@ -81,6 +105,10 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  // Hub view gating (PRs #800/#801): '/' now renders HomeView, not the editor.
+  // Land on an editor URL; the mocked getItem rejects → useBootItem seeds a fresh
+  // 'new' item, same as the pre-hub boot (see AppRoot.test.tsx).
+  window.history.replaceState({}, '', '/?id=t-boot');
   for (const k of Object.keys(captured)) delete captured[k];
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();

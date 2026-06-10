@@ -7,6 +7,55 @@ import { useEditorStore } from '../state/editorStore';
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
+// ─── Router harness (hub PRs #800/#801: HomeView + reactive ?id= routing) ─────
+// The Hub-navigation PRs (#800 "Approach A Hub navigation — HomeView, no-rail
+// editor, breadcrumb", #801 mobile follow-up) made AppRoot read the URL through
+// TanStack Router (`useSearch({ from: indexRoute.id })`, AppRoot.tsx) and navigate
+// imperatively (`useNavigate`). Rendering <AppRoot /> without a RouterProvider now
+// crashes inside useMatch ("Cannot read properties of null (reading 'stores')").
+// Rather than booting a real router — a createMemoryHistory router would SPLIT the
+// URL source of truth, because detectFromEnv() and this file's embed tests already
+// drive window.location via history.replaceState — we partial-mock JUST the two
+// hooks against window.location:
+//  - useSearch parses location.search in the same shape as router.tsx's
+//    indexRoute validateSearch (id, share-token, embed-presence flag, code, title,
+//    stickyOffset coerced to Number);
+//  - useNavigate applies the functional search updater back onto location via
+//    history.replaceState (the store updates that accompany every navigate() call
+//    in AppRoot re-render, and useSearch re-parses the fresh URL on that render).
+// All other exports (createRoute/createRouter/… used by ./router) stay real.
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const parse = () => {
+    const p = new URLSearchParams(window.location.search);
+    return {
+      id: p.get('id') ?? undefined,
+      'share-token': p.get('share-token') ?? undefined,
+      embed: p.has('embed') ? true : undefined,
+      code: p.get('code') ?? undefined,
+      title: p.get('title') ?? undefined,
+      stickyOffset: p.has('stickyOffset') ? Number(p.get('stickyOffset')) : undefined,
+    };
+  };
+  return {
+    ...actual,
+    useSearch: () => parse(),
+    useNavigate: () => (opts?: { search?: unknown }) => {
+      const next = typeof opts?.search === 'function'
+        ? (opts.search as (prev: Record<string, unknown>) => Record<string, unknown>)(parse())
+        : ((opts?.search ?? {}) as Record<string, unknown>);
+      const q = new URLSearchParams();
+      for (const [k, v] of Object.entries(next)) {
+        if (v === undefined || v === null || v === false) continue;
+        q.set(k, v === true ? '' : String(v));
+      }
+      const qs = q.toString();
+      window.history.replaceState({}, '', qs ? `/?${qs}` : '/');
+      return Promise.resolve();
+    },
+  };
+});
+
 // useAuth → services/firebase (initializeApp, onAuthStateChanged…) must be stubbed
 // to avoid live Firebase initialisation in jsdom. Same pattern as useAuth.test.tsx.
 // onAuthChange fires the callback immediately with null so authReady becomes true
@@ -100,6 +149,19 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
+  // Hub view gating (PRs #800/#801): '/' with no ?id= now renders the HomeView
+  // library grid, NOT the editor. Almost every test in this file asserts editor
+  // internals (editor-region, dsl-editor, header-title, console…), so default every
+  // test onto an editor URL. The mocked itemService.getItem rejects ('not found'),
+  // so useBootItem resolves kind:'new' and seeds the SAME fresh editable item the
+  // pre-hub '/' boot produced — each test's original intent is preserved. Home-view-
+  // and embed-specific tests override the URL per-test via history.replaceState
+  // before render() (the file's existing convention; afterEach restores '/').
+  window.history.replaceState({}, '', '/?id=t-boot');
+  // The default editor URL makes every boot call getItem('t-boot'); clear the call
+  // log so per-test assertions (e.g. the by-value embed's "getItem NOT called")
+  // observe only their own test's calls, not leakage from prior boots.
+  itemSvc.getItem.mockClear();
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();
   // uiStore is a module singleton — reset modal/panel state so a modal opened in a
@@ -173,15 +235,14 @@ describe('AppRoot', () => {
     expect(container.querySelector('[data-testid="js-mode-select"]')).toBeNull();
   });
 
-  it('renders the slash-command hint bar above the DSL editor', async () => {
+  it('does NOT render the slash-command hint bar (panel removed 2026-06-10)', async () => {
     const { container } = render(<AppRoot />);
     await screen.findByTestId('editor-region');
-    // The Toolbox snippet grid was replaced by the context-sensitive HintBar
-    // (role=toolbar, aria-label="Insert slash command"). Assert the toolbar and
-    // at least one command chip render, without depending on the current zone.
-    const bar = container.querySelector('[aria-label="Insert slash command"]');
-    expect(bar).toBeTruthy();
-    expect(bar!.querySelectorAll('[data-testid^="hint-"]').length).toBeGreaterThan(0);
+    // The HintBar strip above the DSL editor was REMOVED at the product owner's
+    // request ("remove the command panel and related code"). Slash commands stay
+    // available via the in-editor "/" popup (zenumlAutocomplete). This guards
+    // against the panel quietly returning.
+    expect(container.querySelector('[aria-label="Insert slash command"]')).toBeNull();
   });
 
   it('renders the console panel', async () => {
@@ -991,7 +1052,9 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // ───────────────────────────────────────────────────────────────────────────
 describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
   it('CONTROL: normal (non-embed) mode renders the real header + a sidebar panel', async () => {
-    window.history.replaceState({}, '', '/');
+    // Hub (PRs #800/#801): bare '/' is now the HomeView library, so "normal
+    // (non-embed) mode" — this control's subject — lives at an editor URL.
+    window.history.replaceState({}, '', '/?id=t-boot');
     render(<AppRoot />);
     expect(await screen.findByTestId('header-title')).toBeInTheDocument();
     expect(screen.getByTestId('header-menu')).toBeInTheDocument();
