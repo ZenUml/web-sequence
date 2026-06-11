@@ -3,6 +3,7 @@ import type { Item, Folder, AppUser } from '../../domain/types';
 import {
   SearchInput,
   Button,
+  buttonClassName,
   Select,
   SelectTrigger,
   SelectContent,
@@ -187,12 +188,10 @@ export function HomeView({
                 <button
                   type="button"
                   aria-label="More new diagram options"
-                  className={cn(
-                    'grid place-items-center h-8 px-1.5 rounded-r-md rounded-l-none',
-                    'bg-accent hover:bg-accent-hover active:bg-accent-press text-white',
-                    'transition-colors duration-150 ease-draft ring-draft',
-                    'border-l border-white/20',
-                  )}
+                  className={buttonClassName({
+                    variant: 'primary',
+                    className: 'rounded-l-none px-1.5 border-l border-white/20',
+                  })}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5" aria-hidden="true">
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" />
