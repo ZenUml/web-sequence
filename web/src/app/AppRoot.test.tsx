@@ -1021,6 +1021,20 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     expect(lastEnvelope('itemsImported')).toBeUndefined();
   });
 
+  it("fires 'landed_in_editor' with bootKind on a bare '/' editor landing", async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    const env = await waitFor(() => {
+      const e = lastEnvelope('landed_in_editor');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    // getItem is mocked to reject in this suite → boot resolves kind 'new'.
+    expect(env.label).toBe('new');
+    expect(env.category).toBe('navigation');
+  });
+
   it("'loggedIn' uses legacy category 'fn' + provider label", async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');

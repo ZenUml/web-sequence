@@ -382,6 +382,11 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
+    // Editor-as-landing telemetry: one event per editor boot, tagged with how the
+    // diagram was resolved. Skipped on the hub (boot is skipped when isHomeMode) and
+    // on embed-by-value — so this fires only when the editor is the landing surface.
+    onResolved: (bootKind) =>
+      track('landed_in_editor', { category: 'navigation', label: bootKind }),
   // Hub: skip boot when on home — we don't want newItem() seeding a blank diagram there.
   }, authReady, isHomeMode || embedByValue);
 
