@@ -134,8 +134,16 @@ export class ZenumlLspClient {
 // is the robust form for an already-bundled worker.
 import zenumlLspWorkerUrl from '@zenuml/core/lsp-worker?url';
 
-/** Spawn the worker from the published package and wrap it. */
-export function createZenumlLspClient(): ZenumlLspClient {
+/**
+ * Spawn the worker from the published package and wrap it. Returns `null` in
+ * environments without Web Workers — jsdom (the unit-test runtime) and any SSR
+ * path — so the editor renders WITHOUT LSP instead of throwing
+ * `ReferenceError: Worker is not defined` on mount. The doc-sync/hover/diagnostic
+ * extensions already no-op on a null client (they read it lazily), so "no Worker"
+ * degrades cleanly to "no language server".
+ */
+export function createZenumlLspClient(): ZenumlLspClient | null {
+  if (typeof Worker === 'undefined') return null;
   const worker = new Worker(zenumlLspWorkerUrl, { type: 'module' });
   return new ZenumlLspClient(worker);
 }

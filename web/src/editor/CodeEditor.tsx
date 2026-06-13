@@ -264,6 +264,10 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     if (language !== 'dsl') return;
     const client = createZenumlLspClient();
     lspClientRef.current = client;
+    // No Web Worker available (jsdom unit tests, SSR): createZenumlLspClient returned
+    // null. Render the editor WITHOUT a language server rather than crashing — the
+    // lazily-read hover/doc-sync/diagnostic extensions already no-op on a null client.
+    if (!client) return;
     // Subscribe BEFORE openDoc so the server's first publishDiagnostics isn't dropped.
     // On each push: store the set, then nudge CM to re-run the lint sources now (the
     // dispatched effect satisfies the linter's needsRefresh; forceLinting skips the
