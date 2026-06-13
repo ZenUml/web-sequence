@@ -1142,6 +1142,31 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     expect(hubEvents).toHaveLength(1);
     expect(hubEvents[0].label).toBe('breadcrumb');
   });
+
+  // DISCRIMINATING (controller review of final adversarial pass): leaving the hub and
+  // returning (e.g. hub → open a diagram → browser Back to ?view=diagrams) must emit a
+  // FRESH hub_opened{landing-param}. A permanently-consumed landing ref under-counts
+  // hub demand — an ASYMMETRIC bias that makes editor-landing look better than it is,
+  // skewing the pre/post decision. Leaving the hub must re-arm the landing event.
+  it('returning to the hub after leaving re-fires hub_opened{landing-param}', async () => {
+    window.history.replaceState({}, '', '/?view=diagrams'); // land on the hub
+    const { rerender } = render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    // Leave the hub: open a diagram (?id=) — isHomeMode flips false. The real hub→editor
+    // path is handleOpenItem (a direct loadItem), so seed the item the same way; boot is
+    // skipped on the hub and won't re-resolve on a same-mount re-render.
+    window.history.replaceState({}, '', '/?id=t-boot');
+    await act(async () => { useEditorStore.getState().newItem(); rerender(<AppRoot />); });
+    await screen.findByTestId('editor-region');
+    // Return to the hub (browser Back / re-navigation to ?view=diagrams).
+    window.history.replaceState({}, '', '/?view=diagrams');
+    await act(async () => { rerender(<AppRoot />); });
+    await screen.findByTestId('home-view');
+    const landingEvents = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p.event === 'hub_opened' && p.label === 'landing-param');
+    expect(landingEvents).toHaveLength(2); // once per hub arrival, not collapsed to one
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────────

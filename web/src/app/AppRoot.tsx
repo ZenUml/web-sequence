@@ -360,13 +360,21 @@ export function AppRoot() {
   const isHomeMode =
     viewParam === 'diagrams' && !idParam && !shareToken && !runtime.embedCode && !isEmbed;
 
-  // Editor-as-landing telemetry: arriving directly at ?view=diagrams (not via the
-  // breadcrumb) — fire once. goHome covers the breadcrumb path with its own source.
+  // Editor-as-landing telemetry: fire hub_opened{landing-param} once per hub ARRIVAL.
+  // The ref guards against re-firing on incidental re-renders while already on the hub,
+  // and goHome sets it true up-front so a breadcrumb-initiated arrival is attributed to
+  // 'breadcrumb' only (not also 'landing-param'). Crucially we RE-ARM it on leaving the
+  // hub, so a later return (e.g. browser Back to ?view=diagrams) counts as a fresh
+  // arrival — otherwise hub demand is under-counted, an asymmetric bias against the hub.
   const hubLandingFired = useRef(false);
   useEffect(() => {
-    if (isHomeMode && !hubLandingFired.current) {
-      hubLandingFired.current = true;
-      track('hub_opened', { category: 'navigation', label: 'landing-param' });
+    if (isHomeMode) {
+      if (!hubLandingFired.current) {
+        hubLandingFired.current = true;
+        track('hub_opened', { category: 'navigation', label: 'landing-param' });
+      }
+    } else {
+      hubLandingFired.current = false; // left the hub → re-arm for the next arrival
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHomeMode]);
