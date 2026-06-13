@@ -5,6 +5,7 @@ import {
   MenuContent,
   MenuItem,
   MenuSeparator,
+  BrandLogo,
   cn,
 } from '../../ui';
 
@@ -26,16 +27,6 @@ export interface AppMenuProps {
 // The "ZenUML" mark from the design's `.brand` tile — a small cobalt-gradient
 // square holding the column/arrow glyph. Used as the visual of the app-menu
 // trigger so the logo itself opens the document/app menu (Figma/Docs pattern).
-function BrandGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-      <rect x="3" y="4" width="7" height="5" rx="1" />
-      <rect x="14" y="4" width="7" height="5" rx="1" />
-      <path d="M6.5 9v11M17.5 9v6" />
-      <path d="M6.5 13h9M15 11l2 2-2 2" />
-    </svg>
-  );
-}
 
 function Chevron({ className }: { className?: string }) {
   return (
@@ -90,16 +81,7 @@ export function AppMenu({
             'hover:bg-white/5 ring-draft',
           )}
         >
-          <span
-            className={cn(
-              'grid place-items-center h-[30px] w-[30px] rounded-lg text-white shadow-inset',
-              'bg-gradient-to-br from-accent to-accent-press',
-            )}
-          >
-            <span className="h-[17px] w-[17px]">
-              <BrandGlyph />
-            </span>
-          </span>
+          <BrandLogo className="h-[30px] w-[30px] shrink-0" />
           <Chevron className="text-ondark-muted" />
         </button>
       </MenuTrigger>
