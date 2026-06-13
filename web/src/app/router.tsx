@@ -7,6 +7,7 @@ const indexRoute = createRoute({
   path: '/',
   validateSearch: (s: Record<string, unknown>) => ({
     id: s.id as string | undefined,
+    view: s.view as string | undefined,
     'share-token': s['share-token'] as string | undefined,
     embed: s.embed !== undefined ? true : undefined,
     code: s.code as string | undefined,

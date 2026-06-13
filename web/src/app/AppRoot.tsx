@@ -633,6 +633,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: it.id,
+      view: prev.view,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -656,6 +657,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: newId,
+      view: prev.view,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -671,6 +673,7 @@ export function AppRoot() {
       search: (prev) => ({
         ...prev,
         id: undefined,
+        view: prev.view,
         'share-token': undefined,
         embed: undefined,
         code: undefined,
@@ -894,6 +897,7 @@ export function AppRoot() {
             const newId = useEditorStore.getState().currentItem?.id;
             if (newId) void navigate({ to: '/', search: (prev) => ({
               id: newId,
+              view: prev.view,
               'share-token': prev['share-token'],
               embed: prev.embed,
               code: prev.code,
