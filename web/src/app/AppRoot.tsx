@@ -690,6 +690,10 @@ export function AppRoot() {
   // lands in the editor.
   function goHome() {
     track('hub_opened', { category: 'navigation', label: 'breadcrumb' });
+    // Mark the landing-param event consumed: navigating here flips isHomeMode true and
+    // re-runs the landing effect on the still-mounted AppRoot. Without this, a breadcrumb
+    // click would ALSO emit hub_opened{landing-param}, corrupting the source dimension.
+    hubLandingFired.current = true;
     void navigate({
       to: '/',
       search: (prev) => ({

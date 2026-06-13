@@ -1119,6 +1119,29 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     });
     expect(env.label).toBe('landing-param');
   });
+
+  // DISCRIMINATING (controller review): clicking the breadcrumb to reach the hub
+  // must emit EXACTLY ONE hub_opened, sourced 'breadcrumb' — NOT also 'landing-param'.
+  // goHome navigates to ?view=diagrams, which flips isHomeMode true and re-runs the
+  // landing-param effect on the still-mounted AppRoot. Without goHome marking the
+  // landing ref consumed, BOTH events fire and the source dimension is corrupted.
+  it("breadcrumb→hub fires exactly one hub_opened sourced 'breadcrumb' (no landing-param)", async () => {
+    window.history.replaceState({}, '', '/'); // start in the editor (bare /)
+    const { rerender } = render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    // Click the breadcrumb: goHome fires hub_opened{breadcrumb} and navigates to
+    // ?view=diagrams (the mock applies replaceState but does NOT itself re-render).
+    await act(async () => { await userEvent.click(screen.getByTestId('header-go-home')); });
+    // Simulate the router's post-navigate re-render on the still-mounted AppRoot —
+    // this is what flips isHomeMode true and re-runs the landing-param effect in prod.
+    await act(async () => { rerender(<AppRoot />); });
+    await screen.findByTestId('home-view');
+    const hubEvents = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p.event === 'hub_opened');
+    expect(hubEvents).toHaveLength(1);
+    expect(hubEvents[0].label).toBe('breadcrumb');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────────
