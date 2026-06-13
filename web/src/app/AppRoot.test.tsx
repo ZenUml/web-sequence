@@ -30,6 +30,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     const p = new URLSearchParams(window.location.search);
     return {
       id: p.get('id') ?? undefined,
+      view: p.get('view') ?? undefined,
       'share-token': p.get('share-token') ?? undefined,
       embed: p.has('embed') ? true : undefined,
       code: p.get('code') ?? undefined,
@@ -218,6 +219,19 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('preview-region')).toBeInTheDocument();
   });
 
+  it("bare '/' lands in the editor, not the hub", async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('editor-region')).toBeInTheDocument();
+    expect(screen.queryByTestId('home-view')).toBeNull();
+  });
+
+  it("'?view=diagrams' renders the hub", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('home-view')).toBeInTheDocument();
+  });
+
   it('seeds the DSL editor and mounts the preview iframe', async () => {
     const { container } = render(<AppRoot />);
     expect(await screen.findByTestId('editor-region')).toBeInTheDocument();
@@ -306,9 +320,9 @@ describe('AppRoot', () => {
     // Home view now ('/', no ?id=). The bulk import/export controls were re-homed
     // from the retired panel into HomeView's ALWAYS-present header row (HomeView.tsx
     // — not auth/readOnly-gated, so an empty or signed-out library can still import).
-    // Route to '/' via the file's existing history.replaceState URL pattern instead
-    // of the retired setActivePanel('library').
-    window.history.replaceState({}, '', '/');
+    // Route to '/?view=diagrams' via the file's existing history.replaceState URL
+    // pattern instead of the retired setActivePanel('library').
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     expect(await screen.findByTestId('home-view')).toBeInTheDocument();
     expect(screen.getByTestId('lib-export-all')).toBeInTheDocument();
@@ -323,7 +337,7 @@ describe('AppRoot', () => {
     // view header — AppRoot's isHomeMode branch renders the SAME "Import failed"
     // ConfirmDialog as the editor branch (AppRoot.tsx), so the notice is asserted
     // on the Home view, where the import control now lives.
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
 
@@ -897,8 +911,8 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 
   it("'exportItems' uses legacy category 'fn'", async () => {
     // Hub (PRs #800/#801): export-all moved from the retired LibraryPanel to the
-    // Home view header row (HomeView.tsx) — route to '/' and click it there.
-    window.history.replaceState({}, '', '/');
+    // Home view header row (HomeView.tsx) — route to '/?view=diagrams' to land there.
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     const exportBtn = await screen.findByTestId('lib-export-all');
     await act(async () => { await userEvent.click(exportBtn); });
@@ -917,8 +931,8 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'i2' } as never,
     ]);
     // Hub (PRs #800/#801): import moved from the retired LibraryPanel to the Home
-    // view header (HomeView.tsx) — route to '/' and drive the import input there.
-    window.history.replaceState({}, '', '/');
+    // view header (HomeView.tsx) — route to '/?view=diagrams' to land there.
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
@@ -952,7 +966,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'brand-new' } as never,  // newly added
     ]);
     // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     await act(async () => {
@@ -988,7 +1002,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     });
     vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup-1' } as never]); // all duplicates
     // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     await act(async () => {

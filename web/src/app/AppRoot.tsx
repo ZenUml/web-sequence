@@ -350,12 +350,15 @@ export function AppRoot() {
   // Read URL params reactively via TanStack Router so navigation (e.g. goHome) triggers a re-render.
   const search = useSearch({ from: indexRoute.id });
   const idParam = search.id ?? null;
+  const viewParam = search.view ?? null;
   const shareToken = search['share-token'] ?? null;
 
-  // Hub (Approach A): no id + no share + not an embed → home view shows the library grid.
-  // When true, useBootItem is skipped (no newItem seeded) and HomeView renders instead of
-  // the editor layout.
-  const isHomeMode = !idParam && !shareToken && !runtime.embedCode && !isEmbed;
+  // Editor-as-landing (2026-06-13): the hub is now OPT-IN via ?view=diagrams.
+  // Bare "/" falls through to useBootItem (resume last-code, else sample) — the
+  // legacy landing behavior. id/share-token/embed still take precedence: a deep
+  // link with both ?view=diagrams and ?id= opens the diagram, not the hub.
+  const isHomeMode =
+    viewParam === 'diagrams' && !idParam && !shareToken && !runtime.embedCode && !isEmbed;
 
   // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
   // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
@@ -633,7 +636,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: it.id,
-      view: prev.view,
+      view: undefined,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -657,7 +660,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: newId,
-      view: prev.view,
+      view: undefined,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -666,14 +669,16 @@ export function AppRoot() {
     }) });
   }
 
-  // Hub: return to home/library view by clearing the ?id= param.
+  // Editor-as-landing: return to the hub by setting ?view=diagrams (and clearing
+  // the editor params). Previously this cleared everything to bare "/", which now
+  // lands in the editor.
   function goHome() {
     void navigate({
       to: '/',
       search: (prev) => ({
         ...prev,
+        view: 'diagrams',
         id: undefined,
-        view: prev.view,
         'share-token': undefined,
         embed: undefined,
         code: undefined,
@@ -897,7 +902,7 @@ export function AppRoot() {
             const newId = useEditorStore.getState().currentItem?.id;
             if (newId) void navigate({ to: '/', search: (prev) => ({
               id: newId,
-              view: prev.view,
+              view: undefined,
               'share-token': prev['share-token'],
               embed: prev.embed,
               code: prev.code,
