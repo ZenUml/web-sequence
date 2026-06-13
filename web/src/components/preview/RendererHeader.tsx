@@ -7,9 +7,9 @@ import { IconButton, Tooltip } from '../../ui';
 // right (the `.pv-tools` cluster): a zoom label, an optional Fit button, and a
 // Present button.
 //
-// This bar is the LIGHT paper surface (the diagram is rendered on warm paper, not
-// the dark ink chrome) — so every control here is `surface="light"` and the bar
-// itself is `bg-white border-b border-paper-line`.
+// This bar is the dark ink chrome (matching the editor side and the app header) —
+// every control here is `surface="dark"` and the bar itself is
+// `bg-ink-900 border-b border-ink-line`. Only the diagram canvas below stays warm paper.
 //
 // Zoom and Fit are presentational: PreviewFrame's imperative handle exposes only
 // `getPng`/`evalConsole`, so there is no zoom/fit API to wire in Phase 1. `zoomLabel`
@@ -33,14 +33,14 @@ export function RendererHeader({
   zoomLabel = '100%',
 }: RendererHeaderProps) {
   return (
-    <div className="flex items-center gap-2.5 h-11 px-3 bg-white border-b border-paper-line">
+    <div className="flex items-center gap-2.5 h-11 px-3 bg-ink-900 border-b border-ink-line">
       {/* .rtabs — left cluster, holds the page tabs slot */}
       <div className="flex items-center gap-1 min-w-0">{pageTabs}</div>
 
       {/* .pv-tools — right controls cluster */}
       <div className="ml-auto flex items-center gap-1">
         {/* .zz — zoom percentage (presentational) */}
-        <span className="font-mono text-[11px] text-onlight-muted px-1.5 select-none">
+        <span className="font-mono text-[11px] text-ondark-muted px-1.5 select-none">
           {zoomLabel}
         </span>
 
@@ -48,7 +48,7 @@ export function RendererHeader({
           <Tooltip label="Fit to screen">
             <IconButton
               size="md"
-              surface="light"
+              surface="dark"
               aria-label="Fit to screen"
               data-testid="renderer-fit"
               onClick={() => onFit()}
@@ -64,7 +64,7 @@ export function RendererHeader({
         <Tooltip label="Present">
           <IconButton
             size="md"
-            surface="light"
+            surface="dark"
             aria-label="Present"
             data-testid="renderer-present"
             onClick={() => onPresent()}

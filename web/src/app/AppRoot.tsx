@@ -140,6 +140,14 @@ export function AppRoot() {
   const loginModalOpen = useUiStore((s) => s.loginModalOpen);
   const setLoginModalOpen = useUiStore((s) => s.setLoginModalOpen);
 
+  // P5: dismiss the sign-in sheet once auth succeeds. The OAuth round-trip resolves
+  // asynchronously (popup → authStore.user), and nothing else closes the modal — so a
+  // signed-in user would otherwise stay stranded on the login dialog. Closing on the
+  // null→user transition covers every entry point (share-gate, save-gate, header).
+  useEffect(() => {
+    if (user && loginModalOpen) setLoginModalOpen(false);
+  }, [user, loginModalOpen, setLoginModalOpen]);
+
   // M04: subscription (load + derive plan on auth) — `loading` gates the plan-limit
   // race guard (§1). analytics.track binds the current userId. paddle = checkout.
   const { subscription, planType, subscribed, loading: subLoading, reload: reloadSubscription } =
@@ -1283,7 +1291,7 @@ export function AppRoot() {
                   onPresent={toggleFullscreen}
                   pageTabs={
                     <PageTabs
-                      surface="light"
+                      surface="dark"
                       pages={item.pages ?? []}
                       currentPageId={item.currentPageId ?? ''}
                       onSwitch={switchPageAction}

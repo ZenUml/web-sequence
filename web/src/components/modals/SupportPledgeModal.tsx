@@ -31,7 +31,7 @@ export function SupportPledgeModal({
         description="Thanks for using ZenUML — it stays free and open thanks to people like you."
       >
         <div className="space-y-4" data-testid="pledge-modal">
-          <p className="text-[13px] leading-relaxed text-onlight-muted">
+          <p className="text-[13px] leading-relaxed text-ondark-muted">
             We just shipped a new version. If ZenUML saves you time, consider
             supporting the project so we can keep building it.
           </p>
@@ -50,7 +50,7 @@ export function SupportPledgeModal({
             </a>
             <Button
               variant="primary"
-              surface="light"
+              surface="dark"
               data-testid="pledge-dismiss"
               onClick={onDismiss}
             >

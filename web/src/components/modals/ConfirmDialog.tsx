@@ -30,12 +30,12 @@ export function ConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent title={title}>
         {message && (
-          <p className="text-[13px] text-onlight-muted">{message}</p>
+          <p className="text-[13px] text-ondark-muted">{message}</p>
         )}
         <div className="mt-4 flex justify-end gap-2">
           <Button
             variant="subtle"
-            surface="light"
+            surface="dark"
             data-testid="confirm-cancel"
             onClick={() => onOpenChange(false)}
           >
@@ -43,7 +43,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={tone === 'danger' ? 'danger' : 'primary'}
-            surface="light"
+            surface="dark"
             data-testid="confirm-ok"
             onClick={handleConfirm}
           >

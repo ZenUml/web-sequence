@@ -82,7 +82,7 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
       <Button
         key={id}
         variant={elevated ? 'primary' : 'subtle'}
-        surface="light"
+        surface="dark"
         className="w-full"
         data-testid={`login-${id}`}
         onClick={() => onLogin(id)}
@@ -93,7 +93,7 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
             data-chip={chip ? 'true' : undefined}
             className={
               chip
-                ? 'flex shrink-0 items-center justify-center rounded-[3px] bg-white p-0.5 text-onlight-strong'
+                ? 'flex shrink-0 items-center justify-center rounded-[3px] bg-white p-0.5 text-ondark-strong'
                 : 'shrink-0'
             }
           >
@@ -113,9 +113,9 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
     );
   }
 
-  // Eyelabel (.ret) section headers — onlight-muted keeps them AA-legible on paper
-  // (onlight-faint fails AA for small text per the contrast audit).
-  const eyelabel = 'font-mono text-[10px] uppercase tracking-[0.12em] text-onlight-muted';
+  // Eyelabel (.ret) section headers — ondark-muted keeps them AA-legible on paper
+  // (ondark-faint fails AA for small text per the contrast audit).
+  const eyelabel = 'font-mono text-[10px] uppercase tracking-[0.12em] text-ondark-muted';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,7 +127,7 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
           <p
             data-testid="login-error"
             role="alert"
-            className="mb-3 rounded border border-danger-strong/40 bg-danger/10 px-3 py-2 text-[13px] text-danger-strong"
+            className="mb-3 rounded border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger"
           >
             {error}
           </p>

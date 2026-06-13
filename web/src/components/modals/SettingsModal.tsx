@@ -36,10 +36,10 @@ export interface SettingsModalProps {
 }
 
 const META_LABEL =
-  'font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted';
+  'font-mono uppercase tracking-[0.12em] text-[11px] text-ondark-muted';
 const SECTION_LABEL = `${META_LABEL} mt-5 mb-2 first:mt-0`;
 const ROW = 'flex items-center justify-between gap-4 py-1.5';
-const ROW_LABEL = 'text-[13px] text-onlight-strong';
+const ROW_LABEL = 'text-[13px] text-ondark-strong';
 
 const FONT_SIZES = [12, 13, 14, 15, 16, 17, 18];
 const INDENT_SIZES = [2, 4, 8];
@@ -132,6 +132,7 @@ function SelectRow({
       <span className={ROW_LABEL}>{label}</span>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
+          surface="dark"
           data-testid={testid}
           aria-label={label}
           className="min-w-[150px]"
@@ -179,7 +180,7 @@ export function SettingsModal({
             data-testid="settings-scroll"
             className="max-h-[calc(85vh-9rem)] overflow-y-auto pr-1"
           >
-            <div data-testid="settings-modal" className="text-onlight-strong">
+            <div data-testid="settings-modal" className="text-ondark-strong">
               {/* Two-column layout (design §04): Editor | Behavior. Stacks to one
                   column below sm, splits into two at sm+ to halve the height so
                   nothing falls below the fold. gap-x-8 ≈ the design's 30px gutter. */}
@@ -227,7 +228,7 @@ export function SettingsModal({
                     <div className={ROW}>
                       <span className={ROW_LABEL}>Custom font</span>
                       <TextInput
-                        surface="light"
+                        surface="dark"
                         data-testid="setting-editorCustomFont"
                         aria-label="Custom font"
                         className="min-w-[150px]"
@@ -366,11 +367,11 @@ export function SettingsModal({
               />
             </div>
           </div>
-          {/* Bottom fade: the scroll area sits on the paper surface, so fade to
-              paper-50 (not transparent) to keep the overflow edge discoverable. */}
+          {/* Bottom fade: the scroll area sits on the dark modal surface, so fade to
+              ink-800 (the modal bg, not transparent) to keep the overflow edge discoverable. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-paper-50 to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-ink-800 to-transparent"
           />
         </div>
       </DialogContent>
