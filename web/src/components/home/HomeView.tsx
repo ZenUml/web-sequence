@@ -16,6 +16,7 @@ import {
   MenuItem,
 } from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
+import { TEMPLATES, blankTemplate } from '../../domain/templates';
 import { FolderList } from '../library/FolderList';
 import { ImportExportBar } from '../library/ImportExportBar';
 import { DiagramCard } from './DiagramCard';
@@ -40,6 +41,11 @@ export interface HomeViewProps {
   onOpen(item: Item): void;
   onNewDiagram(): void;
   onBrowseTemplates(): void;
+  // Create a diagram directly from a template's content and open it in the editor.
+  // The hub's "Start something new" quick-pick cards use this so a single click
+  // creates the chosen template — they must NOT reopen the CreateNewModal picker
+  // (which would force the user to select a template a second time).
+  onCreateFromTemplate(item: Partial<Item>): void;
   onOpenSignIn(): void;
   onLogout(): void;
   onCreateFolder(name: string): void;
@@ -63,6 +69,7 @@ export function HomeView({
   onOpen,
   onNewDiagram,
   onBrowseTemplates,
+  onCreateFromTemplate,
   onOpenSignIn,
   onLogout,
   onCreateFolder,
@@ -271,18 +278,19 @@ export function HomeView({
                 </button>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {TEMPLATE_STUBS.map((t) => (
+                {QUICK_TEMPLATES.map((t) => (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={onBrowseTemplates}
+                    data-testid={`home-template-${t.id}`}
+                    onClick={() => onCreateFromTemplate(t.item)}
                     className={cn(
                       'flex flex-col items-start gap-1.5 rounded-lg border border-ink-line/40 p-3 shrink-0 w-36',
                       'bg-ink-900 hover:border-accent/60 hover:bg-ink-800 transition-colors duration-150 ring-draft text-left',
                     )}
                   >
                     <div className="h-16 w-full rounded bg-ink-800 flex items-center justify-center text-ondark-faint text-[9px] font-mono">
-                      {t.icon}
+                      {t.glyph}
                     </div>
                     <span className="font-sans text-[11px] font-medium text-ondark-strong">{t.label}</span>
                   </button>
@@ -430,11 +438,16 @@ function BrandIcon() {
   );
 }
 
-// Stub template cards — clicking any opens the full template picker (CreateNewModal).
-const TEMPLATE_STUBS = [
-  { id: 'blank', label: 'Blank', icon: '—' },
-  { id: 'api', label: 'REST API', icon: 'API' },
-  { id: 'auth', label: 'Auth flow', icon: '🔑' },
-  { id: 'microservices', label: 'Microservices', icon: '⬡' },
-  { id: 'ecommerce', label: 'Checkout', icon: '🛒' },
+// Quick-pick cards for the "Start something new" row. These are the REAL templates
+// (the same inventory the CreateNewModal offers) so a single click creates the chosen
+// diagram and opens it — no second selection. "Browse templates" still opens the full
+// picker for users who want to preview the styled looks before committing.
+const QUICK_TEMPLATES: { id: string; label: string; glyph: string; item: Partial<Item> }[] = [
+  { id: 'blank', label: 'Blank', glyph: '—', item: blankTemplate() },
+  ...TEMPLATES.map((t) => ({
+    id: t.id,
+    label: t.title,
+    glyph: t.id === 'basic' ? 'A→B' : 'Aa',
+    item: t.item,
+  })),
 ];

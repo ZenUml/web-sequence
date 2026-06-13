@@ -653,6 +653,24 @@ export function AppRoot() {
     setActivePanel('editor');
   }
 
+  // Create a diagram from a template payload AND open it in the editor (navigate to
+  // ?id=). Shared by the CreateNewModal's onSelect and the hub's template quick-picks
+  // so both paths create-and-open identically (the quick-picks must not reopen the
+  // picker — a template click should land the user straight in the editor).
+  function handleCreateAndOpen(partial: Partial<Item>) {
+    handleCreateNew(partial);
+    const newId = useEditorStore.getState().currentItem?.id;
+    if (newId) void navigate({ to: '/', search: (prev) => ({
+      id: newId,
+      view: undefined,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
   // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
   // Hub: also navigates to /?id= so the URL reflects which diagram is open.
   function handleOpenItem(it: Item) {
@@ -938,19 +956,7 @@ export function AppRoot() {
         <CreateNewModal
           open={activeModal === 'createNew'}
           onOpenChange={(o) => { if (!o) closeModal(); }}
-          onSelect={(partial) => {
-            handleCreateNew(partial);
-            const newId = useEditorStore.getState().currentItem?.id;
-            if (newId) void navigate({ to: '/', search: (prev) => ({
-              id: newId,
-              view: undefined,
-              'share-token': prev['share-token'],
-              embed: prev.embed,
-              code: prev.code,
-              title: prev.title,
-              stickyOffset: prev.stickyOffset,
-            }) });
-          }}
+          onSelect={handleCreateAndOpen}
         />
         <HelpModal
           open={activeModal === 'help'}
@@ -982,6 +988,7 @@ export function AppRoot() {
           onOpen={handleOpenItem}
           onNewDiagram={handleNewDiagramFromHome}
           onBrowseTemplates={() => openModal('createNew')}
+          onCreateFromTemplate={handleCreateAndOpen}
           onOpenSignIn={() => setLoginModalOpen(true)}
           onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
           onCreateFolder={(name) => void createFolder(name)}
