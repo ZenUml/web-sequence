@@ -315,6 +315,24 @@ describe('AppRoot', () => {
     expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 
+  // P5: after a successful sign-in the login dialog must dismiss itself — otherwise the
+  // user is stranded staring at the sign-in sheet even though they're already in.
+  it('closes the login modal once the user becomes authenticated', async () => {
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    await act(async () => { await userEvent.click(screen.getByTestId('share-button')); });
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument();
+    // Simulate the OAuth round-trip completing: the auth store gets a user.
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e@x.com', displayName: 'U', photoURL: null },
+        authReady: true,
+        online: true,
+      });
+    });
+    await waitFor(() => expect(screen.queryByTestId('login-google')).not.toBeInTheDocument());
+  });
+
   it('renders the import/export actions on the Home view', async () => {
     // Hub (PRs #800/#801) retired the LibraryPanel side panel — the library IS the
     // Home view now ('/', no ?id=). The bulk import/export controls were re-homed
