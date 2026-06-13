@@ -360,6 +360,17 @@ export function AppRoot() {
   const isHomeMode =
     viewParam === 'diagrams' && !idParam && !shareToken && !runtime.embedCode && !isEmbed;
 
+  // Editor-as-landing telemetry: arriving directly at ?view=diagrams (not via the
+  // breadcrumb) — fire once. goHome covers the breadcrumb path with its own source.
+  const hubLandingFired = useRef(false);
+  useEffect(() => {
+    if (isHomeMode && !hubLandingFired.current) {
+      hubLandingFired.current = true;
+      track('hub_opened', { category: 'navigation', label: 'landing-param' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHomeMode]);
+
   // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
   // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
   // the inline code; the normal boot resolution is skipped (skipBoot) so getItem/
@@ -678,6 +689,7 @@ export function AppRoot() {
   // the editor params). Previously this cleared everything to bare "/", which now
   // lands in the editor.
   function goHome() {
+    track('hub_opened', { category: 'navigation', label: 'breadcrumb' });
     void navigate({
       to: '/',
       search: (prev) => ({
@@ -691,6 +703,18 @@ export function AppRoot() {
         stickyOffset: undefined,
       }),
     });
+  }
+
+  // first_edit: fires once per mount on the first user-initiated DSL change.
+  // Wraps setDsl so the event emits from AppRoot's boundary (not from the store
+  // action). CSS/HTML editors use separate handlers and are NOT tracked here.
+  const firstEditFired = useRef(false);
+  function handleDslChange(next: string) {
+    if (!firstEditFired.current) {
+      firstEditFired.current = true;
+      track('first_edit', { category: 'fn' });
+    }
+    setDsl(next);
   }
 
   async function handleDeleteItem(id: string) {
@@ -1173,7 +1197,7 @@ export function AppRoot() {
                     DSL
                   </span>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
                   default re-derives from the new page's CSS emptiness (matches the
@@ -1263,7 +1287,7 @@ export function AppRoot() {
                   // (CSS transform; @zenuml/core untouched).
                   fit={fullscreen}
                   stickyOffset={stickyOffset}
-                  onCodeChange={setDsl}
+                  onCodeChange={handleDslChange}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
                   onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
                 />

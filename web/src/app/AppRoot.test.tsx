@@ -351,6 +351,38 @@ describe('AppRoot', () => {
     expect(await screen.findByText('Bad JSON at line 1')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Import failed' })).toBeInTheDocument();
   });
+
+  it("fires 'first_edit' once on the first DSL change", async () => {
+    // Mechanism: drive the real CodeMirror DSL editor (dsl-editor) via
+    // userEvent.click + userEvent.keyboard — the same pattern used by the CSS-gate
+    // tests (lines ~521-529). This exercises AppRoot's handleDslChange wrapper
+    // (onChange prop of the DSL CodeEditor), not a direct store call, so first_edit
+    // genuinely fires from the wrapper. Non-vacuity guard: assert the store's js
+    // changed (proves the keystroke reached onChange). Two letters prove once-only.
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    const before = useEditorStore.getState().currentItem?.js;
+    const cm = screen.getByTestId('dsl-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cm);
+      await userEvent.keyboard('xy');
+    });
+    // Non-vacuity guard: the keystroke reached onChange → store updated.
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).not.toBe(before));
+    // first_edit fires exactly once (not twice for two keystrokes).
+    await waitFor(() => {
+      const count = trackMock.mock.calls.filter(
+        ([payload]) => (payload as { event?: string }).event === 'first_edit',
+      ).length;
+      expect(count).toBe(1);
+    });
+    // Verify category matches the spec.
+    const env = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .find((p) => p.event === 'first_edit');
+    expect(env?.category).toBe('fn');
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -1074,6 +1106,18 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // Legacy passes the new VALUE as the label (prefs[settingName]); lineWrap
     // defaults to true, so toggling it sends false.
     expect(env!.label).toBe('false');
+  });
+
+  it("fires 'hub_opened' with source 'landing-param' when arriving at ?view=diagrams", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const env = await waitFor(() => {
+      const e = lastEnvelope('hub_opened');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    expect(env.label).toBe('landing-param');
   });
 });
 
