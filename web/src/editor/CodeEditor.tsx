@@ -2,7 +2,7 @@ import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import { Compartment, Prec, type Extension } from '@codemirror/state';
-import { linter, lintGutter, type Diagnostic } from '@codemirror/lint';
+import { linter, lintGutter, forceLinting, type Diagnostic } from '@codemirror/lint';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
@@ -12,6 +12,13 @@ import { languageExtension, type EditorLanguage } from './modes';
 import { editorKeymap, formatCss } from './keymap';
 import { resolveZone, zenumlCompletions, zenumlCompletionKeymap } from './zenumlAutocomplete';
 import type { SlashZone } from './slashCommands';
+import { createZenumlLspClient, type ZenumlLspClient, type LspDiagnostic } from './lsp/lspClient';
+import {
+  lspDocSync,
+  lspHover,
+  lspDiagnosticsLinter,
+  lspDiagnosticsChanged,
+} from './lsp/zenumlLspExtensions';
 
 export interface CodeEditorProps {
   value: string;
@@ -120,6 +127,12 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   onZoneChangeRef.current = onZoneChange;
   // Last zone emitted, so the listener only fires onZoneChange on an actual change.
   const lastZoneRef = useRef<SlashZone | null>(null);
+  // ZenUML LSP worker (hover + doc-sync + diagnostics). Lazily created for the DSL
+  // editor only and disposed on unmount. Powered by @zenuml/core's published lsp-worker.
+  const lspClientRef = useRef<ZenumlLspClient | null>(null);
+  // Latest diagnostics pushed by the LSP (server publishDiagnostics). The DSL linter
+  // source reads this holder; the owning effect updates it and forces a re-lint.
+  const lspDiagnosticsRef = useRef<LspDiagnostic[]>([]);
 
   // Built once; theme/font/keymap are swapped via compartment reconfigure (no remount).
   const extensions = useMemo(() => {
@@ -157,6 +170,25 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
           cb(zone);
         }),
       );
+
+      // ZenUML LSP (@zenuml/core/lsp-worker): adds hover (a capability the editor
+      // lacks today) and keeps the document synced to the server so hover/position
+      // requests resolve. The hand-rolled zenumlCompletions + linter are kept
+      // intentionally — they are richer than the LSP's; LSP completion/diagnostics
+      // are available in ./lsp/zenumlLspExtensions for a later migration if wanted.
+      //
+      // The worker is created/disposed by the effect below (NOT here in the render-phase
+      // memo). These extensions read the live client lazily through `lspClientRef` so the
+      // memoized array — which is not rebuilt on a StrictMode remount — can never hold a
+      // disposed worker.
+      const getLspClient = () => lspClientRef.current;
+      languageExtensions.push(lspDocSync(getLspClient));
+      languageExtensions.push(lspHover(getLspClient));
+      // Server diagnostics (e.g. duplicate-participant warnings, syntax errors) as a
+      // linter() SOURCE — CM merges it with the prop-based linter above rather than
+      // clobbering it. The DSL editor passes no `diagnostics` prop today, so this is the
+      // editor's only DSL diagnostics source.
+      languageExtensions.push(lspDiagnosticsLinter(() => lspDiagnosticsRef.current));
     }
 
     // Emmet + Prettier are CSS-ONLY. The ZenUML DSL editor must never receive them
@@ -219,6 +251,42 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       effects: lintCompartment.current.reconfigure(diagnosticsLinter(diagnostics)),
     });
   }, [diagnostics]);
+
+  // Own the ZenUML LSP worker lifecycle for the DSL editor. Created in an effect
+  // (not in the render-phase `extensions` memo) so React StrictMode's
+  // mount→unmount→remount cycle disposes AND recreates it cleanly: on the simulated
+  // unmount the cleanup terminates the worker, then the effect re-runs on remount and
+  // spins up a fresh one, re-opening the current document. The memoized hover/doc-sync
+  // extensions read the live client lazily via `lspClientRef`, so they always talk to
+  // the current worker and never to a disposed one. (CodeMirror child effects run
+  // before this parent effect, so `viewRef` is populated by the time we open the doc.)
+  useEffect(() => {
+    if (language !== 'dsl') return;
+    const client = createZenumlLspClient();
+    lspClientRef.current = client;
+    // Subscribe BEFORE openDoc so the server's first publishDiagnostics isn't dropped.
+    // On each push: store the set, then nudge CM to re-run the lint sources now (the
+    // dispatched effect satisfies the linter's needsRefresh; forceLinting skips the
+    // idle debounce) so diagnostics appear promptly instead of on the next keystroke.
+    client.onDiagnostics = (diags) => {
+      lspDiagnosticsRef.current = diags;
+      const view = viewRef.current;
+      if (view) {
+        view.dispatch({ effects: lspDiagnosticsChanged.of(null) });
+        forceLinting(view);
+      }
+    };
+    const doc = viewRef.current?.state.doc.toString() ?? value;
+    void client.openDoc(doc);
+    return () => {
+      client.dispose();
+      if (lspClientRef.current === client) lspClientRef.current = null;
+      lspDiagnosticsRef.current = [];
+    };
+    // `value` is intentionally excluded: openDoc seeds the server with the doc at
+    // creation time; subsequent edits flow through lspDocSync's changeDoc.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   return (
     <div data-testid={testId} className="h-full overflow-hidden">

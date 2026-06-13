@@ -48,7 +48,7 @@
     "@uiw/codemirror-theme-solarized": "^4.25.10",
     "@uiw/codemirror-themes": "^4.25.10",
     "@uiw/react-codemirror": "^4.25.10",
-    "@zenuml/core": "^3.49.2",
+    "@zenuml/core": "^3.50.0",
     "atomizer": "^3.30.0",
     "clsx": "^2.1.1",
     "coffeescript": "^2.7.0",
