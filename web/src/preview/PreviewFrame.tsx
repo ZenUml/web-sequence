@@ -30,13 +30,21 @@ export interface PreviewFrameProps {
    * Has no effect in embed mode (embed sizing stays byte-identical). Default false.
    */
   fit?: boolean;
+  /**
+   * Render the native vector SVG instead of the HTML diagram. Used on mobile, where
+   * @zenuml/core's fixed-px HTML layout overflows the narrow viewport with no reflow.
+   * The SVG carries a viewBox and is sized fit-to-width inside the iframe, so the full
+   * diagram width is visible by default (tall diagrams scroll vertically; vector stays
+   * crisp at any zoom). Forwarded to the iframe as `renderMode: 'svg'`. Default false.
+   */
+  svgMode?: boolean;
   onCodeChange?: (code: string) => void;
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, autoPreview = true, embed, fit = false, onCodeChange, onConsole, onError },
+  { code, css, stickyOffset, autoPreview = true, embed, fit = false, svgMode = false, onCodeChange, onConsole, onError },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
@@ -64,6 +72,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const codeRef = useRef(code); codeRef.current = code;
   const cssRef = useRef(css); cssRef.current = css;
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
+  const svgModeRef = useRef(svgMode); svgModeRef.current = svgMode;
   const cbRef = useRef({ onCodeChange, onConsole, onError });
   cbRef.current = { onCodeChange, onConsole, onError };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
@@ -72,7 +81,12 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // no chrome flash on first paint.
   const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
 
-  const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
+  const renderOptions = (): RenderOptions => ({
+    enableMultiTheme: false,
+    theme: 'theme-default',
+    stickyOffset: stickyRef.current,
+    renderMode: svgModeRef.current ? 'svg' : 'html',
+  });
 
   const post = (msg: unknown) => iframeRef.current?.contentWindow?.postMessage(msg, '*');
 
@@ -123,7 +137,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     const t = setTimeout(() => post({ type: 'render', code: codeRef.current, options: renderOptions() }), PREVIEW_DEBOUNCE);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, stickyOffset, autoPreview]);
+  }, [code, stickyOffset, autoPreview, svgMode]);
 
   // CSS-only fast path (REQ-PRV-5): once ready, push CSS via postMessage on css
   // changes instead of rebuilding/reloading the iframe.

@@ -43,6 +43,7 @@ import { downloadText } from '../services/download';
 // M04 — subscription / settings / modals / analytics
 import { useSubscription } from '../hooks/useSubscription';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
@@ -130,6 +131,11 @@ export function AppRoot() {
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  // Mobile (≤767px) renders the preview as the native vector SVG (fit-to-width) instead
+  // of the fixed-px HTML diagram, which overflows a phone viewport. Present/fullscreen
+  // keeps the HTML scale-to-fit-both-axes path (a deliberate "show it big" view), so SVG
+  // mode is the non-fullscreen mobile editor preview only.
+  const isMobile = useIsMobile();
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
   // M04: single-modal state + open/close. Login modal is separate shared state so
@@ -1313,6 +1319,8 @@ export function AppRoot() {
                   // Present (fullscreen) mode: scale-to-fit + center the diagram
                   // (CSS transform; @zenuml/core untouched).
                   fit={fullscreen}
+                  // Mobile editor preview: native SVG fit-to-width (see isMobile above).
+                  svgMode={isMobile && !fullscreen}
                   stickyOffset={stickyOffset}
                   onCodeChange={handleDslChange}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}

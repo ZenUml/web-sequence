@@ -242,4 +242,49 @@ describe('PreviewFrame', () => {
     expect(iframe.style.transform).toBe('');
     expect(iframe.className).toBe('border-0');
   });
+
+  // ---- SVG render mode (mobile) ----
+  // On mobile the HTML diagram overflows the narrow viewport (fixed-px layout, no
+  // reflow). svgMode tells the iframe to render the native vector SVG instead, which
+  // fits-to-width and shows the full diagram. The host signals it via renderMode.
+  it('sends renderMode "svg" in the render options when svgMode is set', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'svg' }) }),
+      '*',
+    );
+  });
+
+  it('defaults renderMode to "html" when svgMode is not set', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'html' }) }),
+      '*',
+    );
+  });
+
+  it('re-renders with svg mode when svgMode flips on after ready (e.g. rotate to a narrow viewport)', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode={false} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    post.mockClear();
+    vi.useFakeTimers();
+    rerender(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode />);
+    act(() => { vi.runAllTimers(); });
+    vi.useRealTimers();
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'svg' }) }),
+      '*',
+    );
+  });
 });

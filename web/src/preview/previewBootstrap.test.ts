@@ -27,4 +27,14 @@ describe('previewBootstrap.runtime.js', () => {
     expect(BOOTSTRAP).toContain("'evalConsole'");
     expect(BOOTSTRAP).toContain("type: 'codeChange'");
   });
+  // Mobile SVG mode: when options.renderMode === 'svg', render the native vector SVG
+  // (window.zenuml.renderToSvg) instead of the HTML diagram, sized fit-to-width so the
+  // full diagram shows by default.
+  it('renders the native SVG (renderToSvg) fit-to-width when renderMode is svg', () => {
+    expect(BOOTSTRAP).toContain('renderToSvg');
+    expect(BOOTSTRAP).toContain('renderMode');
+    expect(BOOTSTRAP).toContain("'svg'");
+    // fit-to-width: width 100% + height auto on the injected <svg>.
+    expect(BOOTSTRAP).toContain("'100%'");
+  });
 });

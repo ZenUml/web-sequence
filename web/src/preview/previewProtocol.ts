@@ -4,6 +4,10 @@ export interface RenderOptions {
   enableMultiTheme: false;
   theme: 'theme-default';
   stickyOffset: number; // from the host router search params — NOT window.location inside the iframe
+  // Renderer selection. 'html' (default) = @zenuml/core's interactive React diagram.
+  // 'svg' = the native vector SVG (renderToSvg), used on mobile where the fixed-px HTML
+  // layout overflows the narrow viewport; the SVG fits-to-width and shows the full diagram.
+  renderMode?: 'html' | 'svg';
 }
 
 // host → iframe
