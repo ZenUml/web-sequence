@@ -1369,3 +1369,51 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(await screen.findByTestId('embed-empty')).toBeInTheDocument();
   });
 });
+
+describe('AppRoot — pricing upgrade → Paddle checkout', () => {
+  async function openPricing() {
+    const { useUiStore } = await import('../state/uiStore');
+    await act(async () => { useUiStore.getState().openModal('pricing'); });
+    return screen.findByTestId('pricing-modal');
+  }
+
+  // Signed-in: Upgrade opens Paddle checkout for the chosen plan (regression guard).
+  it('signed-in user clicking Upgrade opens Paddle checkout for the chosen plan', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u1', email: 'e@x.com', displayName: 'U', photoURL: null }, authReady: true, online: true });
+    });
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(paddle.openCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ planType: 'plus-monthly', userId: 'u1' }),
+    );
+  });
+
+  // Anonymous: Upgrade must NOT silently close — it opens sign-in and defers checkout.
+  it('anonymous user clicking Upgrade opens sign-in (not a silent close) and defers checkout', async () => {
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(useUiStore.getState().loginModalOpen).toBe(true);
+    expect(paddle.openCheckout).not.toHaveBeenCalled();
+  });
+
+  // Anonymous → after sign-in, the deferred Paddle checkout fires for the chosen plan.
+  it('resumes the deferred Paddle checkout once the anonymous user signs in', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(paddle.openCheckout).not.toHaveBeenCalled();
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u2', email: 'z@x.com', displayName: 'Z', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(paddle.openCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ planType: 'plus-monthly', userId: 'u2' }),
+    ));
+  });
+});

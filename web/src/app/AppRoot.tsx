@@ -162,6 +162,22 @@ export function AppRoot() {
   const { openCheckout } = usePaddle();
   const paymentEnabled = appConfig.features.payment;
 
+  // Anonymous upgrade → sign-in → resume checkout. Paddle checkout needs an account
+  // (the webhook links the subscription by userId), so an anonymous Upgrade click can't
+  // go straight to Paddle. handleUpgrade stashes the chosen plan here and opens sign-in;
+  // once the user authenticates we fire the deferred checkout for that plan. Previously
+  // the anonymous branch just closed the modal silently — the Upgrade buttons appeared
+  // dead (never reached Paddle).
+  const pendingCheckoutRef = useRef<CheckoutPlanType | null>(null);
+  useEffect(() => {
+    if (user && pendingCheckoutRef.current) {
+      const plan = pendingCheckoutRef.current;
+      pendingCheckoutRef.current = null;
+      openCheckout({ planType: plan, email: user.email ?? undefined, userId: user.uid, onSuccess: () => reloadSubscription() });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
   const settings = useSettingsStore((s) => s.settings);
   const mergeSettings = useSettingsStore((s) => s.merge);
@@ -631,11 +647,19 @@ export function AppRoot() {
   // first (close pricing; the header login affordance is the entry). Guarded by the
   // payment feature flag at the call site (pricing isn't reachable when off).
   function handleUpgrade(plan: PlanType) {
-    const currentUser = useAuthStore.getState().user;
-    if (!currentUser) { closeModal(); return; }
     if (plan === 'free' || plan === 'enterprise') return;
+    const checkoutPlan = plan as CheckoutPlanType;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      // Defer to sign-in: capture the plan, close pricing, open the login dialog. The
+      // null→user effect above resumes the Paddle checkout once authenticated.
+      pendingCheckoutRef.current = checkoutPlan;
+      closeModal();
+      setLoginModalOpen(true);
+      return;
+    }
     openCheckout({
-      planType: plan as CheckoutPlanType,
+      planType: checkoutPlan,
       email: currentUser.email ?? undefined,
       userId: currentUser.uid,
       onSuccess: () => reloadSubscription(),
