@@ -3,6 +3,8 @@ import type { Item, Folder, AppUser } from '../../domain/types';
 import {
   SearchInput,
   Button,
+  buttonClassName,
+  BrandLogo,
   Select,
   SelectTrigger,
   SelectContent,
@@ -15,6 +17,7 @@ import {
   MenuItem,
 } from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
+import { TEMPLATES, blankTemplate } from '../../domain/templates';
 import { FolderList } from '../library/FolderList';
 import { ImportExportBar } from '../library/ImportExportBar';
 import { DiagramCard } from './DiagramCard';
@@ -39,6 +42,11 @@ export interface HomeViewProps {
   onOpen(item: Item): void;
   onNewDiagram(): void;
   onBrowseTemplates(): void;
+  // Create a diagram directly from a template's content and open it in the editor.
+  // The hub's "Start something new" quick-pick cards use this so a single click
+  // creates the chosen template — they must NOT reopen the CreateNewModal picker
+  // (which would force the user to select a template a second time).
+  onCreateFromTemplate(item: Partial<Item>): void;
   onOpenSignIn(): void;
   onLogout(): void;
   onCreateFolder(name: string): void;
@@ -62,6 +70,7 @@ export function HomeView({
   onOpen,
   onNewDiagram,
   onBrowseTemplates,
+  onCreateFromTemplate,
   onOpenSignIn,
   onLogout,
   onCreateFolder,
@@ -187,12 +196,10 @@ export function HomeView({
                 <button
                   type="button"
                   aria-label="More new diagram options"
-                  className={cn(
-                    'grid place-items-center h-8 px-1.5 rounded-r-md rounded-l-none',
-                    'bg-accent hover:bg-accent-hover active:bg-accent-press text-white',
-                    'transition-colors duration-150 ease-draft ring-draft',
-                    'border-l border-white/20',
-                  )}
+                  className={buttonClassName({
+                    variant: 'primary',
+                    className: 'rounded-l-none px-1.5 border-l border-white/20',
+                  })}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5" aria-hidden="true">
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" />
@@ -272,18 +279,19 @@ export function HomeView({
                 </button>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {TEMPLATE_STUBS.map((t) => (
+                {QUICK_TEMPLATES.map((t) => (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={onBrowseTemplates}
+                    data-testid={`home-template-${t.id}`}
+                    onClick={() => onCreateFromTemplate(t.item)}
                     className={cn(
                       'flex flex-col items-start gap-1.5 rounded-lg border border-ink-line/40 p-3 shrink-0 w-36',
                       'bg-ink-900 hover:border-accent/60 hover:bg-ink-800 transition-colors duration-150 ring-draft text-left',
                     )}
                   >
                     <div className="h-16 w-full rounded bg-ink-800 flex items-center justify-center text-ondark-faint text-[9px] font-mono">
-                      {t.icon}
+                      {t.glyph}
                     </div>
                     <span className="font-sans text-[11px] font-medium text-ondark-strong">{t.label}</span>
                   </button>
@@ -409,33 +417,22 @@ export function HomeView({
   );
 }
 
-// ZenUML brand icon — cobalt rounded square with the two-participant sequence glyph.
+// ZenUML brand mark — the official logo (self-contained blue rounded square with the
+// Zen/UML wordmark). Sized to the prior 30px footprint so the header layout is unchanged.
 function BrandIcon() {
-  return (
-    <span
-      className={cn(
-        'grid place-items-center h-[30px] w-[30px] rounded-lg text-white shrink-0',
-        'bg-gradient-to-br from-accent to-accent-press shadow-inset',
-      )}
-      aria-hidden="true"
-    >
-      <span className="h-[17px] w-[17px]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-          <rect x="3" y="4" width="7" height="5" rx="1" />
-          <rect x="14" y="4" width="7" height="5" rx="1" />
-          <path d="M6.5 9v11M17.5 9v6" />
-          <path d="M6.5 13h9M15 11l2 2-2 2" />
-        </svg>
-      </span>
-    </span>
-  );
+  return <BrandLogo className="h-[30px] w-[30px] shrink-0" />;
 }
 
-// Stub template cards — clicking any opens the full template picker (CreateNewModal).
-const TEMPLATE_STUBS = [
-  { id: 'blank', label: 'Blank', icon: '—' },
-  { id: 'api', label: 'REST API', icon: 'API' },
-  { id: 'auth', label: 'Auth flow', icon: '🔑' },
-  { id: 'microservices', label: 'Microservices', icon: '⬡' },
-  { id: 'ecommerce', label: 'Checkout', icon: '🛒' },
+// Quick-pick cards for the "Start something new" row. These are the REAL templates
+// (the same inventory the CreateNewModal offers) so a single click creates the chosen
+// diagram and opens it — no second selection. "Browse templates" still opens the full
+// picker for users who want to preview the styled looks before committing.
+const QUICK_TEMPLATES: { id: string; label: string; glyph: string; item: Partial<Item> }[] = [
+  { id: 'blank', label: 'Blank', glyph: '—', item: blankTemplate() },
+  ...TEMPLATES.map((t) => ({
+    id: t.id,
+    label: t.title,
+    glyph: t.id === 'basic' ? 'A→B' : 'Aa',
+    item: t.item,
+  })),
 ];

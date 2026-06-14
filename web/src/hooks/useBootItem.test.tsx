@@ -370,3 +370,43 @@ describe('useBootItem hook', () => {
     expect(getItem).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('useBootItem onResolved callback', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('calls onResolved with the resolved kind once auth is ready', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const onResolved = vi.fn();
+    const deps = makeBaseDeps({ onResolved });
+
+    await act(async () => {
+      renderHook(() => useBootItem(deps, true, false));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(onResolved).toHaveBeenCalledWith('new');
+  });
+
+  it('does not call onResolved when skipped (embed-by-value)', async () => {
+    const { useBootItem } = await import('./useBootItem');
+    const { useEditorStore } = await import('../state/editorStore');
+
+    useEditorStore.setState({ currentItem: null, dirty: false, unsavedCount: 0, saving: false });
+
+    const onResolved = vi.fn();
+    const deps = makeBaseDeps({ onResolved });
+
+    await act(async () => {
+      renderHook(() => useBootItem(deps, true, true)); // skip=true
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(onResolved).not.toHaveBeenCalled();
+  });
+});
