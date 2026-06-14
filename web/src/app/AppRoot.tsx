@@ -66,6 +66,7 @@ import { PricingModal, type BillingPeriod } from '../components/subscription/Pri
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
 import { LoginModal } from '../components/auth/LoginModal';
 import { HomeView } from '../components/home/HomeView';
+import { ReportBugButton } from '../components/feedback/ReportBugButton';
 
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
@@ -1019,6 +1020,16 @@ export function AppRoot() {
           lastProvider={lastProvider}
           error={loginError}
         />
+        <ReportBugButton
+          dsl=""
+          appVersion={APP_VERSION}
+          view="hub"
+          signedIn={!!user}
+          onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'hub' })}
+          onSubmitted={({ includedDsl }) =>
+            track('bug_report_submitted', { category: 'feedback', label: 'hub', included_dsl: includedDsl })
+          }
+        />
         <HomeView
           items={items}
           folders={folders}
@@ -1367,6 +1378,16 @@ export function AppRoot() {
           }
         />
       </div>
+      <ReportBugButton
+        dsl={item?.js ?? ''}
+        appVersion={APP_VERSION}
+        view="editor"
+        signedIn={!!user}
+        onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'editor' })}
+        onSubmitted={({ includedDsl }) =>
+          track('bug_report_submitted', { category: 'feedback', label: 'editor', included_dsl: includedDsl })
+        }
+      />
     </div>
   );
 }
