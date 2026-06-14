@@ -49,7 +49,10 @@ export function ReportBugButton({
         size="md"
         data-testid="report-bug-fab"
         aria-label="Report a bug"
-        className={cn('fixed bottom-4 right-4 z-30 shadow-pop')}
+        // bottom-12 (not bottom-4): clear the collapsed Console status band
+        // (h-8 = 32px, see preview/Console.tsx) docked at the editor's
+        // bottom-right so the FAB doesn't cover it.
+        className={cn('fixed bottom-12 right-4 z-30 shadow-pop')}
         onClick={() => {
           setOpen(true);
           onOpen?.();
