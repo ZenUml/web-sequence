@@ -90,6 +90,35 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
 
   const post = (msg: unknown) => iframeRef.current?.contentWindow?.postMessage(msg, '*');
 
+  // Acknowledged render delivery (WebKit fix). A single fire-and-forget render
+  // postMessage to the srcdoc iframe is silently dropped by WebKit/Safari under tight
+  // prod-build timing, leaving the preview stale (it never re-renders after first paint).
+  // So each render carries a token; the iframe echoes it in `rendered`; if the ack does
+  // not arrive within RENDER_ACK_MS we re-post (up to RENDER_MAX_RETRIES). Idempotent —
+  // a duplicate render that did land just re-renders the same code. Chromium acks on the
+  // first try, so the retry path is WebKit-only in practice.
+  const RENDER_ACK_MS = 250;
+  const RENDER_MAX_RETRIES = 4;
+  const renderSeq = useRef(0);
+  const pendingRender = useRef<{ token: number; code: string; tries: number } | null>(null);
+  const ackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armAck = () => {
+    if (ackTimer.current) clearTimeout(ackTimer.current);
+    ackTimer.current = setTimeout(() => {
+      const p = pendingRender.current;
+      if (!p || p.tries >= RENDER_MAX_RETRIES) { pendingRender.current = null; return; }
+      p.tries += 1;
+      post({ type: 'render', code: p.code, options: renderOptions(), token: p.token });
+      armAck();
+    }, RENDER_ACK_MS);
+  };
+  const postRender = (code: string) => {
+    const token = ++renderSeq.current;
+    pendingRender.current = { token, code, tries: 0 };
+    post({ type: 'render', code, options: renderOptions(), token });
+    armAck();
+  };
+
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.source !== iframeRef.current?.contentWindow) return;
@@ -98,11 +127,19 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       switch (msg.type) {
         case 'ready':
           readyRef.current = true;
-          post({ type: 'render', code: codeRef.current, options: renderOptions() });
+          postRender(codeRef.current);
           // Push the LATEST css on ready so css that resolved before the heavy
           // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
           // dropped — the empty initial <style> would otherwise stay empty.
           post({ type: 'updateCss', css: cssRef.current });
+          break;
+        case 'rendered':
+          // Ack for acknowledged render delivery: the iframe applied this token's render,
+          // so stop retrying it (only when it matches the latest in-flight render).
+          if (pendingRender.current && msg.token === pendingRender.current.token) {
+            pendingRender.current = null;
+            if (ackTimer.current) clearTimeout(ackTimer.current);
+          }
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
@@ -127,14 +164,17 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       }
     }
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      if (ackTimer.current) clearTimeout(ackTimer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debounced re-render on DSL change (only once ready + autoPreview on).
   useEffect(() => {
     if (!readyRef.current || !autoPreview) return;
-    const t = setTimeout(() => post({ type: 'render', code: codeRef.current, options: renderOptions() }), PREVIEW_DEBOUNCE);
+    const t = setTimeout(() => postRender(codeRef.current), PREVIEW_DEBOUNCE);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, stickyOffset, autoPreview, svgMode]);

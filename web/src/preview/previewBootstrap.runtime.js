@@ -141,7 +141,9 @@
               stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
             });
           }
-          post({ type: 'rendered' });
+          // Echo the token so the host can confirm THIS render landed (ack+retry for
+          // WebKit's dropped-postMessage race). undefined when the host sent no token.
+          post({ type: 'rendered', token: msg.token });
           // Report the diagram's natural content size (width × height) in ALL modes
           // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
           // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout

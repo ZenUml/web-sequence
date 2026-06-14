@@ -12,7 +12,12 @@ export interface RenderOptions {
 
 // host → iframe
 export type HostMessage =
-  | { type: 'render'; code: string; options: RenderOptions }
+  // `token` (optional) enables acknowledged delivery: the iframe echoes it back in
+  // `rendered` so the host can detect a dropped render and re-post. WebKit/Safari can
+  // silently drop a single fire-and-forget render postMessage to a srcdoc iframe under
+  // tight timing (prod build), leaving the preview stale — the ack+retry makes delivery
+  // reliable across engines. Optional so existing tests/callers still type-check.
+  | { type: 'render'; code: string; options: RenderOptions; token?: number }
   | { type: 'updateCss'; css: string }
   | { type: 'getPng'; id: number }
   | { type: 'evalConsole'; id: number; expr: string };
@@ -20,7 +25,8 @@ export type HostMessage =
 // iframe → host
 export type FrameMessage =
   | { type: 'ready' }
-  | { type: 'rendered' }
+  // `token` echoes the render message's token (acknowledged delivery — see HostMessage).
+  | { type: 'rendered'; token?: number }
   | { type: 'codeChange'; code: string }
   | { type: 'png'; id: number; dataUrl: string | null }
   | { type: 'console'; level: string; args: string[] }
