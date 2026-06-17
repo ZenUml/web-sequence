@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, cpSync, existsSync } from 'fs';
 import { assetsInlineLimit } from './src/preview/assetInlining';
 import { configDefaults } from 'vitest/config';
 
@@ -28,16 +28,60 @@ const zenumlAssetUrlShim = {
     zenumlShimIsBuild = config.command === 'build';
   },
   resolveId(source: string) {
-    return source === '@zenuml/core/dist/zenuml?url' ? '\0zenuml-core-asset-url' : null;
+    return source === '@zenuml/core/dist/zenuml?url'
+      ? '\0zenuml-core-asset-url'
+      : null;
   },
   load(this: any, id: string) {
     if (id !== '\0zenuml-core-asset-url') return null;
-    const filePath = resolve(__dirname, 'node_modules/@zenuml/core/dist/zenuml.js');
+    const filePath = resolve(
+      __dirname,
+      'node_modules/@zenuml/core/dist/zenuml.js',
+    );
     if (zenumlShimIsBuild) {
-      const ref = this.emitFile({ type: 'asset', name: 'zenuml.js', source: readFileSync(filePath) });
+      const ref = this.emitFile({
+        type: 'asset',
+        name: 'zenuml.js',
+        source: readFileSync(filePath),
+      });
       return `export default import.meta.ROLLUP_FILE_URL_${ref};`;
     }
     return `export default ${JSON.stringify('/@fs' + filePath)};`;
+  },
+};
+
+// The M05 cutover repointed Firebase hosting.public from the legacy `app/`
+// assembly to `web/dist`. The legacy build copied a handful of static pages into
+// app/, served at app.zenuml.com/<page>; the cutover dropped them (now 404):
+//   help.html (+ help/ assets) — in-app HelpModal link (www → zenuml.com →
+//     app.zenuml.com/help.html) and external bookmarks. help.html references
+//     help/stylesheets, help/images, help/javascripts relatively, so the whole
+//     help/ dir ships with it.
+//   privacy-policy/ (privacy-policy.html) and End-User-License-Agreement/
+//     (index.html) — legal pages linked from the Chrome Web Store / Marketplace
+//     listings (no in-app link), so they must keep resolving at their prior URLs.
+// Copy the repo-root sources into dist at build time (the root files stay the
+// single source of truth — no duplication into web/public/). Regression-guarded
+// by e2e/tests/production-build.spec.js. Build-only; runs after the bundle is
+// written (emptyOutDir has already run, so nothing clobbers these). cpSync copies
+// files and directories alike (recursive).
+const LEGACY_STATIC_PAGES = [
+  'help.html',
+  'help',
+  'privacy-policy',
+  'End-User-License-Agreement',
+];
+const copyLegacyStaticPages = {
+  name: 'copy-legacy-static-pages',
+  apply: 'build' as const,
+  closeBundle() {
+    const repoRoot = resolve(__dirname, '..');
+    const outDir = resolve(__dirname, 'dist');
+    for (const entry of LEGACY_STATIC_PAGES) {
+      const src = resolve(repoRoot, entry);
+      if (existsSync(src))
+        cpSync(src, resolve(outDir, entry), { recursive: true });
+    }
   },
 };
 
@@ -53,7 +97,7 @@ const proxy = (path: string, fn: string) => ({
 });
 
 export default defineConfig({
-  plugins: [zenumlAssetUrlShim, react()],
+  plugins: [zenumlAssetUrlShim, copyLegacyStaticPages, react()],
   // Conventional layout: root = web/ (this dir), index.html at web/index.html,
   // source under web/src, build output to web/dist. (Differs from the legacy
   // app's root:'src' quirk — this is a clean self-contained project.)

@@ -4,7 +4,10 @@ import { existsSync, readdirSync } from 'fs';
 // These tests check the LOCAL web/dist build and hit localhost:PREVIEW_PORT directly.
 // They must not run when PW_BASE_URL targets a remote host (staging/prod gate).
 test.beforeEach(() => {
-  test.skip(!!process.env.PW_BASE_URL, 'production-build checks require a local web/dist build');
+  test.skip(
+    !!process.env.PW_BASE_URL,
+    'production-build checks require a local web/dist build',
+  );
 });
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
@@ -24,7 +27,8 @@ import { openEditor } from './helpers/hub.js';
 // Requires `pnpm -C web build` first (the webServer preview entry serves web/dist).
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DIST_ASSETS = resolve(__dirname, '../../web/dist/assets');
+const DIST = resolve(__dirname, '../../web/dist');
+const DIST_ASSETS = resolve(DIST, 'assets');
 const PREVIEW_URL = `http://localhost:${PREVIEW_PORT}/`;
 
 test('built dist contains a hashed @zenuml/core asset on disk', async () => {
@@ -32,11 +36,84 @@ test('built dist contains a hashed @zenuml/core asset on disk', async () => {
     existsSync(DIST_ASSETS),
     `web/dist/assets is missing — run "pnpm -C web build" before this spec.\n${DIST_ASSETS}`,
   ).toBe(true);
-  const zenumlAssets = readdirSync(DIST_ASSETS).filter((f) => /^zenuml-.*\.js$/.test(f));
+  const zenumlAssets = readdirSync(DIST_ASSETS).filter((f) =>
+    /^zenuml-.*\.js$/.test(f),
+  );
   expect(
     zenumlAssets.length,
     `Expected a hashed assets/zenuml-*.js in the build output (the shim's emitFile).\nFound: ${readdirSync(DIST_ASSETS).join(', ')}`,
   ).toBeGreaterThan(0);
+});
+
+// Cutover regression guard (M05): hosting.public → web/dist dropped the legacy
+// static pages that the old `app/` assembly served (help.html + help/ assets, and
+// the privacy-policy / EULA legal pages). help.html is linked from the in-app
+// HelpModal (www → zenuml.com → app.zenuml.com/help.html) and bookmarks; the legal
+// pages are linked from the Chrome Web Store / Marketplace listings. All must keep
+// 200-ing. The vite copy-legacy-static-pages plugin re-emits them into the build.
+test('built dist serves the legacy /help.html page and its assets', async ({
+  page,
+}) => {
+  // (a) help.html + the relatively-referenced help/ assets exist on disk.
+  expect(
+    existsSync(resolve(DIST, 'help.html')),
+    'web/dist/help.html missing — the copy-legacy-static-pages vite plugin regressed (app.zenuml.com/help.html would 404)',
+  ).toBe(true);
+  for (const asset of [
+    'help/stylesheets/screen.css',
+    'help/javascripts/all.js',
+    'help/images/logo.png',
+  ]) {
+    expect(
+      existsSync(resolve(DIST, asset)),
+      `web/dist/${asset} missing — help.html references it relatively`,
+    ).toBe(true);
+  }
+
+  // (b) it is actually served (200) from the static preview, as Firebase Hosting would.
+  const resp = await page.goto(`${PREVIEW_URL}help.html`);
+  expect(
+    resp?.status(),
+    'GET /help.html must return 200 from the built dist',
+  ).toBe(200);
+  // The slate page's all.js rewrites document.title to "<section> – ZenUML
+  // language Reference" on load, so match the stable suffix rather than the exact
+  // string.
+  await expect(page).toHaveTitle(/ZenUML language Reference$/);
+});
+
+// The legal pages (privacy policy + EULA) are linked from external store/
+// marketplace listings, so their exact prior URLs must keep resolving. Served at
+// their original paths: /privacy-policy/privacy-policy.html (the dir holds no
+// index.html) and /End-User-License-Agreement/ (index.html → directory index).
+test('built dist serves the legacy privacy-policy and EULA legal pages', async ({
+  page,
+}) => {
+  for (const [file, url, titleRe] of [
+    [
+      'privacy-policy/privacy-policy.html',
+      'privacy-policy/privacy-policy.html',
+      /ZenUML Privacy Policy/,
+    ],
+    [
+      'End-User-License-Agreement/index.html',
+      'End-User-License-Agreement/',
+      /End User License Agreement/i,
+    ],
+  ]) {
+    expect(
+      existsSync(resolve(DIST, file)),
+      `web/dist/${file} missing — copy-legacy-static-pages regressed (the listing URL would 404)`,
+    ).toBe(true);
+    const resp = await page.goto(`${PREVIEW_URL}${url}`);
+    expect(
+      resp?.status(),
+      `GET /${url} must return 200 from the built dist`,
+    ).toBe(200);
+    await expect(page.locator('body')).toContainText(
+      titleRe instanceof RegExp ? titleRe : String(titleRe),
+    );
+  }
 });
 
 test('built app renders the diagram with no dev-only /@fs/ URL and a 200 core asset', async ({
@@ -76,6 +153,9 @@ test('built app renders the diagram with no dev-only /@fs/ URL and a 200 core as
 
   // The @zenuml/core asset must have been served successfully (200), proving the
   // built bundle references the emitted hashed asset rather than a broken path.
-  expect(coreAssetStatus, 'Expected the zenuml-*.js core asset to be requested').not.toBeNull();
+  expect(
+    coreAssetStatus,
+    'Expected the zenuml-*.js core asset to be requested',
+  ).not.toBeNull();
   expect(coreAssetStatus).toBe(200);
 });
