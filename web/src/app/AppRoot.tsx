@@ -920,6 +920,7 @@ export function AppRoot() {
                 code={item.js}
                 css={item.cssMode === 'css' ? item.css : transpiledCss}
                 stickyOffset={stickyOffset}
+                autoPreview={settings.autoPreview}
               />
             </div>
           ) : (
@@ -1265,7 +1266,7 @@ export function AppRoot() {
                     DSL
                   </span>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
               </div>
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
                   default re-derives from the new page's CSS emptiness (matches the
@@ -1306,7 +1307,7 @@ export function AppRoot() {
                   </>
                 }
               >
-                <CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} />
+                <CodeEditor key={`css-${item.currentPageId}`} value={item.css} language="css" onChange={handleSetCss} testId="css-editor" readOnly={item.cssMode === 'acss'} diagnostics={cssErrors} themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} />
               </CssPanel>
             </div>
             )
@@ -1330,6 +1331,9 @@ export function AppRoot() {
               ) : (
                 <RendererHeader
                   onPresent={toggleFullscreen}
+                  // #824: surface a manual Refresh ONLY when auto-preview is off, so the
+                  // default UI (auto-preview on) is unchanged. Forces a one-shot render.
+                  onRefresh={settings.autoPreview ? undefined : () => previewRef.current?.render()}
                   pageTabs={
                     <PageTabs
                       surface="dark"
@@ -1351,6 +1355,9 @@ export function AppRoot() {
                   ref={previewRef}
                   code={item.js}
                   css={previewCss}
+                  // #824: gate the debounced auto re-render on the Settings toggle. When
+                  // OFF, edits don't re-render until the manual Refresh control fires.
+                  autoPreview={settings.autoPreview}
                   // Present (fullscreen) mode: scale-to-fit + center the diagram
                   // (CSS transform; @zenuml/core untouched).
                   fit={fullscreen}

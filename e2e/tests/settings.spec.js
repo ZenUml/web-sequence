@@ -206,26 +206,64 @@ test('SET-3: font-family change applies live to .cm-content', async ({
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SET-4: indent-unit change → auto-indent width. DEFERRED.
+// SET-4: indent-size change → auto-indent width (#825).
 //
-// The Indent-size Select renders but is NOT wired to the editor: AppRoot threads
-// only theme/fontSize/fontFamily/keymap into <CodeEditor> (AppRoot.tsx ~1268), and
-// NOTHING in web/src sets CM6's `indentUnit` facet from settings.indentSize. The DSL
-// block body indents a FIXED 2 spaces via delimitedIndent (zenumlLanguage.ts). So
-// selecting indent=4 produces no observable change in the editor — there is no honest
-// assertion to make today. Marked fixme rather than faked.
+// settings.indentSize/indentWith are now threaded into <CodeEditor> (AppRoot.tsx), which
+// sets CM6's `indentUnit` facet from them. The DSL grammar's delimitedIndent reads that
+// facet (delimitedStrategy = baseIndent + context.unit), so changing indent size produces
+// a REAL, observable change in auto-indent width: pressing Enter inside an `A.run() { … }`
+// block indents the new body line by exactly one indent unit.
+//
+// We compute the observable effect from the DOC TEXT, not a CSS/pixel proxy: after Enter
+// the cursor sits at the body's indent, so inserting a sentinel char and reading its
+// column (leading-whitespace length on that line) yields the applied indent width. At the
+// DEFAULT indent=2 the body indents 2; after switching to indent=4 it indents 4.
 // ──────────────────────────────────────────────────────────────────────────────
-test.fixme(
-  'SET-4: indent-unit change (4) changes auto-indent width in a block',
-  async ({ page }) => {
-    // Wiring gap: settings.indentSize is not connected to the CM6 indentUnit facet,
-    // so the editor always indents blocks by 2 spaces regardless of this setting.
-    // Implement once AppRoot passes indentSize/indentWith into <CodeEditor> and the
-    // editor sets indentUnit from it; then: set indent=4, type `A.run() {`, Enter,
-    // assert the new line is indented 4 spaces.
-    await gotoFresh(page);
-  },
-);
+test('SET-4: indent-size change (2 → 4) changes auto-indent width in a DSL block', async ({
+  page,
+}) => {
+  await gotoFresh(page);
+  const content = dslContent(page);
+  await expect(content).toBeVisible();
+
+  // Reads the leading-space count of the line the cursor lands on after Enter-in-block.
+  // Type the opener, Enter (auto-indents the new line one unit), then a sentinel; read
+  // back the doc and measure the sentinel line's indent. Returns the indent width.
+  async function blockIndentWidth() {
+    await content.click();
+    await page.keyboard.press(selectAll);
+    await page.keyboard.press('Delete');
+    // `A.run() {` is a StatementBraceBlock opener; closeBrackets auto-inserts the `}`.
+    await content.pressSequentially('A.run() {');
+    await page.keyboard.press('Enter'); // auto-indent the body line by one unit
+    await content.pressSequentially('X'); // sentinel marks the indented column
+    // Read the indent width straight from the rendered CM6 lines. CM6 renders each
+    // document line as a `.cm-line` whose textContent includes the leading whitespace,
+    // so the sentinel line's leading-space count IS the applied auto-indent width.
+    const indent = await page.evaluate(() => {
+      const line = Array.from(
+        document.querySelectorAll('[data-testid="dsl-editor"] .cm-line'),
+      )
+        .map((n) => n.textContent || '')
+        .find((l) => l.includes('X'));
+      const m = line ? line.match(/^(\s*)X/) : null;
+      return m ? m[1].length : -1;
+    });
+    return indent;
+  }
+
+  // Default indent = 2 → the block body indents 2 columns.
+  expect(await blockIndentWidth()).toBe(2);
+
+  // Switch indent size to 4 (live compartment reconfigure — no reload).
+  await openSettings(page);
+  await chooseSetting(page, 'setting-indentSize', '4');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-testid="settings-modal"]')).toBeHidden();
+
+  // Now the same Enter-in-block indents the body 4 columns — the setting took effect.
+  expect(await blockIndentWidth()).toBe(4);
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SET-5: a behavior toggle takes observable effect.

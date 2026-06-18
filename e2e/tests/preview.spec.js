@@ -256,81 +256,72 @@ test('PRV-4: console eval runs JS in the preview iframe and echoes the result', 
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PRV-6: With auto-preview OFF, editing the DSL does NOT re-render until a manual
-//        refresh (toggling auto-preview back ON re-fires the render — the only
-//        manual re-render trigger in the no-rail UI).
+// PRV-6: With auto-preview OFF, editing the DSL does NOT re-render until the manual
+//        Refresh control fires (#824).
 // ──────────────────────────────────────────────────────────────────────────────
-// PRODUCT BUG (fixme until wired): this test is a FALSE-GREEN. `settings.autoPreview`
-// is never passed to PreviewFrame — the two call sites in AppRoot.tsx (~918 and ~1350)
-// omit `autoPreview={settings.autoPreview}`, so PreviewFrame falls back to its default
-// `autoPreview=true` (PreviewFrame.tsx:47) and ALWAYS re-renders on the 500ms debounce.
-// The Settings toggle is therefore a dead control for rendering: it flips the stored
-// setting but never gates the preview. The old assertions happened to pass only because
-// they fired inside the debounce window (before the always-on re-render landed) — they
-// would pass identically with auto-preview ON, so they prove nothing.
-// To enable this test:
-//   1. Wire the prop: pass `autoPreview={settings.autoPreview}` to PreviewFrame at
-//      AppRoot.tsx ~918 and ~1350 so the toggle actually gates rendering.
-//   2. Make the staleness assertion debounce-proof: after editing with auto-preview
-//      OFF, wait > PREVIEW_DEBOUNCE (the 500ms PreviewFrame debounce) BEFORE asserting
-//      the preview is NOT re-rendered, so a real always-on render would be caught.
-test.fixme(
-  'PRV-6: with auto-preview OFF, editing does not re-render until auto-preview is re-enabled',
-  async ({ page }) => {
-    // The render path depends on the iframe's srcdoc evaluating @zenuml/core; assert
-    // it against the local app (it works the same against any host the app serves,
-    // but the render timing is most stable locally — keep parity with smoke/dsl specs
-    // which run on both, so no skip needed here).
-
-    // Step 1 — establish a known baseline render with a distinctive participant.
-    const BASELINE = 'PrvBaseline\nUser\nUser->PrvBaseline: before';
-    await typeDsl(page, BASELINE);
-    await expect(mountLocator(page)).toContainText('PrvBaseline', {
-      timeout: 15_000,
-    });
-
-    // Step 2 — turn Auto-preview OFF via Settings (the Radix Switch toggles to
-    // unchecked). This stops PreviewFrame's debounced re-render effect.
-    await openViaHeaderMenu(page, 'header-settings');
-    await expect(page.locator('[data-testid="settings-modal"]')).toBeVisible();
-    const autoPreviewSwitch = page.locator(
-      '[data-testid="setting-autoPreview"]',
-    );
-    await expect(autoPreviewSwitch).toHaveAttribute('aria-checked', 'true');
-    await autoPreviewSwitch.click();
-    await expect(autoPreviewSwitch).toHaveAttribute('aria-checked', 'false');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-testid="settings-modal"]')).toBeHidden();
-
-    // Step 3 — edit the DSL to a NEW distinctive participant. With auto-preview off,
-    // the preview must stay STALE: still showing the baseline, never the new token.
-    const EDITED = 'PrvUpdated\nUser\nUser->PrvUpdated: after';
-    await typeDsl(page, EDITED);
-    await expect(editorLocator(page)).toContainText('PrvUpdated');
-
-    // Give the debounce window time to fire IF it were going to (it must not). Then
-    // assert the preview is unchanged: baseline still rendered, new token absent.
-    await expect(mountLocator(page)).toContainText('PrvBaseline');
-    await expect(mountLocator(page)).not.toContainText('PrvUpdated');
-
-    // Step 4 — manual refresh: re-enable Auto-preview. The PreviewFrame effect's dep
-    // array includes `autoPreview`, so flipping it back ON re-posts the render and
-    // the preview catches up to the edited DSL.
-    await openViaHeaderMenu(page, 'header-settings');
-    await expect(page.locator('[data-testid="settings-modal"]')).toBeVisible();
-    await autoPreviewSwitch.click();
-    await expect(autoPreviewSwitch).toHaveAttribute('aria-checked', 'true');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-testid="settings-modal"]')).toBeHidden();
-
-    await expect(mountLocator(page)).toContainText('PrvUpdated', {
-      timeout: 15_000,
-    });
-    await expect(mountLocator(page)).not.toContainText('PrvBaseline', {
-      timeout: 15_000,
-    });
-  },
+// WIRED (#824): `autoPreview={settings.autoPreview}` is now passed to PreviewFrame
+// (AppRoot.tsx), so the Settings toggle gates the debounced re-render. With it OFF, a
+// RendererHeader "Refresh" control (data-testid="renderer-refresh") appears and calls
+// PreviewFrame's imperative render() to re-render on demand. This test is DEBOUNCE-PROOF:
+// after editing with auto-preview OFF it waits LONGER than PREVIEW_DEBOUNCE (+ margin)
+// BEFORE asserting the preview is stale, so a regression to always-on rendering is caught
+// (the old false-green fired inside the debounce window and proved nothing).
+//
+// Gated off the staging gate (PW_BASE_URL): it depends on local render timing, like the
+// other render-timing specs (PRV-4 / production-build).
+test.skip(
+  !!process.env.PW_BASE_URL,
+  'PRV-6 relies on local render timing (debounce window); not run on the staging gate',
 );
+test('PRV-6: with auto-preview OFF, editing does not re-render until manual Refresh', async ({
+  page,
+}) => {
+  // Step 1 — establish a known baseline render with a distinctive participant.
+  const BASELINE = 'PrvBaseline\nUser\nUser->PrvBaseline: before';
+  await typeDsl(page, BASELINE);
+  await expect(mountLocator(page)).toContainText('PrvBaseline', {
+    timeout: 15_000,
+  });
+
+  // Step 2 — turn Auto-preview OFF via Settings (the Radix Switch toggles to
+  // unchecked). This stops PreviewFrame's debounced re-render effect and reveals the
+  // RendererHeader Refresh control.
+  await openViaHeaderMenu(page, 'header-settings');
+  await expect(page.locator('[data-testid="settings-modal"]')).toBeVisible();
+  const autoPreviewSwitch = page.locator('[data-testid="setting-autoPreview"]');
+  await expect(autoPreviewSwitch).toHaveAttribute('aria-checked', 'true');
+  await autoPreviewSwitch.click();
+  await expect(autoPreviewSwitch).toHaveAttribute('aria-checked', 'false');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-testid="settings-modal"]')).toBeHidden();
+
+  // The manual Refresh control is now present (auto-preview OFF ⇒ AppRoot wires onRefresh).
+  const refresh = page.locator('[data-testid="renderer-refresh"]');
+  await expect(refresh).toBeVisible();
+
+  // Step 3 — edit the DSL to a NEW distinctive participant. With auto-preview off,
+  // the preview must stay STALE: still showing the baseline, never the new token.
+  const EDITED = 'PrvUpdated\nUser\nUser->PrvUpdated: after';
+  await typeDsl(page, EDITED);
+  await expect(editorLocator(page)).toContainText('PrvUpdated');
+
+  // DEBOUNCE-PROOF: wait WELL PAST the 500ms PreviewFrame debounce (+ generous margin)
+  // so an always-on re-render would have landed by now if the toggle were dead. Then
+  // assert the preview is unchanged: baseline still rendered, new token absent.
+  await page.waitForTimeout(2000); // > PREVIEW_DEBOUNCE (500ms) + margin
+  await expect(mountLocator(page)).toContainText('PrvBaseline');
+  await expect(mountLocator(page)).not.toContainText('PrvUpdated');
+
+  // Step 4 — click the manual Refresh control. PreviewFrame.render() re-posts a render
+  // of the CURRENT (edited) code, so the preview catches up to the edited DSL.
+  await refresh.click();
+  await expect(mountLocator(page)).toContainText('PrvUpdated', {
+    timeout: 15_000,
+  });
+  await expect(mountLocator(page)).not.toContainText('PrvBaseline', {
+    timeout: 15_000,
+  });
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PRV-8: The renderer header shows a 100% zoom indicator.

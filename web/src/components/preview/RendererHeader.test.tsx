@@ -47,6 +47,22 @@ describe('RendererHeader', () => {
     expect(screen.queryByTestId('renderer-fit')).not.toBeInTheDocument();
   });
 
+  // #824: the manual Refresh control follows the same "render only when wired" rule as
+  // Fit, so the default UI (auto-preview ON ⇒ no onRefresh) shows no extra control.
+  it('does not render the Refresh control when onRefresh is omitted', () => {
+    setup();
+    expect(screen.queryByTestId('renderer-refresh')).not.toBeInTheDocument();
+  });
+
+  it('renders the Refresh control and calls onRefresh when a handler is provided', () => {
+    const onRefresh = vi.fn();
+    setup({ onRefresh });
+    const refresh = screen.getByTestId('renderer-refresh');
+    expect(refresh).toHaveAttribute('aria-label', 'Refresh preview');
+    fireEvent.click(refresh);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
   it('renders the Fit control and calls onFit when a handler is provided', () => {
     const onFit = vi.fn();
     setup({ onFit });

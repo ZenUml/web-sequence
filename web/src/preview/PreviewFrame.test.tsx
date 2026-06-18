@@ -99,6 +99,82 @@ describe('PreviewFrame', () => {
     await expect(p).resolves.toBe('data:image/png;base64,X');
   });
 
+  // #824: auto-preview gating + the manual render() handle. These are the cheap,
+  // debounce-precise mirror of e2e PRV-6 (with auto-preview OFF, edits don't re-render
+  // until a manual refresh). Fake timers let us advance PAST the 500ms debounce and
+  // prove the always-on render did NOT fire — the false-green the old e2e missed.
+  it('with autoPreview OFF, a code change does NOT re-render even after the debounce', () => {
+    vi.useFakeTimers();
+    try {
+      const { container, rerender } = render(
+        <PreviewFrame code="A.b" css="" stickyOffset={0} autoPreview={false} />,
+      );
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      const post = vi.fn();
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+      act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+      post.mockClear(); // ignore the ready-triggered render
+
+      rerender(<PreviewFrame code="C.d" css="" stickyOffset={0} autoPreview={false} />); // edit
+      act(() => { vi.advanceTimersByTime(2000); }); // well past PREVIEW_DEBOUNCE (500ms)
+
+      // Auto-preview is OFF → no render posted for the edit.
+      expect(post).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'render', code: 'C.d' }), '*',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('with autoPreview OFF, the imperative render() forces a re-render of the current code', () => {
+    const ref = createRef<PreviewHandle>();
+    const { container, rerender } = render(
+      <PreviewFrame ref={ref} code="A.b" css="" stickyOffset={0} autoPreview={false} />,
+    );
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+
+    rerender(<PreviewFrame ref={ref} code="C.d" css="" stickyOffset={0} autoPreview={false} />); // edit (no auto render)
+    post.mockClear();
+
+    // Manual refresh → renders the LATEST code on demand.
+    act(() => { ref.current!.render(); });
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
+  });
+
+  it('with autoPreview ON (default), a code change re-renders after the debounce', () => {
+    vi.useFakeTimers();
+    try {
+      const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      const post = vi.fn();
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+      act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+      post.mockClear();
+
+      rerender(<PreviewFrame code="C.d" css="" stickyOffset={0} />); // edit
+      act(() => { vi.advanceTimersByTime(600); }); // past the 500ms debounce
+
+      expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('render() is a no-op before the iframe reports ready', () => {
+    const ref = createRef<PreviewHandle>();
+    const { container } = render(<PreviewFrame ref={ref} code="A.b" css="" stickyOffset={0} autoPreview={false} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    // No 'ready' dispatched yet.
+    act(() => { ref.current!.render(); });
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('routes error messages to onError', () => {
     const onError = vi.fn();
     const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} onError={onError} />);

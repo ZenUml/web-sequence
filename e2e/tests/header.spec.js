@@ -163,22 +163,56 @@ test('HDR-5: the "Your diagrams" breadcrumb returns to the hub', async ({
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// HDR-2: title edit Escape cancels / reverts.
+// HDR-2: title edit Escape cancels / reverts (#826).
 //
-// NOT IMPLEMENTED (verified): the header title is a controlled <input> bound to
-// setTitle on every keystroke (AppHeader.tsx → TextInput; editorStore.setTitle). There
-// is no draft snapshot and no Escape/onKeyDown handler, so Escape cannot revert — a
-// live probe typing "TempEscapeTitle" then Escape leaves the field unchanged. Asserting
-// a revert would be asserting behavior the product does not have. Marked fixme until a
-// revert-on-Escape affordance is added (a draft buffer committed on Enter/blur and
-// discarded on Escape).
-test.fixme(
-  'HDR-2: pressing Escape reverts an in-progress title edit',
-  async () => {
-    // Intentionally empty: the revert behavior does not exist yet (see comment above).
-    // Implement once the title field gains a draft buffer + Escape→revert handler.
-  },
-);
+// The title field now edits a local DRAFT buffer (AppHeader.tsx): keystrokes update the
+// draft only; Enter/blur COMMIT it via onTitleChange (= editorStore.setTitle); Escape
+// DISCARDS the draft back to the last committed value WITHOUT committing. So:
+//   - type a new title, press Escape ⇒ the field reverts to the prior committed value;
+//   - then type again and press Enter ⇒ the field commits the new value.
+// Both halves are asserted so this is a real revert-AND-commit check, not a half-test.
+// ──────────────────────────────────────────────────────────────────────────────
+test('HDR-2: pressing Escape reverts an in-progress title edit; Enter commits', async ({
+  page,
+}) => {
+  await gotoFresh(page);
+
+  const title = titleInput(page);
+  await expect(title).toBeVisible();
+  // Starter title is "Untitled" — the committed baseline we expect Escape to restore.
+  await expect(title).toHaveValue('Untitled');
+
+  // Type a throwaway title (draft only — not yet committed).
+  await setTitle(page, 'TempEscapeTitle');
+  await expect(title).toHaveValue('TempEscapeTitle');
+
+  // Escape reverts the draft to the last committed value — no commit happened.
+  await page.keyboard.press('Escape');
+  await expect(title).toHaveValue('Untitled');
+
+  // And Enter still commits a real edit: type a new value, Enter, value persists.
+  const COMMITTED = 'EnterCommitsTitle';
+  await setTitle(page, COMMITTED);
+  await page.keyboard.press('Enter');
+  await expect(title).toHaveValue(COMMITTED);
+
+  // Prove Enter committed into the actual item (not just the field): save + open the hub
+  // and read the persisted card title — the COMMITTED value rode through, the reverted
+  // TempEscapeTitle did not.
+  await page.locator('[data-testid="header-menu"]').click();
+  await page.locator('[data-testid="header-save"]').click();
+  const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
+  await expect(noticeCancel).toBeVisible();
+  await noticeCancel.click();
+  await expect(noticeCancel).toBeHidden();
+
+  await gotoHome(page);
+  await expect(page.locator('[data-testid="home-grid"]')).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByText(COMMITTED, { exact: true })).toBeVisible();
+  await expect(page.getByText('TempEscapeTitle', { exact: true })).toHaveCount(0);
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // HDR-3: an unsaved marker appears on edit and clears after Save.
