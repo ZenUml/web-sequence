@@ -30,13 +30,21 @@ export interface PreviewFrameProps {
    * Has no effect in embed mode (embed sizing stays byte-identical). Default false.
    */
   fit?: boolean;
+  /**
+   * Render the native vector SVG instead of the HTML diagram. Used on mobile, where
+   * @zenuml/core's fixed-px HTML layout overflows the narrow viewport with no reflow.
+   * The SVG carries a viewBox and is sized fit-to-width inside the iframe, so the full
+   * diagram width is visible by default (tall diagrams scroll vertically; vector stays
+   * crisp at any zoom). Forwarded to the iframe as `renderMode: 'svg'`. Default false.
+   */
+  svgMode?: boolean;
   onCodeChange?: (code: string) => void;
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, autoPreview = true, embed, fit = false, onCodeChange, onConsole, onError },
+  { code, css, stickyOffset, autoPreview = true, embed, fit = false, svgMode = false, onCodeChange, onConsole, onError },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
@@ -64,6 +72,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const codeRef = useRef(code); codeRef.current = code;
   const cssRef = useRef(css); cssRef.current = css;
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
+  const svgModeRef = useRef(svgMode); svgModeRef.current = svgMode;
   const cbRef = useRef({ onCodeChange, onConsole, onError });
   cbRef.current = { onCodeChange, onConsole, onError };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
@@ -72,9 +81,43 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // no chrome flash on first paint.
   const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
 
-  const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
+  const renderOptions = (): RenderOptions => ({
+    enableMultiTheme: false,
+    theme: 'theme-default',
+    stickyOffset: stickyRef.current,
+    renderMode: svgModeRef.current ? 'svg' : 'html',
+  });
 
   const post = (msg: unknown) => iframeRef.current?.contentWindow?.postMessage(msg, '*');
+
+  // Acknowledged render delivery (WebKit fix). A single fire-and-forget render
+  // postMessage to the srcdoc iframe is silently dropped by WebKit/Safari under tight
+  // prod-build timing, leaving the preview stale (it never re-renders after first paint).
+  // So each render carries a token; the iframe echoes it in `rendered`; if the ack does
+  // not arrive within RENDER_ACK_MS we re-post (up to RENDER_MAX_RETRIES). Idempotent —
+  // a duplicate render that did land just re-renders the same code. Chromium acks on the
+  // first try, so the retry path is WebKit-only in practice.
+  const RENDER_ACK_MS = 250;
+  const RENDER_MAX_RETRIES = 4;
+  const renderSeq = useRef(0);
+  const pendingRender = useRef<{ token: number; code: string; tries: number } | null>(null);
+  const ackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armAck = () => {
+    if (ackTimer.current) clearTimeout(ackTimer.current);
+    ackTimer.current = setTimeout(() => {
+      const p = pendingRender.current;
+      if (!p || p.tries >= RENDER_MAX_RETRIES) { pendingRender.current = null; return; }
+      p.tries += 1;
+      post({ type: 'render', code: p.code, options: renderOptions(), token: p.token });
+      armAck();
+    }, RENDER_ACK_MS);
+  };
+  const postRender = (code: string) => {
+    const token = ++renderSeq.current;
+    pendingRender.current = { token, code, tries: 0 };
+    post({ type: 'render', code, options: renderOptions(), token });
+    armAck();
+  };
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
@@ -84,11 +127,19 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       switch (msg.type) {
         case 'ready':
           readyRef.current = true;
-          post({ type: 'render', code: codeRef.current, options: renderOptions() });
+          postRender(codeRef.current);
           // Push the LATEST css on ready so css that resolved before the heavy
           // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
           // dropped — the empty initial <style> would otherwise stay empty.
           post({ type: 'updateCss', css: cssRef.current });
+          break;
+        case 'rendered':
+          // Ack for acknowledged render delivery: the iframe applied this token's render,
+          // so stop retrying it (only when it matches the latest in-flight render).
+          if (pendingRender.current && msg.token === pendingRender.current.token) {
+            pendingRender.current = null;
+            if (ackTimer.current) clearTimeout(ackTimer.current);
+          }
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
@@ -113,17 +164,20 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       }
     }
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      if (ackTimer.current) clearTimeout(ackTimer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debounced re-render on DSL change (only once ready + autoPreview on).
   useEffect(() => {
     if (!readyRef.current || !autoPreview) return;
-    const t = setTimeout(() => post({ type: 'render', code: codeRef.current, options: renderOptions() }), PREVIEW_DEBOUNCE);
+    const t = setTimeout(() => postRender(codeRef.current), PREVIEW_DEBOUNCE);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, stickyOffset, autoPreview]);
+  }, [code, stickyOffset, autoPreview, svgMode]);
 
   // CSS-only fast path (REQ-PRV-5): once ready, push CSS via postMessage on css
   // changes instead of rebuilding/reloading the iframe.

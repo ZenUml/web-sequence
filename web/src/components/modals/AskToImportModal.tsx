@@ -24,7 +24,7 @@ export function AskToImportModal({
         <div className="flex justify-end gap-2">
           <Button
             variant="subtle"
-            surface="light"
+            surface="dark"
             data-testid="import-dismiss"
             // Closing is driven by the controlled `open` (the hook flips `pending`
             // in dismiss()/doImport()). Do NOT also call onOpenChange(false): that
@@ -37,7 +37,7 @@ export function AskToImportModal({
           </Button>
           <Button
             variant="primary"
-            surface="light"
+            surface="dark"
             data-testid="import-confirm"
             onClick={onImport}
           >

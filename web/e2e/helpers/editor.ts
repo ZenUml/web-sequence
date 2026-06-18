@@ -40,10 +40,13 @@ export function editorRoot(page: Page): Locator {
  * interactive (content focusable). Uses a relative URL so the config's baseURL
  * drives where we point.
  *
- * Hub routing (PR #800/#801): "/" lands on the HomeView library when no diagram
- * id is in the URL — the editor is one "New" click away. Mirrors the same
- * click-through the root production-build spec uses; tolerant of flows that
- * land directly in the editor (?id= / embed) where home-view never appears.
+ * Editor-as-landing (2026-06-13): "/" now lands directly in the editor (resume
+ * last diagram, else sample). The home-view click-through below is kept as a
+ * tolerant fallback — it no-ops on the current default but survives a revert and
+ * still works for any flow that opens the hub first (?view=diagrams). The probe
+ * timeout is short because home-view is now the rare path: on the editor-landing
+ * default it will never appear, so we don't want to tax every editor test by
+ * waiting long for it.
  */
 export async function seedAndOpen(page: Page): Promise<void> {
   await page.addInitScript((flags: Record<string, string>) => {
@@ -51,7 +54,7 @@ export async function seedAndOpen(page: Page): Promise<void> {
   }, SEED_FLAGS);
   await page.goto('/', { waitUntil: 'networkidle' });
   const homeView = page.getByTestId('home-view');
-  if (await homeView.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await homeView.isVisible({ timeout: 1000 }).catch(() => false)) {
     const emptyCta = page.getByTestId('home-empty-new');
     if (await emptyCta.isVisible({ timeout: 1000 }).catch(() => false)) {
       await emptyCta.click();

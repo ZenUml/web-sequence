@@ -182,6 +182,31 @@ describe('AppHeader', () => {
     expect(onOpenPricing).toHaveBeenCalled();
   });
 
+  // ---- Header Pricing link (signed-out) ----
+  // Signed-in users reach pricing via the account menu (ProfileMenu "Upgrade plan" /
+  // "My Plan"). Signed-out users have no account menu, so the only pricing path was
+  // buried in the app menu (logo ▾). Surface a visible "Pricing" link in the header
+  // for signed-out users — gated by paymentEnabled, like the app-menu item.
+  it('shows a visible header Pricing link when signed out and paymentEnabled', async () => {
+    const onOpenPricing = vi.fn();
+    render(<AppHeader {...baseProps} user={null} paymentEnabled onOpenPricing={onOpenPricing} />);
+    const link = screen.getByTestId('header-pricing-link');
+    expect(link).toBeInTheDocument();
+    await userEvent.click(link);
+    expect(onOpenPricing).toHaveBeenCalled();
+  });
+
+  it('hides the header Pricing link when payments are disabled', () => {
+    render(<AppHeader {...baseProps} user={null} paymentEnabled={false} />);
+    expect(screen.queryByTestId('header-pricing-link')).not.toBeInTheDocument();
+  });
+
+  // No duplicate affordance when signed in: ProfileMenu already carries Upgrade/My Plan.
+  it('does not show the header Pricing link when signed in', () => {
+    render(<AppHeader {...baseProps} user={mockUser} paymentEnabled />);
+    expect(screen.queryByTestId('header-pricing-link')).not.toBeInTheDocument();
+  });
+
   // ---- Document menu (filename ▾) ----
 
   it('document menu Duplicate calls onFork', async () => {

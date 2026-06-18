@@ -356,16 +356,33 @@ export function AppHeader({
               onManagePlan={onManagePlan}
             />
           ) : (
-            <Tooltip label="Sign in to save and sync across devices">
-              <Button
-                variant="subtle"
-                size="md"
-                data-testid="header-login"
-                onClick={() => setLoginOpen(true)}
-              >
-                Sign in
-              </Button>
-            </Tooltip>
+            <>
+              {/* Signed-out users have no account menu (which carries Upgrade/My Plan
+                  for signed-in users), so surface a visible Pricing affordance here —
+                  gated by paymentEnabled like the app-menu item. A quiet ghost link so
+                  "Sign in" stays the primary action. The pricing modal handles the
+                  not-signed-in upgrade by routing back to sign-in. */}
+              {paymentEnabled && (
+                <Button
+                  variant="ghost"
+                  size="md"
+                  data-testid="header-pricing-link"
+                  onClick={() => onOpenPricing?.()}
+                >
+                  Pricing
+                </Button>
+              )}
+              <Tooltip label="Sign in to save and sync across devices">
+                <Button
+                  variant="subtle"
+                  size="md"
+                  data-testid="header-login"
+                  onClick={() => setLoginOpen(true)}
+                >
+                  Sign in
+                </Button>
+              </Tooltip>
+            </>
           )}
         </div>
       </header>

@@ -26,7 +26,7 @@ export function ShareErrorNotice({
           <Button
             data-testid="share-error-fresh"
             variant="primary"
-            surface="light"
+            surface="dark"
             onClick={onStartFresh}
           >
             Start fresh

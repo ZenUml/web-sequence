@@ -242,4 +242,107 @@ describe('PreviewFrame', () => {
     expect(iframe.style.transform).toBe('');
     expect(iframe.className).toBe('border-0');
   });
+
+  // ---- SVG render mode (mobile) ----
+  // On mobile the HTML diagram overflows the narrow viewport (fixed-px layout, no
+  // reflow). svgMode tells the iframe to render the native vector SVG instead, which
+  // fits-to-width and shows the full diagram. The host signals it via renderMode.
+  it('sends renderMode "svg" in the render options when svgMode is set', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'svg' }) }),
+      '*',
+    );
+  });
+
+  it('defaults renderMode to "html" when svgMode is not set', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'html' }) }),
+      '*',
+    );
+  });
+
+  // ---- Acknowledged render delivery (WebKit dropped-postMessage fix) ----
+  // WebKit/Safari silently drops a single fire-and-forget render postMessage to the
+  // srcdoc iframe under tight prod timing, so the preview never re-renders after first
+  // paint. Each render carries a token; the iframe echoes it in `rendered`; an unacked
+  // render is re-posted.
+  it('render messages carry a token', () => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', token: expect.any(Number) }),
+      '*',
+    );
+  });
+
+  it('re-posts the render when no "rendered" ack arrives (dropped-message resilience)', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      const post = vi.fn();
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+      act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+      // The first render was posted with a token; capture it.
+      const firstRender = post.mock.calls.find((c) => (c[0] as { type: string }).type === 'render')![0] as { token: number };
+      post.mockClear();
+      // No ack within the ack window → the same token is re-posted.
+      act(() => { vi.advanceTimersByTime(300); });
+      expect(post).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'render', token: firstRender.token }),
+        '*',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops retrying once a matching "rendered" ack arrives', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      const post = vi.fn();
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+      act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+      const firstRender = post.mock.calls.find((c) => (c[0] as { type: string }).type === 'render')![0] as { token: number };
+      // Iframe acks the render → no further re-posts.
+      act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'rendered', token: firstRender.token } })); });
+      post.mockClear();
+      act(() => { vi.advanceTimersByTime(2000); });
+      expect(post).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'render' }), '*');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('re-renders with svg mode when svgMode flips on after ready (e.g. rotate to a narrow viewport)', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode={false} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    post.mockClear();
+    vi.useFakeTimers();
+    rerender(<PreviewFrame code="A.b" css="" stickyOffset={0} svgMode />);
+    act(() => { vi.runAllTimers(); });
+    vi.useRealTimers();
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ renderMode: 'svg' }) }),
+      '*',
+    );
+  });
 });
