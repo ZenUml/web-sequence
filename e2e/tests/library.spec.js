@@ -1,8 +1,9 @@
 // M03 Task 15 — Library E2E (signed-out / local flows only).
 //
-// Hub (PRs #800/#801; f023f89 "no-rail layout"): the in-editor Library PANEL was
-// retired — the Sidebar icon rail (sidebar-library) and LibraryPanel no longer
-// render anywhere. The web library IS the HomeView page at '/': rows are
+// f023f89 "no-rail layout": the in-editor Library PANEL was retired — the
+// Sidebar icon rail (sidebar-library) and LibraryPanel no longer render anywhere.
+// The web library IS the HomeView page, reached at '/?view=diagrams' under
+// editor-as-landing (2026-06-13; bare '/' boots the editor again). Rows are
 // home-card-<id> cards in home-grid, search is home-search (same SearchInput
 // component, so the clear affordance is still search-clear), and the bulk
 // Export-all / Import controls (lib-export-all / lib-import-input) were re-homed
@@ -21,10 +22,10 @@
 // /create-share reads the cloud item doc + needs a fresh ID token). Same auth
 // note as persistence.spec.js / M02.
 //
-// Navigation note: seeding happens in the EDITOR (reached through the hub's New
-// CTA — openEditor); reading the library back happens by a FULL navigation to
-// '/' (gotoHome), which freshly mounts useItems and re-reads the localItems
-// index regardless of in-page subscription timing.
+// Navigation note: seeding happens in the EDITOR (bare '/' boots it directly
+// under editor-as-landing — openEditor); reading the library back happens by a
+// FULL navigation to '/?view=diagrams' (gotoHome), which freshly mounts useItems
+// and re-reads the localItems index regardless of in-page subscription timing.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
@@ -62,8 +63,8 @@ async function gotoFresh(page) {
   await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // Hub: '/' is the HomeView library — seeding drives the editor's header, so
-  // click through the hub's New CTA (empty library → home-empty-new).
+  // Editor-as-landing: bare '/' boots the editor (cleared storage → seeds a fresh
+  // sample diagram), so openEditor lands straight on the CM6 surface here.
   await openEditor(page);
 }
 
@@ -134,10 +135,11 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
 }
 
 /**
- * Navigate to the library. Hub (PRs #800/#801): the library is no longer an
- * in-editor side panel (sidebar-library + library-panel are gone — f023f89
- * removed the rail and LibraryPanel was retired); it is the HomeView page at
- * '/'. gotoHome is a FULL navigation, so useItems freshly re-reads the
+ * Navigate to the library. The library is no longer an in-editor side panel
+ * (sidebar-library + library-panel are gone — f023f89 removed the rail and
+ * LibraryPanel was retired); it is the HomeView page. Editor-as-landing
+ * (2026-06-13): the hub moved off bare '/' and is now opt-in at '/?view=diagrams'.
+ * gotoHome navigates there (a FULL navigation), so useItems freshly re-reads the
  * localItems index — same guarantee the old reload-then-open-panel shape gave.
  */
 async function reloadIntoLibrary(page) {
@@ -147,7 +149,9 @@ async function reloadIntoLibrary(page) {
 // ──────────────────────────────────────────────────────────────────────────────
 // Test 1: Library lists locally-saved diagrams; search filters them.
 // ──────────────────────────────────────────────────────────────────────────────
-test('library lists local items and SearchInput filters them', async ({ page }) => {
+test('library lists local items and SearchInput filters them', async ({
+  page,
+}) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -177,7 +181,9 @@ test('library lists local items and SearchInput filters them', async ({ page }) 
 
   // Both saved items appear as cards in the home grid (hub PRs: library-list /
   // lib-row-* became home-grid / home-card-* — see HomeView.tsx + DiagramCard.tsx).
-  await expect(page.locator('[data-testid="home-grid"]')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('[data-testid="home-grid"]')).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.getByText('AlphaDiagram', { exact: true })).toBeVisible();
   await expect(page.getByText('GammaDiagram', { exact: true })).toBeVisible();
 
@@ -219,7 +225,9 @@ test('export-all triggers a JSON file download', async ({ page }) => {
   });
 
   await reloadIntoLibrary(page);
-  await expect(page.getByText('ExportableDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('ExportableDiagram', { exact: true }),
+  ).toBeVisible();
 
   // Clicking export-all builds a Blob and triggers a download (handleExportAll →
   // downloadText('zenuml-diagrams.json', …)). Assert the download event fires.
@@ -251,7 +259,9 @@ test('importing a JSON file adds a new library row', async ({ page }) => {
   });
 
   await reloadIntoLibrary(page);
-  await expect(page.getByText('PreexistingDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('PreexistingDiagram', { exact: true }),
+  ).toBeVisible();
 
   // Build a minimal import payload matching the { items: Item[] } shape that
   // exportAllItemsJson produces and parseImportJson accepts. The migrate step
@@ -288,6 +298,10 @@ test('importing a JSON file adds a new library row', async ({ page }) => {
   // regardless of in-page subscription timing.
   await reloadIntoLibrary(page);
 
-  await expect(page.getByText('ImportedDiagram', { exact: true })).toBeVisible();
-  await expect(page.getByText('PreexistingDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('ImportedDiagram', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('PreexistingDiagram', { exact: true }),
+  ).toBeVisible();
 });
