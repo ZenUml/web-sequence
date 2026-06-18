@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 
 // These tests check the LOCAL web/dist build and hit localhost:PREVIEW_PORT directly.
 // They must not run when PW_BASE_URL targets a remote host (staging/prod gate).
@@ -113,6 +113,43 @@ test('built dist serves the legacy privacy-policy and EULA legal pages', async (
     await expect(page.locator('body')).toContainText(
       titleRe instanceof RegExp ? titleRe : String(titleRe),
     );
+  }
+});
+
+// Cutover regression guard: the rewrite shipped with NO favicon link (empty tab
+// icon, /favicon.ico 404) and no web manifest. This asserts the canonical favicon
+// + the PWA manifest and every icon it declares are served 200 from the built dist.
+test('built dist serves the favicon and a valid PWA manifest with resolvable icons', async ({
+  page,
+}) => {
+  // index.html must link the favicon + manifest (browsers fetch /favicon.ico
+  // otherwise → empty tab icon, the original regression).
+  const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
+  expect(html, 'built index.html lost its favicon <link rel="icon">').toMatch(
+    /rel="icon"/,
+  );
+  expect(html, 'built index.html lost its <link rel="manifest">').toMatch(
+    /rel="manifest"/,
+  );
+
+  // The manifest is served, valid, and every icon it declares resolves 200.
+  const manifestResp = await page.goto(`${PREVIEW_URL}manifest.webmanifest`);
+  expect(manifestResp?.status(), 'GET /manifest.webmanifest must be 200').toBe(
+    200,
+  );
+  const manifest = JSON.parse(await manifestResp.text());
+  expect(manifest.icons.length, 'manifest declares no icons').toBeGreaterThan(
+    0,
+  );
+  // A real installable PWA needs 192 + 512 PNG icons.
+  const pngSizes = manifest.icons
+    .filter((i) => i.type === 'image/png')
+    .map((i) => i.sizes);
+  expect(pngSizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
+
+  for (const icon of manifest.icons) {
+    const r = await page.goto(`${PREVIEW_URL}${icon.src.replace(/^\//, '')}`);
+    expect(r?.status(), `manifest icon ${icon.src} must resolve 200`).toBe(200);
   }
 });
 
