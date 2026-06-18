@@ -113,17 +113,17 @@ export function PricingModal({
       >
         <div data-testid="pricing-modal">
           {/* Monthly / yearly toggle */}
-          <div className="mb-5 inline-flex items-center gap-0.5 rounded-md bg-paper-100 p-0.5">
+          <div className="mb-5 inline-flex items-center gap-0.5 rounded-md bg-ink-900 p-0.5">
             <button
               type="button"
               data-testid="pricing-period-monthly"
               aria-pressed={billingPeriod === 'monthly'}
               onClick={() => onPeriodChange('monthly')}
               className={cn(
-                'rounded px-4 py-1.5 text-[12px] font-medium transition-colors ring-draft-light',
+                'rounded px-4 py-1.5 text-[12px] font-medium transition-colors ring-draft',
                 billingPeriod === 'monthly'
-                  ? 'bg-paper-50 text-onlight-strong shadow-sm'
-                  : 'text-onlight-muted hover:text-onlight-strong',
+                  ? 'bg-ink-700 text-ondark-strong shadow-sm'
+                  : 'text-ondark-muted hover:text-ondark-strong',
               )}
             >
               Billed monthly
@@ -134,10 +134,10 @@ export function PricingModal({
               aria-pressed={billingPeriod === 'yearly'}
               onClick={() => onPeriodChange('yearly')}
               className={cn(
-                'rounded px-4 py-1.5 text-[12px] font-medium transition-colors ring-draft-light',
+                'rounded px-4 py-1.5 text-[12px] font-medium transition-colors ring-draft',
                 billingPeriod === 'yearly'
-                  ? 'bg-paper-50 text-onlight-strong shadow-sm'
-                  : 'text-onlight-muted hover:text-onlight-strong',
+                  ? 'bg-ink-700 text-ondark-strong shadow-sm'
+                  : 'text-ondark-muted hover:text-ondark-strong',
               )}
             >
               Billed yearly{' '}
@@ -157,11 +157,11 @@ export function PricingModal({
                 <div
                   key={tier.key}
                   className={cn(
-                    'flex flex-col rounded-lg border border-paper-line bg-paper-50 p-4',
+                    'flex flex-col rounded-lg border border-ink-line bg-ink-700 p-4',
                     tier.key === 'plus' && 'border-accent/40 ring-1 ring-accent/20',
                   )}
                 >
-                  <h3 className="font-serif text-[18px] text-onlight-strong">
+                  <h3 className="font-serif text-[18px] text-ondark-strong">
                     {tier.name}
                   </h3>
                   <div className="mt-2 flex items-baseline gap-1.5">
@@ -173,24 +173,24 @@ export function PricingModal({
                       tier.price.monthly !== tier.price.yearly && (
                         <span
                           data-testid={`pricing-struck-${tier.key}`}
-                          // onlight-muted (not faint): the struck "was" price is
+                          // ondark-muted (not faint): the struck "was" price is
                           // load-bearing (it proves the discount), so it must clear AA
                           // on paper. The line-through + smaller size de-emphasize it.
-                          className="font-serif text-[15px] text-onlight-muted line-through"
+                          className="font-serif text-[15px] text-ondark-muted line-through"
                         >
                           {tier.price.monthly}
                         </span>
                       )}
-                    <span className="font-serif text-[24px] text-onlight-strong">
+                    <span className="font-serif text-[24px] text-ondark-strong">
                       {tier.price[billingPeriod]}
                     </span>
                     {tier.priceTerm && (
-                      <span className="text-[12px] text-onlight-muted">
+                      <span className="text-[12px] text-ondark-muted">
                         {tier.priceTerm}
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 min-h-[16px] text-[11px] text-onlight-muted">
+                  <p className="mt-0.5 min-h-[16px] text-[11px] text-ondark-muted">
                     {tier.priceNote[billingPeriod]}
                   </p>
                   {billingPeriod === 'yearly' && tier.savings && (
@@ -200,7 +200,7 @@ export function PricingModal({
                   )}
 
                   {tier.includeDesc && (
-                    <p className="mt-3 text-[12px] font-medium text-onlight-muted">
+                    <p className="mt-3 text-[12px] font-medium text-ondark-muted">
                       {tier.includeDesc}
                     </p>
                   )}
@@ -208,7 +208,7 @@ export function PricingModal({
                     {tier.features.map((f) => (
                       <li
                         key={f}
-                        className="flex gap-1.5 text-[12px] text-onlight-strong"
+                        className="flex gap-1.5 text-[12px] text-ondark-strong"
                       >
                         <span aria-hidden className="text-accent">✓</span>
                         <span>{f}</span>
@@ -220,18 +220,18 @@ export function PricingModal({
                     {isCurrent ? (
                       <p
                         data-testid={`pricing-current-${tier.key}`}
-                        className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-muted"
+                        className="font-mono text-[11px] uppercase tracking-[0.1em] text-ondark-muted"
                       >
                         Current plan
                       </p>
                     ) : tier.key === 'free' ? (
-                      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-onlight-muted">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ondark-muted">
                         Included
                       </p>
                     ) : tier.key === 'enterprise' ? (
                       <Button
                         variant="subtle"
-                        surface="light"
+                        surface="dark"
                         className="w-full"
                         data-testid="pricing-enterprise"
                         onClick={onContactEnterprise}
@@ -241,7 +241,7 @@ export function PricingModal({
                     ) : (
                       <Button
                         variant={tier.key === 'plus' ? 'primary' : 'subtle'}
-                        surface="light"
+                        surface="dark"
                         className="w-full"
                         data-testid={`pricing-upgrade-${tier.key}`}
                         onClick={() => onUpgrade(composedPlan)}

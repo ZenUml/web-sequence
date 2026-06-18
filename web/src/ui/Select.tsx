@@ -39,17 +39,16 @@ function CheckIcon({ className }: { className?: string }) {
 }
 
 // Design-system select — compound wrappers over Radix Select, mirroring the
-// Menu API shape (Root + Trigger + Content + Item). Content floats on the paper
-// surface with shadow-pop; the trigger matches TextInput's light field styling.
+// Menu API shape (Root + Trigger + Content + Item). Content floats on the dark ink
+// surface with shadow-pop; the trigger matches TextInput's field styling.
 // data-testid / aria-label forward through ...rest on each part.
 export const Select = RadixSelect.Root;
 export const SelectValue = RadixSelect.Value;
 
 // SelectTrigger is surface-aware so the same primitive reads correctly on the light
-// paper surface (modals — the default) AND the dark ink chrome (the editor mode
-// strip). The floating SelectContent stays on paper for both surfaces (a small
-// floating menu reads fine on paper over either backdrop, matching the Menu/Popover
-// primitives). `surface` is consumed here, not forwarded to the DOM.
+// paper surface AND the dark ink chrome (now the default for modals + chrome). The
+// floating SelectContent is dark ink (matching the Menu primitive) since every surface
+// that hosts a Select is now dark. `surface` is consumed here, not forwarded to the DOM.
 export const SelectTrigger = forwardRef<
   React.ElementRef<typeof RadixSelect.Trigger>,
   React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger> & { surface?: 'light' | 'dark' }
@@ -90,7 +89,9 @@ export function SelectContent({
         position={position}
         sideOffset={sideOffset}
         className={cn(
-          'bg-paper-50 text-onlight-strong border border-paper-line rounded-lg shadow-pop',
+          // Dark floating panel matching the Menu primitive — every surface that hosts
+          // a Select is now dark ink chrome, so the dropdown reads consistently.
+          'bg-ink-850 text-ondark-strong border border-ink-line rounded-lg shadow-pop',
           'p-1 min-w-[var(--radix-select-trigger-width)] animate-pop-in z-50',
           className,
         )}
@@ -111,7 +112,7 @@ export const SelectItem = forwardRef<
       ref={ref}
       className={cn(
         'relative flex cursor-pointer select-none items-center rounded py-1.5 pl-7 pr-2.5 text-[13px] outline-none',
-        'data-[highlighted]:bg-accent-tint data-[highlighted]:text-onlight-strong',
+        'data-[highlighted]:bg-accent-soft data-[highlighted]:text-ondark-strong',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}

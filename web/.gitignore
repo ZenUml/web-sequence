@@ -10,3 +10,4 @@ extension.zip
 test-results/
 playwright-report/
 .playwright/
+storybook-static

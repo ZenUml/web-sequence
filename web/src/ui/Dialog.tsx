@@ -2,9 +2,10 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { cn } from './cn';
 import { IconButton } from './IconButton';
 
-// Design-system modal shell over Radix Dialog. Modals sit on the paper surface
-// (light) so they read as "lifted off the table." Used by LoginModal,
-// AskToImportModal, ConfirmDialog (M02) and beyond.
+// Design-system modal shell over Radix Dialog. Modals sit on the dark ink surface
+// (the app's chrome) so they read as "lifted off the table" against the darker
+// overlay. Used by LoginModal, AskToImportModal, ConfirmDialog (M02) and beyond.
+// (The diagram canvas remains the only warm-paper surface.)
 export const Dialog = RadixDialog.Root;
 export const DialogTrigger = RadixDialog.Trigger;
 export const DialogClose = RadixDialog.Close;
@@ -29,15 +30,15 @@ export function DialogContent({
       <div className="fixed inset-0 z-50 grid place-items-center p-4">
         <RadixDialog.Content
           className={cn(
-            'relative w-[min(440px,calc(100vw-2rem))] rounded-lg border border-paper-line',
-            'bg-paper-50 text-onlight-strong shadow-pop animate-pop-in',
+            'relative w-[min(440px,calc(100vw-2rem))] rounded-lg border border-ink-line',
+            'bg-ink-800 text-ondark-strong shadow-pop animate-pop-in',
             'p-6 focus:outline-none',
             className,
           )}
         >
           <DialogClose asChild>
             <IconButton
-              surface="light"
+              surface="dark"
               size="sm"
               aria-label="Close"
               className="absolute right-3 top-3"
@@ -58,11 +59,11 @@ export function DialogContent({
               </svg>
             </IconButton>
           </DialogClose>
-          <RadixDialog.Title className="font-serif text-[26px] leading-tight tracking-tight text-onlight-strong">
+          <RadixDialog.Title className="font-serif text-[26px] leading-tight tracking-tight text-ondark-strong">
             {title}
           </RadixDialog.Title>
           {description ? (
-            <RadixDialog.Description className="mt-1 text-[13px] text-onlight-muted">
+            <RadixDialog.Description className="mt-1 text-[13px] text-ondark-muted">
               {description}
             </RadixDialog.Description>
           ) : (

@@ -51,6 +51,46 @@
     }
   }
 
+  // ---- SVG render mode (mobile) ------------------------------------------------
+  // On mobile the HTML diagram (fixed-px React layout) overflows the narrow viewport.
+  // renderMode:'svg' renders @zenuml/core's NATIVE vector SVG (window.zenuml.renderToSvg)
+  // into a SEPARATE container (#svg-mount) — never the app's React root (#mounting-point),
+  // which must stay React-owned so a later switch back to HTML mode re-renders cleanly.
+  // The injected <svg> is sized fit-to-width (width:100% + height:auto on its viewBox) so
+  // the full diagram width shows by default; tall diagrams scroll vertically, and vector
+  // output stays crisp at any zoom.
+  function showSvgMount(svgString) {
+    var diagram = document.getElementById('diagram');
+    var mount = document.getElementById('mounting-point');
+    if (!diagram) return;
+    var svgMount = document.getElementById('svg-mount');
+    if (!svgMount) {
+      svgMount = document.createElement('div');
+      svgMount.id = 'svg-mount';
+      diagram.appendChild(svgMount);
+    }
+    svgMount.innerHTML = svgString || '';
+    var svgEl = svgMount.querySelector('svg');
+    if (svgEl) {
+      // Drop the intrinsic width/height attributes so the viewBox drives the aspect
+      // ratio and the style fit-to-width takes effect.
+      svgEl.removeAttribute('width');
+      svgEl.removeAttribute('height');
+      svgEl.style.width = '100%';
+      svgEl.style.maxWidth = '100%';
+      svgEl.style.height = 'auto';
+      svgEl.style.display = 'block';
+    }
+    svgMount.style.display = 'block';
+    if (mount) mount.style.display = 'none';
+  }
+  function showHtmlMount() {
+    var mount = document.getElementById('mounting-point');
+    var svgMount = document.getElementById('svg-mount');
+    if (mount) mount.style.display = '';
+    if (svgMount) svgMount.style.display = 'none';
+  }
+
   ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
     var orig = console[level];
     console[level] = function () {
@@ -84,13 +124,26 @@
     if (msg.type === 'render' && app) {
       (async function () {
         try {
-          await app.render(msg.code, {
-            enableMultiTheme: false,
-            theme: 'theme-default',
-            onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
-            stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
-          });
-          post({ type: 'rendered' });
+          var renderMode = (msg.options && msg.options.renderMode) || 'html';
+          if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
+            // Native vector SVG (mobile). Pure render — no React commit, no
+            // onContentChange (the editor pane stays the source of truth on mobile).
+            var result = window.zenuml.renderToSvg(msg.code, { theme: 'theme-default' });
+            showSvgMount(result && result.svg);
+          } else {
+            // HTML diagram (desktop / default). Unhide the React mount in case we are
+            // switching back from SVG mode, then render as before.
+            showHtmlMount();
+            await app.render(msg.code, {
+              enableMultiTheme: false,
+              theme: 'theme-default',
+              onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
+              stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
+            });
+          }
+          // Echo the token so the host can confirm THIS render landed (ack+retry for
+          // WebKit's dropped-postMessage race). undefined when the host sent no token.
+          post({ type: 'rendered', token: msg.token });
           // Report the diagram's natural content size (width × height) in ALL modes
           // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
           // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout

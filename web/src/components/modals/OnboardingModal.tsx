@@ -24,20 +24,20 @@ export function OnboardingModal({ open, onOpenChange, onDismiss }: OnboardingMod
         description="Turn plain text into clean UML sequence diagrams — no dragging, no fiddling."
       >
         <div className="space-y-4" data-testid="onboarding-modal">
-          <p className="text-[13px] leading-relaxed text-onlight-muted">
+          <p className="text-[13px] leading-relaxed text-ondark-muted">
             Write a few lines of the ZenUML DSL on the left and watch the diagram
             render live on the right. Describe who talks to whom:
           </p>
-          <pre className="rounded border border-paper-line bg-paper-100 p-3 font-mono text-[12px] leading-relaxed text-onlight-strong">
+          <pre className="rounded border border-ink-line bg-ink-900 p-3 font-mono text-[12px] leading-relaxed text-ondark-strong">
             {'Alice -> Bob: Hello\nBob -> Alice: Hi back'}
           </pre>
-          <p className="text-[13px] leading-relaxed text-onlight-muted">
+          <p className="text-[13px] leading-relaxed text-ondark-muted">
             Add return messages, nesting, alt/loop fragments and more as you go.
           </p>
           <div className="flex justify-end">
             <Button
               variant="primary"
-              surface="light"
+              surface="dark"
               data-testid="onboarding-get-started"
               onClick={onDismiss}
             >

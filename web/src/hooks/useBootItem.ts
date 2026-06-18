@@ -16,6 +16,12 @@ export interface BootDeps {
   getItem: (id: string) => Promise<Item>;
   getSharedItem: (id: string, token: string) => Promise<Item>;
   getLastCode: () => Promise<Item | null>;
+  /**
+   * Editor-as-landing telemetry seam: fired once with the resolved boot kind after
+   * resolution completes (NOT on skip). AppRoot uses it to emit `landed_in_editor`
+   * with bootKind. Optional so the pure resolver and existing callers are unaffected.
+   */
+  onResolved?: (kind: BootResult['kind']) => void;
 }
 
 export type BootResult =
@@ -150,6 +156,7 @@ export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): U
           newItem();
           break;
       }
+      deps.onResolved?.(result.kind);
     }).catch(() => {
       // Unexpected error — fall back to new
       newItem();

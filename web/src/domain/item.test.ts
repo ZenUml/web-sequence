@@ -15,9 +15,45 @@ describe('migrateToPages', () => {
     expect(m.pages[0]).toMatchObject({ title: 'Page 1', js: 'A.b', css: '.x{}', isDefault: true });
     expect(m.currentPageId).toBe(m.pages[0].id);
   });
-  it('is a no-op when pages already exist', () => {
-    const item = base({ pages: [{ id: 'p1', title: 'P', js: 'x', css: '', isDefault: true }], currentPageId: 'p1' });
+  it('leaves the pages array untouched when pages already exist (consistent mirror)', () => {
+    const item = base({
+      js: 'x', css: '',
+      pages: [{ id: 'p1', title: 'P', js: 'x', css: '', isDefault: true }],
+      currentPageId: 'p1',
+    });
     expect(migrateToPages(item)).toEqual(item);
+  });
+  // REGRESSION (page 2 showing page 1): pages[] are the source of truth (REQ-DM-1);
+  // a persisted/legacy item may carry a STALE top-level js/css mirror. Loading must
+  // re-derive js/css from currentPageId so the editor and preview (both read item.js)
+  // can never render a different page than the active tab.
+  it('reconciles a STALE top-level js/css mirror to the current page', () => {
+    const item = base({
+      js: 'PAGE_ONE', css: '.one{}',                 // stale mirror = page 1
+      pages: [
+        { id: 'p1', title: 'Page 1', js: 'PAGE_ONE', css: '.one{}', isDefault: true },
+        { id: 'p2', title: 'Page 2', js: 'PAGE_TWO', css: '.two{}' },
+      ],
+      currentPageId: 'p2',                            // active page = 2
+    });
+    const m = migrateToPages(item);
+    expect(m.js).toBe('PAGE_TWO');
+    expect(m.css).toBe('.two{}');
+    expect(m.currentPageId).toBe('p2');
+    expect(m.pages).toHaveLength(2);                  // pages array untouched
+  });
+  it('falls back to the first page when currentPageId is missing/invalid', () => {
+    const item = base({
+      js: 'STALE', css: '',
+      pages: [
+        { id: 'p1', title: 'Page 1', js: 'FIRST', css: '', isDefault: true },
+        { id: 'p2', title: 'Page 2', js: 'SECOND', css: '' },
+      ],
+      currentPageId: 'does-not-exist',
+    });
+    const m = migrateToPages(item);
+    expect(m.currentPageId).toBe('p1');
+    expect(m.js).toBe('FIRST');
   });
 });
 

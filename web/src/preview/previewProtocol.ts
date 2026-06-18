@@ -4,11 +4,20 @@ export interface RenderOptions {
   enableMultiTheme: false;
   theme: 'theme-default';
   stickyOffset: number; // from the host router search params — NOT window.location inside the iframe
+  // Renderer selection. 'html' (default) = @zenuml/core's interactive React diagram.
+  // 'svg' = the native vector SVG (renderToSvg), used on mobile where the fixed-px HTML
+  // layout overflows the narrow viewport; the SVG fits-to-width and shows the full diagram.
+  renderMode?: 'html' | 'svg';
 }
 
 // host → iframe
 export type HostMessage =
-  | { type: 'render'; code: string; options: RenderOptions }
+  // `token` (optional) enables acknowledged delivery: the iframe echoes it back in
+  // `rendered` so the host can detect a dropped render and re-post. WebKit/Safari can
+  // silently drop a single fire-and-forget render postMessage to a srcdoc iframe under
+  // tight timing (prod build), leaving the preview stale — the ack+retry makes delivery
+  // reliable across engines. Optional so existing tests/callers still type-check.
+  | { type: 'render'; code: string; options: RenderOptions; token?: number }
   | { type: 'updateCss'; css: string }
   | { type: 'getPng'; id: number }
   | { type: 'evalConsole'; id: number; expr: string };
@@ -16,7 +25,8 @@ export type HostMessage =
 // iframe → host
 export type FrameMessage =
   | { type: 'ready' }
-  | { type: 'rendered' }
+  // `token` echoes the render message's token (acknowledged delivery — see HostMessage).
+  | { type: 'rendered'; token?: number }
   | { type: 'codeChange'; code: string }
   | { type: 'png'; id: number; dataUrl: string | null }
   | { type: 'console'; level: string; args: string[] }

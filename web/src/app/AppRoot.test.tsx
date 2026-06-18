@@ -30,6 +30,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     const p = new URLSearchParams(window.location.search);
     return {
       id: p.get('id') ?? undefined,
+      view: p.get('view') ?? undefined,
       'share-token': p.get('share-token') ?? undefined,
       embed: p.has('embed') ? true : undefined,
       code: p.get('code') ?? undefined,
@@ -218,6 +219,19 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('preview-region')).toBeInTheDocument();
   });
 
+  it("bare '/' lands in the editor, not the hub", async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('editor-region')).toBeInTheDocument();
+    expect(screen.queryByTestId('home-view')).toBeNull();
+  });
+
+  it("'?view=diagrams' renders the hub", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    expect(await screen.findByTestId('home-view')).toBeInTheDocument();
+  });
+
   it('seeds the DSL editor and mounts the preview iframe', async () => {
     const { container } = render(<AppRoot />);
     expect(await screen.findByTestId('editor-region')).toBeInTheDocument();
@@ -301,14 +315,32 @@ describe('AppRoot', () => {
     expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 
+  // P5: after a successful sign-in the login dialog must dismiss itself — otherwise the
+  // user is stranded staring at the sign-in sheet even though they're already in.
+  it('closes the login modal once the user becomes authenticated', async () => {
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    await act(async () => { await userEvent.click(screen.getByTestId('share-button')); });
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument();
+    // Simulate the OAuth round-trip completing: the auth store gets a user.
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e@x.com', displayName: 'U', photoURL: null },
+        authReady: true,
+        online: true,
+      });
+    });
+    await waitFor(() => expect(screen.queryByTestId('login-google')).not.toBeInTheDocument());
+  });
+
   it('renders the import/export actions on the Home view', async () => {
     // Hub (PRs #800/#801) retired the LibraryPanel side panel — the library IS the
     // Home view now ('/', no ?id=). The bulk import/export controls were re-homed
     // from the retired panel into HomeView's ALWAYS-present header row (HomeView.tsx
     // — not auth/readOnly-gated, so an empty or signed-out library can still import).
-    // Route to '/' via the file's existing history.replaceState URL pattern instead
-    // of the retired setActivePanel('library').
-    window.history.replaceState({}, '', '/');
+    // Route to '/?view=diagrams' via the file's existing history.replaceState URL
+    // pattern instead of the retired setActivePanel('library').
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     expect(await screen.findByTestId('home-view')).toBeInTheDocument();
     expect(screen.getByTestId('lib-export-all')).toBeInTheDocument();
@@ -323,7 +355,7 @@ describe('AppRoot', () => {
     // view header — AppRoot's isHomeMode branch renders the SAME "Import failed"
     // ConfirmDialog as the editor branch (AppRoot.tsx), so the notice is asserted
     // on the Home view, where the import control now lives.
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
 
@@ -336,6 +368,38 @@ describe('AppRoot', () => {
     // dialog heading.
     expect(await screen.findByText('Bad JSON at line 1')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Import failed' })).toBeInTheDocument();
+  });
+
+  it("fires 'first_edit' once on the first DSL change", async () => {
+    // Mechanism: drive the real CodeMirror DSL editor (dsl-editor) via
+    // userEvent.click + userEvent.keyboard — the same pattern used by the CSS-gate
+    // tests (lines ~521-529). This exercises AppRoot's handleDslChange wrapper
+    // (onChange prop of the DSL CodeEditor), not a direct store call, so first_edit
+    // genuinely fires from the wrapper. Non-vacuity guard: assert the store's js
+    // changed (proves the keystroke reached onChange). Two letters prove once-only.
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    const before = useEditorStore.getState().currentItem?.js;
+    const cm = screen.getByTestId('dsl-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cm);
+      await userEvent.keyboard('xy');
+    });
+    // Non-vacuity guard: the keystroke reached onChange → store updated.
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).not.toBe(before));
+    // first_edit fires exactly once (not twice for two keystrokes).
+    await waitFor(() => {
+      const count = trackMock.mock.calls.filter(
+        ([payload]) => (payload as { event?: string }).event === 'first_edit',
+      ).length;
+      expect(count).toBe(1);
+    });
+    // Verify category matches the spec.
+    const env = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .find((p) => p.event === 'first_edit');
+    expect(env?.category).toBe('fn');
   });
 });
 
@@ -897,8 +961,8 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 
   it("'exportItems' uses legacy category 'fn'", async () => {
     // Hub (PRs #800/#801): export-all moved from the retired LibraryPanel to the
-    // Home view header row (HomeView.tsx) — route to '/' and click it there.
-    window.history.replaceState({}, '', '/');
+    // Home view header row (HomeView.tsx) — route to '/?view=diagrams' to land there.
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     const exportBtn = await screen.findByTestId('lib-export-all');
     await act(async () => { await userEvent.click(exportBtn); });
@@ -917,8 +981,8 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'i2' } as never,
     ]);
     // Hub (PRs #800/#801): import moved from the retired LibraryPanel to the Home
-    // view header (HomeView.tsx) — route to '/' and drive the import input there.
-    window.history.replaceState({}, '', '/');
+    // view header (HomeView.tsx) — route to '/?view=diagrams' to land there.
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
@@ -952,7 +1016,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       { id: 'brand-new' } as never,  // newly added
     ]);
     // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     await act(async () => {
@@ -988,7 +1052,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     });
     vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup-1' } as never]); // all duplicates
     // Hub (PRs #800/#801): import lives on the Home view now (LibraryPanel retired).
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
     await act(async () => {
@@ -1005,6 +1069,20 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // saveItems still runs (the write happens), but no new items → no analytics event.
     await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
     expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
+  it("fires 'landed_in_editor' with bootKind on a bare '/' editor landing", async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    const env = await waitFor(() => {
+      const e = lastEnvelope('landed_in_editor');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    // getItem is mocked to reject in this suite → boot resolves kind 'new'.
+    expect(env.label).toBe('new');
+    expect(env.category).toBe('navigation');
   });
 
   it("'loggedIn' uses legacy category 'fn' + provider label", async () => {
@@ -1046,6 +1124,66 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // Legacy passes the new VALUE as the label (prefs[settingName]); lineWrap
     // defaults to true, so toggling it sends false.
     expect(env!.label).toBe('false');
+  });
+
+  it("fires 'hub_opened' with source 'landing-param' when arriving at ?view=diagrams", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const env = await waitFor(() => {
+      const e = lastEnvelope('hub_opened');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    expect(env.label).toBe('landing-param');
+  });
+
+  // DISCRIMINATING (controller review): clicking the breadcrumb to reach the hub
+  // must emit EXACTLY ONE hub_opened, sourced 'breadcrumb' — NOT also 'landing-param'.
+  // goHome navigates to ?view=diagrams, which flips isHomeMode true and re-runs the
+  // landing-param effect on the still-mounted AppRoot. Without goHome marking the
+  // landing ref consumed, BOTH events fire and the source dimension is corrupted.
+  it("breadcrumb→hub fires exactly one hub_opened sourced 'breadcrumb' (no landing-param)", async () => {
+    window.history.replaceState({}, '', '/'); // start in the editor (bare /)
+    const { rerender } = render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    // Click the breadcrumb: goHome fires hub_opened{breadcrumb} and navigates to
+    // ?view=diagrams (the mock applies replaceState but does NOT itself re-render).
+    await act(async () => { await userEvent.click(screen.getByTestId('header-go-home')); });
+    // Simulate the router's post-navigate re-render on the still-mounted AppRoot —
+    // this is what flips isHomeMode true and re-runs the landing-param effect in prod.
+    await act(async () => { rerender(<AppRoot />); });
+    await screen.findByTestId('home-view');
+    const hubEvents = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p.event === 'hub_opened');
+    expect(hubEvents).toHaveLength(1);
+    expect(hubEvents[0].label).toBe('breadcrumb');
+  });
+
+  // DISCRIMINATING (controller review of final adversarial pass): leaving the hub and
+  // returning (e.g. hub → open a diagram → browser Back to ?view=diagrams) must emit a
+  // FRESH hub_opened{landing-param}. A permanently-consumed landing ref under-counts
+  // hub demand — an ASYMMETRIC bias that makes editor-landing look better than it is,
+  // skewing the pre/post decision. Leaving the hub must re-arm the landing event.
+  it('returning to the hub after leaving re-fires hub_opened{landing-param}', async () => {
+    window.history.replaceState({}, '', '/?view=diagrams'); // land on the hub
+    const { rerender } = render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    // Leave the hub: open a diagram (?id=) — isHomeMode flips false. The real hub→editor
+    // path is handleOpenItem (a direct loadItem), so seed the item the same way; boot is
+    // skipped on the hub and won't re-resolve on a same-mount re-render.
+    window.history.replaceState({}, '', '/?id=t-boot');
+    await act(async () => { useEditorStore.getState().newItem(); rerender(<AppRoot />); });
+    await screen.findByTestId('editor-region');
+    // Return to the hub (browser Back / re-navigation to ?view=diagrams).
+    window.history.replaceState({}, '', '/?view=diagrams');
+    await act(async () => { rerender(<AppRoot />); });
+    await screen.findByTestId('home-view');
+    const landingEvents = trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p.event === 'hub_opened' && p.label === 'landing-param');
+    expect(landingEvents).toHaveLength(2); // once per hub arrival, not collapsed to one
   });
 });
 
@@ -1229,5 +1367,53 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
       expect(useEditorStore.getState().currentItem).toBeNull(),
     );
     expect(await screen.findByTestId('embed-empty')).toBeInTheDocument();
+  });
+});
+
+describe('AppRoot — pricing upgrade → Paddle checkout', () => {
+  async function openPricing() {
+    const { useUiStore } = await import('../state/uiStore');
+    await act(async () => { useUiStore.getState().openModal('pricing'); });
+    return screen.findByTestId('pricing-modal');
+  }
+
+  // Signed-in: Upgrade opens Paddle checkout for the chosen plan (regression guard).
+  it('signed-in user clicking Upgrade opens Paddle checkout for the chosen plan', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u1', email: 'e@x.com', displayName: 'U', photoURL: null }, authReady: true, online: true });
+    });
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(paddle.openCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ planType: 'plus-monthly', userId: 'u1' }),
+    );
+  });
+
+  // Anonymous: Upgrade must NOT silently close — it opens sign-in and defers checkout.
+  it('anonymous user clicking Upgrade opens sign-in (not a silent close) and defers checkout', async () => {
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />); // signed-out by default
+    await screen.findByTestId('header-title');
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(useUiStore.getState().loginModalOpen).toBe(true);
+    expect(paddle.openCheckout).not.toHaveBeenCalled();
+  });
+
+  // Anonymous → after sign-in, the deferred Paddle checkout fires for the chosen plan.
+  it('resumes the deferred Paddle checkout once the anonymous user signs in', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await openPricing();
+    await act(async () => { await userEvent.click(screen.getByTestId('pricing-upgrade-plus')); });
+    expect(paddle.openCheckout).not.toHaveBeenCalled();
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u2', email: 'z@x.com', displayName: 'Z', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(paddle.openCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ planType: 'plus-monthly', userId: 'u2' }),
+    ));
   });
 });

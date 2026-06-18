@@ -23,13 +23,13 @@ export function LimitReachedNotice({
         description={`You've reached your ${limit}-diagram limit. Saved on this device.`}
       >
         <div data-testid="limit-notice" className="flex flex-col gap-3">
-          <p className="text-[13px] text-onlight-muted">
+          <p className="text-[13px] text-ondark-muted">
             Upgrade to keep saving and syncing more diagrams to the cloud.
           </p>
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
-              surface="light"
+              surface="dark"
               data-testid="limit-dismiss"
               onClick={() => onOpenChange(false)}
             >
@@ -37,7 +37,7 @@ export function LimitReachedNotice({
             </Button>
             <Button
               variant="primary"
-              surface="light"
+              surface="dark"
               data-testid="limit-upgrade"
               onClick={onUpgrade}
             >

@@ -43,6 +43,7 @@ import { downloadText } from '../services/download';
 // M04 — subscription / settings / modals / analytics
 import { useSubscription } from '../hooks/useSubscription';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
@@ -65,6 +66,7 @@ import { PricingModal, type BillingPeriod } from '../components/subscription/Pri
 import { LimitReachedNotice } from '../components/subscription/LimitReachedNotice';
 import { LoginModal } from '../components/auth/LoginModal';
 import { HomeView } from '../components/home/HomeView';
+import { ReportBugButton } from '../components/feedback/ReportBugButton';
 
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
@@ -130,6 +132,11 @@ export function AppRoot() {
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  // Mobile (≤767px) renders the preview as the native vector SVG (fit-to-width) instead
+  // of the fixed-px HTML diagram, which overflows a phone viewport. Present/fullscreen
+  // keeps the HTML scale-to-fit-both-axes path (a deliberate "show it big" view), so SVG
+  // mode is the non-fullscreen mobile editor preview only.
+  const isMobile = useIsMobile();
   const setActivePanel = useUiStore((s) => s.setActivePanel);
 
   // M04: single-modal state + open/close. Login modal is separate shared state so
@@ -140,6 +147,14 @@ export function AppRoot() {
   const loginModalOpen = useUiStore((s) => s.loginModalOpen);
   const setLoginModalOpen = useUiStore((s) => s.setLoginModalOpen);
 
+  // P5: dismiss the sign-in sheet once auth succeeds. The OAuth round-trip resolves
+  // asynchronously (popup → authStore.user), and nothing else closes the modal — so a
+  // signed-in user would otherwise stay stranded on the login dialog. Closing on the
+  // null→user transition covers every entry point (share-gate, save-gate, header).
+  useEffect(() => {
+    if (user && loginModalOpen) setLoginModalOpen(false);
+  }, [user, loginModalOpen, setLoginModalOpen]);
+
   // M04: subscription (load + derive plan on auth) — `loading` gates the plan-limit
   // race guard (§1). analytics.track binds the current userId. paddle = checkout.
   const { subscription, planType, subscribed, loading: subLoading, reload: reloadSubscription } =
@@ -147,6 +162,22 @@ export function AppRoot() {
   const { track } = useAnalytics();
   const { openCheckout } = usePaddle();
   const paymentEnabled = appConfig.features.payment;
+
+  // Anonymous upgrade → sign-in → resume checkout. Paddle checkout needs an account
+  // (the webhook links the subscription by userId), so an anonymous Upgrade click can't
+  // go straight to Paddle. handleUpgrade stashes the chosen plan here and opens sign-in;
+  // once the user authenticates we fire the deferred checkout for that plan. Previously
+  // the anonymous branch just closed the modal silently — the Upgrade buttons appeared
+  // dead (never reached Paddle).
+  const pendingCheckoutRef = useRef<CheckoutPlanType | null>(null);
+  useEffect(() => {
+    if (user && pendingCheckoutRef.current) {
+      const plan = pendingCheckoutRef.current;
+      pendingCheckoutRef.current = null;
+      openCheckout({ planType: plan, email: user.email ?? undefined, userId: user.uid, onSuccess: () => reloadSubscription() });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
   const settings = useSettingsStore((s) => s.settings);
@@ -350,12 +381,34 @@ export function AppRoot() {
   // Read URL params reactively via TanStack Router so navigation (e.g. goHome) triggers a re-render.
   const search = useSearch({ from: indexRoute.id });
   const idParam = search.id ?? null;
+  const viewParam = search.view ?? null;
   const shareToken = search['share-token'] ?? null;
 
-  // Hub (Approach A): no id + no share + not an embed → home view shows the library grid.
-  // When true, useBootItem is skipped (no newItem seeded) and HomeView renders instead of
-  // the editor layout.
-  const isHomeMode = !idParam && !shareToken && !runtime.embedCode && !isEmbed;
+  // Editor-as-landing (2026-06-13): the hub is now OPT-IN via ?view=diagrams.
+  // Bare "/" falls through to useBootItem (resume last-code, else sample) — the
+  // legacy landing behavior. id/share-token/embed still take precedence: a deep
+  // link with both ?view=diagrams and ?id= opens the diagram, not the hub.
+  const isHomeMode =
+    viewParam === 'diagrams' && !idParam && !shareToken && !runtime.embedCode && !isEmbed;
+
+  // Editor-as-landing telemetry: fire hub_opened{landing-param} once per hub ARRIVAL.
+  // The ref guards against re-firing on incidental re-renders while already on the hub,
+  // and goHome sets it true up-front so a breadcrumb-initiated arrival is attributed to
+  // 'breadcrumb' only (not also 'landing-param'). Crucially we RE-ARM it on leaving the
+  // hub, so a later return (e.g. browser Back to ?view=diagrams) counts as a fresh
+  // arrival — otherwise hub demand is under-counted, an asymmetric bias against the hub.
+  const hubLandingFired = useRef(false);
+  useEffect(() => {
+    if (isHomeMode) {
+      if (!hubLandingFired.current) {
+        hubLandingFired.current = true;
+        track('hub_opened', { category: 'navigation', label: 'landing-param' });
+      }
+    } else {
+      hubLandingFired.current = false; // left the hub → re-arm for the next arrival
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHomeMode]);
 
   // M05 (REQ-EMB-1): embed-by-value — ?embed&code=<inline DSL>. When present we render
   // the diagram BY VALUE (no Firestore read) by seeding a transient read-only item from
@@ -379,6 +432,11 @@ export function AppRoot() {
     getItem: itemService.getItem,
     getSharedItem,
     getLastCode: () => localStore.get<Item | null>(LS_KEYS.code, null),
+    // Editor-as-landing telemetry: one event per editor boot, tagged with how the
+    // diagram was resolved. Skipped on the hub (boot is skipped when isHomeMode) and
+    // on embed-by-value — so this fires only when the editor is the landing surface.
+    onResolved: (bootKind) =>
+      track('landed_in_editor', { category: 'navigation', label: bootKind }),
   // Hub: skip boot when on home — we don't want newItem() seeding a blank diagram there.
   }, authReady, isHomeMode || embedByValue);
 
@@ -590,11 +648,19 @@ export function AppRoot() {
   // first (close pricing; the header login affordance is the entry). Guarded by the
   // payment feature flag at the call site (pricing isn't reachable when off).
   function handleUpgrade(plan: PlanType) {
-    const currentUser = useAuthStore.getState().user;
-    if (!currentUser) { closeModal(); return; }
     if (plan === 'free' || plan === 'enterprise') return;
+    const checkoutPlan = plan as CheckoutPlanType;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      // Defer to sign-in: capture the plan, close pricing, open the login dialog. The
+      // null→user effect above resumes the Paddle checkout once authenticated.
+      pendingCheckoutRef.current = checkoutPlan;
+      closeModal();
+      setLoginModalOpen(true);
+      return;
+    }
     openCheckout({
-      planType: plan as CheckoutPlanType,
+      planType: checkoutPlan,
       email: currentUser.email ?? undefined,
       userId: currentUser.uid,
       onSuccess: () => reloadSubscription(),
@@ -626,6 +692,24 @@ export function AppRoot() {
     setActivePanel('editor');
   }
 
+  // Create a diagram from a template payload AND open it in the editor (navigate to
+  // ?id=). Shared by the CreateNewModal's onSelect and the hub's template quick-picks
+  // so both paths create-and-open identically (the quick-picks must not reopen the
+  // picker — a template click should land the user straight in the editor).
+  function handleCreateAndOpen(partial: Partial<Item>) {
+    handleCreateNew(partial);
+    const newId = useEditorStore.getState().currentItem?.id;
+    if (newId) void navigate({ to: '/', search: (prev) => ({
+      id: newId,
+      view: undefined,
+      'share-token': prev['share-token'],
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+  }
+
   // M02 Task 16: library panel handlers (presentational — ItemListStub receives these).
   // Hub: also navigates to /?id= so the URL reflects which diagram is open.
   function handleOpenItem(it: Item) {
@@ -633,6 +717,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: it.id,
+      view: undefined,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -656,6 +741,7 @@ export function AppRoot() {
     setActivePanel('editor');
     void navigate({ to: '/', search: (prev) => ({
       id: newId,
+      view: undefined,
       'share-token': prev['share-token'],
       embed: prev.embed,
       code: prev.code,
@@ -664,12 +750,20 @@ export function AppRoot() {
     }) });
   }
 
-  // Hub: return to home/library view by clearing the ?id= param.
+  // Editor-as-landing: return to the hub by setting ?view=diagrams (and clearing
+  // the editor params). Previously this cleared everything to bare "/", which now
+  // lands in the editor.
   function goHome() {
+    track('hub_opened', { category: 'navigation', label: 'breadcrumb' });
+    // Mark the landing-param event consumed: navigating here flips isHomeMode true and
+    // re-runs the landing effect on the still-mounted AppRoot. Without this, a breadcrumb
+    // click would ALSO emit hub_opened{landing-param}, corrupting the source dimension.
+    hubLandingFired.current = true;
     void navigate({
       to: '/',
       search: (prev) => ({
         ...prev,
+        view: 'diagrams',
         id: undefined,
         'share-token': undefined,
         embed: undefined,
@@ -678,6 +772,18 @@ export function AppRoot() {
         stickyOffset: undefined,
       }),
     });
+  }
+
+  // first_edit: fires once per mount on the first user-initiated DSL change.
+  // Wraps setDsl so the event emits from AppRoot's boundary (not from the store
+  // action). CSS/HTML editors use separate handlers and are NOT tracked here.
+  const firstEditFired = useRef(false);
+  function handleDslChange(next: string) {
+    if (!firstEditFired.current) {
+      firstEditFired.current = true;
+      track('first_edit', { category: 'fn' });
+    }
+    setDsl(next);
   }
 
   async function handleDeleteItem(id: string) {
@@ -889,18 +995,7 @@ export function AppRoot() {
         <CreateNewModal
           open={activeModal === 'createNew'}
           onOpenChange={(o) => { if (!o) closeModal(); }}
-          onSelect={(partial) => {
-            handleCreateNew(partial);
-            const newId = useEditorStore.getState().currentItem?.id;
-            if (newId) void navigate({ to: '/', search: (prev) => ({
-              id: newId,
-              'share-token': prev['share-token'],
-              embed: prev.embed,
-              code: prev.code,
-              title: prev.title,
-              stickyOffset: prev.stickyOffset,
-            }) });
-          }}
+          onSelect={handleCreateAndOpen}
         />
         <HelpModal
           open={activeModal === 'help'}
@@ -925,6 +1020,16 @@ export function AppRoot() {
           lastProvider={lastProvider}
           error={loginError}
         />
+        <ReportBugButton
+          dsl=""
+          appVersion={APP_VERSION}
+          view="hub"
+          signedIn={!!user}
+          onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'hub' })}
+          onSubmitted={({ includedDsl }) =>
+            track('bug_report_submitted', { category: 'feedback', label: 'hub', included_dsl: includedDsl })
+          }
+        />
         <HomeView
           items={items}
           folders={folders}
@@ -932,6 +1037,7 @@ export function AppRoot() {
           onOpen={handleOpenItem}
           onNewDiagram={handleNewDiagramFromHome}
           onBrowseTemplates={() => openModal('createNew')}
+          onCreateFromTemplate={handleCreateAndOpen}
           onOpenSignIn={() => setLoginModalOpen(true)}
           onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
           onCreateFolder={(name) => void createFolder(name)}
@@ -1159,7 +1265,7 @@ export function AppRoot() {
                     DSL
                   </span>
                 </div>
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={setDsl} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} /></div>
               </div>
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
                   default re-derives from the new page's CSS emptiness (matches the
@@ -1226,7 +1332,7 @@ export function AppRoot() {
                   onPresent={toggleFullscreen}
                   pageTabs={
                     <PageTabs
-                      surface="light"
+                      surface="dark"
                       pages={item.pages ?? []}
                       currentPageId={item.currentPageId ?? ''}
                       onSwitch={switchPageAction}
@@ -1248,8 +1354,10 @@ export function AppRoot() {
                   // Present (fullscreen) mode: scale-to-fit + center the diagram
                   // (CSS transform; @zenuml/core untouched).
                   fit={fullscreen}
+                  // Mobile editor preview: native SVG fit-to-width (see isMobile above).
+                  svgMode={isMobile && !fullscreen}
                   stickyOffset={stickyOffset}
-                  onCodeChange={setDsl}
+                  onCodeChange={handleDslChange}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
                   onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
                 />
@@ -1270,6 +1378,16 @@ export function AppRoot() {
           }
         />
       </div>
+      <ReportBugButton
+        dsl={item?.js ?? ''}
+        appVersion={APP_VERSION}
+        view="editor"
+        signedIn={!!user}
+        onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'editor' })}
+        onSubmitted={({ includedDsl }) =>
+          track('bug_report_submitted', { category: 'feedback', label: 'editor', included_dsl: includedDsl })
+        }
+      />
     </div>
   );
 }
