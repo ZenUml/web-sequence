@@ -3,6 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Canonical ZenUML favicon (served from web/public). Without an icon link the
+         browser requests a non-existent /favicon.ico and shows an empty tab icon. -->
+    <link rel="icon" type="image/svg+xml" href="/zenuml-logo.svg" />
+    <link rel="icon" type="image/png" href="/favicon-128x128.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- PWA: web app manifest + theme color (icons rendered from BrandLogo artwork).
+         The legacy app shipped only an extension manifest; this is a real web manifest. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2e94d4" />
     <title>ZenUML — Sequence Diagrams</title>
     <!-- Design system "Drafting Table": Hanken Grotesk (UI), IBM Plex Mono
          (code-adjacent metadata), Instrument Serif (editorial accents). -->

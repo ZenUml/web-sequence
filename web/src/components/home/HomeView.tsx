@@ -3,6 +3,7 @@ import type { Item, Folder, AppUser } from '../../domain/types';
 import {
   SearchInput,
   Button,
+  BrandLogo,
   Select,
   SelectTrigger,
   SelectContent,
@@ -409,26 +410,10 @@ export function HomeView({
   );
 }
 
-// ZenUML brand icon — cobalt rounded square with the two-participant sequence glyph.
+// ZenUML brand mark — the official logo (self-contained blue rounded square with the
+// Zen/UML wordmark). Sized to the prior 30px footprint so the header layout is unchanged.
 function BrandIcon() {
-  return (
-    <span
-      className={cn(
-        'grid place-items-center h-[30px] w-[30px] rounded-lg text-white shrink-0',
-        'bg-gradient-to-br from-accent to-accent-press shadow-inset',
-      )}
-      aria-hidden="true"
-    >
-      <span className="h-[17px] w-[17px]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-          <rect x="3" y="4" width="7" height="5" rx="1" />
-          <rect x="14" y="4" width="7" height="5" rx="1" />
-          <path d="M6.5 9v11M17.5 9v6" />
-          <path d="M6.5 13h9M15 11l2 2-2 2" />
-        </svg>
-      </span>
-    </span>
-  );
+  return <BrandLogo className="h-[30px] w-[30px] shrink-0" />;
 }
 
 // Stub template cards — clicking any opens the full template picker (CreateNewModal).
