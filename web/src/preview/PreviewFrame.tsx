@@ -7,6 +7,10 @@ import { detectFromEnv } from '../app/runtimeMode';
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
   evalConsole(expr: string): Promise<{ ok: boolean; value: string }>;
+  // #824: force a one-shot re-render of the CURRENT code, bypassing the autoPreview
+  // gate. Powers the manual "Refresh" control shown when auto-preview is OFF, so the
+  // preview stays usable without the debounced auto re-render. No-op until `ready`.
+  render(): void;
 }
 
 export interface PreviewFrameProps {
@@ -233,6 +237,13 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
         post({ type: 'evalConsole', id, expr });
         setTimeout(() => { if (evalWaiters.current.delete(id)) resolve({ ok: false, value: 'timeout' }); }, 5000);
       });
+    },
+    render() {
+      // Only meaningful once the iframe has reported `ready` (its bootstrap registered
+      // the render listener). Before that, the `ready` handler renders the current code
+      // anyway, so dropping an early manual render is correct, not a missed update.
+      if (!readyRef.current) return;
+      postRender(codeRef.current);
     },
   }));
 

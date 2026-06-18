@@ -4,6 +4,7 @@ import { defaultKeymap } from '@codemirror/commands';
 import { Compartment, Prec, type Extension } from '@codemirror/state';
 import { linter, lintGutter, forceLinting, type Diagnostic } from '@codemirror/lint';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
+import { indentUnit } from '@codemirror/language';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
@@ -30,6 +31,13 @@ export interface CodeEditorProps {
   fontFamily?: string;            // default 'FiraCode' (DEFAULT_SETTINGS.editorFont)
   fontSize?: number;              // default 16 (DEFAULT_SETTINGS.fontSize)
   keymap?: 'sublime' | 'vim';     // default 'sublime' (CM6 default keymap, no vim)
+  // #825: indent unit wiring. `indentWith` selects spaces vs a tab; `indentSize` is the
+  // number of spaces per level (ignored when indentWith === 'tabs'). Together they set
+  // CM6's `indentUnit` facet, which drives auto-indent width (delimitedIndent in the
+  // DSL grammar uses this unit) and the indent/dedent commands. Defaults match
+  // DEFAULT_SETTINGS (2 spaces) so callers that omit them keep today's behavior.
+  indentWith?: 'spaces' | 'tabs'; // default 'spaces'
+  indentSize?: number;            // default 2 (spaces per indent level)
   diagnostics?: { lineNumber: number; message: string }[]; // REQ-ED-7: inline error markers
   // DSL only: fires when the cursor's parse zone (head vs block) changes. Feeds the
   // context-sensitive Hint Bar. Ignored for CSS.
@@ -57,6 +65,17 @@ function fontTheme(family: string, size: number): Extension {
     '&': { fontSize: size + 'px' },
     '.cm-content': { fontFamily: fontStack(family) },
   });
+}
+
+// #825: resolve the indent setting to the string CM6's `indentUnit` facet expects:
+// a run of `n` spaces, or a single tab. The facet's combine() validates that the
+// string is whitespace and homogeneous, so a tab is always exactly '\t' (one level =
+// one tabSize column) and spaces are ' '.repeat(n). n is clamped to >= 1 so a stray 0
+// can never produce the empty-string facet value (which would throw).
+function indentUnitString(indentWith: 'spaces' | 'tabs', indentSize: number): string {
+  if (indentWith === 'tabs') return '\t';
+  const n = Math.max(1, Math.floor(indentSize) || 1);
+  return ' '.repeat(n);
 }
 
 // Stable default so editors without diagnostics don't reconfigure the lint
@@ -108,6 +127,8 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     fontFamily = 'FiraCode',
     fontSize = 16,
     keymap: keymapMode = 'sublime',
+    indentWith = 'spaces',
+    indentSize = 2,
     diagnostics = NO_DIAGNOSTICS,
     onZoneChange,
   },
@@ -116,6 +137,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   const themeCompartment = useRef(new Compartment());
   const fontCompartment = useRef(new Compartment());
   const keymapCompartment = useRef(new Compartment());
+  const indentCompartment = useRef(new Compartment());
   const lintCompartment = useRef(new Compartment());
   const viewRef = useRef<EditorView | null>(null);
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
@@ -221,6 +243,9 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       themeCompartment.current.of(resolveTheme(themeId)),
       fontCompartment.current.of(fontTheme(fontFamily, fontSize)),
       keymapCompartment.current.of(keymapMode === 'vim' ? vim() : []),
+      // #825: indent unit (spaces×n or tab). Live-swapped via the compartment below so a
+      // Settings change reflects without remounting the editor.
+      indentCompartment.current.of(indentUnit.of(indentUnitString(indentWith, indentSize))),
       // Our bindings come BEFORE defaultKeymap so they win on conflicts.
       keymap.of([...bindings, ...defaultKeymap]),
       ...languageExtensions,
@@ -245,6 +270,15 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       effects: fontCompartment.current.reconfigure(fontTheme(fontFamily, fontSize)),
     });
   }, [fontFamily, fontSize]);
+
+  // #825: re-apply the indent unit live when the Settings indentWith/indentSize change.
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: indentCompartment.current.reconfigure(
+        indentUnit.of(indentUnitString(indentWith, indentSize)),
+      ),
+    });
+  }, [indentWith, indentSize]);
 
   useEffect(() => {
     viewRef.current?.dispatch({

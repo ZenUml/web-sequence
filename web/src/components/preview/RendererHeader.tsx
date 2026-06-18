@@ -22,6 +22,13 @@ export interface RendererHeaderProps {
   onPresent(): void;
   /** Optional fit-to-screen handler. Fit button only renders when provided. */
   onFit?(): void;
+  /**
+   * #824: optional manual re-render handler. The Refresh button renders ONLY when this
+   * is supplied — AppRoot passes it solely when auto-preview is OFF, so the default UI
+   * (auto-preview ON, the 99% case) is unchanged and shows no extra control. Mirrors the
+   * onFit "render only when wired" pattern so there is never a dead button.
+   */
+  onRefresh?(): void;
   /** Zoom percentage display, e.g. "100%". Presentational; defaults to "100%". */
   zoomLabel?: string;
 }
@@ -30,6 +37,7 @@ export function RendererHeader({
   pageTabs,
   onPresent,
   onFit,
+  onRefresh,
   zoomLabel = '100%',
 }: RendererHeaderProps) {
   return (
@@ -43,6 +51,27 @@ export function RendererHeader({
         <span className="font-mono text-[11px] text-ondark-muted px-1.5 select-none">
           {zoomLabel}
         </span>
+
+        {/* #824: manual Refresh — only present when auto-preview is OFF (AppRoot gates
+            it by passing onRefresh conditionally). Lets the user re-render on demand so
+            "auto-preview off" stays usable. Matches the Fit/Present control styling. */}
+        {onRefresh && (
+          <Tooltip label="Refresh preview">
+            <IconButton
+              size="md"
+              surface="dark"
+              aria-label="Refresh preview"
+              data-testid="renderer-refresh"
+              onClick={() => onRefresh()}
+            >
+              {/* circular-refresh icon */}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <path d="M21 4v5h-5" />
+              </svg>
+            </IconButton>
+          </Tooltip>
+        )}
 
         {onFit && (
           <Tooltip label="Fit to screen">

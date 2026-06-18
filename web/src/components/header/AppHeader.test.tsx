@@ -226,13 +226,45 @@ describe('AppHeader', () => {
     await waitFor(() => expect(screen.getByTestId('header-title')).toHaveFocus());
   });
 
-  it('editing header-title calls onTitleChange', async () => {
+  // #826: the title field now edits a local DRAFT and commits on Enter/blur (not on
+  // every keystroke), so the user can revert with Escape. Editing then pressing Enter
+  // commits the typed title via onTitleChange.
+  it('editing header-title and pressing Enter commits onTitleChange', async () => {
     const onTitleChange = vi.fn();
     render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
     const input = screen.getByTestId('header-title');
     await userEvent.clear(input);
     await userEvent.type(input, 'New Title');
-    expect(onTitleChange).toHaveBeenCalled();
+    await userEvent.keyboard('{Enter}');
+    expect(onTitleChange).toHaveBeenCalledWith('New Title');
+  });
+
+  // #826: blur also commits (commit-on-exit), so clicking away from a renamed field
+  // saves it.
+  it('editing header-title and blurring commits onTitleChange', async () => {
+    const onTitleChange = vi.fn();
+    render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
+    const input = screen.getByTestId('header-title');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Blurred Title');
+    input.blur();
+    expect(onTitleChange).toHaveBeenCalledWith('Blurred Title');
+  });
+
+  // #826: Escape reverts the in-progress edit WITHOUT committing — the field returns to
+  // the last committed value and onTitleChange is never fired.
+  it('pressing Escape reverts the title edit and does not commit', async () => {
+    const onTitleChange = vi.fn();
+    render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
+    const input = screen.getByTestId('header-title') as HTMLInputElement;
+    expect(input.value).toBe('My Diagram');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'TempEscapeTitle');
+    expect(input.value).toBe('TempEscapeTitle');
+    await userEvent.keyboard('{Escape}');
+    // Reverted to the committed value; never committed.
+    expect(input.value).toBe('My Diagram');
+    expect(onTitleChange).not.toHaveBeenCalled();
   });
 
   // ---- Save-state indicator (replaces the Save button) ----

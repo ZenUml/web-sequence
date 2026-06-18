@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { keymap, type EditorView } from '@codemirror/view';
+import { getIndentation, getIndentUnit } from '@codemirror/language';
 import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { CodeEditor } from './CodeEditor';
 
@@ -99,6 +100,73 @@ describe('CodeEditor', () => {
     const view = ref.current!.view!;
     view.dispatch({ selection: { anchor: view.state.doc.length } });
     await waitFor(() => expect(onZoneChange).toHaveBeenCalledWith('head'));
+  });
+
+  // #825: indentSize/indentWith wiring. The editor sets CM6's `indentUnit` facet from
+  // these props; the DSL grammar's delimitedIndent reads that facet, so a non-default
+  // indent size produces an OBSERVABLE block-indent width change. We assert via the
+  // public getIndentation API (same harness as indentInvariant.test.ts) — the body line
+  // of `A.b() { … }` is indented exactly one indent unit past the opener.
+  function dslBlockBodyIndent(view: EditorView): number | null {
+    // doc is `A.b() {\n  body\n}` — line 2 is the block body. getIndentation returns the
+    // GRAMMAR-computed indent (baseIndent + one unit), independent of the literal text.
+    return getIndentation(view.state, view.state.doc.line(2).from);
+  }
+
+  it('indentSize=4 makes the DSL block body indent 4 columns (indentUnit wired)', async () => {
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value={'A.b() {\n  X.y()\n}'} language="dsl" onChange={() => {}}
+        testId="dsl-editor" indentWith="spaces" indentSize={4} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    expect(getIndentUnit(view.state)).toBe(4); // facet reflects the setting
+    expect(dslBlockBodyIndent(view)).toBe(4);  // observable: body indents one 4-space unit
+  });
+
+  it('indentSize=2 (default) keeps the DSL block body at 2 columns', async () => {
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value={'A.b() {\n  X.y()\n}'} language="dsl" onChange={() => {}}
+        testId="dsl-editor" indentWith="spaces" indentSize={2} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    expect(getIndentUnit(view.state)).toBe(2);
+    expect(dslBlockBodyIndent(view)).toBe(2);
+  });
+
+  it('indentWith=tabs sets a tab indent unit (one tabSize-wide level)', async () => {
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value={'A.b() {\n\tX.y()\n}'} language="dsl" onChange={() => {}}
+        testId="dsl-editor" indentWith="tabs" indentSize={4} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    // A tab unit reports its width as tabSize columns (getIndentUnit: tabSize * length).
+    expect(getIndentUnit(view.state)).toBe(view.state.tabSize);
+    expect(dslBlockBodyIndent(view)).toBe(view.state.tabSize);
+  });
+
+  it('indentSize change reconfigures the live editor (2 → 8) without remount', async () => {
+    const ref = createRef<ReactCodeMirrorRef>();
+    const { rerender } = render(
+      <CodeEditor ref={ref} value={'A.b() {\n  X.y()\n}'} language="dsl" onChange={() => {}}
+        testId="dsl-editor" indentWith="spaces" indentSize={2} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    expect(dslBlockBodyIndent(view)).toBe(2);
+    // Same view instance after the prop change → the compartment reconfigured live.
+    rerender(
+      <CodeEditor ref={ref} value={'A.b() {\n  X.y()\n}'} language="dsl" onChange={() => {}}
+        testId="dsl-editor" indentWith="spaces" indentSize={8} />,
+    );
+    await waitFor(() => expect(getIndentUnit(ref.current!.view!.state)).toBe(8));
+    expect(ref.current!.view).toBe(view); // not remounted
+    expect(dslBlockBodyIndent(ref.current!.view!)).toBe(8);
   });
 
   it('Mod-Shift-f does NOT format/mutate a read-only (ACSS) editor (FIX 6a)', async () => {

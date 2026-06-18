@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Button,
   TextInput,
@@ -177,6 +177,50 @@ export function AppHeader({
     el.select();
   };
 
+  // #826: title edit with a DRAFT buffer so Escape can revert without committing.
+  // The field edits a local `draft`; the committed title (`title` prop, owned by the
+  // editor store) only changes on Enter/blur. Escape discards the draft back to the
+  // last committed value. While the user is NOT editing, the field mirrors the prop —
+  // so external title changes (rename via the doc menu, switching diagrams) still flow
+  // through. We track editing via focus, and a ref holds the value to revert TO on
+  // Escape (captured at focus time) so a mid-edit prop change can't desync the revert.
+  const [draft, setDraft] = useState(title);
+  const editingTitle = useRef(false);
+  const committedTitleRef = useRef(title);
+  committedTitleRef.current = title;
+  // When not actively editing, keep the field in sync with the committed prop. During
+  // an edit we leave `draft` alone so keystrokes aren't clobbered by a re-render.
+  useEffect(() => {
+    if (!editingTitle.current) setDraft(title);
+  }, [title]);
+
+  const commitTitle = (value: string) => {
+    // Only fire onTitleChange when the value actually differs from what's committed,
+    // so a no-op blur/Enter doesn't mark the diagram dirty.
+    if (value !== committedTitleRef.current) {
+      // Optimistically advance the committed ref so a follow-up blur re-syncs to the
+      // just-committed value (the `title` prop updates async via the store, one turn
+      // later). Without this, blur's re-sync would read the STALE prop and briefly
+      // revert the field before the prop catches up.
+      committedTitleRef.current = value;
+      onTitleChange(value);
+    }
+  };
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitTitle(draft);
+      // Keep editing flag set through the synchronous commit; blur (below) clears it.
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Revert: discard the draft, restore the last committed value, do NOT commit.
+      setDraft(committedTitleRef.current);
+      editingTitle.current = false;
+      e.currentTarget.blur();
+    }
+  };
+
   return (
     <>
       <header className={cn(
@@ -251,7 +295,7 @@ export function AppHeader({
           <TextInput
             ref={titleRef}
             surface="dark"
-            value={title}
+            value={draft}
             data-testid="header-title"
             aria-label="Diagram title"
             readOnly={readOnly}
@@ -264,7 +308,22 @@ export function AppHeader({
               // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
               onGoHome ? 'flex-1 sm:flex-none sm:max-w-[220px]' : 'max-w-[220px]',
             )}
-            onChange={(e) => onTitleChange(e.target.value)}
+            onFocus={() => {
+              editingTitle.current = true;
+            }}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleTitleKeyDown}
+            onBlur={() => {
+              // Commit on blur (commit-on-exit), then leave edit mode. Escape's blur
+              // already reverted the draft, so this commit is a no-op there (the draft
+              // equals the committed value → commitTitle skips onTitleChange).
+              if (editingTitle.current) {
+                editingTitle.current = false;
+                commitTitle(draft);
+              }
+              // Re-sync to the authoritative committed value once editing ends.
+              setDraft(committedTitleRef.current);
+            }}
           />
           <Menu>
             <MenuTrigger asChild>
