@@ -1,11 +1,49 @@
-# Emulator setup — unlocking the infra-gated E2E gap cases
+# Emulator setup — the infra-gated E2E gap cases (NOW LIVE)
 
-The `AUTH` / `CLOUD` / `PADDLE` cases in `e2e/E2E_GAP_TEST_PLAN.md` are scaffolded
-as **pending** (`test.fixme`) in [`e2e/tests/cloud.fixme.spec.js`](tests/cloud.fixme.spec.js).
-They cannot run in a plain checkout: the signed-out staging gate runs anonymously
-against a live deploy, so it never touches auth, Firestore, the cloud functions,
-or Paddle. This doc is the concrete recipe to stand that infra up locally and flip
-each `test.fixme(...)` → `test(...)`.
+**STATUS (2026-06-18): DONE.** The `AUTH` / `CLOUD` / `PADDLE` cases from
+`e2e/E2E_GAP_TEST_PLAN.md` are now LIVE, emulator-backed tests in
+[`e2e/tests/cloud.spec.js`](tests/cloud.spec.js), run via the `cloud` Playwright
+project. 34 of the 35 cases are real passing tests; the one residual case (FLD-2)
+stays `test.fixme` in [`e2e/tests/cloud.fixme.spec.js`](tests/cloud.fixme.spec.js)
+because it is blocked by a MISSING UI affordance, not by infrastructure.
+
+```bash
+# Run the whole emulator-backed cloud suite (boots emulators + the wired dev server):
+yarn test:e2e:cloud           # == PW_CLOUD=1 playwright test --project=cloud
+```
+
+The signed-out staging gate (default `chromium` project) is UNCHANGED — it
+`testIgnore`s the cloud specs and boots the plain dev server with no emulator.
+
+The rest of this doc records the working recipe (and the two non-obvious traps the
+prior sketch missed).
+
+---
+
+## 0. The two traps the original sketch missed
+
+1. **The GLOBAL `firebase` v9.16.5 CLI cannot run the functions emulator here.** It
+   is a pkg'd Mach-O binary whose bundled Node is too old to parse
+   `firebase-admin@11`'s optional chaining (`this.appStore?.removeApp(...)`), so the
+   functions emulator crashes on load (`SyntaxError: Unexpected token '.'`) and
+   `/create-share` / `/get-shared-item` never work. **Fix:** use the v13 CLI that
+   ships in `functions/node_modules/.bin/firebase` (a devDependency, `firebase-tools
+   ^13`). v13 runs the functions emulator under the HOST Node (20), which loads
+   `functions/index.js` cleanly. The cloud webServer command uses this binary.
+   Prereq: `cd functions && npm install` (installs firebase-admin/-functions/mixpanel
+   AND the v13 CLI).
+
+2. **The Firestore emulator enforces `firestore.rules` even over REST.** Seeding a
+   fixture item naively returns `403 PERMISSION_DENIED`. **Fix:** the emulator grants
+   full admin access (bypassing all rules) to requests carrying
+   `Authorization: Bearer owner` — `e2e/cloud/firestoreEmu.mjs` sets this on every
+   seed/probe, so tests can set up arbitrary fixtures the client could never write.
+
+---
+
+The original scaffold notes (kept for reference): they cannot run in a plain
+checkout because the signed-out staging gate runs anonymously against a live deploy,
+so it never touches auth, Firestore, the cloud functions, or Paddle.
 
 What unlocks what (from the gap-plan coverage map):
 
@@ -95,33 +133,29 @@ the emulator.
 
 ---
 
-## 3. Seed a test user (Auth emulator)
+## 3. How the deterministic test sign-in actually works (no admin SDK)
 
-The Auth emulator accepts unsigned tokens and lets you create users via its REST
-API or the admin SDK — no real Google/GitHub OAuth round-trip. Two ways:
+The chosen approach signs in entirely **client-side** with an **unsigned Firebase
+custom token** — no `firebase-admin` and no service-account key in the browser:
 
-**A. Admin SDK (deterministic, recommended)** — a global-setup script mints users
-and custom tokens against the emulator:
+- The Auth emulator does NOT verify the custom-token signature, so a JWT with
+  `alg:"none"` + an empty signature, minted for a chosen `uid`, is accepted by
+  `signInWithCustomToken`. (Validated: `accounts:signInWithCustomToken` returns 200
+  and an idToken whose `user_id` is exactly the uid we put in.)
+- `web/src/services/firebase.ts`, gated on `VITE_USE_EMULATOR === '1'`:
+  - connects the SDK to the Auth (:9099) + Firestore (:8080) emulators;
+  - replaces popup `login(provider)` with a popup-free emulator sign-in (so the
+    real `login-google` / `login-github` buttons sign in deterministically);
+  - exposes `window.__e2eSignIn({ uid?, email? })` and a one-shot
+    `window.__e2eForceAuthError(code)` (AUTH-4).
+- The uid is derived from the email (`e2e-<slugified-email>`) OR passed explicitly,
+  so seeded Firestore docs (`users/{uid}`, `items.createdBy`,
+  `user_subscriptions/user-{uid}`) line up with the signed-in session. The test-side
+  mirror is `uidForEmail()` in `e2e/tests/helpers/cloud.js`.
 
-```js
-// e2e/cloud/seed.mjs  (run from Playwright globalSetup)
-import admin from 'firebase-admin';
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
-admin.initializeApp({ projectId: 'web-sequence-local' });
-
-export async function seedUser(uid, email) {
-  await admin
-    .auth()
-    .createUser({ uid, email, displayName: 'E2E User' })
-    .catch(() => {});
-  return admin.auth().createCustomToken(uid); // the test signs in with this
-}
-```
-
-**B. Emulator REST** — `POST http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake`
-with `{ email, password, returnSecureToken: true }`. Returns an idToken you can
-inject. Heavier than the admin SDK; prefer A.
+The spec's single sign-in seam is `signInViaEmulator(page, { uid?, email? })` in
+`e2e/tests/helpers/cloud.js` — it waits for the dev hook, calls it, and waits for
+`profile-trigger` to mount.
 
 ---
 
