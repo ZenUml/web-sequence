@@ -11,3 +11,7 @@ test-results/
 playwright-report/
 .playwright/
 storybook-static
+
+# design-sync staged scripts + build output
+.ds-sync/
+ds-bundle/
