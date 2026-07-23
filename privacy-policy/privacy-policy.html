@@ -93,6 +93,8 @@
       background: #f9fafb; /* gray-50 */
     }
 
+    .table-scroll { width: 100%; overflow-x: auto; }
+
     h2 {
       color: var(--heading);
       font-size: 1.25rem;
@@ -146,35 +148,36 @@
   <h1>ZenUML Privacy Policy</h1>
 
   <div class="policy-meta">
-    <strong>Effective date:</strong> February 23, 2019 <strong>Last updated:</strong> 11/09/2025
+    <strong>Effective date:</strong> February 23, 2019 &nbsp; <strong>Last updated:</strong> July 23, 2026
   </div>
 
   <div class="intro">
-    ZenUML ("we," "our," or "us") values your privacy. This policy explains how we collect, use, and protect information across our different products.
+    ZenUML ("we," "our," or "us") values your privacy. This policy explains what data our products collect, how we use it, where it is stored, and who we share it with. It covers our Confluence app, our IntelliJ IDEA and VS Code plugins, and our Web App at <a href="https://app.zenuml.com">app.zenuml.com</a>.
   </div>
 
   <div class="glance-section">
     <h2>🔎 At a Glance: What Data We Collect</h2>
+    <div class="table-scroll">
     <table class="data-table">
       <thead>
       <tr>
         <th>Product / Service</th>
         <th>Login Required</th>
         <th>Email Collected</th>
-        <th>Diagram/Data Storage Location</th>
+        <th>Diagram / Data Storage Location</th>
         <th>Analytics Collected</th>
       </tr>
       </thead>
       <tbody>
       <tr>
-        <td><strong>Confluence Plug-in</strong></td>
+        <td><strong>Confluence App</strong></td>
         <td>Via Confluence</td>
         <td>No</td>
-        <td>Stored in Atlassian Confluence</td>
-        <td>Anonymous usage events (e.g., create/edit/save). We may collect macro data for analytics purposes (more details below).</td>
+        <td>Atlassian Confluence is the system of record; a verbatim copy of each saved diagram is also mirrored to our backend (Cloudflare).</td>
+        <td>Pseudonymous usage metadata via Mixpanel (no diagram content). Optional opt-in AI features and Live Agent Link. Session replay for a percentage of sessions.</td>
       </tr>
       <tr>
-        <td><strong>IntelliJ IDEA & VS Code Plugins</strong></td>
+        <td><strong>IntelliJ IDEA &amp; VS Code Plugins</strong></td>
         <td>No</td>
         <td>No</td>
         <td>Local only</td>
@@ -189,23 +192,24 @@
       </tr>
       </tbody>
     </table>
+    </div>
   </div>
 
   <div class="section">
     <h2>1. Information We Collect</h2>
 
-    <h3>A. Confluence Plug-in</h3>
+    <h3>A. Confluence App</h3>
     <ul>
-      <li><strong>Authentication</strong>: You log in through Atlassian Confluence. We do <strong>not</strong> collect or have access to your email address or account details.</li>
-      <li><strong>Content</strong>: Your diagrams (macros) are stored within Confluence, not our systems.</li>
-      <li><strong>Analytics</strong>: We use Mixpanel to track anonymous usage events (e.g., creating, editing, or saving a macro). No personally identifiable information (PII) is collected.</li>
+      <li><strong>Authentication</strong>: You sign in through Atlassian Confluence. We do <strong>not</strong> collect your email address or Atlassian account password. Our backend receives an opaque Atlassian account identifier and your Confluence site (cloud) identifier so the app can function.</li>
+      <li><strong>Diagram content</strong>: When you create, edit, or save a diagram macro, the diagram is stored in Atlassian Confluence, which remains the <strong>system of record</strong> for your content. In addition, on <em>each save</em> we mirror a <strong>verbatim copy</strong> of the diagram source (for example ZenUML text, Mermaid, PlantUML, DrawIO XML, or an OpenAPI/AsyncAPI specification) together with the diagram title into our own backend database (Cloudflare D1), with <strong>full version history</strong>. This copy supports current and planned product features (such as diagram relationships and freshness detection). It is not currently displayed back to you and does not replace Confluence storage. We retain this mirrored copy for <strong>as long as the app remains installed on your site, after which it is deleted within 90 days of uninstallation (or earlier on request)</strong>. You can request deletion of this copy through our support portal (see <a href="#contact">Contact Us</a>).</li>
     </ul>
+    <p>The sections below describe additional, feature-specific data flows in the Confluence app. Several of them (AI features, Live Agent Link) are optional and off by default.</p>
 
-    <h3>B. IntelliJ IDEA & VS Code Plugins</h3>
+    <h3>B. IntelliJ IDEA &amp; VS Code Plugins</h3>
     <ul>
       <li><strong>Authentication</strong>: No login is required.</li>
       <li><strong>Personal Data</strong>: We do not collect email addresses or user account details.</li>
-      <li><strong>Usage Data</strong>: No personal data is collected.</li>
+      <li><strong>Usage Data</strong>: No personal data is collected. Diagrams are processed locally.</li>
     </ul>
 
     <h3>C. Web App (SaaS)</h3>
@@ -217,29 +221,73 @@
   </div>
 
   <div class="section">
-    <h2>2. How We Use Your Data</h2>
+    <h2>2. Enhanced Page Capture (a small number of enterprise customers)</h2>
+    <p>For a small number of enterprise customers who have arranged for <strong>enhanced page capture</strong>, the Confluence app captures the full body of a Confluence page when that page is updated and stores it in our backend object storage (Cloudflare R2). This behaviour is limited to an explicit allowlist of customer sites.</p>
+    <p>For all other customers, <strong>no page body is captured or stored</strong> — page-update events are received but discarded without being retained. Where enhanced page capture is active, we retain captured page content for <strong>no longer than 90 days on a rolling basis (in current operation, captured snapshots are automatically deleted after 7 days)</strong>.</p>
+  </div>
+
+  <div class="section">
+    <h2>3. AI Features (optional, opt-in)</h2>
+    <p>ZenUML offers optional AI features — <strong>AI diagram generation</strong>, <strong>AI repair</strong>, and <strong>AI update</strong>. These are <strong>off by default</strong> and controlled by feature flags; they run only when you actively use them.</p>
+    <ul>
+      <li><strong>Generation, repair, and update</strong>: When you use these features, the relevant diagram source and any related error text are sent from our backend to <strong>Diagramly.ai</strong> (our sister product), which orchestrates the request. Diagramly.ai in turn calls third-party AI model providers — <strong>OpenAI</strong> (GPT-4o) and <strong>Anthropic</strong> (Claude Sonnet family) — to produce the result. Diagramly.ai <strong>retains the inputs of AI-repair jobs</strong> in its database.</li>
+      <li><strong>Model-provider terms</strong>: Under their terms, neither OpenAI nor Anthropic uses this content to train their models. OpenAI does not train on API inputs by default and deletes API inputs/outputs within about 30 days; Anthropic's commercial terms state it may not train on customer content and automatically deletes API inputs and outputs within 30 days.</li>
+      <li><strong>AI title suggestion</strong>: A separate feature sends only the diagram text to our backend, which calls <strong>Cloudflare Workers AI</strong> (Meta Llama models running on Cloudflare's infrastructure) to suggest a title. This inference is <strong>ephemeral and not stored</strong>. It does not go to Diagramly.ai, OpenAI, or Anthropic.</li>
+    </ul>
+    <p>Because AI features send diagram content to the providers named above, do not use them for content you are not permitted to share with those providers.</p>
+  </div>
+
+  <div class="section">
+    <h2>4. Live Agent Link (optional, opt-in)</h2>
+    <p>Live Agent Link is an optional feature that is <strong>off by default</strong>. When you explicitly start a session, your diagram source is streamed in real time over an encrypted secure WebSocket connection (<code>wss://*.zenuml.com</code>) through a relay running on our Cloudflare infrastructure, and is made available to an <strong>external AI agent or MCP client that you have authorized on your own device</strong>.</p>
+    <p>The relay holds session state only <strong>transiently</strong>, for the duration of the session. Because you are connecting your diagram to a third-party AI agent of your own choosing, that agent's own privacy terms govern what it does with the content it receives.</p>
+  </div>
+
+  <div class="section">
+    <h2>5. PlantUML Rendering (PlantUML diagrams only)</h2>
+    <p>If you render a <strong>PlantUML</strong> diagram, the PlantUML source is URL-encoded and sent over HTTPS to the public PlantUML rendering service at <a href="https://www.plantuml.com">plantuml.com</a>. This occurs during editing (syntax validation), on each render, and on PNG export.</p>
+    <p>According to PlantUML's own FAQ, it <strong>does not store diagrams</strong> on its servers — rendering is stateless and the diagram is encoded in the request URL — though it may keep transient HTTP traces for performance and then remove them. The public PlantUML service is a community service with <strong>no data processing agreement and no SOC 2 certification</strong>; PlantUML recommends self-hosting for sensitive diagrams. This applies only to PlantUML diagrams; other diagram types are not sent to plantuml.com.</p>
+  </div>
+
+  <div class="section">
+    <h2>6. Analytics (Mixpanel)</h2>
+    <p>We use <strong>Mixpanel</strong> to understand how the Confluence app is used. The events we send contain <strong>metadata only</strong> — for example an opaque Atlassian account identifier, your Confluence site domain, space key, macro identifiers, opaque page/content identifiers, product type, timings, and counts. We do <strong>not</strong> send diagram source content to Mixpanel; where the size of your input matters we send only length values (such as prompt length or the size of a text change).</p>
+    <p>These identifiers are <strong>pseudonymous, not anonymous</strong>: an opaque account identifier combined with a site domain can relate to an individual or an organization. We therefore describe this data as pseudonymous rather than claiming it contains no personal data.</p>
+    <p>Two features send limited <strong>free text</strong>:</p>
+    <ul>
+      <li><strong>Accepted AI title</strong>: if you accept an AI-suggested diagram title, that title text is recorded.</li>
+      <li><strong>Feedback</strong>: if you submit feedback, your free-text feedback is recorded.</li>
+    </ul>
+    <p><strong>Session replay</strong>: For a configurable percentage of sessions, Mixpanel records a replay of the session (a reconstruction of on-screen interactions). This is controlled by a server-side setting and uses Mixpanel's default masking behaviour. Session replay is separate from the event analytics described above.</p>
+  </div>
+
+  <div class="section">
+    <h2>7. How We Use Your Data</h2>
     <p>We use collected data to:</p>
     <ul>
       <li>Provide, maintain, and improve our services</li>
+      <li>Deliver the specific features you use (including the optional AI and Live Agent Link features)</li>
       <li>Notify you about changes or updates</li>
       <li>Support customer service requests</li>
       <li>Analyze usage to improve features and performance</li>
       <li>Ensure security and prevent abuse</li>
     </ul>
-    <p>We are transitioning towards server-side tracking to further minimize data collection.</p>
   </div>
 
   <div class="section">
-    <h2>3. Data Residency & Retention</h2>
+    <h2>8. Data Residency &amp; Retention</h2>
     <ul>
-      <li><strong>Confluence Plug-in</strong>: Your diagrams remain stored in Atlassian Confluence. For analytics, we may process macro data on our servers, which is periodically purged. You can opt out by submitting a request at: <a href="https://zenuml.atlassian.net/servicedesk/customer/portals">https://zenuml.atlassian.net/servicedesk/customer/portals</a></li>
-      <li><strong>Web App</strong>: Your account and diagram data are stored on our servers. We retain data only as long as necessary for providing the service, unless required otherwise by law.</li>
+      <li><strong>Confluence app — Confluence storage</strong>: Your diagrams remain stored in Atlassian Confluence under Atlassian's own data residency and retention.</li>
+      <li><strong>Confluence app — our mirrored copy</strong>: The verbatim copy of each saved diagram (with version history) is stored in our Cloudflare backend and retained for <strong>as long as the app remains installed on your site, after which it is deleted within 90 days of uninstallation (or earlier on request)</strong>. Cloudflare D1 supports data-localization jurisdictions at creation time; regional residency is a configuration option and is not currently configured.</li>
+      <li><strong>Confluence app — enhanced page capture</strong>: Where active (see Section 2), captured page content is retained for <strong>no longer than 90 days on a rolling basis (in current operation, captured snapshots are automatically deleted after 7 days)</strong>.</li>
+      <li><strong>Web App</strong>: Your account and diagram data are stored on our servers. We retain data only as long as necessary to provide the service, unless required otherwise by law.</li>
+      <li><strong>Requests</strong>: You can request access to or deletion of data we hold about you, or opt out where applicable, via our support portal: <a href="https://zenuml.atlassian.net/servicedesk/customer/portals">https://zenuml.atlassian.net/servicedesk/customer/portals</a>.</li>
     </ul>
   </div>
 
   <div class="section">
-    <h2>4. Disclosure of Data</h2>
-    <p>We may disclose information only if required to:</p>
+    <h2>9. Disclosure of Data</h2>
+    <p>We share data with the sub-processors listed in Section 10 to operate the service. Beyond that, we may disclose information only if required to:</p>
     <ul>
       <li>Comply with legal obligations</li>
       <li>Protect and defend our rights or property</li>
@@ -249,32 +297,101 @@
   </div>
 
   <div class="section">
-    <h2>5. Security</h2>
-    <p>We take strong measures to protect your data. Any data transmitted to our servers is encrypted both <strong>in transit</strong> (using SSL/TLS) and <strong>at rest</strong>.</p>
+    <h2>10. Sub-processors</h2>
+    <p>We use the following sub-processors to deliver the service. Some (OpenAI, Anthropic, plantuml.com) receive data only when you use the specific feature noted.</p>
+    <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Sub-processor</th>
+        <th>Purpose</th>
+        <th>In transit</th>
+        <th>At rest</th>
+        <th>Notes / compliance</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><strong>Cloudflare</strong></td>
+        <td>App backend &amp; storage (D1 / R2 / KV / Workers)</td>
+        <td>TLS</td>
+        <td>AES-256 (GCM), automatic</td>
+        <td>SOC 2 / ISO</td>
+      </tr>
+      <tr>
+        <td><strong>Atlassian</strong></td>
+        <td>Confluence — system of record</td>
+        <td>TLS 1.2+ (perfect forward secrecy)</td>
+        <td>AES-256</td>
+        <td>SOC 2 / ISO</td>
+      </tr>
+      <tr>
+        <td><strong>Diagramly.ai</strong> (our product; Neon / Vercel infrastructure)</td>
+        <td>AI generation / repair / update</td>
+        <td>TLS 1.2 / 1.3</td>
+        <td>AES-256</td>
+        <td>SOC 2, ISO 27001 / 27701; retains AI-repair job inputs</td>
+      </tr>
+      <tr>
+        <td><strong>OpenAI</strong></td>
+        <td>AI model provider (opt-in features only)</td>
+        <td>TLS</td>
+        <td>AES-256</td>
+        <td>SOC 2 Type 2; no training by default; inputs/outputs deleted within ~30 days</td>
+      </tr>
+      <tr>
+        <td><strong>Anthropic</strong></td>
+        <td>AI model provider (opt-in features only)</td>
+        <td>TLS 1.2+</td>
+        <td>AES-256</td>
+        <td>SOC 2 Type II, ISO 27001 / 42001; no training (commercial terms §B); 30-day deletion of API inputs/outputs</td>
+      </tr>
+      <tr>
+        <td><strong>Cloudflare Workers AI</strong> (Meta Llama)</td>
+        <td>AI title suggestion</td>
+        <td>TLS</td>
+        <td>n/a (ephemeral inference)</td>
+        <td>Runs on Cloudflare infrastructure; not stored</td>
+      </tr>
+      <tr>
+        <td><strong>Mixpanel</strong></td>
+        <td>Product analytics (metadata only)</td>
+        <td>TLS 1.2</td>
+        <td>AES-256</td>
+        <td>SOC 2 Type II, ISO 27001 / 27701; session replay for a percentage of sessions</td>
+      </tr>
+      <tr>
+        <td><strong>plantuml.com</strong></td>
+        <td>PlantUML rendering only</td>
+        <td>HTTPS</td>
+        <td>Not stored (stateless; per PlantUML FAQ)</td>
+        <td>Community service; no DPA / SOC 2; transient performance logs possible</td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+    <p>We may also use Google Analytics for anonymous web-traffic analysis on our marketing website only (not inside the Confluence app). You can opt out of Google Analytics tracking by installing the Google Analytics opt-out browser add-on.</p>
   </div>
 
   <div class="section">
-    <h2>6. Third-Party Services</h2>
-    <ul>
-      <li><strong>Mixpanel</strong>: Used for analytics on usage events (no PII).</li>
-      <li><strong>Google Analytics</strong>: May be used for anonymous web traffic analysis on our website.</li>
-    </ul>
-    <p>You can opt out of Google Analytics tracking by installing the Google Analytics opt-out browser add-on.</p>
+    <h2>11. Security</h2>
+    <p><strong>In transit</strong>: All data sent to our services is encrypted with TLS/HTTPS, including secure WebSockets (<code>wss</code>) for Live Agent Link. Requests to our backend are authenticated using Atlassian Forge signed invocation tokens (RS256).</p>
+    <p><strong>At rest</strong>: Content stored in our primary backend (Cloudflare D1, R2, and KV) is encrypted using AES-256 in GCM (Galois/Counter Mode), applied automatically, with keys managed by Cloudflare. Atlassian Confluence — the system of record for your diagrams — encrypts data in transit (TLS 1.2+ with perfect forward secrecy) and at rest (AES-256). Our AI sister product's database (Neon) encrypts data at rest with AES-256 and in transit with TLS 1.2/1.3.</p>
   </div>
 
   <div class="section">
-    <h2>7. Children's Privacy</h2>
+    <h2>12. Children's Privacy</h2>
     <p>Our services are not directed to children under 13. We do not knowingly collect personal data from children. If you believe we have done so, please contact us and we will delete it.</p>
   </div>
 
   <div class="section">
-    <h2>8. Changes to This Policy</h2>
+    <h2>13. Changes to This Policy</h2>
     <p>We may update this Privacy Policy from time to time. Updates will be posted on this page, and we will notify users of material changes.</p>
   </div>
 
-  <div class="contact-section">
-    <h2>9. Contact Us</h2>
-    <p>If you have any questions about this Privacy Policy, please contact us: <strong>Email:</strong> <a href="mailto:support@zenuml.com">support@zenuml.com</a></p>
+  <div class="contact-section" id="contact">
+    <h2>14. Contact Us</h2>
+    <p>If you have any questions about this Privacy Policy, or wish to make a data access or deletion request, please contact us: <strong>Email:</strong> <a href="mailto:support@zenuml.com">support@zenuml.com</a>, or use our support portal at <a href="https://zenuml.atlassian.net/servicedesk/customer/portals">https://zenuml.atlassian.net/servicedesk/customer/portals</a>.</p>
   </div>
 </div>
 </body>
