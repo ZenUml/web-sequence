@@ -3,6 +3,8 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect } from 'preact/hooks';
 import mixpanel from '../services/mixpanel';
 
+const isExtension = typeof chrome !== 'undefined' && !!chrome?.runtime?.id;
+
 export default function LoginModal({ open, onClose }) {
   const login = (e) => {
     const provider = e.target.dataset.authProvider;
@@ -40,20 +42,22 @@ export default function LoginModal({ open, onClose }) {
           </Dialog.Title>
           <div className="mt-6 w-full">
             <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={login}
-                className="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
-                data-auth-provider="github"
-                data-hint="You logged in with Github last time"
-              >
-                <span className="block w-5 h-5">
-                  <svg className="w-full h-full fill-current">
-                    <use xlinkHref="#github-icon" />
-                  </svg>
-                </span>
-                Login with Github
-              </button>
+              {!isExtension && (
+                <button
+                  type="button"
+                  onClick={login}
+                  className="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
+                  data-auth-provider="github"
+                  data-hint="You logged in with Github last time"
+                >
+                  <span className="block w-5 h-5">
+                    <svg className="w-full h-full fill-current">
+                      <use xlinkHref="#github-icon" />
+                    </svg>
+                  </span>
+                  Login with Github
+                </button>
+              )}
               <button
                 type="button"
                 onClick={login}
@@ -68,20 +72,22 @@ export default function LoginModal({ open, onClose }) {
                 </span>
                 Login with Google
               </button>
-              <button
-                type="button"
-                onClick={login}
-                class="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
-                data-auth-provider="facebook"
-                data-hint="You logged in with Facebook last time"
-              >
-                <span className="block w-5 h-5">
-                  <svg className="w-full h-full">
-                    <use xlinkHref="#fb-icon" />
-                  </svg>
-                </span>
-                Login with Facebook
-              </button>
+              {!isExtension && (
+                <button
+                  type="button"
+                  onClick={login}
+                  className="flex items-center p-3 gap-2 justify-center w-full rounded-lg border border-neutral-400  hover:bg-black-500/90"
+                  data-auth-provider="facebook"
+                  data-hint="You logged in with Facebook last time"
+                >
+                  <span className="block w-5 h-5">
+                    <svg className="w-full h-full">
+                      <use xlinkHref="#fb-icon" />
+                    </svg>
+                  </span>
+                  Login with Facebook
+                </button>
+              )}
               <p className="text-center mt-4">
                 Join a community of 50,000+ Developers
               </p>
