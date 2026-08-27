@@ -18,10 +18,12 @@ describe('HelpModal', () => {
     expect(docs).toHaveClass('ring-draft');
     expect(docs.getAttribute('href')).toBe('https://www.zenuml.com/help.html');
     const contact = screen.getByRole('link', { name: /contact/i });
+    expect(contact).toHaveClass('ring-draft');
     expect(contact.getAttribute('href')).toBe(
       'https://zenuml.com/docs/about/contact-us',
     );
     const github = screen.getByRole('link', { name: /github/i });
+    expect(github).toHaveClass('ring-draft');
     expect(github.getAttribute('href')).toBe(
       'https://github.com/ZenUml/web-sequence',
     );
