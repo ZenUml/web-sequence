@@ -81,6 +81,13 @@ describe('FolderList', () => {
     expect(onSelectFolder).toHaveBeenCalledWith('folder-a');
   });
 
+  it('uses the rounded accent tint alone for the active folder, without a left accent rail', () => {
+    render(<FolderList {...baseProps} activeFolderId="folder-a" />);
+    const active = screen.getByTestId('folder-folder-a').parentElement!;
+    expect(active).toHaveClass('bg-accent-soft');
+    expect(active.className).not.toMatch(/\bborder-l(?:-|\b)/);
+  });
+
   it('the New folder control shows a visible text label (not a bare icon)', () => {
     render(<FolderList {...baseProps} />);
     expect(screen.getByTestId('folder-new')).toHaveTextContent(/New folder/i);
