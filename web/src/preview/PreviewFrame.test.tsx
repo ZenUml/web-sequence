@@ -253,8 +253,8 @@ describe('PreviewFrame', () => {
 
   // DISCRIMINATING: proves the fit MATH, not just that some transform got applied.
   // Mock a real ResizeObserver that fires synchronously on observe(), with a wrapper
-  // measuring 200×150 against a 400×300 diagram → scale = min(200/400, 150/300, 1)
-  // = min(0.5, 0.5, 1) = 0.5. A broken min() (e.g. dropping a term or the cap) yields
+  // measuring 200×150 against a 400×300 diagram → scale = min(200/400, 150/300)
+  // = min(0.5, 0.5) = 0.5. A broken min() (e.g. dropping either dimension) yields
   // a different number and fails here.
   it('in fit mode: computes scale < 1 when the wrapper is smaller than the content', () => {
     const observed: Element[] = [];
@@ -281,6 +281,32 @@ describe('PreviewFrame', () => {
       });
       expect(observed.length).toBeGreaterThan(0);
       expect(iframe.style.transform).toBe('scale(0.5)');
+    } finally {
+      globalThis.ResizeObserver = prev;
+    }
+  });
+
+  it('in fit mode: scales a small diagram up to use a larger present canvas', () => {
+    class FakeRO {
+      constructor(private cb: ResizeObserverCallback) {}
+      observe(el: Element) {
+        Object.defineProperty(el, 'clientWidth', { value: 800, configurable: true });
+        Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true });
+        this.cb([{ target: el } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    const prev = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeRO as unknown as typeof ResizeObserver;
+    try {
+      const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} fit />);
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+      act(() => {
+        window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 400, height: 300 } }));
+      });
+      expect(iframe.style.transform).toBe('scale(2)');
     } finally {
       globalThis.ResizeObserver = prev;
     }

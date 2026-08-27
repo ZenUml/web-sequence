@@ -195,7 +195,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // kept as a safety net should the iframe ever reload and re-fire `ready`.
   useEffect(() => { readyRef.current = false; }, [srcdoc]);
 
-  // Present-mode fit: compute scale = min(containerW/contentW, containerH/contentH, 1)
+  // Present-mode fit: compute scale = min(containerW/contentW, containerH/contentH)
   // and keep it current as the wrapper resizes (window resize / orientation change).
   // Self-contained so the controller only passes `fit`. Guards:
   //  - only runs when `fit` AND a contentSize is known (else nothing to fit against);
@@ -211,7 +211,9 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     const measure = () => {
       const cw = wrapper.clientWidth;
       const ch = wrapper.clientHeight;
-      const s = Math.min(cw / contentSize.width, ch / contentSize.height, 1);
+      // Do not cap at 1: Present's purpose is to use the available canvas, so a
+      // small natural-size diagram must grow as well as an oversized one shrink.
+      const s = Math.min(cw / contentSize.width, ch / contentSize.height);
       setFitScale(Number.isFinite(s) && s > 0 ? s : 1);
     };
     measure();
