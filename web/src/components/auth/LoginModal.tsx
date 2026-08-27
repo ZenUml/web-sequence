@@ -127,7 +127,7 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
           <p
             data-testid="login-error"
             role="alert"
-            className="mb-3 rounded border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger"
+            className="mb-3 rounded border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger-onDark"
           >
             {error}
           </p>

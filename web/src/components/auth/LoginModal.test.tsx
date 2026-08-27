@@ -138,7 +138,7 @@ describe('LoginModal', () => {
       <LoginModal open onOpenChange={() => {}} onLogin={() => {}} error="Sign-in failed." />,
     );
     const notice = screen.getByTestId('login-error');
-    expect(notice.className).toContain('danger');
+    expect(notice.className).toContain('text-danger-onDark');
     expect(notice.className).not.toContain('signal-amber');
   });
 

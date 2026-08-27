@@ -37,10 +37,10 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
             'flex-1 flex items-center gap-1 rounded px-1 py-1 text-left font-mono text-[11px] uppercase tracking-[0.12em] ring-draft',
             // Design (.console.clean/.err .lbl): tint the whole label by state —
             // emerald when clean, danger when errors.
-            clean ? 'text-ok hover:text-ok/80' : 'text-danger hover:text-danger/80',
+            clean ? 'text-ok hover:text-ok/80' : 'text-danger-onDark hover:text-danger-onDark/80',
           )}
         >
-          <span aria-hidden="true" className="text-ondark-faint">{open ? '▾' : '▸'}</span>
+          <span aria-hidden="true" className="text-ondark-muted">{open ? '▾' : '▸'}</span>
           <span>Console (<span data-testid="console-count">{entries.length}</span>)</span>
         </button>
         <span
@@ -50,7 +50,7 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
             'mr-2 select-none rounded-[5px] px-[7px] py-0.5 font-mono text-[10px] font-semibold tracking-wide',
             clean
               ? 'bg-ok/10 text-ok'
-              : 'bg-danger/15 text-danger',
+              : 'bg-danger/15 text-danger-onDark',
           )}
         >
           {clean ? 'No issues' : `${errorCount} error${errorCount === 1 ? '' : 's'}`}
@@ -70,7 +70,7 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
         <>
           <div className="max-h-40 overflow-auto px-2 font-mono text-xs text-ondark-strong">
             {entries.map((e, i) => (
-              <div key={i} className={e.level === 'error' ? 'text-danger' : undefined}>
+              <div key={i} className={e.level === 'error' ? 'text-danger-onDark' : undefined}>
                 {e.args.join(' ')}
               </div>
             ))}

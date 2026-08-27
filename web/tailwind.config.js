@@ -61,7 +61,14 @@ export default {
         // WCAG AA for danger TEXT on the light paper surface. `strong` (#B23A33) is a
         // darker red that clears AA on paper (~5.5:1 on paper-50, ~5.9:1 white-on-it);
         // use it for danger-colored TEXT/icons on LIGHT surfaces. (danger-contrast fix)
-        danger: { DEFAULT: '#E0524A', strong: '#B23A33' },
+        danger: {
+          DEFAULT: '#E0524A',
+          strong: '#B23A33',
+          // Light danger text for ink panels. DEFAULT is only 4.20:1 on ink-800,
+          // so it is not sufficient for the Login/Console body text after those
+          // surfaces moved to the dark dialog treatment.
+          onDark: '#F27770',
+        },
       },
       fontFamily: {
         sans: ['"Hanken Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],

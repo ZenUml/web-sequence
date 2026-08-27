@@ -14,6 +14,8 @@ describe('HelpModal', () => {
     expect(screen.getByText('ZenUML Sequence')).toBeTruthy();
 
     const docs = screen.getByRole('link', { name: /documentation/i });
+    expect(docs).toHaveClass('text-accent-onDark');
+    expect(docs).toHaveClass('ring-draft');
     expect(docs.getAttribute('href')).toBe('https://www.zenuml.com/help.html');
     const contact = screen.getByRole('link', { name: /contact/i });
     expect(contact.getAttribute('href')).toBe(

@@ -67,6 +67,8 @@ describe('Console', () => {
     const pill = screen.getByTestId('console-status');
     expect(pill).toHaveTextContent('2 errors');
     expect(pill).toHaveAttribute('data-clean', 'false');
+    expect(pill).toHaveClass('text-danger-onDark');
+    expect(screen.getByText('boom')).toHaveClass('text-danger-onDark');
   });
   it('uses the singular "error" label for a single error', () => {
     render(

@@ -16,6 +16,7 @@ describe('CssPanel', () => {
     expect(strip).toBeInTheDocument();
     expect(strip).toHaveTextContent('Custom CSS');
     expect(strip).toHaveTextContent('empty · click to expand');
+    expect(strip.querySelector('span:last-child')).toHaveClass('text-ondark-muted');
     // Collapsed: neither the header controls nor the editor are mounted.
     expect(screen.queryByTestId('hc')).not.toBeInTheDocument();
     expect(screen.queryByTestId('editor')).not.toBeInTheDocument();

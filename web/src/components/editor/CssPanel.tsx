@@ -81,7 +81,7 @@ export function CssPanel({
         <Chevron open={false} />
         <span>Custom CSS</span>
         {isEmpty && (
-          <span className="ml-auto font-mono text-[10px] tracking-[0.08em] text-ondark-faint">
+          <span className="ml-auto font-mono text-[10px] tracking-[0.08em] text-ondark-muted">
             empty · click to expand
           </span>
         )}
