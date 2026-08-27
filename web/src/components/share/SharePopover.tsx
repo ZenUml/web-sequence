@@ -56,7 +56,7 @@ export function SharePopover({
               data-testid="share-stop"
               variant="danger"
               surface="light"
-              size="sm"
+              size="md"
               onClick={onStop}
             >
               Stop sharing

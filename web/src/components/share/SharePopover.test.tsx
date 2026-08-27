@@ -73,7 +73,7 @@ describe('SharePopover', () => {
     expect(urlField).toHaveValue('https://app.zenuml.com/s/abc');
     expect(urlField).toHaveAttribute('readonly');
     expect(screen.getByTestId('share-copy')).toBeInTheDocument();
-    expect(screen.getByTestId('share-stop')).toBeInTheDocument();
+    expect(screen.getByTestId('share-stop')).toHaveClass('h-9');
     expect(screen.queryByTestId('share-create')).not.toBeInTheDocument();
   });
 

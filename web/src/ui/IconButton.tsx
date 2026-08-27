@@ -9,7 +9,7 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   'aria-label': string;
 }
 
-const sizes = { sm: 'h-6 w-6', md: 'h-8 w-8' } as const;
+const sizes = { sm: 'h-8 w-8', md: 'h-9 w-9' } as const;
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
   { size = 'md', surface = 'dark', className, type = 'button', ...rest },

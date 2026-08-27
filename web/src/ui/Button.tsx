@@ -19,7 +19,7 @@ const base =
   'disabled:pointer-events-none whitespace-nowrap';
 
 const sizes: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-[12px]',
+  sm: 'h-8 px-3 text-[12px]',
   md: 'h-9 px-3.5 text-[13px]',
 };
 

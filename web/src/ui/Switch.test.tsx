@@ -35,4 +35,9 @@ describe('Switch', () => {
     // data-[state=checked]:bg-accent is what carries the "on" affordance.
     expect(screen.getByRole('switch').className).toContain('data-[state=checked]:bg-accent');
   });
+
+  it('uses a 32px-high comfortable hit target instead of the former 24px track', () => {
+    render(<Switch aria-label="Auto save" onCheckedChange={vi.fn()} />);
+    expect(screen.getByRole('switch')).toHaveClass('h-8', 'w-12');
+  });
 });

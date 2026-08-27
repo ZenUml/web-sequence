@@ -51,4 +51,9 @@ describe('Button', () => {
     );
     expect(screen.getByTestId('stop').className).toContain('text-danger-strong');
   });
+
+  it('makes small buttons a 32px target for compact actions', () => {
+    render(<Button size="sm">Copy</Button>);
+    expect(screen.getByRole('button', { name: 'Copy' })).toHaveClass('h-8');
+  });
 });
