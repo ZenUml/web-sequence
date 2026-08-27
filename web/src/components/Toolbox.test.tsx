@@ -30,6 +30,10 @@ describe('Toolbox', () => {
       expect(btn).toHaveAttribute('title', s.label);
       // icon stacked over label
       expect(btn.querySelector('svg')).toBeInTheDocument();
+      // Resting affordance: every insert control is a persistent subtle chip,
+      // not bare muted text that only reads as interactive on hover.
+      expect(btn).toHaveClass('border');
+      expect(btn).toHaveClass('bg-ink-800/55');
     }
     // f023f89 design spec (Toolbox.tsx comments): Instance is intentionally absent
     // from the toolbar, and While has no standalone button (merged into "Alt / Loop").

@@ -88,9 +88,9 @@ function SnippetButton({ snippet, onInsert }: { snippet: Snippet; onInsert: (cod
       onClick={() => onInsert(snippet.code)}
       className={cn(
         // .ibtn — icon stacked over a small label
-        'flex min-w-[46px] flex-col items-center gap-[3px] rounded-md px-[7px] pb-[5px] pt-1.5',
+        'flex min-w-[46px] flex-col items-center gap-[3px] rounded-md border border-ink-line/35 bg-ink-800/55 px-[7px] pb-[5px] pt-1.5',
         'text-ondark-muted transition-colors duration-150 ease-draft ring-draft',
-        'hover:bg-ink-700/70 hover:text-ondark-strong',
+        'hover:border-ink-line/70 hover:bg-ink-700/70 hover:text-ondark-strong',
       )}
     >
       <Icon />
