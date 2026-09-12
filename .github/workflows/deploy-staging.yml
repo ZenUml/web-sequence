@@ -3,6 +3,9 @@
 
 name: Deploy to Stage
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: ['**']
@@ -16,11 +19,8 @@ concurrency:
 
 jobs:
   build:
+    name: Release validation
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [22.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -28,12 +28,13 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22.x
           cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile && pnpm build
+      - run: node --test scripts/release/*.test.mjs
+      - run: pnpm install --frozen-lockfile && pnpm build
       # Cutover (M05): build the React rewrite artifact that firebase.json now
       # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
       # needs its own install. The legacy `pnpm build` above still produces the
@@ -43,17 +44,17 @@ jobs:
         # hoisting into the root (pnpm-workspace.yaml exists at repo root). Without it,
         # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
         working-directory: web
-        run: pnpm install --no-frozen-lockfile --ignore-workspace && pnpm build
+        run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
       # Pre-deploy guard: serve the built dist statically and verify the diagram
       # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
       # path) that the dev-server suite can't see, BEFORE anything ships to
       # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
       - name: Install Playwright (chromium)
         run: pnpm exec playwright install --with-deps chromium
-      - name: Verify production build renders
+      - name: Verify production build and application E2E
         env:
           PW_PROD_BUILD: '1'
-        run: pnpm exec playwright test production-build --project=chromium
+        run: pnpm exec playwright test --project=chromium
       - name: Package Chrome extension
         # gulp release is incompatible with Node 20+; replicate its steps directly.
         run: |
@@ -79,20 +80,40 @@ jobs:
           cp static/icon-*.png extension/ 2>/dev/null || true
           rm -rf extension/partials
           cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
+      - name: Create immutable deployment bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: node scripts/release/bundle.mjs
+      - name: Upload deployment bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle-${{ github.run_attempt }}
+          path: release-bundle/
+          retention-days: 90
+          if-no-files-found: error
       - name: Setup Firebase service account
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > /tmp/gcp-key.json
-      # Every branch deploys to staging (conf-app parity). The staging-gate and
-      # draft-release jobs remain master-only so releases only cut from master.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp-key.json"
+      - name: Restore the exact bundle for staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          mkdir deployment
+          tar -xzf release-bundle/deploy.tar.gz -C deployment
+      # Only master writes shared staging. Workflow concurrency serializes the
+      # entire deploy + E2E + draft sequence, so another run cannot replace it.
       - name: Deploy functions config (staging)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          cd functions && npm install && pnpm deploy:config:staging
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp-key.json"
+          cd deployment/functions && pnpm install --frozen-lockfile --ignore-workspace && pnpm deploy:config:staging
       - name: Deploy to staging
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          pnpm deploy:staging
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp-key.json"
+          cd deployment
+          node functions/node_modules/firebase-tools/lib/bin/firebase.js deploy --project staging-zenuml-27954 --config firebase.json --non-interactive
       - name: Upload extension dir # Browsable under actions/jobs
         uses: actions/upload-artifact@v4
         with:
@@ -123,7 +144,13 @@ jobs:
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle-${{ github.run_attempt }}
+          path: release-bundle
+      - name: Verify staging commit before E2E
+        run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
       # Chromium only. Against the *deployed* site, webkit/firefox are flaky on
@@ -135,6 +162,8 @@ jobs:
         env:
           PW_BASE_URL: https://staging.zenuml.com
         run: pnpm exec playwright test --project=chromium
+      - name: Verify staging commit after E2E
+        run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
 
   # Once the gate is green, auto-create a DRAFT production release. The only
   # remaining human action is clicking "Publish" on the draft, which fires
@@ -154,8 +183,8 @@ jobs:
           name: extension-zip
       - name: Compute release tag
         id: tag
-        # Seconds included so two merges in the same minute can't collide on tag.
-        run: echo "tag=release-$(date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+        # Bind the release to one specific staging workflow attempt.
+        run: echo "tag=release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
       - name: Create draft release
         env:
           GH_TOKEN: ${{ secrets.GH_ACTION_TOKEN }}

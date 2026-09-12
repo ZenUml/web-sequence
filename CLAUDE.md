@@ -106,12 +106,12 @@ Unit test files follow the pattern `*.test.js` and are located either in `/src/t
 
 ## Deployment Process
 
-See [docs/adr/0001-release-pipeline-imitating-conf-app.md](docs/adr/0001-release-pipeline-imitating-conf-app.md) for the full design.
+See [docs/adr/0002-verified-release-promotion.md](docs/adr/0002-verified-release-promotion.md) for the current design (supersedes ADR 0001).
 
-- **PRs**: Built and packaged for validation; no staging deploy.
+- **PRs**: Must pass `Release validation` (locked installs, builds, release-policy tests and Chromium E2E); no staging deploy.
 - **Staging**: Merge to master → deploy to https://staging.zenuml.com → full Playwright E2E gate against the live staging site (chromium).
-- **Production**: When the staging gate passes, CI auto-creates a **draft** GitHub Release (`release-<timestamp>`). Click **Publish** → `deploy-prod.yml` ships to https://app.zenuml.com → automatic `@smoke` check. (No hand-crafted tags.)
-- **Rollback**: `firebase hosting:rollback --project prod` for hosting-only; the **Rollback Production** `workflow_dispatch` (with a prior `release-*` tag) for all surfaces (hosting + functions + Firestore rules).
+- **Production**: When the staging gate passes, CI creates a **draft** GitHub Release (`release-<run-id>-<attempt>`). Click **Publish** → provenance validation → deploy the same immutable artifact → identity and `@smoke` checks. No rebuild and no hand-crafted tags.
+- **Rollback**: Dispatch **Rollback Production** on master with a prior gated release tag. It validates and deploys the archived hosting + functions + rules bundle, then checks identity and smoke. Missing/expired artifacts and old timestamp tags are rejected; retention is 90 days. Firebase hosting version history remains an operator recovery option for hosting-only incidents.
 - **Chrome extension**: `extension.zip` is attached to each release as an asset. Publishing to the Chrome Web Store stays a **manual** step (`yarn upload` + `yarn pub`).
 
 ## Key Features to Understand

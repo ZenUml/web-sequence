@@ -1,0 +1,57 @@
+name: Deploy verified release
+description: Promote an immutable staging-tested bundle and verify production
+inputs:
+  firebase-service-account:
+    required: true
+    description: Production Firebase service account JSON
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+    - name: Verify provenance and download bundle
+      shell: bash
+      run: node scripts/release/download.mjs
+    - name: Install locked deployment tools and functions
+      shell: bash
+      working-directory: deployment/functions
+      run: pnpm install --frozen-lockfile --ignore-workspace
+    - name: Configure production credentials
+      shell: bash
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ inputs.firebase-service-account }}
+      run: |
+        printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp-key.json"
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-key.json" >> "$GITHUB_ENV"
+    - name: Deploy functions config
+      shell: bash
+      working-directory: deployment/functions
+      run: pnpm deploy:config:prod
+    - name: Deploy verified hosting, functions and rules
+      shell: bash
+      working-directory: deployment
+      run: node functions/node_modules/firebase-tools/lib/bin/firebase.js deploy --project web-sequence-local --config firebase.json --non-interactive
+    - name: Check deployed release identity
+      shell: bash
+      run: node scripts/release/check-live.mjs https://app.zenuml.com release-bundle/manifest.json
+    - name: Install locked smoke-test dependencies
+      shell: bash
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm exec playwright install --with-deps chromium
+    - name: Production smoke test
+      shell: bash
+      env:
+        PW_BASE_URL: https://app.zenuml.com
+      run: pnpm exec playwright test --grep @smoke --project=chromium
+    - name: Verify release identity after smoke
+      shell: bash
+      run: node scripts/release/check-live.mjs https://app.zenuml.com release-bundle/manifest.json
+    - name: Remove credentials
+      if: always()
+      shell: bash
+      run: rm -f "$RUNNER_TEMP/gcp-key.json"
