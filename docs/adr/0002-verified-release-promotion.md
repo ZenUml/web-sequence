@@ -1,27 +1,40 @@
-# Verified release promotion
+# Release flow aligned with conf-app
 
-Supersedes the deployment and rollback details of ADR 0001.
+Supersedes the earlier immutable-only proposal in this PR and conflicting details of ADR 0001.
 
-## Gates
+## Reference and correction
 
-PRs run `Release validation`: locked root/web installs, both builds, release-policy tests, and the Chromium E2E suite including the built-output tests. Master requires this check with an up-to-date branch. Only master deploys shared staging; its workflow lock covers deployment, E2E and draft creation. Feature branches no longer overwrite staging.
+Source of truth: ZenUml/conf-app main workflows `build-test-deploy.yml`, `staging-deploy.yml`, `release.yml`, and `.github/actions/wrangler-publish/action.yml`, inspected 2026-09-12 (main at `fd1b064eedfa0121aead4d1fcf4ae1e7deaf7656`).
 
-Before deployment, CI writes `web/dist/release.json` with the commit, run ID and attempt, then archives the built site, functions source and lockfile, Firebase config/rules/indexes, and extension. The immutable Actions artifact includes a SHA-256 manifest. Staging restores and deploys this archive, then verifies the live marker before and after its E2E suite.
+The previous quiz described our proposed design, not conf-app. Its master-only staging and mandatory Actions-artifact promotion answers were incorrect for the requested reference. conf-app currently prefers a prebuilt **Release attachment**, with source rebuild on a missing/unavailable attachment. Rebuild uses the release tag and frozen lockfile, not latest dependencies.
 
-Draft release tags are `release-<run-id>-<attempt>`. Publishing a draft remains the production approval. Production rejects a tag unless it resolves to the exact commit of a successful master push to `deploy-staging.yml`, including a successful staging E2E job. The commit must be an ancestor of master. Arbitrary published releases cannot bypass this check.
+## Flow
 
-Production downloads that run's immutable artifact, checks its manifest and digest, and deploys it without rebuilding the frontend. Functions dependencies use their frozen lockfile; Firebase may still build the functions in its managed environment. Functions configuration remains environment-specific. Policy and smoke tests are taken from protected master. A shared production concurrency lock covers both deployment and rollback through their post-deploy checks.
+| Stage | web-sequence behavior matching conf-app |
+| --- | --- |
+| Branch iteration | Build and local Chromium checks; all branches can deploy shared staging. Same-repository PRs deploy too; forks have no deployment credentials. |
+| Ready PR / master | Run deployed staging E2E. Draft PRs and ordinary feature pushes skip this expensive gate. |
+| Draft | Only a successful master push with staging E2E creates a draft; pin it to the tested SHA and attach the prebuilt frontend and extension. |
+| Publish | Manual Release/prerelease publication starts production. Checkout the published tag, prefer its Release attachment; if unavailable, install using that tag's frozen lockfiles and rebuild. |
+| Verify | Deploy hosting, functions and rules, then run production Chromium smoke. A failed smoke is a failed deployment, not an automatic data rollback. |
+| Rollback | Redeploy a selected previous release tag via the same attachment-or-rebuild path. Missing Actions artifacts are irrelevant. |
 
-## Rollback
+Transient Actions bundles retain three days; the copy attached to the Release is the production optimization. If it is absent or cannot download, rebuild the selected tag. A present corrupt archive fails extraction, as in conf-app. Source/build failure still stops deployment.
 
-Dispatch `Rollback Production` on master with a previously gated release tag. It runs the same provenance check and deploys the same archived `web/dist`, functions, rules and indexes, followed by identity and smoke checks. No legacy gulp rebuild is used.
+Functions and Firebase configuration come from the selected tag, not an arbitrary archived backend. Functions install from their frozen lockfile. Old tags can lack the current workflow scripts, so a runner checked out from protected master executes the deployment against tag source.
 
-Artifacts are retained for 90 days, subject to repository retention limits and manual deletion. Expired or missing artifacts and pre-migration timestamp tags are rejected. There is intentionally no automatic rebuild fallback. Before the first production cutover, validate a new release on staging and retain a known-good hosting version; legacy releases are not certified for this rollback path. Hosting-only recovery can still use Firebase's version history through an operator.
+## Explicit platform adaptations
 
-Smoke failures mark deployment failed but do not automatically roll back data/schema changes. An operator chooses the prior verified release. A production deployment is not a Firestore data backup or migration rollback.
+- One Firebase web app maps to conf-app's representative Lite deployment; there are no Full/Diagramly/AsyncAPI variants, Forge installations, D1 migrations or Atlassian login shards to port.
+- Node 22 and root/web/functions lockfiles match web-sequence's runtime. `release-YYYYMMDDHHMMSS` remains its timestamp tag convention, rather than conf-app's variant suffixes.
+- The existing web-sequence rollback entry point remains; conf-app has no separate rollback workflow in its current workflow inventory.
+- Live staging marker checks before/after E2E detect cross-branch replacement; they do not restrict which branch can deploy staging.
+- Production and rollback share a non-cancelling lock; manual Publish remains the release approval, with no extra environment reviewer approval.
+- conf-app's identical-tree PR-E2E reuse and multi-variant scheduling optimizations are not ported here: web-sequence runs its staging suite again on master. This does not skip a release gate.
+- Chrome extension publishing remains opt-in through `[publish-extension]`.
 
-## Repository settings
+## Repository settings and rollout
 
-Require `Release validation` on master, enforce it for admins, and require pull requests (zero mandatory reviewer approvals for the solo-maintainer workflow). Force-push/deletion protections remain enabled. The production Environment permits only master and `release-*` tags; the verified release and manual Publish action are the approval boundary, with no redundant reviewer gate.
+Master requires GitHub Actions `Release validation` with an up-to-date branch and PRs (zero mandatory approving reviewers for the solo-maintainer workflow). Admin enforcement and force-push/deletion protections remain. Production environment permits master and `release-*` tags.
 
-No production release is published as part of introducing these gates. Run the rollout PR in CI, merge it, verify the new master staging gate, and only then publish its draft. The previous production site remains unchanged until Publish.
+This change does not publish or roll back production. CI/staging must pass before merging; after merge, verify the master draft before manually publishing.

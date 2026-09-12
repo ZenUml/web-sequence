@@ -10,16 +10,18 @@ on:
   push:
     branches: ['**']
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 concurrency:
   # Cancel superseded runs per ref, but NEVER cancel master — an in-flight run
   # may be creating a draft release we must not lose.
-  group: deploy-staging-${{ github.ref }}
+  group: deploy-staging-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   build:
-    name: Release validation
+    name: Build and local E2E
     runs-on: ubuntu-latest
 
     steps:
@@ -57,59 +59,37 @@ jobs:
         run: pnpm exec playwright test --project=chromium
       - name: Package Chrome extension
         # gulp release is incompatible with Node 20+; replicate its steps directly.
-        run: |
-          rm -rf app extension
-          mkdir -p app
-          rsync -a --exclude='manifest.json' static/. app/static/
-          for d in help privacy-policy End-User-License-Agreement; do
-            [ -d "$d" ] && cp -R "$d/." "app/$d/" || true
-          done
-          cp -R dist/. app/
-          cp help.html app/ 2>/dev/null || true
-          cp ZenUML_Sequence_Diagram_addon_help.html app/ 2>/dev/null || true
-          cp src/detached-window.js app/ 2>/dev/null || true
-          cp src/icon-*.png app/ 2>/dev/null || true
-          cp static/manifest.json app/
-          cp -R app/. extension/
-          cp static/manifest.json extension/
-          cp src/extension/options.js extension/
-          cp src/extension/options.html extension/
-          cp src/extension/eventPage.js extension/
-          cp src/extension/script.js extension/
-          cp static/favicon-128x128.png extension/ 2>/dev/null || true
-          cp static/icon-*.png extension/ 2>/dev/null || true
-          rm -rf extension/partials
-          cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
-      - name: Create immutable deployment bundle
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: bash scripts/release/package-extension.sh
+      - name: Create deployment bundle
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: node scripts/release/bundle.mjs
       - name: Upload deployment bundle
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/upload-artifact@v4
         with:
           name: release-bundle-${{ github.run_attempt }}
           path: release-bundle/
-          retention-days: 90
+          retention-days: 3
           if-no-files-found: error
       - name: Setup Firebase service account
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
         run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp-key.json"
       - name: Restore the exact bundle for staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           mkdir deployment
           tar -xzf release-bundle/deploy.tar.gz -C deployment
-      # Only master writes shared staging. Workflow concurrency serializes the
-      # entire deploy + E2E + draft sequence, so another run cannot replace it.
+      # Like conf-app Lite, feature branches and same-repository PRs deploy staging.
+      # Live marker checks prevent a concurrently replaced site passing the gate.
       - name: Deploy functions config (staging)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp-key.json"
           cd deployment/functions && pnpm install --frozen-lockfile --ignore-workspace && pnpm deploy:config:staging
       - name: Deploy to staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp-key.json"
           cd deployment
@@ -131,7 +111,7 @@ jobs:
   staging-gate:
     name: E2E gate (staging)
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -153,11 +133,7 @@ jobs:
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
-      # Chromium only. Against the *deployed* site, webkit/firefox are flaky on
-      # network-timed localStorage/render tests (a remote-target artifact, not a
-      # product bug — the full 3-browser suite is green locally on PRs). Gating
-      # releases on chromium keeps "did the deploy work?" reliable without
-      # letting cross-browser flakiness block every release.
+      # Chromium is the configured release-gating browser for web-sequence.
       - name: Run full E2E suite against staging
         env:
           PW_BASE_URL: https://staging.zenuml.com
@@ -165,9 +141,26 @@ jobs:
       - name: Verify staging commit after E2E
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
 
+  validation:
+    name: Release validation
+    needs: [build, staging-gate]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require build and applicable staging E2E
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          GATE_RESULT: ${{ needs.staging-gate.result }}
+          EXPECT_GATE: ${{ github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: |
+          test "$BUILD_RESULT" = success
+          if [ "$EXPECT_GATE" = true ]; then
+            test "$GATE_RESULT" = success
+          fi
+
   # Once the gate is green, auto-create a DRAFT production release. The only
   # remaining human action is clicking "Publish" on the draft, which fires
-  # deploy-prod.yml (on: release: published).
+  # deploy-prod.yml (on: release: released/prereleased).
   draft-release:
     name: Create draft release
     needs: staging-gate
@@ -181,16 +174,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: extension-zip
+      - name: Download production bundle for the release attachment
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle-${{ github.run_attempt }}
+          path: release-bundle
       - name: Compute release tag
         id: tag
-        # Bind the release to one specific staging workflow attempt.
-        run: echo "tag=release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=release-$(date -u +'%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
       - name: Create draft release
         env:
           GH_TOKEN: ${{ secrets.GH_ACTION_TOKEN }}
         run: |
           tag="${{ steps.tag.outputs.tag }}"
-          gh release create "$tag" extension.zip \
+          gh release create "$tag" extension.zip release-bundle/deploy.tar.gz \
             --draft \
             --target "${{ github.sha }}" \
             --title "$tag" \

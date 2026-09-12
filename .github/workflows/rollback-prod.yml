@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Previously gated release tag (release-<run-id>-<attempt>)'
+        description: 'Previous release tag to redeploy (missing attachment rebuilds that tag)'
         required: true
         type: string
 permissions:
@@ -19,10 +19,19 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Resolve an existing release before rollback
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.ref }}
+        run: gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/checkout@v4
         with:
           ref: master
-      - uses: ./.github/actions/deploy-release
+          path: .release-policy
+      - uses: ./.release-policy/.github/actions/deploy-release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.ref }}

@@ -1,7 +1,7 @@
 name: Deploy to Prod
 on:
   release:
-    types: [published]
+    types: [prereleased, released]
 permissions:
   contents: read
   actions: read
@@ -10,15 +10,19 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.event.release.prerelease == false
     runs-on: ubuntu-latest
     environment: production
     steps:
-      # Read deployment policy from protected master, never an arbitrary tag.
+      # Source and functions come from the published tag, as in conf-app.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      # Keep the runner available when rebuilding pre-migration release tags.
       - uses: actions/checkout@v4
         with:
           ref: master
-      - uses: ./.github/actions/deploy-release
+          path: .release-policy
+      - uses: ./.release-policy/.github/actions/deploy-release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
@@ -27,7 +31,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: extension-zip
-          path: deployment/extension.zip
+          path: extension.zip
           if-no-files-found: error
   publish-extension:
     name: Publish Chrome extension

@@ -1,26 +1,27 @@
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { readFileSync, mkdirSync } from 'node:fs';
-import { verifyRun, verifyManifest } from './provenance.mjs';
+import { appendFileSync, mkdirSync, statSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
-const tag = process.env.RELEASE_TAG;
-if (!/^release-[1-9][0-9]*-[1-9][0-9]*$/.test(tag ?? '') || tag.includes('\n')) throw new Error('Only gated release-<run>-<attempt> tags can deploy');
-const repo = process.env.GITHUB_REPOSITORY;
-const [, runId, attempt] = tag.split('-');
-const gh = args => execFileSync('gh', args, { encoding: 'utf8' });
-const run = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}/attempts/${attempt}`]));
-const jobs = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}/attempts/${attempt}/jobs?per_page=100`])).jobs;
-execFileSync('git', ['fetch', '--no-tags', 'origin', `refs/tags/${tag}`]);
-const sha = execFileSync('git', ['rev-parse', 'FETCH_HEAD^{commit}'], { encoding: 'utf8' }).trim();
-verifyRun(run, jobs, tag, sha);
-execFileSync('git', ['fetch', 'origin', 'master']);
-execFileSync('git', ['merge-base', '--is-ancestor', sha, 'origin/master']);
-// Immutable Actions artifact, not a user-replaceable Release attachment.
-// Expired/missing artifacts intentionally fail closed; no unverified rebuild fallback.
-gh(['run', 'download', runId, '--repo', repo, '--name', `release-bundle-${attempt}`, '--dir', 'release-bundle']);
-const manifest = JSON.parse(readFileSync('release-bundle/manifest.json', 'utf8'));
-const digest = createHash('sha256').update(readFileSync('release-bundle/deploy.tar.gz')).digest('hex');
-verifyManifest(manifest, run, digest);
-mkdirSync('deployment');
-execFileSync('tar', ['-xzf', 'release-bundle/deploy.tar.gz', '-C', 'deployment']);
-console.log(`Verified release ${tag}: ${sha}`);
+// conf-app falls back when the release asset is absent/unavailable.
+// A present but corrupt archive still fails extraction.
+export function prepareRelease({ download, destination = '.' }) {
+  let archive;
+  try {
+    archive = download();
+    if (statSync(archive).size === 0) return false;
+  } catch {
+    return false;
+  }
+  execFileSync('tar', ['-xzf', archive, '-C', destination, 'web/dist'], { stdio: 'pipe' });
+  return true;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const prebuilt = prepareRelease({ download: () => {
+    mkdirSync('prebuilt', { recursive: true });
+    execFileSync('gh', ['release', 'download', process.env.RELEASE_TAG, '--repo', process.env.GITHUB_REPOSITORY, '--pattern', 'deploy.tar.gz', '--dir', 'prebuilt'], { stdio: 'inherit' });
+    return 'prebuilt/deploy.tar.gz';
+  } });
+  appendFileSync(process.env.GITHUB_OUTPUT, `prebuilt=${prebuilt}\n`);
+  if (!prebuilt) console.log('::warning::Release bundle unavailable; rebuilding the checked-out tag with frozen lockfiles');
+}

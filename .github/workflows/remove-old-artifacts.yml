@@ -24,8 +24,7 @@ jobs:
               ...context.repo, per_page: 100,
             });
             for (const artifact of artifacts) {
-              // Native artifact retention owns release expiry (90 days).
-              if (artifact.name.startsWith('release-bundle-')) continue;
+              // Release attachments, not transient Actions artifacts, serve production.
               if (Date.parse(artifact.created_at) >= cutoff) continue;
               await github.rest.actions.deleteArtifact({ ...context.repo, artifact_id: artifact.id });
             }

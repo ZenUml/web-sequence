@@ -1,5 +1,5 @@
-name: Deploy verified release
-description: Promote an immutable staging-tested bundle and verify production
+name: Deploy release
+description: Deploy a release attachment or rebuild the release tag, as conf-app does
 inputs:
   firebase-service-account:
     required: true
@@ -13,12 +13,24 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: 22.x
-    - name: Verify provenance and download bundle
+    - name: Install locked dependencies and build extension frontend
       shell: bash
-      run: node scripts/release/download.mjs
+      run: pnpm install --frozen-lockfile && pnpm build
+    - name: Download prebuilt frontend from release
+      id: bundle
+      shell: bash
+      run: node .release-policy/scripts/release/download.mjs
+    - name: Rebuild missing frontend from release tag
+      if: steps.bundle.outputs.prebuilt != 'true'
+      shell: bash
+      working-directory: web
+      run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
+    - name: Package Chrome extension
+      shell: bash
+      run: bash .release-policy/scripts/release/package-extension.sh
     - name: Install locked deployment tools and functions
       shell: bash
-      working-directory: deployment/functions
+      working-directory: functions
       run: pnpm install --frozen-lockfile --ignore-workspace
     - name: Configure production credentials
       shell: bash
@@ -29,28 +41,19 @@ runs:
         echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-key.json" >> "$GITHUB_ENV"
     - name: Deploy functions config
       shell: bash
-      working-directory: deployment/functions
+      working-directory: functions
       run: pnpm deploy:config:prod
-    - name: Deploy verified hosting, functions and rules
+    - name: Deploy hosting, functions and rules
       shell: bash
-      working-directory: deployment
       run: node functions/node_modules/firebase-tools/lib/bin/firebase.js deploy --project web-sequence-local --config firebase.json --non-interactive
-    - name: Check deployed release identity
+    - name: Install smoke-test browser
       shell: bash
-      run: node scripts/release/check-live.mjs https://app.zenuml.com release-bundle/manifest.json
-    - name: Install locked smoke-test dependencies
-      shell: bash
-      run: |
-        pnpm install --frozen-lockfile
-        pnpm exec playwright install --with-deps chromium
+      run: pnpm exec playwright install --with-deps chromium
     - name: Production smoke test
       shell: bash
       env:
         PW_BASE_URL: https://app.zenuml.com
       run: pnpm exec playwright test --grep @smoke --project=chromium
-    - name: Verify release identity after smoke
-      shell: bash
-      run: node scripts/release/check-live.mjs https://app.zenuml.com release-bundle/manifest.json
     - name: Remove credentials
       if: always()
       shell: bash
