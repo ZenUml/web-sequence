@@ -106,13 +106,15 @@ Unit test files follow the pattern `*.test.js` and are located either in `/src/t
 
 ## Deployment Process
 
-See [docs/adr/0001-release-pipeline-imitating-conf-app.md](docs/adr/0001-release-pipeline-imitating-conf-app.md) for the full design.
+See [docs/adr/0002-verified-release-promotion.md](docs/adr/0002-verified-release-promotion.md) for the conf-app-aligned flow and platform adaptations.
 
-- **PRs**: Built and packaged for validation; no staging deploy.
-- **Staging**: Merge to master → deploy to https://staging.zenuml.com → full Playwright E2E gate against the live staging site (chromium).
-- **Production**: When the staging gate passes, CI auto-creates a **draft** GitHub Release (`release-<timestamp>`). Click **Publish** → `deploy-prod.yml` ships to https://app.zenuml.com → automatic `@smoke` check. (No hand-crafted tags.)
-- **Rollback**: `firebase hosting:rollback --project prod` for hosting-only; the **Rollback Production** `workflow_dispatch` (with a prior `release-*` tag) for all surfaces (hosting + functions + Firestore rules).
-- **Chrome extension**: `extension.zip` is attached to each release as an asset. Publishing to the Chrome Web Store stays a **manual** step (`yarn upload` + `yarn pub`).
+- **Branches/PRs**: Build, frozen installs and local Chromium E2E. Every branch can deploy shared staging; same-repository PRs deploy too. Fork PRs never receive staging credentials.
+- **Staging E2E**: Runs on master and ready-for-review PRs, not draft PRs or ordinary feature-branch pushes. Live identity checks detect shared-site replacement.
+- **Production**: Only successful master staging E2E creates a timestamp-tagged draft pinned to the tested SHA. Manually publishing the release or prerelease triggers deployment. Checkout that tag; prefer its Release attachment, or rebuild with that tag's frozen lockfiles if missing. Never install latest dependencies.
+- **Rollback**: Dispatch **Rollback Production** on master with a previous release tag. The same release-attachment/source-rebuild path redeploys hosting, functions and rules, then runs production smoke. Transient Actions artifact expiry does not prevent rebuilding.
+- **Chrome extension**: Attached as `extension.zip`. Web Store publishing remains opt-in with `[publish-extension]` in the release body.
+- **Adaptations**: Firebase replaces Cloudflare/Forge; Node 22 and separate root/web/functions lockfiles remain. Production and rollback share a non-cancelling lock. The protected master runner supports tags predating these workflow changes.
+
 
 ## Key Features to Understand
 

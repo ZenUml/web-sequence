@@ -1,151 +1,53 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Deploy to Prod
-
 on:
   release:
-    types: [published]
-
+    types: [prereleased, released]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: web-sequence-production
+  cancel-in-progress: false
 jobs:
-  build:
-    permissions:
-      contents: write
+  deploy:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [22.x]
-
+    environment: production
     steps:
+      # Source and functions come from the published tag, as in conf-app.
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
         with:
-          version: 10
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+          ref: ${{ github.event.release.tag_name }}
+      # Keep the runner available when rebuilding pre-migration release tags.
+      - uses: actions/checkout@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile && pnpm build
-      # Cutover (M05): build the React rewrite artifact that firebase.json now
-      # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
-      # needs its own install. The legacy `pnpm build` above still produces the
-      # extension's dist/app/ assembly (retained for rollback).
-      - name: Build web/dist (cutover hosting artifact)
-        working-directory: web
-        run: pnpm install --no-frozen-lockfile --ignore-workspace && pnpm build
-      - name: Package Chrome extension
-        # gulp release is incompatible with Node 20+; replicate its steps directly.
-        run: |
-          rm -rf app extension
-          mkdir -p app
-          rsync -a --exclude='manifest.json' static/. app/static/
-          for d in help privacy-policy End-User-License-Agreement; do
-            [ -d "$d" ] && cp -R "$d/." "app/$d/" || true
-          done
-          cp -R dist/. app/
-          cp help.html app/ 2>/dev/null || true
-          cp ZenUML_Sequence_Diagram_addon_help.html app/ 2>/dev/null || true
-          cp src/detached-window.js app/ 2>/dev/null || true
-          cp src/icon-*.png app/ 2>/dev/null || true
-          cp static/manifest.json app/
-          cp -R app/. extension/
-          cp static/manifest.json extension/
-          cp src/extension/options.js extension/
-          cp src/extension/options.html extension/
-          cp src/extension/eventPage.js extension/
-          cp src/extension/script.js extension/
-          cp static/favicon-128x128.png extension/ 2>/dev/null || true
-          cp static/icon-*.png extension/ 2>/dev/null || true
-          rm -rf extension/partials
-          cd extension && zip -r ../extension.zip . -x "*.DS_Store" && cd ..
-      - name: Upload extension.zip artifact
-        uses: actions/upload-artifact@v4
+          ref: master
+          path: .release-policy
+      - uses: ./.release-policy/.github/actions/deploy-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        with:
+          firebase-service-account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}
+      - uses: actions/upload-artifact@v4
         with:
           name: extension-zip
           path: extension.zip
-      - name: Setup Firebase service account
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}' > /tmp/gcp-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-      - run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          cd functions && npm install && pnpm deploy:config:prod
-      - run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-          pnpm deploy:prod
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: shogo82148/actions-upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_ACTION_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./extension.zip
-          asset_name: chrome-extension.zip
-          asset_content_type: application/zip
-
-  # Verify the live production site immediately after deploy. Runs the fast,
-  # read-only @smoke subset against app.zenuml.com. A failure here is the signal
-  # to roll back (see .github/workflows/rollback-prod.yml).
-  smoke:
-    name: Post-deploy smoke (prod)
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-      - name: Run @smoke subset against production
-        # Chromium only — same rationale as the staging gate (deployed-URL
-        # webkit/firefox flakiness). @smoke is load + render + core-bundle.
-        env:
-          PW_BASE_URL: https://app.zenuml.com
-        run: pnpm exec playwright test --grep @smoke --project=chromium
-
-  # Publish the Chrome extension after the web app smoke tests pass.
-  # Opt-in only: Web Store publishing stays a manual step by default (see CLAUDE.md).
-  # To auto-publish, include the marker "[publish-extension]" in the release notes.
-  # Requires three repository secrets: WEBSTORE_CLIENT_ID, WEBSTORE_CLIENT_SECRET,
-  # WEBSTORE_REFRESH_TOKEN (OAuth2 credentials from Google Cloud Console).
+          if-no-files-found: error
   publish-extension:
     name: Publish Chrome extension
-    needs: smoke
+    needs: deploy
     if: contains(github.event.release.body, '[publish-extension]')
     runs-on: ubuntu-latest
     steps:
-      - name: Download extension.zip
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: extension-zip
-      - name: Upload to Chrome Web Store
+      - name: Upload and publish verified Chrome extension
         env:
           CLIENT_ID: ${{ secrets.WEBSTORE_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.WEBSTORE_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.WEBSTORE_REFRESH_TOKEN }}
           PUBLISHER_ID: ${{ secrets.WEBSTORE_PUBLISHER_ID }}
         run: |
-          npx chrome-webstore-upload-cli@latest upload \
-            --source extension.zip \
-            --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef
-      - name: Publish to Chrome Web Store
-        env:
-          CLIENT_ID: ${{ secrets.WEBSTORE_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.WEBSTORE_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.WEBSTORE_REFRESH_TOKEN }}
-          PUBLISHER_ID: ${{ secrets.WEBSTORE_PUBLISHER_ID }}
-        run: |
-          npx chrome-webstore-upload-cli@latest publish \
-            --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef
+          npx chrome-webstore-upload-cli@latest upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef
+          npx chrome-webstore-upload-cli@latest publish --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef

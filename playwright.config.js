@@ -18,7 +18,7 @@ const isCloud = process.env.PW_CLOUD === '1';
 // The production-build spec navigates here explicitly (web/dist served statically
 // by `vite preview`), independent of baseURL — that is the point: it exercises
 // the BUILT bundle, where a dev-only /@fs/ asset URL would 404.
-export const PREVIEW_PORT = 4173;
+export const PREVIEW_PORT = Number(process.env.PW_PREVIEW_PORT) || 4173;
 
 const baseURL = process.env.PW_BASE_URL || 'http://localhost:3000';
 
