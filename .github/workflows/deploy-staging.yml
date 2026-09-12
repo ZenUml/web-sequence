@@ -142,9 +142,11 @@ jobs:
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
 
   validation:
-    name: Release validation
+    # A deduplicated push may be cancelled by the PR run. It must not leave
+    # a failed check with the same name as the required PR merge gate.
+    name: ${{ github.event_name == 'pull_request' && 'Release validation' || 'Branch validation' }}
     needs: [build, staging-gate]
-    if: always()
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Require build and applicable staging E2E
