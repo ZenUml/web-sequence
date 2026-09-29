@@ -377,6 +377,7 @@
     <h2>11. Security</h2>
     <p><strong>In transit</strong>: All data sent to our services is encrypted with TLS/HTTPS, including secure WebSockets (<code>wss</code>) for Live Agent Link. Requests to our backend are authenticated using Atlassian Forge signed invocation tokens (RS256).</p>
     <p><strong>At rest</strong>: Content stored in our primary backend (Cloudflare D1, R2, and KV) is encrypted using AES-256 in GCM (Galois/Counter Mode), applied automatically, with keys managed by Cloudflare. Atlassian Confluence — the system of record for your diagrams — encrypts data in transit (TLS 1.2+ with perfect forward secrecy) and at rest (AES-256). Our AI sister product's database (Neon) encrypts data at rest with AES-256 and in transit with TLS 1.2/1.3.</p>
+    <p>For our vulnerability management, responsible disclosure, incident response and breach notification, access control and secure development practices, see our <a href="security-overview.html">Security Overview</a>.</p>
   </div>
 
   <div class="section">

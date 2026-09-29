@@ -96,6 +96,11 @@ test('built dist serves the legacy privacy-policy and EULA legal pages', async (
       /ZenUML Privacy Policy/,
     ],
     [
+      'privacy-policy/security-overview.html',
+      'privacy-policy/security-overview.html',
+      /ZenUML Security Overview/,
+    ],
+    [
       'End-User-License-Agreement/index.html',
       'End-User-License-Agreement/',
       /End User License Agreement/i,

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZenUML Security Overview</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111827;     /* slate-900 */
+      --muted: #6b7280;    /* gray-500 */
+      --border: #e5e7eb;   /* gray-200 */
+      --accent: #0ea5e9;   /* sky-500 */
+      --heading: #0f172a;  /* slate-900 */
+      --subtle: #f8fafc;   /* slate-50 */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.8;
+      color: var(--text);
+      background-color: var(--bg);
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg);
+      padding: 0 0 32px 0;
+    }
+
+    h1 {
+      color: var(--heading);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .policy-meta {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+    }
+
+    .intro {
+      font-size: 1.05rem;
+      color: #374151; /* gray-700 */
+      margin-bottom: 28px;
+    }
+
+    .glance-section {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      background: var(--subtle);
+      margin-bottom: 28px;
+    }
+
+    .glance-section h2 {
+      color: var(--heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .data-table thead th {
+      text-align: left;
+      font-weight: 600;
+      color: #1f2937; /* gray-800 */
+      background: #f3f4f6; /* gray-100 */
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table tbody tr:hover {
+      background: #f9fafb; /* gray-50 */
+    }
+
+    .table-scroll { width: 100%; overflow-x: auto; }
+
+    h2 {
+      color: var(--heading);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 36px;
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      color: #1f2937; /* gray-800 */
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+
+    p { margin-bottom: 12px; }
+
+    ul { margin: 0 0 12px 18px; }
+
+    li { margin-bottom: 6px; }
+
+    strong { font-weight: 600; color: inherit; }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .section { margin-bottom: 28px; }
+
+    .contact-section {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 32px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body { padding: 24px 16px; }
+      .container { padding: 0; }
+      h1 { font-size: 1.75rem; }
+      .data-table { font-size: 0.9rem; }
+      .data-table thead th, .data-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>ZenUML Security Overview</h1>
+  <div class="policy-meta">
+    <strong>Effective date:</strong> September 29, 2026 &nbsp; <strong>Last updated:</strong> September 29, 2026
+  </div>
+
+  <p>This document describes how ZenUML ("we", "our", "us") protects the ZenUML apps for Atlassian Confluence Cloud and the data they process. It is a companion to our <a href="https://app.zenuml.com/privacy-policy/privacy-policy.html">Privacy Policy</a>, which describes what data we collect, where it is stored, retention periods and our sub-processors.</p>
+
+  <div class="contact-section">
+    <strong>Report a security issue:</strong> email <a href="mailto:support@zenuml.com?subject=Security%20vulnerability%20report">support@zenuml.com</a> with the subject line "Security vulnerability report". We acknowledge reports within <strong>3 business days</strong>. See <a href="#disclosure">Responsible disclosure</a>.
+  </div>
+
+  <div class="section">
+  <h2 id="scope">1. Scope</h2>
+  <p>This overview covers the ZenUML Confluence Cloud apps (all editions, including ZenUML Diagrams, ZenUML Diagrams Lite, Diagramly and AsyncAPI for Confluence) and the ZenUML backend services that support them.</p>
+  </div>
+
+  <div class="section">
+  <h2 id="architecture">2. Platform architecture and data protection</h2>
+  <ul>
+    <li><strong>Built on Atlassian Forge.</strong> The apps run on Atlassian's Forge platform. The app user interface runs inside Forge's sandboxed iframes, and the app can access only the Confluence permission scopes declared in its manifest.</li>
+    <li><strong>Confluence is the system of record.</strong> Diagram content is stored in Atlassian Confluence. Our backend is not required storage for your diagrams (see the Privacy Policy for the mirrored copy and its retention).</li>
+    <li><strong>Authenticated backend requests.</strong> Every request from the app to our backend carries an Atlassian Forge invocation token. The backend verifies the token's RS256 signature against Atlassian's published signing keys and checks its issuer and required claims before processing the request.</li>
+    <li><strong>Tenant isolation.</strong> The backend takes the Confluence site (tenant) identity from the verified invocation token, not from request parameters. A request cannot read or write another site's data by naming it.</li>
+    <li><strong>Encryption in transit.</strong> All traffic to our services uses TLS/HTTPS, including secure WebSockets (<code>wss</code>).</li>
+    <li><strong>Encryption at rest.</strong> Data in our backend (Cloudflare D1, R2 and KV) is encrypted with AES-256 (GCM), with keys managed by Cloudflare.</li>
+    <li><strong>Data minimization.</strong> We do not collect email addresses or passwords through the Confluence app. Product analytics carry metadata only, never diagram content. Optional features that send data to third parties (AI features, Live Agent Link) are off by default.</li>
+  </ul>
+  </div>
+
+  <div class="section">
+  <h2 id="vulnerability-management">3. Vulnerability management</h2>
+  <ul>
+    <li><strong>Dependency monitoring.</strong> Automated dependency-update tooling (GitHub Dependabot) checks our dependencies every week and opens pull requests for updates, which are built and tested like any other change.</li>
+    <li><strong>Severity rating.</strong> We rate vulnerabilities with CVSS v3 and fix them within the timeframes set by Atlassian's <a href="https://developer.atlassian.com/platform/marketplace/security-bugfix-policy/">Security Bug Fix Policy for Marketplace apps</a>, counted from when the issue is reported or triaged:</li>
+  </ul>
+  <div class="table-scroll"><table class="data-table">
+    <thead><tr><th>Severity</th><th>CVSS v3 score</th><th>Fix deadline</th></tr></thead>
+    <tbody>
+      <tr><td>Critical</td><td>9.0 – 10.0</td><td>10 days</td></tr>
+      <tr><td>High</td><td>7.0 – 8.9</td><td>4 weeks</td></tr>
+      <tr><td>Medium</td><td>4.0 – 6.9</td><td>12 weeks</td></tr>
+      <tr><td>Low</td><td>0.1 – 3.9</td><td>25 weeks</td></tr>
+    </tbody>
+  </table></div>
+  <p>Vulnerabilities reported to us through Atlassian (for example via the Atlassian Marketplace Security program) are handled on the same timeline.</p>
+  </div>
+
+  <div class="section">
+  <h2 id="disclosure">4. Responsible disclosure</h2>
+  <p>If you believe you have found a security vulnerability in a ZenUML product, please report it to us privately:</p>
+  <ul>
+    <li><strong>Contact:</strong> <a href="mailto:support@zenuml.com?subject=Security%20vulnerability%20report">support@zenuml.com</a>, subject "Security vulnerability report", or our support portal at <a href="https://zenuml.atlassian.net/servicedesk/customer/portals">ZenUML support portal</a>.</li>
+    <li><strong>What to include:</strong> the affected product and version, steps to reproduce, the potential impact, and any proof of concept.</li>
+    <li><strong>Our commitment:</strong> we acknowledge your report within 3 business days, keep you informed while we investigate and fix it, and let you know when it is resolved.</li>
+    <li><strong>Please:</strong> test only against Confluence sites you own, do not access or modify other customers' data, avoid degrading the service, and give us reasonable time to fix the issue before public disclosure.</li>
+  </ul>
+  </div>
+
+  <div class="section">
+  <h2 id="incident-response">5. Incident response and breach notification</h2>
+  <p>We handle security incidents in four stages:</p>
+  <ol>
+    <li><strong>Detect and triage.</strong> We identify suspected incidents from monitoring, alerts, customer reports and Atlassian notifications, then assess their scope and severity.</li>
+    <li><strong>Contain.</strong> We limit the impact, for example by revoking or rotating credentials, disabling the affected feature or rolling back a release.</li>
+    <li><strong>Eradicate and recover.</strong> We remove the root cause, deploy a fix and restore normal service.</li>
+    <li><strong>Review.</strong> After the incident we review what happened and put in place measures to prevent it recurring.</li>
+  </ol>
+  <p><strong>Customer notification:</strong> if we confirm a security breach that affects customer data, we notify affected customers <strong>within 72 hours</strong> of confirmation. The notice describes what happened, what data is affected, what we are doing about it and any steps customers should take. Where required, we also notify Atlassian and the relevant authorities. If a breach involves one of our sub-processors, we notify affected customers within the same timeframe after the sub-processor informs us.</p>
+  </div>
+
+  <div class="section">
+  <h2 id="access-control">6. Access control and internal security practices</h2>
+  <ul>
+    <li><strong>Multi-factor authentication.</strong> MFA is required on all team accounts with access to our source code, Atlassian developer and Marketplace accounts, and cloud infrastructure (GitHub, Atlassian and Cloudflare).</li>
+    <li><strong>Least privilege, role-based access.</strong> Access to production systems and customer data is limited to the core team members whose role requires it.</li>
+    <li><strong>Scoped credentials.</strong> Service credentials and API tokens are scoped to the systems they need. Production secrets are stored in the platform secret stores (Cloudflare and GitHub Actions encrypted secrets), not in the source repository.</li>
+    <li><strong>Minimal app permissions.</strong> The apps request only the Confluence scopes they need to render and store diagrams.</li>
+  </ul>
+  </div>
+
+  <div class="section">
+  <h2 id="sdlc">7. Secure software development lifecycle</h2>
+  <ul>
+    <li><strong>Version control.</strong> All code changes are tracked in version control. The source repository does not accept pull requests from outside contributors (forks).</li>
+    <li><strong>Automated testing.</strong> Every change is built and runs automated unit tests and end-to-end tests in continuous integration before it reaches production.</li>
+    <li><strong>Pipeline-only deployment.</strong> Staging and production deployments run through our CI/CD pipeline, not from developer machines. Each change is verified on staging before release.</li>
+    <li><strong>Staged production rollout.</strong> Production releases go out to one edition first as a canary before the others, and each release is followed by a production validation check.</li>
+    <li><strong>Dependency hygiene.</strong> Dependencies are pinned in a lockfile and updated through the automated process in section 3.</li>
+  </ul>
+  </div>
+
+  <div class="section">
+  <h2 id="subprocessors">8. Sub-processors</h2>
+  <p>The sub-processors we use, what each one receives, and their encryption and compliance posture are listed in Section 10 of our <a href="https://app.zenuml.com/privacy-policy/privacy-policy.html">Privacy Policy</a>.</p>
+  </div>
+
+  <div class="section">
+  <h2 id="changes">9. Changes to this document</h2>
+  <p>We may update this Security Overview as our practices change. Updates will be posted on this page with a new "Last updated" date.</p>
+  </div>
+
+  <div class="section">
+  <h2 id="contact">10. Contact</h2>
+  <p>Security questions and reports: <a href="mailto:support@zenuml.com">support@zenuml.com</a> or our <a href="https://zenuml.atlassian.net/servicedesk/customer/portals">support portal</a>.</p>
+  </div>
+</div>
+</body>
+</html>
