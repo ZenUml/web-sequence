@@ -11,7 +11,7 @@ This is **ZenUML Web Sequence**, a free sequence diagram online tool that conver
 - **Frontend Framework**: Preact (v10.18.1) - lightweight React alternative
 - **Build Tool**: Vite (v6.3.5)
 - **UI Libraries**: Tailwind CSS, Radix UI, Headless UI
-- **Core Engine**: @zenuml/core (v3.49.2) - sequence diagram rendering (Vue-based; vue + vuex are its peer deps)
+- **Core Engine**: @zenuml/core (v4.4.1) - sequence diagram rendering (bundles its own React; renders in its bundled IBM Plex Sans)
 - **Code Editor**: CodeMirror (v5.65.16)
 - **Backend**: Firebase (authentication, Firestore, cloud functions)
 - **Testing**: Jest + Enzyme (unit); Playwright (E2E)

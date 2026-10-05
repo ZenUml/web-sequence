@@ -128,6 +128,12 @@
           if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
             // Native vector SVG (mobile). Pure render — no React commit, no
             // onContentChange (the editor pane stays the source of truth on mobile).
+            // renderToSvg is synchronous and measures text with canvas, so the
+            // core's bundled font must be loaded first (app.render does this
+            // itself). Loads once, never rejects; absent before @zenuml/core 4.4.
+            if (typeof window.zenuml.ensureDiagramFontsLoaded === 'function') {
+              await window.zenuml.ensureDiagramFontsLoaded();
+            }
             var result = window.zenuml.renderToSvg(msg.code, { theme: 'theme-default' });
             showSvgMount(result && result.svg);
           } else {
