@@ -3269,10 +3269,10 @@
   resolved "https://registry.yarnpkg.com/@webcontainer/env/-/env-1.1.1.tgz#23021b2bb24befeeef53dba8996d1886b7016515"
   integrity sha512-6aN99yL695Hi9SuIk1oC88l9o0gmxL1nGWWQ/kNy81HigJ0FoaoTXpytCj6ItzgyCEwA9kF1wixsTuv5cjsgng==
 
-"@zenuml/core@^4.4.1":
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-4.4.1.tgz#0f65a74e9852f63067c3867411cd07b69f3e930d"
-  integrity sha512-BjZfTVn6JyRAFNVeYBg00atr6kj380vbB+QU70akxnK08aRWL/SCIkJra8ssfB41FO4049riykhkt/XQilw1Uw==
+"@zenuml/core@^4.7.2":
+  version "4.7.2"
+  resolved "https://registry.yarnpkg.com/@zenuml/core/-/core-4.7.2.tgz#f2b42478886a770bb089fc3c237d761b66614e8b"
+  integrity sha512-FDA4xG4GmGt8hYsMvhmNb6WXgLCMFQwD3NZos/Y915KDYTrsye4tJhfvDemEhJx4BTDbJfuVvgliwPVLVW+SLg==
   dependencies:
     "@floating-ui/react" "^0.27.16"
     "@headlessui/react" "^2.2.9"
