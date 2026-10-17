@@ -77,6 +77,8 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const cssRef = useRef(css); cssRef.current = css;
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
   const svgModeRef = useRef(svgMode); svgModeRef.current = svgMode;
+  const participantStyleEditingRef = useRef(!embedMode && !fit && !svgMode);
+  participantStyleEditingRef.current = !embedMode && !fit && !svgMode;
   const cbRef = useRef({ onCodeChange, onConsole, onError });
   cbRef.current = { onCodeChange, onConsole, onError };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
@@ -87,6 +89,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
 
   const renderOptions = (): RenderOptions => ({
     enableMultiTheme: false,
+    enableParticipantStyleEditing: participantStyleEditingRef.current,
     theme: 'theme-default',
     stickyOffset: stickyRef.current,
     renderMode: svgModeRef.current ? 'svg' : 'html',
@@ -182,6 +185,14 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, stickyOffset, autoPreview, svgMode]);
+
+  // Presentation mode must reset core's stored participant-editor flag even when
+  // auto-preview is off. The iframe DOM stays mounted across this transition.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    postRender(codeRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fit]);
 
   // CSS-only fast path (REQ-PRV-5): once ready, push CSS via postMessage on css
   // changes instead of rebuilding/reloading the iframe.

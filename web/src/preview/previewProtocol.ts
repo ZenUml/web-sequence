@@ -2,6 +2,9 @@
 // The iframe is a same-origin srcdoc; messages are validated by `type`.
 export interface RenderOptions {
   enableMultiTheme: false;
+  // The participant editor is available only in the normal HTML editor preview.
+  // Explicit false also resets core's stored flag when switching modes.
+  enableParticipantStyleEditing: boolean;
   theme: 'theme-default';
   stickyOffset: number; // from the host router search params — NOT window.location inside the iframe
   // Renderer selection. 'html' (default) = @zenuml/core's interactive React diagram.

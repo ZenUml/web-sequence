@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 // The bootstrap is now a real `.js` asset (CSP fix — roadmap §9 M05 finding #1),
 // loaded via `<script src=...>` rather than an inline string. Import its source
 // text via Vite's `?raw` so the content assertions stay bulletproof — a content
@@ -26,6 +26,39 @@ describe('previewBootstrap.runtime.js', () => {
     expect(BOOTSTRAP).toContain("'getPng'");
     expect(BOOTSTRAP).toContain("'evalConsole'");
     expect(BOOTSTRAP).toContain("type: 'codeChange'");
+  });
+  it('passes participant style editing to core and forwards edited DSL to the host', () => {
+    const listeners: Record<string, (event?: any) => void> = {};
+    const postMessage = vi.fn();
+    const parent = { postMessage };
+    const renderCore = vi.fn(async (_code: string, _options: {
+      enableParticipantStyleEditing: boolean;
+      onContentChange: (code: string) => void;
+    }) => {});
+    class Engine { render = renderCore; }
+    const mount = { style: {}, scrollHeight: 100, scrollWidth: 100 };
+    const frameWindow = {
+      zenuml: { default: Engine },
+      addEventListener: (type: string, listener: (event?: any) => void) => { listeners[type] = listener; },
+    };
+    const frameDocument = {
+      getElementById: (id: string) => id === 'mounting-point' || id === 'diagram' ? mount : null,
+      querySelector: () => null,
+      documentElement: { scrollHeight: 100, scrollWidth: 100 },
+    };
+    const frameConsole = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug'].map((level) => [level, vi.fn()]));
+    new Function('window', 'document', 'parent', 'console', 'requestAnimationFrame', 'ResizeObserver', BOOTSTRAP)(
+      frameWindow, frameDocument, parent, frameConsole, vi.fn(), undefined,
+    );
+
+    listeners.load();
+    listeners.message({
+      source: parent,
+      data: { type: 'render', code: 'A.b', options: { renderMode: 'html', enableParticipantStyleEditing: true } },
+    });
+    expect(renderCore).toHaveBeenCalledWith('A.b', expect.objectContaining({ enableParticipantStyleEditing: true }));
+    renderCore.mock.calls[0][1].onContentChange('A #FF0000');
+    expect(postMessage).toHaveBeenCalledWith({ type: 'codeChange', code: 'A #FF0000' }, '*');
   });
   // Mobile SVG mode: when options.renderMode === 'svg', render the native vector SVG
   // (window.zenuml.renderToSvg) instead of the HTML diagram, sized fit-to-width so the
