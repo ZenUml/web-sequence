@@ -28,6 +28,49 @@ describe('PreviewFrame', () => {
     );
   });
 
+  it.each([
+    { mode: 'editor', props: {}, enabled: true },
+    { mode: 'embed', props: { embed: true }, enabled: false },
+    { mode: 'presentation', props: { fit: true }, enabled: false },
+    { mode: 'mobile SVG', props: { svgMode: true }, enabled: false },
+  ])('posts participant style editing $enabled in $mode mode', ({ props, enabled }) => {
+    const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} {...props} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'render',
+        options: expect.objectContaining({ enableParticipantStyleEditing: enabled }),
+      }),
+      '*',
+    );
+  });
+
+  it('turns participant style editing off in presentation and back on in the editor even with auto-preview off', () => {
+    const base = { code: 'A.b', css: '', stickyOffset: 0, autoPreview: false };
+    const { container, rerender } = render(<PreviewFrame {...base} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+
+    post.mockClear();
+    rerender(<PreviewFrame {...base} fit />);
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ enableParticipantStyleEditing: false }) }),
+      '*',
+    );
+
+    post.mockClear();
+    rerender(<PreviewFrame {...base} />);
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', options: expect.objectContaining({ enableParticipantStyleEditing: true }) }),
+      '*',
+    );
+  });
+
   it('routes codeChange and console messages to callbacks', () => {
     const onCodeChange = vi.fn();
     const onConsole = vi.fn();

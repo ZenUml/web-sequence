@@ -142,6 +142,7 @@
             showHtmlMount();
             await app.render(msg.code, {
               enableMultiTheme: false,
+              enableParticipantStyleEditing: !!(msg.options && msg.options.enableParticipantStyleEditing),
               theme: 'theme-default',
               onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
               stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
