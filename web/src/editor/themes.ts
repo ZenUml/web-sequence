@@ -21,8 +21,7 @@ export interface ThemeDef {
 //
 // Hex literals (not Tailwind token names) are required by `createTheme`, and
 // editor *mechanics* are explicitly out of the design system's "no raw hex"
-// scope. The values below mirror the semantic tokens in `web/tailwind.config.js`
-// so the editor stays visually consistent with the app chrome. Each foreground
+// scope. These values match the light teal editor chrome.
 // The foregrounds below are tuned for the D surface (#EDF4EF): a deep teal ink
 // for identifiers, a readable teal accent for keywords/calls, and a softened
 // line-number colour that stays legible without competing with the source.
@@ -36,12 +35,12 @@ const ink = createTheme({
     selectionMatch: 'rgba(18,129,111,0.10)',
     lineHighlight: 'rgba(18,129,111,0.06)',
     gutterBackground: '#EDF4EF',
-    gutterForeground: '#8CA39A',
+    gutterForeground: '#5C6E61',
     gutterBorder: 'transparent',
   },
   styles: [
-    { tag: t.comment, color: '#718C83', fontStyle: 'italic' },
-    { tag: t.lineComment, color: '#718C83', fontStyle: 'italic' },
+    { tag: t.comment, color: '#5C6E61', fontStyle: 'italic' },
+    { tag: t.lineComment, color: '#5C6E61', fontStyle: 'italic' },
     { tag: t.keyword, color: '#0E7768' },
     { tag: t.controlKeyword, color: '#0E7768' },
     { tag: t.moduleKeyword, color: '#0E7768' },
@@ -58,11 +57,9 @@ const ink = createTheme({
     { tag: t.propertyName, color: '#2B514A' },
     { tag: t.typeName, color: '#2B514A' },
     { tag: t.className, color: '#2B514A' },
-    { tag: t.operator, color: '#718C83' },
-    { tag: [t.punctuation, t.separator, t.bracket], color: '#718C83' },
-    // t.meta — ZenUML annotations (@Actor, @Database, @return). Cobalt reuses the
-    // keyword/marker signal hue (no new palette colour); the @-prefixed role marker
-    // now pops on every participant line instead of reading as plain text.
+    { tag: t.operator, color: '#5C6E61' },
+    { tag: [t.punctuation, t.separator, t.bracket], color: '#5C6E61' },
+    // ZenUML annotations use the same teal accent as keywords.
     { tag: t.meta, color: '#0E7768' },
     { tag: t.invalid, color: '#B23A33' },
   ],

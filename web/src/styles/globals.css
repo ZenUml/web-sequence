@@ -569,10 +569,24 @@ body {
   width: 92px;
 }
 
+.editor-hifi-shell .editor-document-share button {
+  width: 100%;
+  background: var(--editor-panel) !important;
+  border-color: var(--editor-line-strong) !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-document-share button:hover {
+  background: var(--editor-accent-soft) !important;
+}
+
 .editor-hifi-shell .editor-document-present {
   flex: 0 0 auto;
   width: 116px;
   justify-content: center;
+  background: var(--editor-accent-solid) !important;
+  border-color: var(--editor-accent-solid) !important;
+  color: #fff !important;
 }
 
 .editor-hifi-shell .editor-document-present > span {
