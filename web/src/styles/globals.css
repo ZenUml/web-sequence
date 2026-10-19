@@ -637,6 +637,89 @@ body {
   }
 }
 
+/* Mobile keeps document actions on both tabs in a compact two-row header. */
+@media (max-width: 767px) {
+  .editor-hifi-shell .editor-hifi-header {
+    display: grid;
+    grid-template-columns: 56px 34px minmax(0, 1fr) auto;
+    gap: 6px;
+    height: auto;
+    padding: 8px 12px;
+  }
+
+  .editor-hifi-shell .editor-hifi-header > .flex-1,
+  .editor-hifi-shell .editor-global-account-divider,
+  .editor-hifi-shell .editor-document-chrome-slot {
+    display: none;
+  }
+
+  .editor-hifi-shell .editor-hifi-header [data-testid='header-menu'] {
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .editor-hifi-shell .editor-document-chrome {
+    display: contents;
+  }
+
+  .editor-hifi-shell .editor-global-actions {
+    grid-column: 3 / 5;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .editor-hifi-shell .editor-global-account {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .editor-hifi-shell .editor-document-file {
+    grid-column: 1 / 4;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .editor-hifi-shell .editor-document-file input {
+    flex: 1;
+    width: 0;
+    max-width: none;
+  }
+
+  .editor-hifi-shell .editor-document-save {
+    display: none;
+  }
+
+  .editor-hifi-shell .editor-document-actions {
+    grid-column: 4;
+    grid-row: 2;
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  .editor-hifi-shell .editor-document-share,
+  .editor-hifi-shell .editor-document-present {
+    width: 36px;
+  }
+
+  .editor-hifi-shell .editor-document-share button,
+  .editor-hifi-shell .editor-document-present {
+    padding: 0;
+  }
+
+  .editor-hifi-shell .editor-hifi-header .editor-document-share button {
+    background: var(--editor-panel) !important;
+  }
+
+  .editor-hifi-shell .editor-hifi-header .editor-document-present {
+    background: var(--editor-accent-solid) !important;
+    border-color: var(--editor-accent-solid) !important;
+    color: #fff !important;
+  }
+}
+
 .editor-hifi-shell .editor-layout-mobile,
 .editor-hifi-shell .editor-mobile-tabs {
   background: var(--editor-bg);
