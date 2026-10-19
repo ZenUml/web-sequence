@@ -178,6 +178,7 @@ body {
   background-color: var(--editor-bg) !important;
   background-image: none !important;
   border-color: var(--editor-line) !important;
+  border-bottom-width: 0;
   color: var(--editor-ink);
 }
 
@@ -256,6 +257,10 @@ body {
   border-color: var(--editor-line) !important;
 }
 
+.editor-hifi-shell .editor-pane-header {
+  border-bottom-width: 0;
+}
+
 .editor-hifi-shell .editor-pane-header .text-accent-onDark {
   color: var(--editor-accent) !important;
 }
@@ -281,9 +286,9 @@ body {
   min-height: 0;
   overflow: hidden;
   background: var(--editor-panel);
-  border: 1px solid var(--editor-line);
+  border: 0;
   border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(43, 81, 74, 0.08);
+  box-shadow: 0 6px 24px -4px rgba(36, 61, 51, 0.12);
 }
 
 .editor-hifi-shell .editor-preview-panel--fullscreen {
@@ -421,8 +426,7 @@ body {
   color: var(--editor-ink);
 }
 
-/* Split.js inserts the gutter between the two regions. The center seam and the
-   short grip make the resize affordance visible at both normal and narrow widths. */
+/* Keep the full resize hit target; reveal the grip only while interacting. */
 .editor-hifi-shell .editor-split-gutter {
   position: relative;
   flex: 0 0 10px;
@@ -430,10 +434,16 @@ body {
   cursor: col-resize;
 }
 
+.editor-hifi-shell .editor-split-gutter:focus-visible {
+  outline: none;
+}
+
+.editor-hifi-shell .editor-split-gutter:focus-visible::before {
+  box-shadow: 0 0 0 3px var(--editor-accent-soft);
+}
+
 .editor-hifi-shell .editor-split-gutter::after {
-  inset: 0 auto 0 50%;
-  width: 1px;
-  background: var(--editor-line-strong);
+  display: none;
 }
 
 .editor-hifi-shell .editor-split-gutter::before {
@@ -452,14 +462,14 @@ body {
   line-height: 25px;
   text-align: center;
   transform: translate(-50%, -50%);
-  opacity: 0.9;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.editor-hifi-shell .editor-split-gutter:hover::after {
-  background: var(--editor-accent);
-}
-
-.editor-hifi-shell .editor-split-gutter:hover::before {
+.editor-hifi-shell .editor-split-gutter:hover::before,
+.editor-hifi-shell .editor-split-gutter:focus-visible::before,
+.editor-hifi-shell .editor-split-gutter:active::before {
+  opacity: 1;
   border-color: var(--editor-accent);
   color: var(--editor-accent);
 }

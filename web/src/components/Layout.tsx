@@ -33,6 +33,19 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
           gutter.className = `editor-split-gutter gutter gutter-${direction}`;
           gutter.setAttribute('role', 'separator');
           gutter.setAttribute('aria-label', 'Resize editor and preview');
+          gutter.tabIndex = 0;
+          gutter.addEventListener('keydown', (event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            const width = leftRef.current?.parentElement?.clientWidth ?? 0;
+            if (!inst || width <= 0) return;
+            event.preventDefault();
+            const minimum = Math.min(50, 240 / width * 100);
+            const delta = (event.key === 'ArrowRight' ? 1 : -1) * 20 / width * 100;
+            const left = Math.max(minimum, Math.min(100 - minimum, inst.getSizes()[0] + delta));
+            const next = [left, 100 - left];
+            inst.setSizes(next);
+            useEditorStore.getState().setMainSizes(next);
+          });
           gutter.setAttribute('aria-orientation', direction === 'horizontal' ? 'vertical' : 'horizontal');
           return gutter;
         },
