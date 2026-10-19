@@ -586,10 +586,6 @@ body {
   color: #fff !important;
 }
 
-.editor-hifi-shell .editor-document-present > span {
-  display: inline;
-}
-
 /* On desktop the document chrome belongs to the floating preview card. The
    existing AppHeader still owns these controls and their behavior; the explicit
    slot above puts them in the floating card without coupling their position to
