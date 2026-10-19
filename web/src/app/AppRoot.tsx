@@ -1227,7 +1227,11 @@ export function AppRoot() {
         onOpenCheatSheet={() => openModal('cheatsheet')}
         onOpenShortcuts={() => openModal('shortcuts')}
         onGoHome={goHome}
-        documentChromeTarget={documentChromeTarget}
+        // Mobile keeps the document actions in the always-visible global header;
+        // the preview pane is mounted but hidden while the Edit tab is active.
+        // Desktop portals them into the floating preview card so they follow the
+        // draggable split.
+        documentChromeTarget={isMobile ? null : documentChromeTarget}
         actions={
           <ShareButton
             disabled={shareReadOnly}

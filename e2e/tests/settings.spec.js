@@ -103,8 +103,8 @@ test('SET-1: changing the editor theme applies live to CodeMirror', async ({
   const before = await editor.evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
-  // Default ink theme: deep ink well (#0B0E13).
-  expect(before).toBe('rgb(11, 14, 19)');
+  // Default ink theme: the teal editor surface (#EDF4EF).
+  expect(before).toBe('rgb(237, 244, 239)');
 
   await openSettings(page);
   await chooseSetting(page, 'setting-editorTheme', 'GitHub Light');

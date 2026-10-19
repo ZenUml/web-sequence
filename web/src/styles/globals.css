@@ -264,13 +264,10 @@ body {
   background-color: var(--editor-accent) !important;
 }
 
-/* CodeMirror receives its own theme, but the host must still fill the sunk pane
-   while the editor is loading or when an empty document is shown. */
-.editor-hifi-shell .cm-editor,
-.editor-hifi-shell .cm-scroller,
-.editor-hifi-shell .cm-gutters {
-  background: var(--editor-bg) !important;
-}
+/* CodeMirror owns its editor and gutter surfaces through the selected theme.
+   Keep the shell background as the loading/empty fallback, but do not override
+   `.cm-editor`, `.cm-scroller`, or `.cm-gutters`: users' saved theme choices
+   must continue to apply live inside the teal workspace. */
 
 .editor-hifi-shell .editor-preview-stage {
   min-width: 0;
