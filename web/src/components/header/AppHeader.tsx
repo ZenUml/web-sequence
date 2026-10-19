@@ -224,9 +224,9 @@ export function AppHeader({
   return (
     <>
       <header className={cn(
-        'bg-blueprint border-b border-ink-line/40 px-3 md:px-4 flex items-center gap-2 md:gap-3.5',
+        'editor-hifi-header bg-blueprint border-b border-ink-line/40 px-3 md:px-4 flex items-center gap-2 md:gap-3.5',
         // Hub mode on mobile: two rows (nav row + title row). Single row on sm+ or outside hub.
-        onGoHome ? 'h-auto sm:h-14 flex-wrap py-1.5 sm:py-0' : 'h-14',
+        onGoHome ? 'h-auto sm:h-16 flex-wrap py-1.5 sm:py-0' : 'h-16',
       )}>
         {/* App menu — the logo brand button (▾). Holds New / New from template /
             Settings / Keyboard shortcuts / DSL cheat sheet / Help / Pricing / Save. */}
@@ -277,7 +277,7 @@ export function AppHeader({
               Your diagrams
             </button>
             {/* "/" separator — hidden on mobile too (arrow alone is sufficient) */}
-            <span className="hidden sm:inline text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
+            <span className="editor-breadcrumb-separator hidden sm:inline text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
           </div>
         )}
 
@@ -286,7 +286,7 @@ export function AppHeader({
             pill (.filemenu) so "this is the file and its actions" reads as a unit. */}
         <div
           className={cn(
-            'flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
+            'editor-document-file flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
             'bg-ink-700/45 border border-ink-line/50',
             // Hub mode on mobile: drop title to its own row, stretch full width.
             onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
@@ -340,7 +340,7 @@ export function AppHeader({
                 <Chevron />
               </button>
             </MenuTrigger>
-            <MenuContent align="start" onCloseAutoFocus={handleDocMenuCloseAutoFocus}>
+            <MenuContent className="editor-hifi-menu" align="start" onCloseAutoFocus={handleDocMenuCloseAutoFocus}>
               <MenuItem
                 data-testid="filemenu-rename"
                 onSelect={() => {
@@ -365,7 +365,7 @@ export function AppHeader({
             - saving: "Saving…"; dirty: amber "Unsaved"; otherwise emerald "Saved". */}
         {/* Hidden on the narrowest screens (< sm) so the save-state text doesn't crowd
             the filename; the design's mobile header is intentionally minimal. */}
-        <div className="hidden sm:flex items-center">
+        <div className="editor-document-save hidden sm:flex items-center">
           <SaveState
             readOnly={readOnly}
             signedIn={!!user}
@@ -379,8 +379,8 @@ export function AppHeader({
 
         {/* Top-right: the only shared verbs. Share (via actions) · Present · divider ·
             account. Three jobs, clear order. */}
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-          {actions}
+        <div className="editor-header-actions flex items-center gap-1.5 md:gap-2 shrink-0">
+          <div className="editor-document-share">{actions}</div>
           <Tooltip label="Present this diagram full-screen">
             {/* Below md the label collapses to icon-only to avoid clipping. The
                 accessible name persists via aria-label so the control is never
@@ -392,6 +392,7 @@ export function AppHeader({
               data-testid="header-present"
               aria-label="Present"
               onClick={onPresent}
+              className="editor-document-present"
             >
               <PlayIcon />
               <span className="hidden md:inline">Present</span>
@@ -401,21 +402,23 @@ export function AppHeader({
           <div
             aria-hidden="true"
             data-testid="header-account-divider"
-            className="mx-0.5 h-6 w-px bg-ink-line/50 shrink-0"
+            className="editor-global-account-divider mx-0.5 h-6 w-px bg-ink-line/50 shrink-0"
           />
 
           {user ? (
-            <ProfileMenu
-              user={user}
-              onLogout={onLogout}
-              subscribed={subscribed}
-              planType={planType}
-              paymentEnabled={paymentEnabled}
-              onUpgrade={onUpgrade}
-              onManagePlan={onManagePlan}
-            />
+            <div className="editor-global-account">
+              <ProfileMenu
+                user={user}
+                onLogout={onLogout}
+                subscribed={subscribed}
+                planType={planType}
+                paymentEnabled={paymentEnabled}
+                onUpgrade={onUpgrade}
+                onManagePlan={onManagePlan}
+              />
+            </div>
           ) : (
-            <>
+            <div className="editor-global-account">
               {/* Signed-out users have no account menu (which carries Upgrade/My Plan
                   for signed-in users), so surface a visible Pricing affordance here —
                   gated by paymentEnabled like the app-menu item. A quiet ghost link so
@@ -441,7 +444,7 @@ export function AppHeader({
                   Sign in
                 </Button>
               </Tooltip>
-            </>
+            </div>
           )}
         </div>
       </header>

@@ -1084,7 +1084,7 @@ export function AppRoot() {
     settings.editorFont === 'other' ? settings.editorCustomFont : settings.editorFont;
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div data-testid="editor-shell" className="editor-hifi-shell flex flex-col h-full w-full">
       {/* One-time "saved locally" notice for signed-out users (REQ-PST) */}
       <ConfirmDialog
         open={noticeOpen}
@@ -1247,7 +1247,7 @@ export function AppRoot() {
         <Layout
           editor={
             (
-            <div className="flex flex-col h-full">
+            <div className="editor-source-pane flex flex-col h-full">
               {/* Page tabs now live on the RENDERER side (preview slot), above the
                   diagram — pages are a property of the rendered document, not the DSL
                   (per design §02). The editor pane just edits whichever page is active. */}
@@ -1258,9 +1258,9 @@ export function AppRoot() {
                   when empty, expanding to the editor + its pre-processor Select. CSS
                   modes are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
-              <div className="flex flex-1 min-h-0 flex-col">
+              <div className="editor-source-stack flex flex-1 min-h-0 flex-col">
                 {/* DSL pane header — primary surface marker */}
-                <div className="flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
+                <div className="editor-pane-header flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
                   <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-accent-onDark">
                     <span className="h-3 w-0.5 rounded-full bg-accent-onDark/70" aria-hidden="true" />
                     DSL
@@ -1283,6 +1283,7 @@ export function AppRoot() {
                       <Button
                         size="sm"
                         variant="subtle"
+                        surface="light"
                         data-testid="acss-settings-open"
                         onClick={() => openModal('acss')}
                       >
@@ -1293,12 +1294,12 @@ export function AppRoot() {
                       <SelectTrigger
                         data-testid="css-mode-select"
                         aria-label="CSS pre-processor mode"
-                        surface="dark"
+                        surface="light"
                         className="h-7"
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="editor-hifi-select-menu">
                         {CSS_MODES.map((m) => (
                           <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                         ))}
@@ -1313,7 +1314,8 @@ export function AppRoot() {
             )
           }
           preview={
-            <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'relative h-full flex flex-col'}>
+            <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'editor-preview-stage relative h-full flex flex-col'}>
+              <div className={fullscreen ? 'editor-preview-panel editor-preview-panel--fullscreen flex flex-col h-full' : 'editor-preview-panel flex flex-col h-full'}>
               {/* Renderer header (diagram side): page tabs + zoom/Fit/Present controls.
                   In Present (fullscreen) mode the chrome is hidden — only an Exit
                   affordance remains so the diagram presents clean. */}
@@ -1336,7 +1338,7 @@ export function AppRoot() {
                   onRefresh={settings.autoPreview ? undefined : () => previewRef.current?.render()}
                   pageTabs={
                     <PageTabs
-                      surface="dark"
+                      surface="light"
                       pages={item.pages ?? []}
                       currentPageId={item.currentPageId ?? ''}
                       onSwitch={switchPageAction}
@@ -1381,6 +1383,7 @@ export function AppRoot() {
                   onToggle={toggleConsole}
                 />
               )}
+              </div>
             </div>
           }
         />

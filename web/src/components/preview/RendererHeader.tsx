@@ -41,7 +41,7 @@ export function RendererHeader({
   zoomLabel = '100%',
 }: RendererHeaderProps) {
   return (
-    <div className="flex items-center gap-2.5 h-11 px-3 bg-ink-900 border-b border-ink-line">
+    <div className="editor-renderer-header flex items-center gap-2.5 h-11 px-3 bg-ink-900 border-b border-ink-line">
       {/* .rtabs — left cluster, holds the page tabs slot */}
       <div className="flex items-center gap-1 min-w-0">{pageTabs}</div>
 

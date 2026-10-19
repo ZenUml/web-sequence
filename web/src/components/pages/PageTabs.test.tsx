@@ -180,6 +180,26 @@ describe('PageTabs', () => {
     expect(screen.getByTestId('page-delete-p3')).toBeInTheDocument();
   });
 
+  it('keeps long page names in a scrollable light tab strip without widening the panel', () => {
+    const longTitle = 'Customer onboarding and billing escalation sequence for support';
+    const longPage: Page = { id: 'long', title: longTitle, js: '', css: '' };
+
+    render(
+      <PageTabs
+        {...defaultProps}
+        surface="light"
+        pages={[pageA, longPage]}
+        currentPageId="long"
+      />,
+    );
+
+    const tabList = screen.getByRole('tablist', { name: 'Pages' });
+    expect(tabList).toHaveClass('editor-page-tabs', 'overflow-x-auto');
+    const label = screen.getByTitle(longTitle);
+    expect(label).toHaveClass('overflow-hidden', 'text-ellipsis');
+    expect(screen.getByTestId('page-tab-long')).toHaveAttribute('aria-selected', 'true');
+  });
+
   // Fix 3: empty-rename guard
   it('committing an empty rename does not call onRename', async () => {
     const onRename = vi.fn();

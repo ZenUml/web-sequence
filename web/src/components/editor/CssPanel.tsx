@@ -76,7 +76,7 @@ export function CssPanel({
         aria-expanded={false}
         aria-label="Expand custom CSS"
         onClick={() => setOpen(true)}
-        className="flex h-9 w-full items-center gap-2 border-t border-ink-line bg-ink-850 px-3.5 text-left text-[12px] text-ondark-muted transition-colors duration-150 ease-draft ring-draft hover:text-ondark-strong"
+        className="editor-css-panel-strip flex h-9 w-full items-center gap-2 border-t border-ink-line bg-ink-850 px-3.5 text-left text-[12px] text-ondark-muted transition-colors duration-150 ease-draft ring-draft hover:text-ondark-strong"
       >
         <Chevron open={false} />
         <span>Custom CSS</span>
@@ -92,9 +92,9 @@ export function CssPanel({
   return (
     <div
       data-testid="css-panel-expanded"
-      className="flex flex-1 min-h-0 flex-col border-t border-ink-line"
+      className="editor-css-panel flex flex-1 min-h-0 flex-col border-t border-ink-line"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-ink-line/40 bg-ink-850 px-2 py-1.5">
+      <div className="editor-css-panel-header flex items-center justify-between gap-3 border-b border-ink-line/40 bg-ink-850 px-2 py-1.5">
         <button
           type="button"
           data-testid="css-panel-collapse"

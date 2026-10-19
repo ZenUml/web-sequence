@@ -219,6 +219,14 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('preview-region')).toBeInTheDocument();
   });
 
+  it('keeps the Hi-Fi shell boundaries and visible desktop resize affordance wired', async () => {
+    render(<AppRoot />);
+    expect(await screen.findByTestId('editor-shell')).toHaveClass('editor-hifi-shell');
+    expect(screen.getByTestId('editor-region').querySelector('.editor-source-pane')).toBeTruthy();
+    expect(screen.getByTestId('preview-region').querySelector('.editor-preview-panel')).toBeTruthy();
+    expect(screen.getByRole('separator', { name: 'Resize editor and preview' })).toHaveAttribute('aria-orientation', 'vertical');
+  });
+
   it("bare '/' lands in the editor, not the hub", async () => {
     window.history.replaceState({}, '', '/');
     render(<AppRoot />);

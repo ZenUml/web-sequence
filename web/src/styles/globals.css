@@ -149,3 +149,529 @@ body {
   background: var(--ink-line);
   background-clip: content-box;
 }
+
+/* ============================================================================
+   Editor Hi-Fi surface
+
+   The editor is the one product surface that uses the light teal workspace from
+   the current Figma baseline. Keep these overrides under the editor shell so
+   library, dialogs, and other pages continue to use the Drafting Table tokens.
+   The renderer itself remains the existing PreviewFrame/iframe; this layer only
+   defines the editor chrome around that renderer.
+   ========================================================================== */
+.editor-hifi-shell {
+  --editor-bg: #edf4ef;
+  --editor-panel: #fffefc;
+  --editor-line: #d6e4dc;
+  --editor-line-strong: #c4d7ce;
+  --editor-ink: #2b514a;
+  --editor-muted: #5c6e61;
+  --editor-accent: #0f6d58;
+  --editor-accent-solid: #147d68;
+  --editor-accent-soft: #e0f0eb;
+  background: var(--editor-bg);
+  color: var(--editor-ink);
+}
+
+.editor-hifi-header {
+  flex-shrink: 0;
+  background-color: var(--editor-bg) !important;
+  background-image: none !important;
+  border-color: var(--editor-line) !important;
+  color: var(--editor-ink);
+}
+
+.editor-hifi-header .text-ondark-strong,
+.editor-hifi-header .text-ondark-muted,
+.editor-hifi-header .text-ondark-faint,
+.editor-hifi-header .text-accent-onDark {
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-header .text-ondark-muted,
+.editor-hifi-header .text-ondark-faint {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-header [class*='bg-ink-'],
+.editor-hifi-header [class*='bg-blueprint'] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.editor-hifi-header [class*='border-ink-'] {
+  border-color: var(--editor-line) !important;
+}
+
+.editor-hifi-header [class*='hover:bg-white']:hover,
+.editor-hifi-header [class*='hover:bg-ink']:hover {
+  background-color: var(--editor-accent-soft) !important;
+}
+
+.editor-hifi-header .bg-accent,
+.editor-hifi-header .bg-accent-press {
+  background-color: var(--editor-accent-solid) !important;
+  color: #fff !important;
+}
+
+.editor-hifi-header .bg-accent-soft {
+  background-color: var(--editor-accent-soft) !important;
+}
+
+.editor-hifi-header .text-accent,
+.editor-hifi-header .text-ok {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-header input {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-header input::placeholder {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-header svg[aria-label='ZenUML'] rect {
+  fill: var(--editor-accent-solid) !important;
+}
+
+.editor-hifi-header [data-testid='header-menu'] {
+  padding-right: 14px;
+  border-right: 1px solid var(--editor-line);
+  border-radius: 0;
+}
+
+.editor-hifi-shell .editor-layout,
+.editor-hifi-shell .editor-region,
+.editor-hifi-shell .editor-source-pane,
+.editor-hifi-shell .editor-source-stack {
+  background: var(--editor-bg);
+}
+
+.editor-hifi-shell .editor-pane-header,
+.editor-hifi-shell .editor-source-stack,
+.editor-hifi-shell .editor-source-pane {
+  border-color: var(--editor-line) !important;
+}
+
+.editor-hifi-shell .editor-pane-header .text-accent-onDark {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-shell .editor-pane-header .bg-accent-onDark {
+  background-color: var(--editor-accent) !important;
+}
+
+/* CodeMirror receives its own theme, but the host must still fill the sunk pane
+   while the editor is loading or when an empty document is shown. */
+.editor-hifi-shell .cm-editor,
+.editor-hifi-shell .cm-scroller,
+.editor-hifi-shell .cm-gutters {
+  background: var(--editor-bg) !important;
+}
+
+.editor-hifi-shell .editor-preview-stage {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px 24px 20px 0;
+  background: var(--editor-bg);
+}
+
+.editor-hifi-shell .editor-preview-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--editor-panel);
+  border: 1px solid var(--editor-line);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(43, 81, 74, 0.08);
+}
+
+.editor-hifi-shell .editor-preview-panel--fullscreen {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.editor-hifi-shell .editor-renderer-header {
+  flex-shrink: 0;
+  background: var(--editor-panel) !important;
+  border-color: var(--editor-line) !important;
+  color: var(--editor-ink);
+}
+
+.editor-hifi-shell .editor-renderer-header .text-ondark-muted,
+.editor-hifi-shell .editor-renderer-header .text-ondark-strong {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-renderer-header button {
+  color: var(--editor-ink);
+}
+
+.editor-hifi-shell .editor-renderer-header button:hover {
+  background: var(--editor-accent-soft);
+  color: var(--editor-accent);
+}
+
+.editor-hifi-shell .editor-page-tabs {
+  scrollbar-width: none;
+}
+
+.editor-hifi-shell .editor-page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.editor-hifi-shell .editor-page-tabs .bg-paper-100 {
+  background: var(--editor-accent-soft) !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-page-tabs .text-onlight-muted,
+.editor-hifi-shell .editor-page-tabs .text-onlight-strong {
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-page-tabs .text-onlight-muted {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .bg-paper-50,
+.editor-hifi-shell .editor-source-pane .bg-paper-100 {
+  background: var(--editor-panel) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .border-paper-line {
+  border-color: var(--editor-line) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .text-onlight-strong,
+.editor-hifi-shell .editor-source-pane .text-onlight-muted,
+.editor-hifi-shell .editor-source-pane .text-onlight-faint {
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .text-onlight-muted,
+.editor-hifi-shell .editor-source-pane .text-onlight-faint {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .bg-accent-soft {
+  background: var(--editor-accent-soft) !important;
+}
+
+.editor-hifi-shell .editor-source-pane .text-accent {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-shell .editor-css-panel-strip,
+.editor-hifi-shell .editor-css-panel-header,
+.editor-hifi-shell .editor-css-panel {
+  background: var(--editor-bg);
+  border-color: var(--editor-line) !important;
+  color: var(--editor-ink);
+}
+
+.editor-hifi-shell .editor-css-panel-strip:hover,
+.editor-hifi-shell .editor-css-panel-header button:hover {
+  background: var(--editor-accent-soft);
+  color: var(--editor-ink);
+}
+
+.editor-hifi-shell .editor-css-panel-strip .text-ondark-muted,
+.editor-hifi-shell .editor-css-panel-header .text-ondark-muted,
+.editor-hifi-shell .editor-css-panel-header .text-ondark-strong {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-console {
+  flex-shrink: 0;
+  background: var(--editor-panel);
+  border-color: var(--editor-line) !important;
+  color: var(--editor-muted);
+}
+
+.editor-hifi-shell .editor-console .text-ondark-muted,
+.editor-hifi-shell .editor-console .text-ondark-strong {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-console .text-ok {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-shell .editor-console .text-danger-onDark {
+  color: #b23a33 !important;
+}
+
+.editor-hifi-shell .editor-console input {
+  border-color: var(--editor-line) !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-console input::placeholder {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-console button {
+  color: var(--editor-muted);
+}
+
+.editor-hifi-shell .editor-console button:hover {
+  background: var(--editor-accent-soft);
+  color: var(--editor-ink);
+}
+
+/* Split.js inserts the gutter between the two regions. The center seam and the
+   short grip make the resize affordance visible at both normal and narrow widths. */
+.editor-hifi-shell .editor-split-gutter {
+  position: relative;
+  flex: 0 0 10px;
+  background: transparent;
+  cursor: col-resize;
+}
+
+.editor-hifi-shell .editor-split-gutter::after {
+  inset: 0 auto 0 50%;
+  width: 1px;
+  background: var(--editor-line-strong);
+}
+
+.editor-hifi-shell .editor-split-gutter::before {
+  content: '⋮';
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 30px;
+  border: 1px solid var(--editor-line-strong);
+  border-radius: 8px;
+  background: var(--editor-panel);
+  color: var(--editor-muted);
+  font-size: 14px;
+  line-height: 25px;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+}
+
+.editor-hifi-shell .editor-split-gutter:hover::after {
+  background: var(--editor-accent);
+}
+
+.editor-hifi-shell .editor-split-gutter:hover::before {
+  border-color: var(--editor-accent);
+  color: var(--editor-accent);
+}
+
+/* On desktop the document chrome belongs to the floating preview card. The
+   existing AppHeader still owns these controls and their behavior; positioning
+   the marked pieces here keeps title editing, document actions, save states,
+   sharing, and Present wired to the same handlers while matching the Figma
+   hierarchy: global navigation/account above, document actions inside the card. */
+@media (min-width: 768px) {
+  .editor-hifi-shell {
+    position: relative;
+  }
+
+  .editor-hifi-shell .editor-pane-header {
+    min-height: 64px;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .editor-hifi-header {
+    position: static;
+    z-index: 20;
+    overflow: visible;
+  }
+
+  .editor-hifi-header .editor-document-file,
+  .editor-hifi-header .editor-document-save,
+  .editor-hifi-header .editor-header-actions {
+    position: absolute;
+    z-index: 30;
+  }
+
+  .editor-hifi-header .editor-document-file {
+    top: 88px;
+    left: calc(26.7% + 32px);
+    width: 120px;
+    max-width: 120px;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+    pointer-events: auto;
+  }
+
+  .editor-hifi-header .editor-document-file input {
+    width: 90px;
+    max-width: 90px;
+    height: 32px;
+    padding: 0 !important;
+    font-size: 16px;
+    font-weight: 600;
+    border-color: transparent !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .editor-hifi-header .editor-document-file input:focus {
+    border-color: var(--editor-line-strong) !important;
+  }
+
+  .editor-hifi-header .editor-document-file button {
+    color: var(--editor-muted) !important;
+  }
+
+  .editor-hifi-header .editor-document-file button:hover {
+    color: var(--editor-accent) !important;
+  }
+
+  .editor-hifi-header .editor-document-save {
+    top: 100px;
+    left: calc(26.7% + 156px);
+    pointer-events: none;
+  }
+
+  .editor-hifi-header .editor-document-save [data-testid='header-savestate'] {
+    color: var(--editor-muted) !important;
+    font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+    font-size: 12px;
+  }
+
+  .editor-hifi-header .editor-document-save [data-testid='header-savestate'] .text-ok {
+    color: var(--editor-accent) !important;
+  }
+
+  .editor-hifi-header .editor-document-save [data-testid='header-savestate'][data-state='local']::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--editor-accent);
+  }
+
+  .editor-hifi-header .editor-header-actions {
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .editor-hifi-header .editor-document-share,
+  .editor-hifi-header .editor-document-present,
+  .editor-hifi-header .editor-global-account {
+    position: absolute;
+    pointer-events: auto;
+  }
+
+  .editor-hifi-header .editor-document-share {
+    top: 90px;
+    right: 174px;
+    width: 92px;
+  }
+
+  .editor-hifi-header .editor-document-present {
+    top: 90px;
+    right: 48px;
+    width: 116px;
+    justify-content: center;
+  }
+
+  .editor-hifi-header .editor-document-present > span {
+    display: inline;
+  }
+
+  .editor-hifi-header .editor-global-account-divider {
+    display: none;
+  }
+
+  .editor-hifi-header .editor-global-account {
+    top: 12px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .editor-hifi-shell .editor-renderer-header {
+    margin-top: 64px;
+  }
+
+  .editor-hifi-header .editor-breadcrumb-separator {
+    display: none;
+  }
+
+  .editor-hifi-shell > [data-testid='report-bug-fab'] {
+    top: 92px;
+    left: 270px;
+    right: auto;
+    bottom: auto;
+    background: transparent !important;
+    color: var(--editor-muted) !important;
+    box-shadow: none !important;
+  }
+
+  .editor-hifi-shell > [data-testid='report-bug-fab']:hover {
+    background: var(--editor-accent-soft) !important;
+    color: var(--editor-accent) !important;
+  }
+}
+
+.editor-hifi-shell .editor-layout-mobile,
+.editor-hifi-shell .editor-mobile-tabs {
+  background: var(--editor-bg);
+  border-color: var(--editor-line) !important;
+}
+
+.editor-hifi-shell .editor-mobile-tabs [aria-pressed='true'] {
+  background: var(--editor-accent-soft) !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-mobile-tabs [aria-pressed='false'] {
+  color: var(--editor-muted) !important;
+}
+
+/* The menu and Select content are Radix portals, so they are marked explicitly
+   at the call site rather than depending on their ancestor in the app tree. */
+.editor-hifi-menu,
+.editor-hifi-select-menu {
+  background: #fffefc !important;
+  border-color: #d6e4dc !important;
+  color: #2b514a !important;
+  box-shadow: 0 10px 28px rgba(43, 81, 74, 0.14) !important;
+}
+
+.editor-hifi-menu [data-highlighted],
+.editor-hifi-select-menu [data-highlighted] {
+  background: #e0f0eb !important;
+  color: #0f6d58 !important;
+}
+
+.editor-hifi-menu [class*='text-ondark-'],
+.editor-hifi-select-menu [class*='text-ondark-'] {
+  color: #5c6e61 !important;
+}
+
+.editor-hifi-menu [class*='bg-ink-line'],
+.editor-hifi-select-menu [class*='bg-ink-line'] {
+  background: #d6e4dc !important;
+}
+
+@media (max-width: 767px) {
+  .editor-hifi-shell .editor-preview-stage {
+    padding: 0;
+  }
+
+  .editor-hifi-shell .editor-preview-panel {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
+}

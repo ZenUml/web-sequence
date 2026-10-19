@@ -18,11 +18,24 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
     // `isMobile` is in the dep array so split re-inits when crossing the breakpoint.
     if (isMobile) return;
     if (!leftRef.current || !rightRef.current) return;
-    const sizes = item?.mainSizes ?? [40, 60];
+    // The Hi-Fi baseline gives the renderer the larger working area: at a 1440px
+    // desktop viewport the preview card begins around x=392px, with the editor
+    // retaining enough width for readable DSL. A persisted drag still wins.
+    const sizes = item?.mainSizes ?? [26.7, 73.3];
     let inst: ReturnType<typeof Split> | undefined;
     try {
       inst = Split([leftRef.current, rightRef.current], {
-        sizes, minSize: 240, gutterSize: 6, direction: 'horizontal',
+        // A slightly wider gutter gives the split an explicit draggable affordance
+        // at desktop sizes while preserving the same two-pane interaction.
+        sizes, minSize: 240, gutterSize: 10, direction: 'horizontal',
+        gutter: (_index, direction) => {
+          const gutter = document.createElement('div');
+          gutter.className = `editor-split-gutter gutter gutter-${direction}`;
+          gutter.setAttribute('role', 'separator');
+          gutter.setAttribute('aria-label', 'Resize editor and preview');
+          gutter.setAttribute('aria-orientation', direction === 'horizontal' ? 'vertical' : 'horizontal');
+          return gutter;
+        },
         // FIX 5: use getState() to avoid stale closure over `item`; update store immutably.
         onDragEnd: (s) => useEditorStore.getState().setMainSizes(s.map(Number)),
       });
@@ -39,11 +52,11 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
   // Mobile (< md): single pane with a segmented Edit | Preview control (design §03).
   if (isMobile) {
     return (
-      <div className="flex h-full w-full flex-col">
+      <div className="editor-layout-mobile flex h-full w-full flex-col">
         <div
           role="group"
           aria-label="Editor or preview"
-          className="flex shrink-0 gap-1 px-3 py-2 bg-ink-900 border-b border-ink-line"
+          className="editor-mobile-tabs flex shrink-0 gap-1 px-3 py-2 bg-ink-900 border-b border-ink-line"
         >
           <SegTab label="Edit" testid="layout-tab-edit" active={tab === 'edit'} onClick={() => setTab('edit')} />
           <SegTab label="Preview" testid="layout-tab-preview" active={tab === 'preview'} onClick={() => setTab('preview')} />
@@ -74,9 +87,9 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
 
   // Desktop (≥ md): unchanged split.js two-pane (editor | preview).
   return (
-    <div className="flex h-full w-full">
-      <div ref={leftRef} data-testid="editor-region" aria-label="Editor" className="h-full overflow-hidden">{editor}</div>
-      <div ref={rightRef} data-testid="preview-region" aria-label="Preview" className="h-full overflow-hidden">{preview}</div>
+    <div className="editor-layout flex h-full w-full">
+      <div ref={leftRef} data-testid="editor-region" aria-label="Editor" className="editor-region h-full min-w-0 overflow-hidden">{editor}</div>
+      <div ref={rightRef} data-testid="preview-region" aria-label="Preview" className="preview-region h-full min-w-0 overflow-hidden">{preview}</div>
     </div>
   );
 }

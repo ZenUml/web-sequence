@@ -78,7 +78,7 @@ export function PageTabs({
       role="tablist"
       aria-label="Pages"
       className={cn(
-        'flex items-center gap-0.5',
+        'editor-page-tabs flex min-w-0 max-w-full items-center gap-0.5 overflow-x-auto',
         // Light: the white RendererHeader (.pv-head) owns the surface + border, so the
         // tablist adds neither — only its tab pills. Dark: legacy ink strip.
         light ? 'min-w-0' : 'px-2 py-1 bg-ink-900 border-b border-ink-line',
@@ -138,7 +138,9 @@ export function PageTabs({
                       : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
                 )}
               >
-                {page.title}
+                <span className="max-w-[180px] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={page.title}>
+                  {page.title}
+                </span>
                 {canDelete && (
                   // Fix 1: IconButton is a sibling to the label text, not nested in a <button>
                   <IconButton

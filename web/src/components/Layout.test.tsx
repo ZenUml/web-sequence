@@ -33,6 +33,7 @@ describe('Layout', () => {
       // No mobile tabs on desktop.
       expect(screen.queryByTestId('layout-tab-edit')).toBeNull();
       expect(screen.queryByTestId('layout-tab-preview')).toBeNull();
+      expect(document.querySelector('.editor-layout')).toBeInTheDocument();
     });
   });
 
@@ -85,6 +86,8 @@ describe('Layout', () => {
     it('groups the tabs with an accessible role/name', () => {
       render(<Layout editor={editor} preview={preview} />);
       expect(screen.getByRole('group', { name: 'Editor or preview' })).toBeInTheDocument();
+      expect(document.querySelector('.editor-layout-mobile')).toBeInTheDocument();
+      expect(document.querySelector('.editor-mobile-tabs')).toBeInTheDocument();
     });
   });
 });

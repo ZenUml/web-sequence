@@ -14,61 +14,57 @@ export interface ThemeDef {
 
 // "Ink" / drafting theme — the default editor surface for the rewrite.
 //
-// Aligned to the "Drafting Table" design system's ink workspace: code reads as
-// mostly-neutral (ondark-strong) text on the deep ink-950 well, with a SMALL set
-// of accent highlights — cobalt keywords, a calm green for strings, a teal for
-// calls. Amber is deliberately absent here (the design system reserves amber for
-// sparing chrome emphasis, not wall-to-wall syntax like the old Monokai default).
+// The editor shell is the warm paper/teal D direction. The stored id remains
+// `ink` for backwards compatibility with existing settings; an explicit user
+// choice of another theme still resolves to that theme unchanged. Keeping the
+// id stable means returning users do not get a dead or silently-migrated setting.
 //
 // Hex literals (not Tailwind token names) are required by `createTheme`, and
 // editor *mechanics* are explicitly out of the design system's "no raw hex"
 // scope. The values below mirror the semantic tokens in `web/tailwind.config.js`
 // so the editor stays visually consistent with the app chrome. Each foreground
-// passes WCAG AA (>=4.5:1) on ink-950 (#0B0E13):
-//   ondark-strong #E8EEF7  16.6:1   base text, identifiers, numbers
-//   accent.onDark #7AA2FF   7.8:1   keywords (the cobalt signal)
-//   ok            #2FA56B   6.2:1   strings (calm green)
-//   teal          #5CC8C0   9.6:1   function/method calls (calm teal)
-//   ondark-muted  #8A99AE   6.7:1   comments (italic), operators, punctuation
+// The foregrounds below are tuned for the D surface (#EDF4EF): a deep teal ink
+// for identifiers, a readable teal accent for keywords/calls, and a softened
+// line-number colour that stays legible without competing with the source.
 const ink = createTheme({
-  theme: 'dark',
+  theme: 'light',
   settings: {
-    background: '#0B0E13', // ink-950 — deepest well
-    foreground: '#E8EEF7', // ondark-strong — neutral base text
-    caret: '#7AA2FF', // accent.onDark
-    selection: 'rgba(47,107,255,0.24)', // accent tint
-    selectionMatch: 'rgba(47,107,255,0.16)', // accent-soft
-    lineHighlight: 'rgba(255,255,255,0.03)',
-    gutterBackground: '#10141B', // ink-900
-    gutterForeground: '#5C6A80', // ondark-faint (line numbers; non-syntax chrome)
+    background: '#EDF4EF',
+    foreground: '#2B514A',
+    caret: '#12816F',
+    selection: 'rgba(18,129,111,0.16)',
+    selectionMatch: 'rgba(18,129,111,0.10)',
+    lineHighlight: 'rgba(18,129,111,0.06)',
+    gutterBackground: '#EDF4EF',
+    gutterForeground: '#8CA39A',
     gutterBorder: 'transparent',
   },
   styles: [
-    { tag: t.comment, color: '#8A99AE', fontStyle: 'italic' }, // ondark-muted
-    { tag: t.lineComment, color: '#8A99AE', fontStyle: 'italic' },
-    { tag: t.keyword, color: '#7AA2FF' }, // accent.onDark — the cobalt signal
-    { tag: t.controlKeyword, color: '#7AA2FF' },
-    { tag: t.moduleKeyword, color: '#7AA2FF' },
-    { tag: [t.string, t.special(t.string)], color: '#2FA56B' }, // ok — calm green
-    { tag: t.number, color: '#E8EEF7' }, // neutral
-    { tag: [t.bool, t.null], color: '#7AA2FF' },
+    { tag: t.comment, color: '#718C83', fontStyle: 'italic' },
+    { tag: t.lineComment, color: '#718C83', fontStyle: 'italic' },
+    { tag: t.keyword, color: '#0E7768' },
+    { tag: t.controlKeyword, color: '#0E7768' },
+    { tag: t.moduleKeyword, color: '#0E7768' },
+    { tag: [t.string, t.special(t.string)], color: '#2E806D' },
+    { tag: t.number, color: '#2B514A' },
+    { tag: [t.bool, t.null], color: '#0E7768' },
     // Teal for call-like names. The ZenUML DSL LRLanguage maps
     // `MethodName/Identifier → t.function(t.variableName)` (zenumlLanguage.ts), so
     // DSL method calls now reach this teal style — the old StreamLanguage emitted a
     // bare "function" modifier string that resolved to nothing. These styles also
     // apply in the CSS editor (@codemirror/lang-css), which emits real function tags.
-    { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#5CC8C0' }, // teal calls
-    { tag: t.variableName, color: '#E8EEF7' }, // neutral identifiers
-    { tag: t.propertyName, color: '#E8EEF7' },
-    { tag: t.typeName, color: '#E8EEF7' },
-    { tag: t.className, color: '#E8EEF7' },
-    { tag: t.operator, color: '#8A99AE' }, // ondark-muted — recessed punctuation
-    { tag: [t.punctuation, t.separator, t.bracket], color: '#8A99AE' },
+    { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#12816F' },
+    { tag: t.variableName, color: '#2B514A' },
+    { tag: t.propertyName, color: '#2B514A' },
+    { tag: t.typeName, color: '#2B514A' },
+    { tag: t.className, color: '#2B514A' },
+    { tag: t.operator, color: '#718C83' },
+    { tag: [t.punctuation, t.separator, t.bracket], color: '#718C83' },
     // t.meta — ZenUML annotations (@Actor, @Database, @return). Cobalt reuses the
     // keyword/marker signal hue (no new palette colour); the @-prefixed role marker
     // now pops on every participant line instead of reading as plain text.
-    { tag: t.meta, color: '#7AA2FF' },
-    { tag: t.invalid, color: '#E0524A' }, // danger
+    { tag: t.meta, color: '#0E7768' },
+    { tag: t.invalid, color: '#B23A33' },
   ],
 });
 

@@ -23,7 +23,7 @@ export function Console({ open, entries, onClear, onEval, onToggle }: ConsolePro
   return (
     <div
       data-testid="console"
-      className={`border-t border-ink-line/60 bg-ink-800 text-ondark-muted ${open ? '' : 'h-8 overflow-hidden'}`}
+      className={`editor-console border-t border-ink-line/60 bg-ink-800 text-ondark-muted ${open ? '' : 'h-8 overflow-hidden'}`}
     >
       <div className="flex items-center justify-between pl-1 pr-2 py-0.5 select-none">
         {/* Real toggle button: keyboard-operable and exposes its open state to AT. */}

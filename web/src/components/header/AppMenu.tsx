@@ -85,7 +85,7 @@ export function AppMenu({
           <Chevron className="text-ondark-muted" />
         </button>
       </MenuTrigger>
-      <MenuContent align="start">
+      <MenuContent className="editor-hifi-menu" align="start">
         <MenuItem data-testid="header-new" onSelect={() => onNew()}>
           New
         </MenuItem>
