@@ -173,7 +173,7 @@ body {
   color: var(--editor-ink);
 }
 
-.editor-hifi-header {
+.editor-hifi-shell .editor-hifi-header {
   flex-shrink: 0;
   background-color: var(--editor-bg) !important;
   background-image: none !important;
@@ -181,63 +181,63 @@ body {
   color: var(--editor-ink);
 }
 
-.editor-hifi-header .text-ondark-strong,
-.editor-hifi-header .text-ondark-muted,
-.editor-hifi-header .text-ondark-faint,
-.editor-hifi-header .text-accent-onDark {
+.editor-hifi-shell .editor-hifi-header .text-ondark-strong,
+.editor-hifi-shell .editor-hifi-header .text-ondark-muted,
+.editor-hifi-shell .editor-hifi-header .text-ondark-faint,
+.editor-hifi-shell .editor-hifi-header .text-accent-onDark {
   color: var(--editor-ink) !important;
 }
 
-.editor-hifi-header .text-ondark-muted,
-.editor-hifi-header .text-ondark-faint {
+.editor-hifi-shell .editor-hifi-header .text-ondark-muted,
+.editor-hifi-shell .editor-hifi-header .text-ondark-faint {
   color: var(--editor-muted) !important;
 }
 
-.editor-hifi-header [class*='bg-ink-'],
-.editor-hifi-header [class*='bg-blueprint'] {
+.editor-hifi-shell .editor-hifi-header [class*='bg-ink-'],
+.editor-hifi-shell .editor-hifi-header [class*='bg-blueprint'] {
   background-color: transparent !important;
   background-image: none !important;
 }
 
-.editor-hifi-header [class*='border-ink-'] {
+.editor-hifi-shell .editor-hifi-header [class*='border-ink-'] {
   border-color: var(--editor-line) !important;
 }
 
-.editor-hifi-header [class*='hover:bg-white']:hover,
-.editor-hifi-header [class*='hover:bg-ink']:hover {
+.editor-hifi-shell .editor-hifi-header [class*='hover:bg-white']:hover,
+.editor-hifi-shell .editor-hifi-header [class*='hover:bg-ink']:hover {
   background-color: var(--editor-accent-soft) !important;
 }
 
-.editor-hifi-header .bg-accent,
-.editor-hifi-header .bg-accent-press {
+.editor-hifi-shell .editor-hifi-header .bg-accent,
+.editor-hifi-shell .editor-hifi-header .bg-accent-press {
   background-color: var(--editor-accent-solid) !important;
   color: #fff !important;
 }
 
-.editor-hifi-header .bg-accent-soft {
+.editor-hifi-shell .editor-hifi-header .bg-accent-soft {
   background-color: var(--editor-accent-soft) !important;
 }
 
-.editor-hifi-header .text-accent,
-.editor-hifi-header .text-ok {
+.editor-hifi-shell .editor-hifi-header .text-accent,
+.editor-hifi-shell .editor-hifi-header .text-ok {
   color: var(--editor-accent) !important;
 }
 
-.editor-hifi-header input {
+.editor-hifi-shell .editor-hifi-header input {
   background: transparent !important;
   border-color: transparent !important;
   color: var(--editor-ink) !important;
 }
 
-.editor-hifi-header input::placeholder {
+.editor-hifi-shell .editor-hifi-header input::placeholder {
   color: var(--editor-muted) !important;
 }
 
-.editor-hifi-header svg[aria-label='ZenUML'] rect {
+.editor-hifi-shell .editor-hifi-header svg[aria-label='ZenUML'] rect {
   fill: var(--editor-accent-solid) !important;
 }
 
-.editor-hifi-header [data-testid='header-menu'] {
+.editor-hifi-shell .editor-hifi-header [data-testid='header-menu'] {
   padding-right: 14px;
   border-right: 1px solid var(--editor-line);
   border-radius: 0;
@@ -467,11 +467,122 @@ body {
   color: var(--editor-accent);
 }
 
+/* Document controls are mounted into this slot inside the preview card. The
+   controls remain owned by AppHeader, but their layout belongs to the card so
+   they follow a dragged split and can wrap when the card gets narrow. */
+.editor-hifi-shell .editor-document-chrome-slot {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 64px;
+}
+
+.editor-hifi-shell .editor-document-chrome-slot--hidden {
+  display: none;
+}
+
+.editor-hifi-shell .editor-document-chrome {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 12px 24px;
+  box-sizing: border-box;
+}
+
+.editor-hifi-shell .editor-document-file {
+  display: flex;
+  flex: 0 1 120px;
+  align-items: center;
+  min-width: 0;
+  width: 120px;
+  max-width: 120px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.editor-hifi-shell .editor-document-file input {
+  width: 90px;
+  max-width: 90px;
+  height: 32px;
+  padding: 0 !important;
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--editor-ink) !important;
+}
+
+.editor-hifi-shell .editor-document-file input:focus {
+  border-color: var(--editor-line-strong) !important;
+}
+
+.editor-hifi-shell .editor-document-file button {
+  color: var(--editor-muted) !important;
+}
+
+.editor-hifi-shell .editor-document-file button:hover {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-shell .editor-document-save {
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.editor-hifi-shell .editor-document-save [data-testid='header-savestate'] {
+  color: var(--editor-muted) !important;
+  font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.editor-hifi-shell .editor-document-save [data-testid='header-savestate'] .text-ok {
+  color: var(--editor-accent) !important;
+}
+
+.editor-hifi-shell .editor-document-save [data-testid='header-savestate'][data-state='local']::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--editor-accent);
+}
+
+.editor-hifi-shell .editor-document-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.editor-hifi-shell .editor-document-share {
+  flex: 0 0 auto;
+  width: 92px;
+}
+
+.editor-hifi-shell .editor-document-present {
+  flex: 0 0 auto;
+  width: 116px;
+  justify-content: center;
+}
+
+.editor-hifi-shell .editor-document-present > span {
+  display: inline;
+}
+
 /* On desktop the document chrome belongs to the floating preview card. The
-   existing AppHeader still owns these controls and their behavior; positioning
-   the marked pieces here keeps title editing, document actions, save states,
-   sharing, and Present wired to the same handlers while matching the Figma
-   hierarchy: global navigation/account above, document actions inside the card. */
+   existing AppHeader still owns these controls and their behavior; the explicit
+   slot above puts them in the floating card without coupling their position to
+   the viewport or the current split percentage. */
 @media (min-width: 768px) {
   .editor-hifi-shell {
     position: relative;
@@ -483,126 +594,23 @@ body {
     padding-right: 24px !important;
   }
 
-  .editor-hifi-header {
+  .editor-hifi-shell .editor-hifi-header {
     position: static;
     z-index: 20;
     overflow: visible;
   }
 
-  .editor-hifi-header .editor-document-file,
-  .editor-hifi-header .editor-document-save,
-  .editor-hifi-header .editor-header-actions {
-    position: absolute;
-    z-index: 30;
-  }
-
-  .editor-hifi-header .editor-document-file {
-    top: 88px;
-    left: calc(26.7% + 32px);
-    width: 120px;
-    max-width: 120px;
-    padding: 0;
-    border: 0 !important;
-    border-radius: 0;
-    background: transparent !important;
-    pointer-events: auto;
-  }
-
-  .editor-hifi-header .editor-document-file input {
-    width: 90px;
-    max-width: 90px;
-    height: 32px;
-    padding: 0 !important;
-    font-size: 16px;
-    font-weight: 600;
-    border-color: transparent !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .editor-hifi-header .editor-document-file input:focus {
-    border-color: var(--editor-line-strong) !important;
-  }
-
-  .editor-hifi-header .editor-document-file button {
-    color: var(--editor-muted) !important;
-  }
-
-  .editor-hifi-header .editor-document-file button:hover {
-    color: var(--editor-accent) !important;
-  }
-
-  .editor-hifi-header .editor-document-save {
-    top: 100px;
-    left: calc(26.7% + 156px);
-    pointer-events: none;
-  }
-
-  .editor-hifi-header .editor-document-save [data-testid='header-savestate'] {
-    color: var(--editor-muted) !important;
-    font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
-    font-size: 12px;
-  }
-
-  .editor-hifi-header .editor-document-save [data-testid='header-savestate'] .text-ok {
-    color: var(--editor-accent) !important;
-  }
-
-  .editor-hifi-header .editor-document-save [data-testid='header-savestate'][data-state='local']::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--editor-accent);
-  }
-
-  .editor-hifi-header .editor-header-actions {
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .editor-hifi-header .editor-document-share,
-  .editor-hifi-header .editor-document-present,
-  .editor-hifi-header .editor-global-account {
-    position: absolute;
-    pointer-events: auto;
-  }
-
-  .editor-hifi-header .editor-document-share {
-    top: 90px;
-    right: 174px;
-    width: 92px;
-  }
-
-  .editor-hifi-header .editor-document-present {
-    top: 90px;
-    right: 48px;
-    width: 116px;
-    justify-content: center;
-  }
-
-  .editor-hifi-header .editor-document-present > span {
-    display: inline;
-  }
-
-  .editor-hifi-header .editor-global-account-divider {
+  .editor-hifi-shell .editor-global-account-divider {
     display: none;
   }
 
-  .editor-hifi-header .editor-global-account {
-    top: 12px;
-    right: 24px;
+  .editor-hifi-shell .editor-global-account {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .editor-hifi-shell .editor-renderer-header {
-    margin-top: 64px;
-  }
-
-  .editor-hifi-header .editor-breadcrumb-separator {
+  .editor-hifi-shell .editor-breadcrumb-separator {
     display: none;
   }
 

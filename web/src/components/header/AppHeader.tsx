@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Button,
   TextInput,
@@ -63,6 +64,10 @@ export interface AppHeaderProps {
   // Hub (Approach A): when provided, renders a "← Library" breadcrumb left of the
   // title so the user can return to the home/library view. Omitted in classic mode.
   onGoHome?(): void;
+  // The editor mounts document controls in the floating preview card. AppHeader
+  // remains the single owner of their state and handlers; this target only controls
+  // their DOM location. When omitted, controls stay inline for standalone callers.
+  documentChromeTarget?: HTMLElement | null;
 }
 
 function Chevron({ className }: { className?: string }) {
@@ -140,6 +145,7 @@ export function AppHeader({
   onLoginOpenChange,
   actions,
   onGoHome,
+  documentChromeTarget,
 }: AppHeaderProps) {
   const [loginOpenInternal, setLoginOpenInternal] = useState(false);
   // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
@@ -221,6 +227,174 @@ export function AppHeader({
     }
   };
 
+  // The editor's document chrome is rendered through an explicit slot in the
+  // preview card. Keeping this JSX here means title editing, menus, save state,
+  // Share, and Present still have one owner even though the controls move with
+  // the card when the editor/preview split is dragged.
+  const documentChrome = (
+    <div data-testid="editor-document-chrome" className="editor-document-chrome">
+      <div
+        className={cn(
+          'editor-document-file flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
+          'bg-ink-700/45 border border-ink-line/50',
+          !documentChromeTarget && onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
+        )}
+      >
+        <TextInput
+          ref={titleRef}
+          surface="dark"
+          value={draft}
+          data-testid="header-title"
+          aria-label="Diagram title"
+          readOnly={readOnly}
+          // .fname: quiet until hover/focus — transparent fill + borderless until
+          // the field is engaged, so the title reads as text, not a form control.
+          className={cn(
+            'min-w-0 h-7 bg-transparent border-transparent font-sans font-medium',
+            'text-[14px] text-ondark-strong',
+            'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
+            // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
+            documentChromeTarget
+              ? 'max-w-[220px]'
+              : onGoHome
+                ? 'flex-1 sm:flex-none sm:max-w-[220px]'
+                : 'max-w-[220px]',
+          )}
+          onFocus={() => {
+            editingTitle.current = true;
+          }}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleTitleKeyDown}
+          onBlur={() => {
+            // Commit on blur (commit-on-exit), then leave edit mode. Escape's blur
+            // already reverted the draft, so this commit is a no-op there (the draft
+            // equals the committed value → commitTitle skips onTitleChange).
+            if (editingTitle.current) {
+              editingTitle.current = false;
+              commitTitle(draft);
+            }
+            // Re-sync to the authoritative committed value once editing ends.
+            setDraft(committedTitleRef.current);
+          }}
+        />
+        <Menu>
+          <MenuTrigger asChild>
+            <button
+              type="button"
+              data-testid="filemenu-trigger"
+              aria-label="Document menu"
+              className={cn(
+                'grid place-items-center h-6 w-6 shrink-0 rounded',
+                'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
+                'transition-colors duration-150 ease-draft ring-draft',
+              )}
+            >
+              <Chevron />
+            </button>
+          </MenuTrigger>
+          <MenuContent className="editor-hifi-menu" align="start" onCloseAutoFocus={handleDocMenuCloseAutoFocus}>
+            <MenuItem
+              data-testid="filemenu-rename"
+              onSelect={() => {
+                renameIntent.current = true;
+              }}
+            >
+              Rename
+            </MenuItem>
+            <MenuItem data-testid="filemenu-duplicate" onSelect={onFork}>
+              Duplicate
+            </MenuItem>
+            {/* Export / Move to trash — document-domain but need plumbing not
+                present in Phase 1. Phase 3. */}
+          </MenuContent>
+        </Menu>
+      </div>
+
+      <div className="editor-document-save hidden sm:flex items-center">
+        <SaveState
+          readOnly={readOnly}
+          signedIn={!!user}
+          saving={saving}
+          dirty={dirty ?? unsavedCount > 0}
+          unsavedCount={unsavedCount}
+        />
+      </div>
+
+      <div className="editor-document-actions editor-header-actions flex items-center gap-1.5 md:gap-2 shrink-0">
+        <div className="editor-document-share">{actions}</div>
+        <Tooltip label="Present this diagram full-screen">
+          {/* Below md the label collapses to icon-only to avoid clipping. The
+              accessible name persists via aria-label so the control is never
+              an unlabelled icon. This is CSS-only (Tailwind responsive); no JS
+              media query touches the header. */}
+          <Button
+            variant="subtle"
+            size="md"
+            data-testid="header-present"
+            aria-label="Present"
+            onClick={onPresent}
+            className="editor-document-present"
+          >
+            <PlayIcon />
+            <span className="hidden md:inline">Present</span>
+          </Button>
+        </Tooltip>
+      </div>
+    </div>
+  );
+
+  const globalAccount = (
+    <div className="editor-global-actions flex items-center gap-1.5 md:gap-2 shrink-0">
+      <div
+        aria-hidden="true"
+        data-testid="header-account-divider"
+        className="editor-global-account-divider mx-0.5 h-6 w-px bg-ink-line/50 shrink-0"
+      />
+
+      {user ? (
+        <div className="editor-global-account">
+          <ProfileMenu
+            user={user}
+            onLogout={onLogout}
+            subscribed={subscribed}
+            planType={planType}
+            paymentEnabled={paymentEnabled}
+            onUpgrade={onUpgrade}
+            onManagePlan={onManagePlan}
+          />
+        </div>
+      ) : (
+        <div className="editor-global-account">
+          {/* Signed-out users have no account menu (which carries Upgrade/My Plan
+              for signed-in users), so surface a visible Pricing affordance here —
+              gated by paymentEnabled like the app-menu item. A quiet ghost link so
+              "Sign in" stays the primary action. The pricing modal handles the
+              not-signed-in upgrade by routing back to sign-in. */}
+          {paymentEnabled && (
+            <Button
+              variant="ghost"
+              size="md"
+              data-testid="header-pricing-link"
+              onClick={() => onOpenPricing?.()}
+            >
+              Pricing
+            </Button>
+          )}
+          <Tooltip label="Sign in to save and sync across devices">
+            <Button
+              variant="subtle"
+              size="md"
+              data-testid="header-login"
+              onClick={() => setLoginOpen(true)}
+            >
+              Sign in
+            </Button>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <header className={cn(
@@ -281,173 +455,14 @@ export function AppHeader({
           </div>
         )}
 
-        {/* File menu — inline-editable filename + a chevron opening the document
-            menu (Rename / Duplicate). The name + chevron sit together in a quiet
-            pill (.filemenu) so "this is the file and its actions" reads as a unit. */}
-        <div
-          className={cn(
-            'editor-document-file flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
-            'bg-ink-700/45 border border-ink-line/50',
-            // Hub mode on mobile: drop title to its own row, stretch full width.
-            onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
-          )}
-        >
-          <TextInput
-            ref={titleRef}
-            surface="dark"
-            value={draft}
-            data-testid="header-title"
-            aria-label="Diagram title"
-            readOnly={readOnly}
-            // .fname: quiet until hover/focus — transparent fill + borderless until
-            // the field is engaged, so the title reads as text, not a form control.
-            className={cn(
-              'min-w-0 h-7 bg-transparent border-transparent font-sans font-medium',
-              'text-[14px] text-ondark-strong',
-              'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
-              // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
-              onGoHome ? 'flex-1 sm:flex-none sm:max-w-[220px]' : 'max-w-[220px]',
-            )}
-            onFocus={() => {
-              editingTitle.current = true;
-            }}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleTitleKeyDown}
-            onBlur={() => {
-              // Commit on blur (commit-on-exit), then leave edit mode. Escape's blur
-              // already reverted the draft, so this commit is a no-op there (the draft
-              // equals the committed value → commitTitle skips onTitleChange).
-              if (editingTitle.current) {
-                editingTitle.current = false;
-                commitTitle(draft);
-              }
-              // Re-sync to the authoritative committed value once editing ends.
-              setDraft(committedTitleRef.current);
-            }}
-          />
-          <Menu>
-            <MenuTrigger asChild>
-              <button
-                type="button"
-                data-testid="filemenu-trigger"
-                aria-label="Document menu"
-                className={cn(
-                  'grid place-items-center h-6 w-6 shrink-0 rounded',
-                  'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
-                  'transition-colors duration-150 ease-draft ring-draft',
-                )}
-              >
-                <Chevron />
-              </button>
-            </MenuTrigger>
-            <MenuContent className="editor-hifi-menu" align="start" onCloseAutoFocus={handleDocMenuCloseAutoFocus}>
-              <MenuItem
-                data-testid="filemenu-rename"
-                onSelect={() => {
-                  renameIntent.current = true;
-                }}
-              >
-                Rename
-              </MenuItem>
-              <MenuItem data-testid="filemenu-duplicate" onSelect={onFork}>
-                Duplicate
-              </MenuItem>
-              {/* Export / Move to trash — document-domain but need plumbing not
-                  present in Phase 1. Phase 3. */}
-            </MenuContent>
-          </Menu>
-        </div>
-
-        {/* Auto-save state (.savestate) — sits left of the right-hand action group.
-            Never claims "Saved" when there is no real save target:
-            - readOnly: no save happens, so show a neutral "Read-only" (no dirty/saving).
-            - signed-out: auto-save is local-only, so show neutral "Local only".
-            - saving: "Saving…"; dirty: amber "Unsaved"; otherwise emerald "Saved". */}
-        {/* Hidden on the narrowest screens (< sm) so the save-state text doesn't crowd
-            the filename; the design's mobile header is intentionally minimal. */}
-        <div className="editor-document-save hidden sm:flex items-center">
-          <SaveState
-            readOnly={readOnly}
-            signedIn={!!user}
-            saving={saving}
-            dirty={dirty ?? unsavedCount > 0}
-            unsavedCount={unsavedCount}
-          />
-        </div>
+        {!documentChromeTarget && documentChrome}
 
         <div className="flex-1" />
 
-        {/* Top-right: the only shared verbs. Share (via actions) · Present · divider ·
-            account. Three jobs, clear order. */}
-        <div className="editor-header-actions flex items-center gap-1.5 md:gap-2 shrink-0">
-          <div className="editor-document-share">{actions}</div>
-          <Tooltip label="Present this diagram full-screen">
-            {/* Below md the label collapses to icon-only to avoid clipping. The
-                accessible name persists via aria-label so the control is never
-                an unlabelled icon. This is CSS-only (Tailwind responsive); no JS
-                media query touches the header. */}
-            <Button
-              variant="subtle"
-              size="md"
-              data-testid="header-present"
-              aria-label="Present"
-              onClick={onPresent}
-              className="editor-document-present"
-            >
-              <PlayIcon />
-              <span className="hidden md:inline">Present</span>
-            </Button>
-          </Tooltip>
-
-          <div
-            aria-hidden="true"
-            data-testid="header-account-divider"
-            className="editor-global-account-divider mx-0.5 h-6 w-px bg-ink-line/50 shrink-0"
-          />
-
-          {user ? (
-            <div className="editor-global-account">
-              <ProfileMenu
-                user={user}
-                onLogout={onLogout}
-                subscribed={subscribed}
-                planType={planType}
-                paymentEnabled={paymentEnabled}
-                onUpgrade={onUpgrade}
-                onManagePlan={onManagePlan}
-              />
-            </div>
-          ) : (
-            <div className="editor-global-account">
-              {/* Signed-out users have no account menu (which carries Upgrade/My Plan
-                  for signed-in users), so surface a visible Pricing affordance here —
-                  gated by paymentEnabled like the app-menu item. A quiet ghost link so
-                  "Sign in" stays the primary action. The pricing modal handles the
-                  not-signed-in upgrade by routing back to sign-in. */}
-              {paymentEnabled && (
-                <Button
-                  variant="ghost"
-                  size="md"
-                  data-testid="header-pricing-link"
-                  onClick={() => onOpenPricing?.()}
-                >
-                  Pricing
-                </Button>
-              )}
-              <Tooltip label="Sign in to save and sync across devices">
-                <Button
-                  variant="subtle"
-                  size="md"
-                  data-testid="header-login"
-                  onClick={() => setLoginOpen(true)}
-                >
-                  Sign in
-                </Button>
-              </Tooltip>
-            </div>
-          )}
-        </div>
+        {globalAccount}
       </header>
+
+      {documentChromeTarget ? createPortal(documentChrome, documentChromeTarget) : null}
 
       <LoginModal
         open={loginOpen}

@@ -92,6 +92,9 @@ export function AppRoot() {
   useOnlineStatus();
 
   const item = useEditorStore((s) => s.currentItem);
+  // AppHeader owns document control state and handlers, while this target lets the
+  // controls render inside the floating preview card so they follow split dragging.
+  const [documentChromeTarget, setDocumentChromeTarget] = useState<HTMLDivElement | null>(null);
   const setDsl = useEditorStore((s) => s.setDsl);
   const setCss = useEditorStore((s) => s.setCss);
   const setCssMode = useEditorStore((s) => s.setCssMode);
@@ -1224,6 +1227,7 @@ export function AppRoot() {
         onOpenCheatSheet={() => openModal('cheatsheet')}
         onOpenShortcuts={() => openModal('shortcuts')}
         onGoHome={goHome}
+        documentChromeTarget={documentChromeTarget}
         actions={
           <ShareButton
             disabled={shareReadOnly}
@@ -1316,6 +1320,12 @@ export function AppRoot() {
           preview={
             <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'editor-preview-stage relative h-full flex flex-col'}>
               <div className={fullscreen ? 'editor-preview-panel editor-preview-panel--fullscreen flex flex-col h-full' : 'editor-preview-panel flex flex-col h-full'}>
+              <div
+                ref={setDocumentChromeTarget}
+                data-testid="editor-document-chrome-slot"
+                className={fullscreen ? 'editor-document-chrome-slot editor-document-chrome-slot--hidden' : 'editor-document-chrome-slot'}
+                aria-hidden={fullscreen ? true : undefined}
+              />
               {/* Renderer header (diagram side): page tabs + zoom/Fit/Present controls.
                   In Present (fullscreen) mode the chrome is hidden — only an Exit
                   affordance remains so the diagram presents clean. */}

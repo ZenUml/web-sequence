@@ -281,6 +281,18 @@ describe('AppRoot', () => {
     expect(useUiStore.getState().fullscreen).toBe(true);
   });
 
+  it('mounts document controls in the preview slot and hides that slot in fullscreen', async () => {
+    const { container, getByTestId } = render(<AppRoot />);
+    const slot = await screen.findByTestId('editor-document-chrome-slot');
+    await waitFor(() => expect(slot.querySelector('[data-testid="editor-document-chrome"]')).toBeTruthy());
+    expect(slot.querySelector('[data-testid="header-title"]')).toBeTruthy();
+    expect(container.querySelectorAll('[data-testid="header-title"]')).toHaveLength(1);
+
+    await userEvent.click(getByTestId('header-present'));
+    expect(slot).toHaveClass('editor-document-chrome-slot--hidden');
+    expect(slot).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('renders the AppHeader with title input + save-state indicator', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
