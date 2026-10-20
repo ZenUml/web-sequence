@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { EditorState, type Transaction } from '@codemirror/state'
-import { LRLanguage } from '@codemirror/language'
+import { LRLanguage, ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { parser } from './grammar/zenuml-parser.js'
 import { zenumlParticipantField, getParticipants } from './participantManager'
 
@@ -20,6 +20,15 @@ const lezerLang = LRLanguage.define({ parser })
 /** Build an EditorState with the Lezer language + participant field installed. */
 function stateFor(doc: string): EditorState {
   return EditorState.create({ doc, extensions: [lezerLang, zenumlParticipantField] })
+}
+
+/**
+ * Finish the parse and hand the tree to the state, the way the editor's
+ * background parser does: a transaction that changes the tree, not the doc.
+ */
+function fullyParsed(state: EditorState): EditorState {
+  if (!ensureSyntaxTree(state, state.doc.length, 5000)) throw new Error('parse did not finish')
+  return state.update({}).state
 }
 
 /** Apply a doc-replacing transaction to simulate editing. */
@@ -213,11 +222,25 @@ describe('zenumlParticipantField + getParticipants', () => {
       // 100 messages P0->P1, P1->P2, … plus a trailing endpoint = participants P0..P100.
       const lines: string[] = []
       for (let i = 0; i < 100; i++) lines.push(`P${i}->P${i + 1}: m${i}`)
-      const set = getParticipants(stateFor(lines.join('\n')))
+      // The initial parse has a 20ms budget; under parallel test load it can stop
+      // early (seen: 43 of 101). Complete the parse first, as the editor does.
+      const set = getParticipants(fullyParsed(stateFor(lines.join('\n'))))
       expect(set.size).toBe(101) // P0..P100
       expect(set.has('P0')).toBe(true)
       expect(set.has('P100')).toBe(true)
       expect(set.has('m0')).toBe(false) // labels never fabricated, even at scale
+    })
+
+    it('picks up participants the initial parse did not reach once parsing completes', () => {
+      // EditorState.create parses at most 3000 chars (Work.InitViewport); the rest
+      // arrives later in a transaction that changes the tree but not the doc.
+      const lines: string[] = []
+      for (let i = 0; i < 300; i++) lines.push(`P${i}->P${i + 1}: m${i}`)
+      const initial = stateFor(lines.join('\n'))
+      expect(syntaxTree(initial).length).toBeLessThan(initial.doc.length) // precondition
+      const set = getParticipants(fullyParsed(initial))
+      expect(set.size).toBe(301)
+      expect(set.has('P300')).toBe(true)
     })
   })
 

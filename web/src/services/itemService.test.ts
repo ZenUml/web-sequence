@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const fs = vi.hoisted(() => ({
   doc: vi.fn((_db, path) => ({ path })),
@@ -17,8 +17,13 @@ vi.mock('./firebase', () => ({ db: {} }));
 
 import { localStore } from './storage';
 import * as localItems from './localItems';
-import { makeItemService } from './itemService';
+import { makeItemService, IdentityChangedError } from './itemService';
 import type { Item } from '../domain/types';
+import { useImportFeedbackStore, runImport } from '../components/library/importFeedbackStore';
+import type { IdentityBinding, OperationIdentity } from '../components/library/libraryIdentity';
+import { useLibraryReader } from '../components/library/useLibraryReader';
+import { renderHook } from '@testing-library/react';
+import { LS_KEYS } from '../config/constants';
 
 const baseItem = (over: Partial<Item> = {}): Item => ({
   id: 'item-1', title: 'T', js: 'A.b', css: '', html: '',
@@ -52,8 +57,21 @@ describe('itemService.setItem', () => {
   });
   it('signed-in but OFFLINE → local write; cloud attempted but not awaited (resolves immediately)', async () => {
     const svc = makeItemService(() => ({ uid: 'u1', online: false }));
-    await svc.setItem('item-1', baseItem());
+    expect(await svc.setItem('item-1', baseItem())).toEqual({ status: 'queued' });
     expect(await localStore.get<Item | null>('item-1', null)).not.toBeNull();
+  });
+
+  it('does not write to a replacement account after the local write awaited', async () => {
+    let uid: string | null = 'u1';
+    const svc = makeItemService(() => ({uid, online:true}));
+    const original = localStore.set.bind(localStore);
+    const local = vi.spyOn(localStore, 'set').mockImplementationOnce(async (key, value) => {
+      await original(key, value);
+      uid = 'u2';
+    });
+    await expect(svc.setItem('item-1', baseItem(), {guard:{expectedUid:'u1'}})).rejects.toBeInstanceOf(IdentityChangedError);
+    expect(fs.setDoc).not.toHaveBeenCalled();
+    local.mockRestore();
   });
 
   // REQ-SUB-5 softened plan-limit: skipCloud keeps the local write but withholds
@@ -127,6 +145,27 @@ describe('itemService.subscribeAllItems', () => {
     expect(fs.where).toHaveBeenCalledWith('createdBy', '==', 'u1');
     expect(cb).toHaveBeenCalledWith([{ id: 'a', createdBy: 'u1' }, { id: 'b', createdBy: 'u1' }]);
     expect(stop).toBe(unsub);
+  });
+});
+
+describe('itemService.subscribeAllItems — read error provenance (IE-F2)', () => {
+  it('with onError: a snapshot error reaches onError and is NOT reported as an empty library', () => {
+    const failure = new Error('permission-denied');
+    fs.onSnapshot.mockImplementationOnce((_q: any, _onNext: any, onErr: any) => { onErr(failure); return vi.fn(); });
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    const cb = vi.fn();
+    const onError = vi.fn();
+    svc.subscribeAllItems('u1', cb, onError);
+    expect(onError).toHaveBeenCalledWith(failure);
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('without onError: legacy behaviour (cb([])) is unchanged for existing callers', () => {
+    fs.onSnapshot.mockImplementationOnce((_q: any, _onNext: any, onErr: any) => { onErr(new Error('x')); return vi.fn(); });
+    const svc = makeItemService(() => ({ uid: 'u1', online: true }));
+    const cb = vi.fn();
+    svc.subscribeAllItems('u1', cb);
+    expect(cb).toHaveBeenCalledWith([]);
   });
 });
 
@@ -238,5 +277,275 @@ describe('itemService.stopSharing', () => {
     const svc = makeItemService(() => ({ uid: null, online: true }));
     await svc.stopSharing('item-1');
     expect(fs.setDoc).not.toHaveBeenCalled();
+  });
+});
+
+// Bound-identity import saves (identity-cancellation review). saveItems reads live
+// auth; an import started under one identity must never write into another. The
+// optional { expectedUid } guard is checked before every local write and before the
+// cloud commit. Without the guard, behaviour is unchanged (useImportOnLogin et al.).
+describe('itemService.saveItems — bound identity guard', () => {
+  it('signed-in: identity changed before commit → no commit, IdentityChangedError(writesStarted=false)', async () => {
+    const svc = makeItemService(() => ({ uid: 'B', online: true }));
+    const err = await svc.saveItems({ a: baseItem({ id: 'a' }) }, { expectedUid: 'A' }).catch((e) => e);
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(err.writesStarted).toBe(false);
+    // No batch is even built for B (no set, no commit).
+    expect(fs.writeBatch).not.toHaveBeenCalled();
+  });
+
+  it('signed-in: switch while the batch is being built → no commit', async () => {
+    let uid: string | null = 'A';
+    const batch = { set: vi.fn(() => { uid = 'B'; }), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid, online: true }));
+    const err = await svc
+      .saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }) }, { expectedUid: 'A' })
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(batch.commit).not.toHaveBeenCalled();
+  });
+
+  it('A → signed out: an import bound to A never falls into the local signed-out path', async () => {
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    const err = await svc.saveItems({ a: baseItem({ id: 'a' }) }, { expectedUid: 'A' }).catch((e) => e);
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(await localStore.get('a', null)).toBeNull();
+    expect(await localItems.list()).toEqual([]);
+  });
+
+  it('signed-out multi-item save stops at the first write after sign-in (writesStarted=true)', async () => {
+    let uid: string | null = null;
+    const svc = makeItemService(() => ({ uid, online: true }));
+    const setSpy = vi.spyOn(localStore, 'set');
+    // Sign in right after the first item record is written.
+    setSpy.mockImplementationOnce(async (k, v) => {
+      window.localStorage.setItem(k, JSON.stringify(v));
+      uid = 'B';
+    });
+    const err = await svc
+      .saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }), c: baseItem({ id: 'c' }) }, { expectedUid: null })
+      .catch((e) => e);
+    setSpy.mockRestore();
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(err.writesStarted).toBe(true);
+    expect(await localStore.get('b', null)).toBeNull();
+    expect(await localStore.get('c', null)).toBeNull();
+    expect(fs.writeBatch).not.toHaveBeenCalled();
+  });
+
+  it('matching identity behaves exactly like the unguarded call', async () => {
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'A', online: true }));
+    await svc.saveItems({ a: baseItem({ id: 'a' }) }, { expectedUid: 'A' });
+    expect(batch.set).toHaveBeenCalledTimes(2);
+    expect(batch.commit).toHaveBeenCalledTimes(1);
+    const local = makeItemService(() => ({ uid: null, online: true }));
+    await local.saveItems({ z: baseItem({ id: 'z' }) }, { expectedUid: null });
+    expect(await localItems.list()).toContain('z');
+  });
+
+  it('no guard: unchanged legacy behaviour (writes under whatever identity is live)', async () => {
+    const local = makeItemService(() => ({ uid: null, online: true }));
+    await local.saveItems({ q: baseItem({ id: 'q' }) });
+    expect(await localItems.list()).toContain('q');
+  });
+});
+
+// IE-C2: the optional isCurrent predicate stops NOT-YET-ISSUED writes after the
+// operation's generation is invalidated, even when the live uid matches again.
+describe('itemService.saveItems — current-attempt predicate (IE-C2)', () => {
+  function holdFirstLocalWrite() {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const real = localStore.set.bind(localStore);
+    const spy = vi.spyOn(localStore, 'set').mockImplementationOnce(async (k: string, v: unknown) => {
+      await gate;
+      await real(k, v);
+    });
+    return { release, spy };
+  }
+
+  it('first local write held, attempt invalidated (uid still null), settled: no index or later record writes', async () => {
+    const { release, spy } = holdFirstLocalWrite();
+    let current = true;
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    const run = svc
+      .saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }), c: baseItem({ id: 'c' }) },
+        { expectedUid: null, isCurrent: () => current })
+      .catch((e) => e);
+    current = false; // e.g. owner unmounted, or null → B → null
+    release();
+    const err = await run;
+    spy.mockRestore();
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(err.writesStarted).toBe(true);
+    expect(await localItems.list()).toEqual([]); // the index write for 'a' never started
+    expect(await localStore.get('b', null)).toBeNull();
+    expect(await localStore.get('c', null)).toBeNull();
+  });
+
+  it('signed-in: attempt invalidated while the batch is built → no commit', async () => {
+    let current = true;
+    const batch = { set: vi.fn(() => { current = false; }), update: vi.fn(), commit: vi.fn(async () => {}) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    const svc = makeItemService(() => ({ uid: 'A', online: true }));
+    const err = await svc.saveItems({ a: baseItem({ id: 'a' }) }, { expectedUid: 'A', isCurrent: () => current }).catch((e) => e);
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(batch.commit).not.toHaveBeenCalled();
+  });
+
+  it('expectedUid alone (account-flow callers) keeps the round-3 behaviour', async () => {
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    await svc.saveItems({ k: baseItem({ id: 'k' }) }, { expectedUid: null });
+    expect(await localItems.list()).toContain('k');
+  });
+
+  // Real service seam end to end: the controller forwards its token predicate.
+  it('runImport + real saveItems: first local write held, null → B → null, settled: later writes stopped, no success', async () => {
+    useImportFeedbackStore.getState().reset();
+    let current: OperationIdentity = { uid: null, generation: 1 };
+    const binding: IdentityBinding = {
+      current: () => current,
+      isCurrent: (t) => t.uid === current.uid && t.generation === current.generation,
+    };
+    let liveUid: string | null = null;
+    const svc = makeItemService(() => ({ uid: liveUid, online: true }));
+    const { release, spy } = holdFirstLocalWrite();
+    const onItemsAdded = vi.fn();
+    const text = JSON.stringify({ items: [{ id: 'a', title: 'a', js: '' }, { id: 'b', title: 'b', js: '' }, { id: 'c', title: 'c', js: '' }] });
+    const run = runImport(text, { identity: binding, existingIds: [], saveItems: svc.saveItems, onItemsAdded });
+    await vi.waitFor(() => expect(spy).toHaveBeenCalled());
+    liveUid = 'B'; current = { uid: 'B', generation: 2 };
+    liveUid = null; current = { uid: null, generation: 3 };
+    release();
+    await run;
+    spy.mockRestore();
+    expect(await localItems.list()).toEqual([]);
+    expect(await localStore.get('b', null)).toBeNull();
+    expect(await localStore.get('c', null)).toBeNull();
+    expect(onItemsAdded).not.toHaveBeenCalled();
+    expect(useImportFeedbackStore.getState()).toMatchObject({ phase: 'cancelled', writesMayHaveStarted: true, prepared: null });
+  });
+
+  it('A cloud commit already issued, A → B → A, commit settles: interrupted, no success, no analytics', async () => {
+    useImportFeedbackStore.getState().reset();
+    let current: OperationIdentity = { uid: 'A', generation: 1 };
+    const binding: IdentityBinding = {
+      current: () => current,
+      isCurrent: (t) => t.uid === current.uid && t.generation === current.generation,
+    };
+    let commitDone!: () => void;
+    const batch = { set: vi.fn(), update: vi.fn(), commit: vi.fn(() => new Promise<void>((r) => { commitDone = r; })) };
+    fs.writeBatch.mockReturnValueOnce(batch);
+    let liveUid: string | null = 'A';
+    const svc = makeItemService(() => ({ uid: liveUid, online: true }));
+    const onItemsAdded = vi.fn();
+    const run = runImport(JSON.stringify({ items: [{ id: 'a', title: 'a', js: '' }] }),
+      { identity: binding, existingIds: [], saveItems: svc.saveItems, onItemsAdded });
+    await vi.waitFor(() => expect(batch.commit).toHaveBeenCalled());
+    liveUid = 'B'; current = { uid: 'B', generation: 2 };
+    liveUid = 'A'; current = { uid: 'A', generation: 3 };
+    commitDone();
+    await run;
+    expect(onItemsAdded).not.toHaveBeenCalled();
+    expect(useImportFeedbackStore.getState()).toMatchObject({ phase: 'cancelled', writesMayHaveStarted: true });
+  });
+});
+
+// IE-C2-index: the index write inside localItems.add happens after its own awaited
+// index read. An attempt invalidated during that read must not issue the index write.
+describe('itemService.saveItems — nested index-write boundary (IE-C2-index)', () => {
+  const spies: Array<{ mockRestore(): void }> = [];
+  afterEach(() => { while (spies.length) spies.pop()!.mockRestore(); });
+  function holdIndexRead() {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const realGet = localStore.get.bind(localStore);
+    let held = false;
+    const getSpy = vi.spyOn(localStore, 'get').mockImplementation(async (k: string, fb: any) => {
+      if (k === LS_KEYS.items && !held) { held = true; await gate; }
+      return realGet(k, fb);
+    });
+    const setSpy = vi.spyOn(localStore, 'set');
+    spies.push(getSpy, setSpy);
+    const reached = () => held;
+    return { release, getSpy, setSpy, reached };
+  }
+  const indexWrites = (setSpy: ReturnType<typeof vi.spyOn>) =>
+    setSpy.mock.calls.filter((c: unknown[]) => c[0] === LS_KEYS.items).length;
+
+  it('service: attempt invalidated during the index read (uid stays null): no index write, no next record', async () => {
+    const h = holdIndexRead();
+    let current = true;
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    const run = svc
+      .saveItems({ a: baseItem({ id: 'a' }), b: baseItem({ id: 'b' }) }, { expectedUid: null, isCurrent: () => current })
+      .catch((e) => e);
+    await vi.waitFor(() => expect(h.reached()).toBe(true));
+    current = false; // owner unmounted
+    h.release();
+    const err = await run;
+    expect(err).toBeInstanceOf(IdentityChangedError);
+    expect(err.writesStarted).toBe(true); // record 'a' was already issued
+    expect(indexWrites(h.setSpy)).toBe(0);
+    expect(h.setSpy.mock.calls.some((c: unknown[]) => c[0] === 'b')).toBe(false);
+    h.getSpy.mockRestore(); h.setSpy.mockRestore();
+    expect(await localItems.list()).toEqual([]);
+    expect(await localStore.get('b', null)).toBeNull();
+  });
+
+  it('runImport + real saveItems: null → B → null during the index read: cancelled, no index, no analytics', async () => {
+    useImportFeedbackStore.getState().reset();
+    let current: OperationIdentity = { uid: null, generation: 1 };
+    const binding: IdentityBinding = {
+      current: () => current,
+      isCurrent: (t) => t.uid === current.uid && t.generation === current.generation,
+    };
+    let liveUid: string | null = null;
+    const svc = makeItemService(() => ({ uid: liveUid, online: true }));
+    const h = holdIndexRead();
+    const onItemsAdded = vi.fn();
+    const text = JSON.stringify({ items: [{ id: 'a', title: 'a', js: '' }, { id: 'b', title: 'b', js: '' }] });
+    const run = runImport(text, { identity: binding, existingIds: [], saveItems: svc.saveItems, onItemsAdded });
+    await vi.waitFor(() => expect(h.reached()).toBe(true));
+    liveUid = 'B'; current = { uid: 'B', generation: 2 };
+    liveUid = null; current = { uid: null, generation: 3 };
+    h.release();
+    await run;
+    expect(indexWrites(h.setSpy)).toBe(0);
+    expect(h.setSpy.mock.calls.some((c: unknown[]) => c[0] === 'b')).toBe(false);
+    h.getSpy.mockRestore(); h.setSpy.mockRestore();
+    expect(await localItems.list()).toEqual([]);
+    expect(onItemsAdded).not.toHaveBeenCalled();
+    expect(useImportFeedbackStore.getState()).toMatchObject({ phase: 'cancelled', writesMayHaveStarted: true, prepared: null });
+  });
+
+  it('runImport + real saveItems: reader unmount during the index read: cancelled, no index write', async () => {
+    useImportFeedbackStore.getState().reset();
+    const reader = renderHook(() => useLibraryReader({ items: [], loading: false, uid: null }));
+    const binding = reader.result.current.identity;
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    const h = holdIndexRead();
+    const onItemsAdded = vi.fn();
+    const run = runImport(JSON.stringify({ items: [{ id: 'a', title: 'a', js: '' }] }),
+      { identity: binding, existingIds: [], saveItems: svc.saveItems, onItemsAdded });
+    await vi.waitFor(() => expect(h.reached()).toBe(true));
+    reader.unmount();
+    h.release();
+    await run;
+    expect(indexWrites(h.setSpy)).toBe(0);
+    h.getSpy.mockRestore(); h.setSpy.mockRestore();
+    expect(onItemsAdded).not.toHaveBeenCalled();
+    expect(useImportFeedbackStore.getState()).toMatchObject({ phase: 'cancelled', writesMayHaveStarted: true });
+  });
+
+  it('matching attempt and legacy callers still index every record', async () => {
+    const svc = makeItemService(() => ({ uid: null, online: true }));
+    await svc.saveItems({ m: baseItem({ id: 'm' }), n: baseItem({ id: 'n' }) }, { expectedUid: null, isCurrent: () => true });
+    await svc.saveItems({ o: baseItem({ id: 'o' }) });
+    await localItems.add('p'); // unguarded helper caller
+    expect((await localItems.list()).sort()).toEqual(['m', 'n', 'o', 'p']);
   });
 });

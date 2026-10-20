@@ -55,7 +55,7 @@ describe('editorStore', () => {
     expect(it.pages.length).toBe(1);
     expect(useEditorStore.getState().unsavedCount).toBe(0);
     expect(it.js).toBe(DEFAULT_STARTER.js);
-    expect(it.mainSizes).toEqual([26.7, 73.3]);
+    expect(it.mainSizes).toEqual([26.8056, 73.1944]);
   });
   it('renamePage updates the page title, marks dirty, and does not increment unsavedCount', () => {
     useEditorStore.getState().loadItem(sample());
@@ -131,4 +131,20 @@ describe('editorStore', () => {
     useEditorStore.getState().switchPage(pageId);
     expect(useEditorStore.getState().dirty).toBe(true);
   });
+});
+
+it('protects shared content and metadata from every editor mutation while allowing a fork', () => {
+  useEditorStore.getState().loadItem(sample({ isReadOnly: true }));
+  const before = useEditorStore.getState().currentItem!;
+  const store = useEditorStore.getState();
+  store.setDsl('changed'); store.setCss('changed'); store.setCssMode('scss');
+  store.setJsMode('typescript'); store.setHtmlMode('jade'); store.setCssSettings({ changed: true });
+  store.setTitle('changed'); store.setItemId('changed'); store.addPage();
+  store.deletePage(before.currentPageId); store.renamePage(before.currentPageId, 'changed');
+  expect(useEditorStore.getState().currentItem).toBe(before);
+  expect(useEditorStore.getState().dirty).toBe(false);
+  store.forkCurrent();
+  expect(useEditorStore.getState().currentItem?.isReadOnly).toBeUndefined();
+  store.setDsl('fork edit');
+  expect(useEditorStore.getState().currentItem?.js).toBe('fork edit');
 });

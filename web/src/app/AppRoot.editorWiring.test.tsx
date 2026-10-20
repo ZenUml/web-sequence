@@ -114,7 +114,7 @@ beforeEach(() => {
   useEditorStore.getState().reset();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   window.localStorage.clear();
-  // Suppress the one-time onboarding/pledge triggers (they'd perturb boot).
+  // Suppress the one-time upgrade-pledge trigger (it would perturb boot).
   window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
 });

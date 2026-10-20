@@ -12,15 +12,8 @@
 //     only Present + (optional) Fit. So these two cases have no implementable UI
 //     today → test.fixme with the exact reason (not test.skip; the gap is real,
 //     not environment-conditional).
-//   - Export-as-HTML (EXP-3): DiagramCard's kebab → "Export as HTML"
-//     (web/src/components/home/DiagramCard.tsx:107) → AppRoot.handleExportHtml →
-//     downloadText(`${safe}.html`, buildStandaloneHtml(item), 'text/html')
-//     (AppRoot.tsx:821). buildStandaloneHtml (services/exportImport.ts) embeds the
-//     DSL inline + loads @zenuml/core from the jsDelivr CDN — a self-contained file.
-//   - Malformed import (EXP-4): the HomeView header's ImportExportBar feeds the
-//     file text to AppRoot.handleImport, which try/catches parseImportJson (throws
-//     on invalid JSON) and calls setImportError → a ConfirmDialog titled
-//     "Import failed" (AppRoot.tsx:972) — i.e. an explicit error dialog, not silent.
+//   - EXP-3 checks the supported bulk JSON export (also covered by library.spec.js).
+//   - Malformed import (EXP-4): ImportFeedback surfaces an actionable alert.
 //   - Merge dedup (EXP-5): handleImport builds `map[it.id] = it`, so an imported id
 //     that already exists OVERWRITES rather than appends — the row count only grows
 //     by the number of genuinely-new ids.
@@ -121,8 +114,7 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
 
@@ -152,7 +144,7 @@ test.fixme(
 // ──────────────────────────────────────────────────────────────────────────────
 // EXP-3: Export-as-HTML produces a self-contained *.html.
 // ──────────────────────────────────────────────────────────────────────────────
-test('EXP-3 card "Export as HTML" downloads a self-contained .html file', async ({
+test('EXP-3 Export all downloads JSON containing the saved diagram', async ({
   page,
 }) => {
   test.skip(
@@ -170,40 +162,24 @@ test('EXP-3 card "Export as HTML" downloads a self-contained .html file', async 
     firstSave: true,
   });
 
-  // The HTML export lives on the HomeView card's kebab menu.
   await gotoHome(page);
-  const card = page.locator('[data-testid^="home-card-"]').first();
-  await expect(card).toBeVisible({ timeout: 10_000 });
-
-  // The kebab trigger is revealed on hover (opacity-0 group-hover). Hover the card,
-  // then open its "Diagram options" menu.
-  await card.hover();
-  await card.getByRole('button', { name: 'Diagram options' }).click();
-
-  // Click "Export as HTML" and capture the download it triggers.
+  await expect(page.getByText('HtmlExportDiagram', { exact: true })).toBeVisible();
   const downloadPromise = page.waitForEvent('download', { timeout: 10_000 });
-  await page.getByRole('menuitem', { name: 'Export as HTML' }).click();
+  await page.locator('[data-testid="lib-export-all"]').click();
   const download = await downloadPromise;
-
-  // Filename is `${slug(title)}.html` (AppRoot.handleExportHtml).
-  expect(download.suggestedFilename()).toMatch(/\.html$/);
-  expect(download.suggestedFilename()).toBe('htmlexportdiagram.html');
-
-  // Read the file off disk and assert it is SELF-CONTAINED: it embeds the diagram
-  // DSL inline AND pulls @zenuml/core from a CDN (so it renders with no local server).
+  expect(download.suggestedFilename()).toBe('zenuml-diagrams.json');
   const path = await download.path();
   const fs = await import('fs');
-  const html = fs.readFileSync(path, 'utf-8');
-  expect(html).toContain('<!doctype html>');
-  expect(html).toContain(UNIQUE_PARTICIPANT); // the DSL is embedded, not referenced
-  expect(html).toContain('mounting-point'); // the @zenuml/core mount scaffold
-  expect(html).toMatch(/cdn\.jsdelivr\.net\/npm\/@zenuml\/core/); // CDN-loaded core
+  const payload = JSON.parse(fs.readFileSync(path, 'utf-8'));
+  expect(payload.items).toEqual(expect.arrayContaining([
+    expect.objectContaining({ title: 'HtmlExportDiagram', js: expect.stringContaining(UNIQUE_PARTICIPANT) }),
+  ]));
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
 // EXP-4: Importing malformed JSON shows an error dialog (not silent).
 // ──────────────────────────────────────────────────────────────────────────────
-test('EXP-4 importing malformed JSON shows an "Import failed" error dialog', async ({
+test('EXP-4 importing malformed JSON shows actionable import feedback', async ({
   page,
 }) => {
   test.skip(
@@ -217,11 +193,8 @@ test('EXP-4 importing malformed JSON shows an "Import failed" error dialog', asy
   // lives. An empty library still renders the import control.
   await gotoHome(page);
 
-  // The "Import failed" ConfirmDialog must NOT be present before we import.
-  const errorDialog = page
-    .getByRole('dialog')
-    .filter({ hasText: 'Import failed' });
-  await expect(errorDialog).toHaveCount(0);
+  const errorAlert = page.locator('[data-testid="import-feedback"]');
+  await expect(errorAlert).toHaveCount(0);
 
   // Feed the hidden file input a file that is NOT valid JSON. parseImportJson does
   // JSON.parse(text) which throws; handleImport catches it → setImportError → dialog.
@@ -231,12 +204,10 @@ test('EXP-4 importing malformed JSON shows an "Import failed" error dialog', asy
     buffer: Buffer.from('{ this is not valid json ]]', 'utf-8'),
   });
 
-  // The error is surfaced as a dialog (title "Import failed") — not swallowed.
-  await expect(errorDialog).toBeVisible({ timeout: 10_000 });
-
-  // It is dismissible via its OK button (confirm-ok), proving the wired action path.
-  await page.locator('[data-testid="confirm-ok"]').click();
-  await expect(errorDialog).toHaveCount(0);
+  await expect(errorAlert).toContainText('This file can’t be imported', { timeout: 10_000 });
+  await expect(errorAlert).toContainText('isn’t valid JSON');
+  await expect(errorAlert.getByRole('button', { name: 'Choose another file' })).toBeVisible();
+  await expect(page.locator('[data-testid^="home-card-"]')).toHaveCount(0);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

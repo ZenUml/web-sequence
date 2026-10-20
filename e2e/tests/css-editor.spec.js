@@ -343,3 +343,23 @@ test.fixme(
     // observable — hence this is auth-gated, not implementable locally.
   },
 );
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CSS-7: a signed-out user typing into Custom CSS gets the sign-in prompt and the
+// CSS buffer stays EMPTY. Before the fix the gate ran in onChange, after the first
+// keystroke had landed: the editor kept "." while the store and preview stayed
+// empty, so the buffer showed CSS that was never saved or applied.
+// ──────────────────────────────────────────────────────────────────────────────
+test('CSS-7 signed-out typing in Custom CSS prompts sign-in and leaves no stray text', async ({
+  page,
+}) => {
+  await gotoFresh(page);
+  await page.locator('[data-testid="css-panel-strip"]').click();
+  const css = page.locator('[data-testid="css-editor"] .cm-content');
+  await css.click();
+  await page.keyboard.type('.x{color:red}');
+
+  await expect(page.getByRole('dialog', { name: /Sign in to ZenUML/ })).toBeVisible();
+  await expect(css).toHaveText('');
+  await expect.poll(() => readZenumlStyle(page)).toBe('');
+});

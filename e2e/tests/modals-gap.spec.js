@@ -3,7 +3,7 @@
 // modals.spec.js already covers OPEN + one action + Escape for Settings /
 // Create-New / Help / Cheat-Sheet / Shortcuts / Pricing. This spec does NOT
 // duplicate those; it covers the deeper modal behaviours the gap plan calls out:
-//   MOD-1 onboarding shows once per profile (localStorage `onboarded`)
+//   MOD-1 a first visit opens the editor without Welcome and records its version baseline
 //   MOD-3 single-modal invariant (open Settings → open Help → Settings is gone)
 //   MOD-4 Help links have correct hrefs + target=_blank + rel=noopener
 //   MOD-5 cheat-sheet lists the documented example rows
@@ -11,15 +11,12 @@
 //   MOD-7 login modal opens from header "Sign in" AND from a gated action
 //
 // Selectors are taken from the components verbatim (AppMenu.tsx / HelpModal.tsx /
-// CheatSheetModal.tsx / KeyboardShortcutsModal.tsx / OnboardingModal.tsx /
+// CheatSheetModal.tsx / KeyboardShortcutsModal.tsx /
 // AppHeader.tsx / CssPanel.tsx / AppRoot.tsx) — none invented.
 //
-// Onboarding gate (AppRoot.tsx): the first-run effect opens onboarding only when
-// localStorage `onboarded` is falsy AND syncStore `lastSeenVersion` is empty. On
-// web, syncStore falls back to localStorage, so a clean localStorage slate (no
-// suppressOneTimeModals) is the genuine first-run condition. MOD-1 deliberately
-// does NOT call suppressOneTimeModals — it needs the real first-run path. Every
-// other test here DOES suppress so onboarding/pledge don't trap focus.
+// MOD-1 deliberately does NOT call suppressOneTimeModals: it needs an empty storage
+// slate to verify the first-visit baseline. Other tests suppress the upgrade pledge
+// so it does not trap focus.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
@@ -55,11 +52,6 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-/** Open an item in the header app-menu by its trigger testid. */
-async function openViaHeaderMenu(page, triggerTestId) {
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator(`[data-testid="${triggerTestId}"]`).click();
-}
 
 /** Reach the editor with a clean localStorage slate AND one-time modals suppressed. */
 async function gotoEditorSuppressed(page) {
@@ -70,83 +62,78 @@ async function gotoEditorSuppressed(page) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MOD-1: Onboarding modal shows once per profile (localStorage `onboarded`).
-// fresh slate → onboarding shown; dismiss stamps `onboarded` (+ lastSeenVersion);
-// a reload of the SAME profile → onboarding gone.
+// MOD-1: first visit enters the editor without Welcome, records a version baseline,
+// and stays clear of Welcome and the upgrade pledge after reload.
 // ──────────────────────────────────────────────────────────────────────────────
-test('MOD-1: onboarding modal shows on first run and is gone after dismiss + reload', async ({
+test('MOD-1: first visit has no Welcome and records a baseline that survives reload', async ({
   page,
 }) => {
   test.skip(
     !!process.env.PW_BASE_URL,
     'needs a local clean-slate (empty onboarded/lastSeenVersion); flaky on the deployed staging gate',
   );
-  // First-run path — do NOT suppress the one-time modals; we WANT onboarding.
   // Land on the origin, wipe storage to simulate a brand-new profile, then reload
-  // so AppRoot's boot effect re-evaluates the (now empty) onboarding gate.
+  // so the app starts with no stored version baseline.
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 
-  // Bare '/' boots the editor; the onboarding effect opens its modal on the empty
-  // `onboarded` + empty `lastSeenVersion` slate.
-  const onboarding = page.locator('[data-testid="onboarding-modal"]');
-  await expect(onboarding).toBeVisible({ timeout: 15_000 });
-
-  // Sanity: the dismiss flag is not yet set before we dismiss.
-  expect(
-    await page.evaluate(() => localStorage.getItem('onboarded')),
-  ).toBeNull();
-
-  // Dismiss via "Get started" → AppRoot's onDismiss writes localStorage.onboarded
-  // = true and closes the modal.
-  await page.locator('[data-testid="onboarding-get-started"]').click();
-  await expect(onboarding).toBeHidden();
-
-  // The dismissal persisted the `onboarded` flag for this profile.
+  // First visit opens the editor directly and silently records this app version.
+  await expect(page.locator('[data-testid="dsl-editor"]')).toBeVisible({ timeout: 15_000 });
+  const welcome = page.locator('[data-testid="onboarding-modal"]');
+  await expect(welcome).toHaveCount(0);
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem('onboarded')))
-    .toBe('true');
+    .poll(() => page.evaluate(() => {
+      const raw = localStorage.getItem('lastSeenVersion');
+      return raw === null ? null : JSON.parse(raw);
+    }))
+    .toMatch(/^\d{4}\.\d+\.\d+$/);
+  await expect(page.locator('[data-testid="pledge-modal"]')).toHaveCount(0);
 
-  // Reload the SAME profile (no storage clear): onboarding must NOT reappear.
+  // Reload the same profile: the editor remains usable, with no Welcome or pledge.
   await page.reload();
   await expect(page.locator('[data-testid="dsl-editor"]')).toBeVisible({
     timeout: 15_000,
   });
-  // Give the boot effects a beat, then assert onboarding stayed closed.
-  await expect(page.locator('[data-testid="onboarding-modal"]')).toHaveCount(0);
+  await expect(welcome).toHaveCount(0);
+  await expect(page.locator('[data-testid="pledge-modal"]')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => {
+      const raw = localStorage.getItem('lastSeenVersion');
+      return raw === null ? null : JSON.parse(raw);
+    }))
+    .toMatch(/^\d{4}\.\d+\.\d+$/);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
 // MOD-3: only one modal open at a time. Opening a second modal while one is open
 // replaces it (activeModal is a single value in uiStore) — the first closes.
 //
-// We open the SECOND modal via the global Ctrl/Cmd+Shift+? shortcut rather than
-// the header menu: the first modal's Radix overlay (fixed inset-0) intercepts
-// pointer events on the header trigger, but the shortcut is a window keydown
-// listener (AppRoot) that fires regardless of the overlay — and routes through the
-// same openModal('shortcuts') the menu would, so it exercises the same invariant.
+// We open the SECOND modal via the global Ctrl/Cmd+Shift+? shortcut: the first
+// modal's Radix overlay (fixed inset-0) intercepts pointer events on the page, but
+// the shortcut is a window keydown listener (AppRoot) that fires regardless of the
+// overlay and routes through the same single-valued openModal().
 // ──────────────────────────────────────────────────────────────────────────────
 test('MOD-3: opening a second modal closes the first (single-modal invariant)', async ({
   page,
 }) => {
   await gotoEditorSuppressed(page);
 
-  // Open Settings via the header menu.
-  await openViaHeaderMenu(page, 'header-settings');
-  const settings = page.locator('[data-testid="settings-modal"]');
-  await expect(settings).toBeVisible();
+  // Open Help via the code-column footer.
+  await page.locator('[data-testid="footer-help"]').click();
+  const help = page.locator('[data-testid="help-modal"]');
+  await expect(help).toBeVisible();
 
-  // Open the Keyboard-Shortcuts modal via the global accelerator while Settings is
-  // open. activeModal is single-valued, so this must REPLACE Settings.
+  // Open the Keyboard-Shortcuts modal via the global accelerator while Help is
+  // open. activeModal is single-valued, so this must REPLACE Help.
   const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
   await page.keyboard.press(`${mod}+Shift+?`);
 
   const shortcuts = page.locator('[data-testid="shortcuts-modal"]');
   await expect(shortcuts).toBeVisible();
 
-  // The invariant: Settings is gone, exactly one modal (Shortcuts) is open.
-  await expect(settings).toHaveCount(0);
+  // The invariant: Help is gone, exactly one modal (Shortcuts) is open.
+  await expect(help).toHaveCount(0);
   await expect(shortcuts).toBeVisible();
 });
 
@@ -158,7 +145,7 @@ test('MOD-4: Help modal links carry correct hrefs + target=_blank + rel=noopener
   page,
 }) => {
   await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-help');
+  await page.locator('[data-testid="footer-help"]').click();
 
   const modal = page.locator('[data-testid="help-modal"]');
   await expect(modal).toBeVisible();
@@ -180,45 +167,6 @@ test('MOD-4: Help modal links carry correct hrefs + target=_blank + rel=noopener
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MOD-5: cheat-sheet lists the documented example rows. Assert the feature labels
-// AND their example DSL (the rows are SOURCED in CheatSheetModal.tsx, not invented).
-// ──────────────────────────────────────────────────────────────────────────────
-test('MOD-5: cheat-sheet lists the documented DSL example rows', async ({
-  page,
-}) => {
-  await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-cheatsheet');
-
-  const modal = page.locator('[data-testid="cheatsheet-modal"]');
-  await expect(modal).toBeVisible();
-
-  // Feature labels every documented row carries (CheatSheetModal.tsx ROWS).
-  for (const feature of [
-    'Participant',
-    'Message',
-    'Async message',
-    'Nested message',
-    'Self-message',
-    'Return',
-    'Instance creation',
-    'Alt (conditional)',
-    'Loop',
-    'Comment',
-  ]) {
-    await expect(modal.getByText(feature, { exact: true })).toBeVisible();
-  }
-
-  // And the example DSL for a few rows, proving the EXAMPLE column rendered too.
-  await expect(modal).toContainText('Alice->Bob: How are you?'); // async message
-  await expect(modal).toContainText('a = new A()'); // instance creation
-  await expect(modal).toContainText('while (condition)'); // loop
-  await expect(modal).toContainText('// This is a comment'); // comment
-
-  // Count the rendered rows — one <tr> per documented feature (10).
-  await expect(modal.locator('tbody tr')).toHaveCount(10);
-});
-
-// ──────────────────────────────────────────────────────────────────────────────
 // MOD-6: shortcuts modal lists the Global + Editor groups, with representative
 // bindings under each (KeyboardShortcutsModal.tsx GLOBAL / EDITOR sections).
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,7 +174,8 @@ test('MOD-6: shortcuts modal lists the Global and Editor groups with bindings', 
   page,
 }) => {
   await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-shortcuts');
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${mod}+Shift+?`);
 
   const modal = page.locator('[data-testid="shortcuts-modal"]');
   await expect(modal).toBeVisible();
@@ -270,12 +219,14 @@ test('MOD-7: login modal opens from the header "Sign in" affordance', async ({
 
   // LoginModal opens. It has no inner wrapper testid; its provider buttons do
   // (login-<provider>), and they only exist inside the open modal — anchor on
-  // them. All four providers (google/github/facebook/twitter) render.
-  for (const provider of ['google', 'github', 'facebook', 'twitter']) {
+  // them. Google and GitHub are the supported sign-in providers.
+  for (const provider of ['google', 'github']) {
     await expect(
       page.locator(`[data-testid="login-${provider}"]`),
     ).toBeVisible();
   }
+  await expect(page.locator('[data-testid="login-facebook"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="login-twitter"]')).toHaveCount(0);
   // The modal carries its accessible title.
   await expect(
     page.getByRole('dialog').getByText('Sign in to ZenUML'),

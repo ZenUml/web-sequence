@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { getSharedItem, createShare, trackEvent } from './cloudFunctions';
+import { SharedItemError, classifySharedItemFailure } from './sharedItemError';
 
 vi.mock('./firebase', () => ({ getIdToken: vi.fn(async () => 'fresh-token') }));
 
@@ -36,6 +37,45 @@ describe('getSharedItem', () => {
     server.use(http.get(`${BASE}/get-shared-item`, () =>
       HttpResponse.json({ error: 'Sharing disabled' }, { status: 403 })));
     await expect(getSharedItem('abc', 'xyz')).rejects.toThrow(/Sharing disabled/);
+  });
+
+  // Provenance: the visitor UI may only call a link unavailable when the backend
+  // explicitly said so. Each case asserts the typed status + classification.
+  it.each([
+    [400, 'unavailable'],
+    [403, 'unavailable'],
+    [404, 'unavailable'],
+    [500, 'retryable'],
+    [503, 'retryable'],
+    [429, 'retryable'],
+  ] as const)('HTTP %i rejects with SharedItemError classified %s', async (status, failure) => {
+    server.use(http.get(`${BASE}/get-shared-item`, () =>
+      HttpResponse.json({ error: 'server said no' }, { status })));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect((err as SharedItemError).status).toBe(status);
+    expect(classifySharedItemFailure(err)).toBe(failure);
+  });
+
+  it('a network failure (fetch rejects) is retryable, never unavailable', async () => {
+    server.use(http.get(`${BASE}/get-shared-item`, () => HttpResponse.error()));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect((err as SharedItemError).status).toBeNull();
+    expect(classifySharedItemFailure(err)).toBe('retryable');
+  });
+
+  it('a 200 with a non-JSON body (e.g. an HTML error page) is retryable', async () => {
+    server.use(http.get(`${BASE}/get-shared-item`, () =>
+      new HttpResponse('<html>gateway</html>', { status: 200, headers: { 'Content-Type': 'text/html' } })));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect(classifySharedItemFailure(err)).toBe('retryable');
+  });
+
+  it('an error without SharedItemError provenance is classified retryable', () => {
+    expect(classifySharedItemFailure(new Error('not found'))).toBe('retryable');
+    expect(classifySharedItemFailure(undefined)).toBe('retryable');
   });
 });
 

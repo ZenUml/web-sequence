@@ -4,9 +4,14 @@ import { localStore } from './storage';
 import * as localItems from './localItems';
 import { migrateToPages } from '../domain/item';
 import type { Item } from '../domain/types';
+import { IdentityChangedError, type SaveItemsGuard } from './identityGuard';
 
 export interface AuthContext { uid: string | null; online: boolean }
 export type AuthContextGetter = () => AuthContext;
+export interface SaveItemOutcome { status: 'local' | 'cloud' | 'queued' }
+
+// Bound-identity guard for saveItems (see identityGuard.ts), re-exported as public API.
+export { IdentityChangedError, type SaveItemsGuard };
 
 // Factory so tests/hooks inject the auth/online context instead of reading globals
 // (NFR-3: no window.* as the integration mechanism).
@@ -15,15 +20,20 @@ export function makeItemService(getAuth: AuthContextGetter) {
   // touch Firestore. The save-seam uses this for an over-cap save so the user's
   // diagram is preserved on-device while the cloud copy is withheld — enforcement
   // without a blocking alert. The signed-out path is already local-only.
-  async function setItem(id: string, item: Item, opts?: { skipCloud?: boolean }): Promise<void> {
+  async function setItem(id: string, item: Item, opts?: { skipCloud?: boolean; guard?: SaveItemsGuard }): Promise<SaveItemOutcome> {
+    const assertCurrent = (writesStarted = false) => {
+      if (opts?.guard && (getAuth().uid !== opts.guard.expectedUid || opts.guard.isCurrent?.() === false)) throw new IdentityChangedError(writesStarted);
+    };
+    assertCurrent();
     // imageBase64 can blow the localStorage quota — never persist it.
     const clean: any = { ...item };
     delete clean.imageBase64;
 
     // Local write always (sync, fast feedback). The `code` slot is handled by saveLastCode.
     await localStore.set(id, clean);
+    assertCurrent(true);
 
-    if (opts?.skipCloud) return; // over-cap save: local kept, cloud withheld.
+    if (opts?.skipCloud) return { status: 'local' }; // over-cap save: local kept, cloud withheld.
 
     const { uid, online } = getAuth();
     // Signed-out: keep the local index in sync (mirrors users/{uid}.items) so the
@@ -31,7 +41,7 @@ export function makeItemService(getAuth: AuthContextGetter) {
     // Signal the signed-out list to refresh. Fire even when add() is a no-op (an
     // existing id) so move-to-folder — which routes here via moveToFolder and never
     // changes the index — still re-renders the list (adversarial review).
-    if (!uid) { await localItems.add(id); localItems.notifyChange(); return; }
+    if (!uid) { await localItems.add(id, () => assertCurrent(true)); assertCurrent(true); localItems.notifyChange(); return { status: 'local' }; }
 
     const withMeta: Item = { ...migrateToPages(clean as Item), createdBy: uid, updatedOn: Date.now() };
     delete (withMeta as any).imageBase64;
@@ -41,10 +51,13 @@ export function makeItemService(getAuth: AuthContextGetter) {
     delete (withMeta as any).shareToken;
     delete (withMeta as any).sharedAt;
     const ref = doc(db, `items/${id}`);
+    assertCurrent();
     const cloud = setDoc(ref, withMeta, { merge: true });
     // Online: await so callers see the result. Offline: don't block — Firestore's
     // persistent cache queues the write and syncs on reconnect (CQ-5 multi-tab cache).
-    if (online) await cloud; else void cloud.catch(() => {});
+    if (online) { await cloud; assertCurrent(true); return { status: 'cloud' }; }
+    void cloud.catch(() => {});
+    return { status: 'queued' };
   }
 
   // Never goes to cloud — local `code` slot for last-code restore (REQ-PST).
@@ -76,25 +89,49 @@ export function makeItemService(getAuth: AuthContextGetter) {
     await deleteDoc(doc(db, `items/${id}`));
   }
 
-  function subscribeAllItems(uid: string, cb: (items: Item[]) => void): () => void {
+  // `onError` (optional) receives a snapshot error with its provenance. Without it the
+  // legacy behaviour stays: an error is reported as cb([]), indistinguishable from an
+  // empty library. Callers that must not treat a failed read as "no diagrams" (import
+  // classification, Export all) pass onError.
+  function subscribeAllItems(
+    uid: string,
+    cb: (items: Item[]) => void,
+    onError?: (error: unknown) => void,
+  ): () => void {
     const q = query(collection(db, 'items'), where('createdBy', '==', uid));
     return onSnapshot(q, (snap: any) => {
       const items: Item[] = [];
       snap.forEach((d: any) => items.push(d.data() as Item));
       cb(items);
-    }, () => cb([]));
+    }, (error: unknown) => (onError ? onError(error) : cb([])));
   }
 
-  async function saveItems(items: Record<string, Item>): Promise<void> {
+  async function saveItems(items: Record<string, Item>, guard?: SaveItemsGuard): Promise<void> {
+    let writesStarted = false;
+    const assertIdentity = () => {
+      if (!guard) return;
+      if (getAuth().uid !== guard.expectedUid || (guard.isCurrent && !guard.isCurrent())) {
+        throw new IdentityChangedError(writesStarted);
+      }
+    };
+    assertIdentity();
     const { uid } = getAuth();
     const entries = Object.entries(items);
     if (!uid) {
-      for (const [id, it] of entries) {
-        const c = { ...it }; delete (c as any).imageBase64;
-        await localStore.set(id, c);
-        await localItems.add(id);
+      try {
+        for (const [id, it] of entries) {
+          const c = { ...it }; delete (c as any).imageBase64;
+          assertIdentity();
+          writesStarted = true;
+          await localStore.set(id, c);
+          assertIdentity();
+          // Re-checked inside add, after its index read and before the index write.
+          await localItems.add(id, guard ? assertIdentity : undefined);
+        }
+      } finally {
+        // Refresh the signed-out list for whatever was written, even when stopped.
+        if (writesStarted) localItems.notifyChange();
       }
-      localItems.notifyChange();
       return;
     }
     const batch = writeBatch(db);
@@ -127,6 +164,9 @@ export function makeItemService(getAuth: AuthContextGetter) {
       // so the import is robust regardless of ordering (adversarial review).
       batch.set(doc(db, `users/${uid}`), { items: { [id]: true } }, { merge: true });
     }
+    // Last check before the single atomic commit. A commit already sent cannot be
+    // recalled if auth changes while it is in flight.
+    assertIdentity();
     await batch.commit();
   }
 

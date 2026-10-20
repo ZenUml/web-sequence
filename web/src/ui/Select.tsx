@@ -1,9 +1,11 @@
 import { forwardRef } from 'react';
 import * as RadixSelect from '@radix-ui/react-select';
 import { cn } from './cn';
+import { surfaceClass, type UISurface } from './surface';
+import './tokens.css';
 
 // Inline glyphs (the project ships no icon library — primitives draw their own
-// SVGs, see SearchInput).
+// SVGs, see SearchInput). Stroke is 1.5, the shared icon stroke.
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -28,7 +30,7 @@ function CheckIcon({ className }: { className?: string }) {
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.75"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
@@ -38,89 +40,70 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-// Design-system select — compound wrappers over Radix Select, mirroring the
-// Menu API shape (Root + Trigger + Content + Item). Content floats on the dark ink
-// surface with shadow-pop; the trigger matches TextInput's field styling.
-// data-testid / aria-label forward through ...rest on each part.
+// Compound wrappers over Radix Select. The trigger default surface stays light.
+// SelectContent is portaled, so it does not inherit the trigger surface. Pass
+// the same `surface` to SelectContent. The default remains dark, matching the
+// previous menu panel.
 export const Select = RadixSelect.Root;
 export const SelectValue = RadixSelect.Value;
 
-// SelectTrigger is surface-aware so the same primitive reads correctly on the light
-// paper surface AND the dark ink chrome (now the default for modals + chrome). The
-// floating SelectContent is dark ink (matching the Menu primitive) since every surface
-// that hosts a Select is now dark. `surface` is consumed here, not forwarded to the DOM.
 export const SelectTrigger = forwardRef<
   React.ElementRef<typeof RadixSelect.Trigger>,
-  React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger> & { surface?: 'light' | 'dark' }
+  React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger> & { surface?: UISurface }
 >(function SelectTrigger({ className, children, surface = 'light', ...rest }, ref) {
-  const isDark = surface === 'dark';
   return (
     <RadixSelect.Trigger
       ref={ref}
+      {...rest}
+      data-ui-surface={surface}
       className={cn(
-        'inline-flex h-8 items-center justify-between gap-2 rounded px-2 text-[13px] font-sans',
-        'transition-colors duration-150 ease-draft',
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        isDark
-          ? 'bg-ink-800 text-ondark-strong border border-ink-line/50 ring-draft data-[placeholder]:text-ondark-muted'
-          : 'bg-paper-50 text-onlight-strong border border-paper-line ring-draft-light data-[placeholder]:text-onlight-faint',
+        'ui-field',
+        'ui-field--control',
+        'ui-select-trigger',
+        surfaceClass(surface),
         className,
       )}
-      {...rest}
     >
       {children}
       <RadixSelect.Icon>
-        <ChevronDownIcon className={cn('h-4 w-4', isDark ? 'text-ondark-muted' : 'text-onlight-muted')} />
+        <ChevronDownIcon className="ui-select-icon" />
       </RadixSelect.Icon>
     </RadixSelect.Trigger>
   );
 });
 
-export function SelectContent({
-  className,
-  children,
-  position = 'popper',
-  sideOffset = 6,
-  ...rest
-}: React.ComponentPropsWithoutRef<typeof RadixSelect.Content>) {
+export const SelectContent = forwardRef<
+  React.ElementRef<typeof RadixSelect.Content>,
+  React.ComponentPropsWithoutRef<typeof RadixSelect.Content> & { surface?: UISurface }
+>(function SelectContent(
+  { className, children, position = 'popper', sideOffset = 6, surface = 'dark', ...rest },
+  ref,
+) {
   return (
     <RadixSelect.Portal>
       <RadixSelect.Content
+        ref={ref}
+        {...rest}
         position={position}
         sideOffset={sideOffset}
-        className={cn(
-          // Dark floating panel matching the Menu primitive — every surface that hosts
-          // a Select is now dark ink chrome, so the dropdown reads consistently.
-          'bg-ink-850 text-ondark-strong border border-ink-line rounded-lg shadow-pop',
-          'p-1 min-w-[var(--radix-select-trigger-width)] animate-pop-in z-50',
-          className,
-        )}
-        {...rest}
+        data-ui-surface={surface}
+        className={cn('ui-select-content', surfaceClass(surface), 'animate-pop-in', className)}
       >
         <RadixSelect.Viewport>{children}</RadixSelect.Viewport>
       </RadixSelect.Content>
     </RadixSelect.Portal>
   );
-}
+});
 
 export const SelectItem = forwardRef<
   React.ElementRef<typeof RadixSelect.Item>,
   React.ComponentPropsWithoutRef<typeof RadixSelect.Item>
 >(function SelectItem({ className, children, ...rest }, ref) {
   return (
-    <RadixSelect.Item
-      ref={ref}
-      className={cn(
-        'relative flex cursor-pointer select-none items-center rounded py-1.5 pl-7 pr-2.5 text-[13px] outline-none',
-        'data-[highlighted]:bg-accent-soft data-[highlighted]:text-ondark-strong',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        className,
-      )}
-      {...rest}
-    >
-      <span className="absolute left-2 inline-flex items-center">
+    <RadixSelect.Item ref={ref} {...rest} className={cn('ui-select-item', className)}>
+      <span className="ui-select-indicator">
         <RadixSelect.ItemIndicator>
-          <CheckIcon className="h-3.5 w-3.5 text-accent" />
+          <CheckIcon className="ui-select-check" />
         </RadixSelect.ItemIndicator>
       </span>
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>

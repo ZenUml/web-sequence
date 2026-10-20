@@ -1,123 +1,184 @@
-import { useState } from 'react';
-import type { Item } from '../../domain/types';
-import { cn, Menu, MenuTrigger, MenuContent, MenuItem } from '../../ui';
+import { useRef } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import type { Folder, Item, Appearance } from '../../domain/types';
+import { Tooltip } from '../../ui';
+import { DiagramThumbnail } from './DiagramThumbnail';
+import { CheckIcon, ForkIcon, MoveToFolderIcon, TrashIcon } from './icons';
 
 interface DiagramCardProps {
   item: Item;
-  onClick(item: Item): void;
-  onDelete?(id: string): void;
+  appearance?: Appearance;
+  onOpen(item: Item): void;
   onFork?(item: Item): void;
-  onExportHtml?(item: Item): void;
+  onRequestDelete?(item: Item, trigger: HTMLElement): void;
+  /** Folders offered by drag and by the Move to folder menu. Empty = no move UI. */
+  folders?: Folder[];
+  /** Where the diagram is now: a folder id, or 'unfiled'. */
+  currentTarget?: string;
+  /** Move to a folder id, or null for Not in a folder. Completes at once. */
+  onMove?(item: Item, folderId: string | null): void;
+  onDragStart?(item: Item): void;
+  onDragEnd?(): void;
 }
 
-function KebabIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-[14px] w-[14px]" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="12" cy="19" r="1.5" />
-    </svg>
-  );
+export function formatEditedDate(updatedOn: number | undefined): string | null {
+  if (!updatedOn) return null;
+  return new Date(updatedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export function DiagramCard({ item, onClick, onDelete, onFork, onExportHtml }: DiagramCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const preview = (item.js ?? '').trim().slice(0, 240);
-  const updated = item.updatedOn
-    ? new Date(item.updatedOn).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    : null;
+// A saved diagram: the real rendered preview with the title/date "pocket" sleeved
+// over its lower edge. The open button and the action buttons are siblings, so the
+// actions never open the diagram and no interactive element is nested.
+//
+// When folders exist the card can be dragged onto a sidebar folder (drop moves it at
+// once). Keyboard and touch users get the same result from the Move to folder menu:
+// choosing a destination moves immediately, with no second confirmation.
+export function DiagramCard({
+  item,
+  appearance = 'light',
+  onOpen,
+  onFork,
+  onRequestDelete,
+  folders = [],
+  currentTarget = 'unfiled',
+  onMove,
+  onDragStart,
+  onDragEnd,
+}: DiagramCardProps) {
+  const title = item.title || 'Untitled';
+  const edited = formatEditedDate(item.updatedOn);
+  const canMove = Boolean(onMove) && folders.length > 0;
+  // A drag must never open the diagram, even if a browser fires click after drop.
+  const draggedRef = useRef(false);
 
-  const hasMenu = !!(onDelete || onFork || onExportHtml);
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>) {
+    draggedRef.current = true;
+    e.dataTransfer.effectAllowed = 'move';
+    // A private type only: dropping on a text field must not paste anything.
+    e.dataTransfer.setData('application/x-zenuml-diagram', item.id);
+    const ghost = document.createElement('div');
+    ghost.className = 'dh-drag-ghost';
+    const t = document.createElement('strong');
+    t.textContent = title;
+    const s = document.createElement('span');
+    s.textContent = 'Drag onto a folder';
+    ghost.append(t, s);
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 24, 20);
+    setTimeout(() => ghost.remove(), 0);
+    onDragStart?.(item);
+  }
 
   return (
     <div
-      className={cn(
-        'group relative flex flex-col rounded-xl border text-left w-full',
-        'transition-all duration-150 ease-draft ring-draft cursor-pointer',
-        'bg-ink-800 border-ink-line/40',
-        'hover:border-accent/60 hover:shadow-pop-dark hover:-translate-y-[3px]',
-      )}
+      className="dh-card"
       data-testid={`home-card-${item.id}`}
+      draggable={canMove || undefined}
+      onDragStart={canMove ? handleDragStart : undefined}
+      onDragEnd={
+        canMove
+          ? () => {
+              onDragEnd?.();
+              setTimeout(() => {
+                draggedRef.current = false;
+              }, 0);
+            }
+          : undefined
+      }
     >
-      {/* Clickable area — thumbnail + footer */}
       <button
         type="button"
-        onClick={() => onClick(item)}
-        className="flex flex-col w-full text-left focus:outline-none"
-        aria-label={`Open ${item.title || 'Untitled'}`}
+        className="dh-card-open"
+        draggable={false}
+        onClick={() => {
+          if (draggedRef.current) return;
+          onOpen(item);
+        }}
+        aria-label={`Open ${title}`}
       >
-        {/* DSL code preview */}
-        <div
-          className="h-28 overflow-hidden rounded-t-xl px-3 pt-3 bg-ink-950 border-b border-ink-line/30 w-full"
-          aria-hidden="true"
-        >
-          <pre
-            className={cn(
-              'font-mono text-[9.5px] leading-[1.65] text-ondark-faint',
-              'whitespace-pre-wrap break-all select-none',
-            )}
-            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 8, overflow: 'hidden' }}
-          >
-            {preview || '# empty diagram'}
-          </pre>
-        </div>
-
-        {/* Card footer */}
-        <div className="flex flex-col gap-0.5 px-3 py-2.5 min-w-0 w-full">
-          <span className="font-sans font-medium text-[13px] text-ondark-strong truncate pr-5">
-            {item.title || 'Untitled'}
-          </span>
-          {updated && (
-            <span className="font-mono text-[10px] text-ondark-faint tabular-nums">
-              {updated}
-            </span>
-          )}
-        </div>
+        <span className="dh-card-preview">
+          <DiagramThumbnail item={item} />
+        </span>
+        <span className="dh-pocket">
+          <span className="dh-card-title" title={title}>{title}</span>
+          {edited && <span className="dh-card-date">{edited}</span>}
+        </span>
       </button>
-
-      {/* Kebab menu — appears on group hover */}
-      {hasMenu && (
-        <div className={cn(
-          'absolute top-2 right-2',
-          'opacity-0 group-hover:opacity-100 transition-opacity duration-100',
-          menuOpen && 'opacity-100',
-        )}>
-          <Menu open={menuOpen} onOpenChange={setMenuOpen}>
-            <MenuTrigger asChild>
+      {(onFork || onRequestDelete || canMove) && (
+        <div className={canMove ? 'dh-card-actions dh-card-actions--three' : 'dh-card-actions'}>
+          {canMove && onMove && (
+            <DropdownMenu.Root modal={false}>
+              <Tooltip surface={appearance} label="Move to folder">
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className="dh-icon-button"
+                    aria-label={`Move ${title} to folder`}
+                    data-testid={`home-action-move-${item.id}`}
+                  >
+                    <MoveToFolderIcon />
+                  </button>
+                </DropdownMenu.Trigger>
+              </Tooltip>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="dh-menu"
+                  align="end"
+                  sideOffset={6}
+                  collisionPadding={8}
+                  data-testid={`home-move-menu-${item.id}`}
+                >
+                  <DropdownMenu.Label className="dh-menu-label">Move to folder</DropdownMenu.Label>
+                  {[{ id: 'unfiled', name: 'Not in a folder' }, ...folders].map((f) => {
+                    const current = f.id === currentTarget;
+                    return (
+                      <DropdownMenu.Item
+                        key={f.id}
+                        className="dh-menu-item"
+                        disabled={current}
+                        data-testid={`home-move-to-${f.id}`}
+                        onSelect={() => onMove(item, f.id === 'unfiled' ? null : f.id)}
+                      >
+                        <span className="dh-menu-item-label">{f.name}</span>
+                        {current && (
+                          <span className="dh-menu-current">
+                            <CheckIcon />
+                            <span className="sr-only">(current)</span>
+                          </span>
+                        )}
+                      </DropdownMenu.Item>
+                    );
+                  })}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+          {onFork && (
+            <Tooltip surface={appearance} label="Fork">
               <button
                 type="button"
-                aria-label="Diagram options"
-                onClick={(e) => e.stopPropagation()}
-                className={cn(
-                  'grid place-items-center h-6 w-6 rounded-md',
-                  'bg-ink-700/80 text-ondark-muted hover:text-ondark-strong hover:bg-ink-600/80',
-                  'transition-colors duration-100 ring-draft',
-                )}
+                className="dh-icon-button"
+                aria-label={`Fork ${title}`}
+                data-testid={`home-action-fork-${item.id}`}
+                onClick={() => onFork(item)}
               >
-                <KebabIcon />
+                <ForkIcon />
               </button>
-            </MenuTrigger>
-            <MenuContent align="end">
-              {onFork && (
-                <MenuItem onSelect={() => { setMenuOpen(false); onFork(item); }}>
-                  Duplicate
-                </MenuItem>
-              )}
-              {onExportHtml && (
-                <MenuItem onSelect={() => { setMenuOpen(false); onExportHtml(item); }}>
-                  Export as HTML
-                </MenuItem>
-              )}
-              {onDelete && (
-                <MenuItem
-                  data-variant="danger"
-                  onSelect={() => { setMenuOpen(false); onDelete(item.id); }}
-                >
-                  Delete
-                </MenuItem>
-              )}
-            </MenuContent>
-          </Menu>
+            </Tooltip>
+          )}
+          {onRequestDelete && (
+            <Tooltip surface={appearance} label="Delete">
+              <button
+                type="button"
+                className="dh-icon-button"
+                aria-label={`Delete ${title}`}
+                data-testid={`home-action-delete-${item.id}`}
+                onClick={(e) => onRequestDelete(item, e.currentTarget)}
+              >
+                <TrashIcon />
+              </button>
+            </Tooltip>
+          )}
         </div>
       )}
     </div>

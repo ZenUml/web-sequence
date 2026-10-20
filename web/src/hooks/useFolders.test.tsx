@@ -179,3 +179,27 @@ describe('useFolders — signed out', () => {
     expect(mockDeleteFolder).not.toHaveBeenCalled();
   });
 });
+
+it('reports a failed initial read and retries without a folder mutation', async () => {
+  useAuthStore.setState({ user: { uid: 'u1' }, authReady: true });
+  mockGetFolders.mockRejectedValueOnce(new Error('offline')).mockResolvedValue(FOLDERS);
+  const { result } = renderHook(() => useFolders());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.error).toContain('load');
+  await act(async () => { await result.current.retry(); });
+  expect(result.current.folders).toEqual(FOLDERS);
+  expect(result.current.error).toBeNull();
+});
+
+it('keeps a successful create successful when its refresh fails, so retry only reads', async () => {
+  useAuthStore.setState({ user: { uid: 'u1' }, authReady: true });
+  mockGetFolders.mockResolvedValueOnce(FOLDERS).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(FOLDERS);
+  mockCreateFolder.mockResolvedValue({ id: 'new', name: 'New', createdOn: 1, updatedOn: 1 });
+  const { result } = renderHook(() => useFolders());
+  await waitFor(() => expect(result.current.folders).toHaveLength(2));
+  await act(async () => { await result.current.createFolder('New'); });
+  expect(result.current.error).toContain('refresh');
+  expect(result.current.folders.some(f => f.id === 'new')).toBe(true);
+  await act(async () => { await result.current.retry(); });
+  expect(mockCreateFolder).toHaveBeenCalledTimes(1);
+});

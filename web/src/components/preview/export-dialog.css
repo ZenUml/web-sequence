@@ -1,0 +1,56 @@
+/* F08 Download dialog: its portal owns its Dark surface and responsive bounds. */
+.dl-dialog {
+  --ui-export-dialog-surface: #303640;
+  --ui-export-dialog-border: #56606f;
+  box-sizing: border-box;
+  width: min(960px, calc(100vw - 32px));
+  min-height: min(590px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: var(--ui-space-24);
+  border: var(--ui-stroke-border) solid var(--ui-export-dialog-border);
+  border-radius: var(--ui-radius-dialog);
+  background: var(--ui-export-dialog-surface);
+  color: var(--ui-text);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .28);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+.dl-title { margin: 0; padding-right: 32px; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.01em; }
+.dl-description { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+.dl-dialog.dl-dialog .dl-close { top: 16px; right: var(--ui-space-24); width: 32px; height: 32px; border-radius: var(--ui-radius-control); background: transparent; color: var(--ui-text-secondary); }
+.dl-dialog.dl-dialog .dl-close:hover { background: var(--ui-secondary-hover); color: var(--ui-text); }
+.dl-overlay { background: rgba(0,0,0,.5); }
+.dl-body { margin-top: 20px; }
+.dl-grid { display: grid; grid-template-columns: minmax(0, 540px) minmax(0, 340px); justify-content: space-between; gap: var(--ui-space-24); min-height: 492px; }
+.dl-preview-column, .dl-settings { min-width: 0; }
+.dl-caption { margin: 0 0 8px; color: var(--ui-text-secondary); font-size: 12px; line-height: 16px; }
+.dl-preview { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; height: 452px; padding: var(--ui-space-8); overflow: auto; background: var(--ui-surface); color: var(--ui-text-secondary); font-size: 13px; line-height: var(--ui-line-control); }
+.dl-preview img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.dl-settings { display: flex; flex-direction: column; padding-top: var(--ui-space-24); }
+.dl-fields { display: flex; flex-direction: column; gap: 28px; }
+.dl-field { display: flex; flex-direction: column; gap: var(--ui-space-4); }
+.dl-field label { font-size: 13px; line-height: var(--ui-line-control); font-weight: 400; }
+.dl-field .ui-select-trigger { box-sizing: border-box; width: 100%; height: var(--ui-control-default); font-size: 14px; line-height: var(--ui-line-control); }
+.dl-select-menu { width: var(--radix-select-trigger-width); max-width: calc(100vw - 32px); }
+.dl-helpers { margin-top: 80px; color: var(--ui-text-secondary); font-size: 13px; line-height: var(--ui-line-control); }
+.dl-helpers p { margin: 0; overflow-wrap: anywhere; }
+.dl-helpers p + p { margin-top: 4px; }
+.dl-error { margin: 12px 0 0; color: var(--ui-text); border-left: 2px solid var(--ui-danger); padding-left: var(--ui-space-8); font-size: 13px; line-height: var(--ui-line-control); overflow-wrap: anywhere; }
+.dl-actions { display: flex; justify-content: flex-end; gap: var(--ui-space-8); margin-top: auto; padding-top: var(--ui-space-24); padding-bottom: 28px; }
+.dl-actions .ui-button { flex-shrink: 0; height: var(--ui-control-default); }
+.dl-actions .dl-cancel { width: 80px; }
+.dl-actions .dl-download { width: 160px; }
+@media (max-width: 760px) {
+  .dl-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .dl-preview { height: 320px; }
+  .dl-settings { padding-top: 0; }
+  .dl-helpers { margin-top: 24px; }
+  .dl-actions { margin-top: 0; padding-bottom: 0; }
+}
+@media (max-height: 680px) { .dl-dialog { min-height: 0; } }
+@media (max-width: 360px) {
+  .dl-dialog { padding: 20px; }
+  .dl-actions { gap: 6px; }
+  .dl-actions .dl-download { flex: 1 1 160px; min-width: 0; }
+}

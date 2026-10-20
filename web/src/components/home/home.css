@@ -1,0 +1,1332 @@
+/* ============================================================================
+   Diagrams page (Figma FVH4SBtHNJMWZFedkE23H4: light 36:7530, dark 35:5898,
+   delete confirmation 36:7812). Scoped to .diagrams-home and the portalled
+   .dh-dialog. Shared colours come from the editor semantic tokens in globals.css
+   (--editor-*), so the page follows <html data-appearance> exactly like the Editor.
+   Only the Diagrams-specific surfaces (cards, pocket, selection) are defined here.
+   ========================================================================== */
+
+.diagrams-home,
+.dh-dialog,
+.dh-menu {
+  --dh-card: #f7fafd;
+  --dh-card-border: #e3e8ed;
+  --dh-template-border: #d9e3ec;
+  --dh-pocket-line: #e6edf3;
+  --dh-pocket-lip: rgba(28, 54, 80, 0.09);
+  --dh-selected: #e5f1fa;
+  --dh-selected-text: #176593;
+  --dh-sort-track: #f5f8fb;
+  --dh-sort-selected: #dfeffa;
+  --dh-sort-selected-text: #216b9d;
+  --dh-sort-text: #657585;
+  --dh-search-bg: #ffffff;
+  --dh-search-border: #d9dde3;
+  --dh-tool-label: #687d8d;
+  --dh-tool-icon: #607386;
+  --dh-icon: #60646c;
+  --dh-danger: #b63c32;
+  --dh-danger-hover: #a0342b;
+  --dh-placeholder-icon: #9cb6cb;
+  --dh-placeholder-text: #687d8d;
+  --dh-drop: #e5f1fa;
+  --dh-drop-border: #2b84c0;
+  --dh-error-text: #b63c32;
+  --dh-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root[data-appearance='dark'] .diagrams-home,
+:root[data-appearance='dark'] .dh-dialog,
+:root[data-appearance='dark'] .dh-menu {
+  --dh-card: #424f5e;
+  --dh-card-border: #516071;
+  --dh-template-border: #516071;
+  --dh-pocket-line: #4b596a;
+  --dh-pocket-lip: rgba(0, 0, 0, 0.22);
+  --dh-selected: #304f69;
+  --dh-selected-text: #9acdfa;
+  --dh-sort-track: #2d3743;
+  --dh-sort-selected: #304f69;
+  --dh-sort-selected-text: #9acdfa;
+  --dh-sort-text: #b8c3cf;
+  --dh-search-bg: #2d3743;
+  --dh-search-border: #516071;
+  --dh-tool-label: #b8c3cf;
+  --dh-tool-icon: #becbd8;
+  --dh-icon: #b8c3cf;
+  --dh-drop: #304f69;
+  --dh-drop-border: #6db6ee;
+  --dh-error-text: #f29b8f;
+}
+
+/* ---- Page frame ----------------------------------------------------------- */
+.diagrams-home {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  font-family: var(--dh-font);
+  color-scheme: light;
+}
+:root[data-appearance='dark'] .diagrams-home {
+  color-scheme: dark;
+}
+.diagrams-home :focus-visible,
+.dh-dialog :focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: 2px;
+}
+.diagrams-home button,
+.diagrams-home input {
+  font-family: inherit;
+}
+
+.dh-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 24px;
+  background: var(--editor-bg);
+}
+.dh-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.dh-brand-mark,
+.dh-brand-logo {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.dh-brand-name {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--editor-text);
+}
+.dh-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Buttons -------------------------------------------------------------- */
+.dh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.dh-button--primary {
+  background: var(--editor-primary);
+  color: var(--editor-on-primary);
+}
+.dh-button--primary:hover {
+  background: var(--editor-primary-hover);
+}
+.dh-button--primary:active {
+  background: var(--editor-primary-press);
+}
+.dh-button--secondary {
+  background: var(--editor-secondary-bg);
+  color: var(--editor-secondary-text);
+  border-color: var(--editor-secondary-border);
+  font-size: 14px;
+}
+.dh-button--secondary:hover {
+  background: var(--editor-secondary-hover);
+}
+.dh-button--secondary:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.dh-button--danger {
+  background: var(--dh-danger);
+  border-color: var(--dh-danger);
+  color: #ffffff;
+  font-size: 14px;
+}
+.dh-button--danger:hover {
+  background: var(--dh-danger-hover);
+}
+.dh-button--danger[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.75;
+}
+.dh-new {
+  width: 100px;
+  padding: 0 12px;
+}
+.dh-appearance {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--editor-text-secondary);
+  cursor: pointer;
+}
+.dh-appearance:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+.dh-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--editor-primary);
+  color: var(--editor-on-primary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dh-avatar:hover {
+  background: var(--editor-primary-hover);
+}
+
+/* ---- Body: sidebar + content surface -------------------------------------- */
+.dh-body {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 12px 12px 0;
+}
+
+.dh-sidebar {
+  position: sticky;
+  top: 68px;
+  flex: 0 0 256px;
+  width: 256px;
+  height: calc(100vh - 80px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  padding: 52px 20px 32px 12px;
+  overflow-y: auto;
+}
+.dh-nav {
+  display: flex;
+  flex-direction: column;
+}
+.dh-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.dh-nav-item {
+  flex: none;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px 0 16px;
+  margin-bottom: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editor-text);
+  font-size: 14px;
+  line-height: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+.dh-nav-row .dh-nav-item {
+  flex: 1;
+  margin-bottom: 0;
+}
+.dh-nav-item:hover {
+  background: var(--editor-hover);
+}
+.dh-nav-item.is-active {
+  background: var(--dh-selected);
+  color: var(--dh-selected-text);
+  font-weight: 600;
+}
+.dh-nav-item[data-testid='folder-unfiled']:not(.is-active) {
+  color: var(--editor-text-secondary);
+}
+.dh-nav-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-nav-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--editor-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.dh-nav-item.is-active .dh-nav-count {
+  color: var(--dh-selected-text);
+}
+.dh-nav-actions {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+}
+/* Folder actions show on hover, on keyboard focus and on the selected row, so a
+   tap on a folder reveals them on touch screens: never a hover-only control. */
+.dh-nav-row:hover .dh-nav-actions,
+.dh-nav-row.is-active .dh-nav-actions,
+.dh-nav-actions:focus-within {
+  opacity: 1;
+}
+.dh-nav-row:hover .dh-nav-count,
+.dh-nav-row.is-active .dh-nav-count,
+.dh-nav-row:focus-within .dh-nav-count {
+  visibility: hidden;
+}
+/* Keep the label clear of the two action buttons while they show. */
+.dh-nav-row:hover .dh-nav-item,
+.dh-nav-row.is-active .dh-nav-item,
+.dh-nav-row:focus-within .dh-nav-item {
+  padding-right: 68px;
+}
+.dh-nav-action {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dh-icon);
+  cursor: pointer;
+}
+.dh-nav-action:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+.dh-nav-action--danger:hover {
+  color: var(--editor-danger);
+}
+/* Drag a diagram onto a folder: rows that accept the drop, and the one under it. */
+.dh-sidebar.is-dragging .dh-nav-item.is-droppable {
+  outline: 1px dashed var(--dh-card-border);
+  outline-offset: -1px;
+}
+.dh-nav-item.is-drop-target,
+.dh-sidebar.is-dragging .dh-nav-item.is-drop-target {
+  background: var(--dh-drop);
+  color: var(--dh-selected-text);
+  outline: 1px solid var(--dh-drop-border);
+  outline-offset: -1px;
+}
+.dh-drop-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dh-selected-text);
+}
+.dh-drag-hint {
+  margin: 12px 0 0 16px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--editor-text-secondary);
+}
+.dh-drag-ghost {
+  position: fixed;
+  top: -200px;
+  left: -400px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid #d9e3ec;
+  border-radius: 8px;
+  background: #f7fafd;
+  color: #1f2a37;
+  font: 600 13px/16px 'Inter', ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 8px 20px rgba(28, 54, 80, 0.16);
+}
+.dh-drag-ghost span {
+  font-weight: 400;
+  font-size: 11px;
+  color: #2b84c0;
+}
+/* Inline create / rename. */
+.dh-folder-edit {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.dh-nav-input[aria-invalid='true'] {
+  border-color: var(--dh-danger);
+}
+.dh-nav-input:focus {
+  outline: none;
+  border-color: var(--editor-focus);
+  box-shadow: 0 0 0 1px var(--editor-focus);
+}
+.dh-folder-hint {
+  margin: 2px 0 8px 2px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--editor-text-secondary);
+}
+.dh-folder-error {
+  margin: 4px 0 8px;
+}
+.dh-folder-error-title {
+  margin: 0 0 4px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--editor-text);
+}
+.dh-folder-error-text {
+  margin: 0 0 4px 2px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--dh-error-text);
+}
+.dh-folder-error-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.dh-button--small {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.dh-button[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+.dh-nav-heading {
+  margin: 20px 0 16px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
+}
+.dh-nav-input {
+  width: 100%;
+  height: 36px;
+  margin: 2px 0 6px;
+  padding: 0 12px;
+  border: 1px solid var(--dh-search-border);
+  border-radius: 8px;
+  background: var(--dh-search-bg);
+  color: var(--editor-text);
+  font-size: 14px;
+}
+.dh-new-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editor-link);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.dh-new-folder:hover {
+  background: var(--editor-hover);
+}
+.dh-tools {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 24px;
+}
+.dh-tools .dh-nav-heading {
+  margin: 0 0 10px 16px;
+  font-weight: 500;
+  color: var(--dh-tool-label);
+}
+.dh-tool {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+  padding: 0 12px;
+  margin-left: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editor-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.dh-tool svg {
+  color: var(--dh-tool-icon);
+  flex-shrink: 0;
+}
+.dh-tool:hover {
+  background: var(--editor-hover);
+}
+.dh-tool[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+/* Report a bug (ReportBugButton placement="inline") as the last Library tool, so
+   no floating button covers the card actions. */
+.dh-tool-slot {
+  display: flex;
+}
+.diagrams-home .dh-tool-slot .editor-report-bug {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  margin-left: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editor-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.diagrams-home .dh-tool-slot .editor-report-bug svg {
+  color: var(--dh-tool-icon);
+  flex-shrink: 0;
+}
+.diagrams-home .dh-tool-slot .editor-report-bug:hover {
+  background: var(--editor-hover);
+}
+
+/* Latest move result with Undo (design "Moved · undo"). In the sticky sidebar on
+   wide screens; docked to the bottom on narrow screens (see media query). */
+.dh-status {
+  position: relative;
+  margin: 20px 0 0 4px;
+  padding: 14px 36px 14px 16px;
+  border: 1px solid var(--dh-card-border);
+  border-radius: 8px;
+  background: var(--editor-surface);
+  box-shadow: 0 2px 6px rgba(28, 54, 80, 0.06);
+}
+.dh-status.is-error {
+  border-color: var(--dh-danger);
+}
+.dh-status-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--editor-text);
+}
+.dh-status-line {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--editor-text);
+  overflow-wrap: anywhere;
+}
+.dh-status-meta {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--editor-text-secondary);
+}
+.dh-status-error {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--dh-error-text);
+}
+.dh-status-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.dh-status-earlier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--editor-border);
+}
+.dh-status-earlier .dh-status-error {
+  margin: 0;
+}
+.dh-status-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--editor-text-secondary);
+  cursor: pointer;
+}
+.dh-status-close:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+
+/* Move to folder menu (portalled). */
+.dh-menu {
+  z-index: 50;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: min(360px, var(--radix-dropdown-menu-content-available-height));
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--dh-card-border);
+  border-radius: 8px;
+  background: var(--editor-surface);
+  color: var(--editor-text);
+  font-family: var(--dh-font);
+  box-shadow: var(--editor-shadow);
+}
+:root[data-appearance='dark'] .dh-menu {
+  color-scheme: dark;
+}
+.dh-menu-label {
+  padding: 6px 10px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
+}
+.dh-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+.dh-menu-item[data-highlighted] {
+  background: var(--editor-hover);
+}
+.dh-menu-item[data-disabled] {
+  cursor: default;
+  color: var(--editor-text-secondary);
+}
+.dh-menu-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-menu-current {
+  display: inline-flex;
+  color: var(--dh-selected-text);
+}
+
+.dh-surface {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(100vh - 80px);
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--editor-surface);
+}
+
+/* ---- Sections ------------------------------------------------------------- */
+.dh-section + .dh-section,
+.dh-section + .dh-empty {
+  margin-top: 32px;
+}
+.dh-section-title {
+  margin: 0 0 20px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--editor-text);
+}
+
+/* Shared pocket: one solid sleeve over the lower preview, same colour on every
+   card. A narrow faint shadow at its lip makes the overlap read; no fog/gradient. */
+.dh-pocket {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dh-card);
+  border-top: 1px solid var(--dh-pocket-line);
+  box-shadow: 0 -2px 3px -1px var(--dh-pocket-lip);
+}
+
+/* ---- Start something new ------------------------------------------------- */
+.dh-templates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 270px));
+  gap: 16px;
+}
+@media (max-width: 1099px) {
+  .dh-templates {
+    grid-template-columns: repeat(2, minmax(0, 270px));
+  }
+}
+.dh-template {
+  position: relative;
+  display: block;
+  height: 150px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--dh-template-border);
+  border-radius: 8px;
+  background: var(--dh-card);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.dh-template:hover,
+.dh-card:hover {
+  border-color: var(--editor-primary);
+  box-shadow: var(--editor-shadow);
+}
+.dh-template-art {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 86px;
+  overflow: hidden;
+}
+.dh-template-art img {
+  display: block;
+  width: 100%;
+  height: 86px;
+  object-fit: cover;
+  object-position: center top;
+}
+.dh-pocket--template {
+  top: 85px;
+  padding: 13px 16px 0;
+}
+.dh-template-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 17px;
+  color: var(--editor-text);
+}
+.dh-template-desc {
+  margin-top: 9px;
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--editor-text-secondary);
+}
+
+/* ---- Diagrams heading row ------------------------------------------------- */
+.dh-diagrams-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.dh-diagrams-title {
+  display: flex;
+  align-items: baseline;
+  gap: 17px;
+  margin: 0 auto 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--editor-text);
+}
+.dh-diagrams-title:focus {
+  outline: none;
+}
+.dh-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--editor-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.dh-search {
+  position: relative;
+  flex: 0 1 320px;
+  min-width: 0;
+}
+.dh-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--dh-search-border);
+  border-radius: 8px;
+  background: var(--dh-search-bg);
+  color: var(--editor-text);
+  font-size: 13px;
+}
+.dh-search-input::placeholder {
+  color: var(--editor-text-secondary);
+}
+.dh-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.dh-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--editor-text-secondary);
+  cursor: pointer;
+}
+.dh-search-clear:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+.dh-search-kbd {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--editor-text-secondary);
+  pointer-events: none;
+}
+.dh-sort {
+  display: flex;
+  flex: 0 0 240px;
+  height: 36px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--dh-sort-track);
+}
+.dh-sort-option {
+  flex: 1 1 auto;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dh-sort-text);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dh-sort-option:first-child {
+  flex: 0 0 130px;
+}
+.dh-sort-option.is-selected {
+  background: var(--dh-sort-selected);
+  color: var(--dh-sort-selected-text);
+  font-weight: 500;
+}
+
+/* ---- Diagram cards -------------------------------------------------------- */
+.dh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 352px));
+  gap: 24px;
+}
+/* auto-fill counts tracks at their 352px maximum, so mid widths (e.g. 1024)
+   dropped to one column with a large gap. Below the design width, let the
+   columns flex so two or three cards fit. */
+@media (min-width: 640px) and (max-width: 1439px) {
+  .dh-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+.dh-card {
+  position: relative;
+  height: 228px;
+  overflow: hidden;
+  border: 1px solid var(--dh-card-border);
+  border-radius: 8px;
+  background: var(--dh-card);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.dh-card-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.dh-card-open:focus-visible {
+  outline-offset: -2px;
+}
+.dh-card-preview {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: block;
+  height: 172px;
+  overflow: hidden;
+  /* Diagram previews stay light in the dark UI, as supplied. */
+  background: #ffffff;
+}
+.dh-card .dh-pocket {
+  top: 157px;
+  padding: 18px 96px 0 16px;
+}
+.dh-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--editor-text);
+}
+.dh-card-date {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--editor-text-secondary);
+}
+.dh-card-actions {
+  position: absolute;
+  top: 169px;
+  right: 15px;
+  display: flex;
+  gap: 8px;
+}
+.dh-card-actions--three {
+  gap: 4px;
+}
+.dh-card:has(.dh-card-actions--three) .dh-pocket {
+  padding-right: 120px;
+}
+.dh-card[draggable='true'] {
+  cursor: grab;
+}
+.dh-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dh-icon);
+  cursor: pointer;
+}
+.dh-icon-button:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+
+/* Rendered thumbnail (DiagramThumbnail.tsx). */
+.dh-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.dh-thumb-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  background: #ffffff;
+}
+.dh-thumb-note,
+.dh-empty-label {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--dh-placeholder-text);
+}
+.dh-thumb-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 20px;
+}
+.dh-thumb--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 42px;
+  gap: 12px;
+}
+.dh-empty-icon {
+  color: var(--dh-placeholder-icon);
+}
+/* The preview stays light in dark mode, so keep the light placeholder colours. */
+:root[data-appearance='dark'] .dh-thumb--empty {
+  --dh-placeholder-icon: #9cb6cb;
+  --dh-placeholder-text: #687d8d;
+}
+
+/* ---- Empty library and no-results (existing behaviour, page typography) --- */
+.dh-empty,
+.dh-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 16px;
+  text-align: center;
+}
+.dh-empty-title,
+.dh-no-results-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--editor-text);
+}
+.dh-empty-text,
+.dh-no-results-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--editor-text-secondary);
+}
+.dh-no-results-term {
+  color: var(--editor-text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.dh-no-results-clear {
+  margin-top: 14px;
+}
+.dh-folder-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 56px;
+  text-align: center;
+}
+.dh-folder-empty-icon {
+  display: inline-flex;
+  margin-bottom: 20px;
+  color: var(--editor-text-secondary);
+}
+.dh-folder-empty-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--editor-text);
+}
+.dh-folder-empty-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--editor-text-secondary);
+}
+.dh-empty-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ---- Delete confirmation (portalled) -------------------------------------- */
+.dh-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(16, 24, 32, 0.42);
+}
+.dh-dialog-center {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.dh-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(460px, calc(100vw - 32px));
+  min-height: 268px;
+  padding: 28px 36px 32px 28px;
+  border: 1px solid var(--editor-border);
+  border-radius: 12px;
+  background: var(--editor-surface);
+  color: var(--editor-text);
+  font-family: var(--dh-font);
+  box-shadow: var(--editor-shadow);
+}
+:root[data-appearance='dark'] .dh-dialog {
+  border-color: #516071;
+  color-scheme: dark;
+}
+.dh-dialog:focus {
+  outline: none;
+}
+.dh-dialog-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 27px;
+}
+.dh-dialog-name {
+  margin: 19px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+}
+.dh-dialog-message {
+  margin: 13px 0 0;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--editor-text-secondary);
+}
+.dh-dialog-body {
+  margin-top: 19px;
+}
+.dh-dialog-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 19px;
+}
+.dh-dialog-strong {
+  font-weight: 600;
+  color: var(--editor-text);
+}
+.dh-dialog-error {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--editor-danger);
+}
+.dh-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 32px;
+}
+.dh-dialog-actions .dh-button {
+  width: 96px;
+  height: 40px;
+  padding: 0;
+}
+:root[data-appearance='dark'] .dh-dialog .dh-button--secondary {
+  border-color: #516071;
+}
+
+/* ---- Narrow screens ------------------------------------------------------- */
+@media (max-width: 639px) {
+  .dh-topbar {
+    padding: 0 12px;
+  }
+  .dh-brand {
+    gap: 10px;
+  }
+  .dh-new {
+    width: auto;
+  }
+  .dh-appearance {
+    margin-left: 0;
+  }
+  .dh-body {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 8px 8px;
+  }
+  /* Sidebar becomes a scrolling strip so folders and library tools stay reachable. */
+  .dh-sidebar {
+    position: static;
+    flex: none;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .dh-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+  .dh-nav-row {
+    margin: 0;
+  }
+  .dh-nav-item,
+  .dh-new-folder,
+  .dh-tool {
+    flex: none;
+    height: 36px;
+    margin: 0;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .dh-nav-label {
+    overflow: visible;
+  }
+  /* Folder actions sit after the selected folder in the strip. */
+  .dh-nav-actions {
+    position: static;
+    display: none;
+    opacity: 1;
+  }
+  .dh-nav-row.is-active .dh-nav-actions {
+    display: flex;
+  }
+  .dh-nav-row:hover .dh-nav-count,
+  .dh-nav-row.is-active .dh-nav-count,
+  .dh-nav-row:focus-within .dh-nav-count {
+    visibility: visible;
+  }
+  .dh-nav-row:hover .dh-nav-item,
+  .dh-nav-row.is-active .dh-nav-item,
+  .dh-nav-row:focus-within .dh-nav-item {
+    padding-right: 12px;
+  }
+  /* While a folder name is edited, let the strip wrap so the hint/error is visible. */
+  .dh-sidebar.is-editing,
+  .dh-sidebar.is-editing .dh-nav {
+    flex-wrap: wrap;
+  }
+  .dh-sidebar.is-editing .dh-nav-row--editing,
+  .dh-sidebar.is-editing .dh-folder-edit {
+    flex: 1 1 100%;
+  }
+  .dh-folder-edit .dh-nav-input {
+    width: 100%;
+  }
+  .dh-drag-hint {
+    display: none;
+  }
+  /* The move result docks to the bottom; the surface reserves room for it so the
+     last cards can still scroll clear. */
+  .dh-status {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 25;
+    margin: 0;
+    box-shadow: 0 8px 24px rgba(28, 54, 80, 0.18);
+  }
+  .diagrams-home.has-status .dh-surface {
+    padding-bottom: 200px;
+  }
+  .dh-tool-slot .editor-report-bug {
+    flex: none;
+    height: 36px;
+    margin: 0;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .dh-nav-heading {
+    display: none;
+  }
+  .dh-tools {
+    flex-direction: row;
+    margin: 0;
+    padding: 0 0 0 8px;
+    gap: 4px;
+    border-left: 1px solid var(--editor-border);
+  }
+  .dh-nav-input {
+    width: 160px;
+    margin: 0;
+  }
+  .dh-surface {
+    min-height: 0;
+    padding: 16px;
+  }
+  .dh-templates {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 220px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .dh-diagrams-head {
+    flex-wrap: wrap;
+  }
+  .dh-diagrams-title {
+    flex: 1 0 100%;
+  }
+  .dh-search {
+    flex: 1 1 100%;
+  }
+  .dh-sort {
+    flex: 1 1 100%;
+  }
+  .dh-sort-option:first-child {
+    flex: 1 1 50%;
+  }
+  .dh-sort-option {
+    flex: 1 1 50%;
+  }
+  .dh-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dh-sidebar-wrapper { display: flex; flex: 0 0 256px; min-height: 0; flex-direction: column; }
+.dh-sidebar-wrapper > .dh-sidebar { flex: 1; width: 100%; }
+.dh-folder-read-status { padding: 10px 12px; font-size: 13px; color: var(--editor-text); }
+.dh-folders-drawer { position: fixed; inset: 0 auto 0 0; width: min(340px, 90vw); max-height: 100dvh; border-radius: 0; background: var(--editor-bg); color: var(--editor-text); padding: 22px 14px; overflow-y: auto; }
+.dh-folders-drawer-body .dh-sidebar-wrapper { height: calc(100dvh - 80px); }
+@media (max-width: 639px) {
+  .dh-folders-drawer .dh-sidebar { flex-direction: column; align-items: stretch; overflow: visible; height: auto; }
+  .dh-folders-drawer .dh-nav { flex-direction: column; align-items: stretch; }
+  .dh-folders-drawer .dh-nav-item { width: 100%; }
+}
+
+.dh-dialog.dh-folders-drawer { position: fixed; inset: 0 auto 0 0; animation: none; opacity: 1; transform: none; }
+.dh-folders-drawer .dh-sidebar { position: static; top: auto; padding: 20px 0; min-height: 0; }
+.dh-folders-drawer .dh-tools { flex-direction: column; margin-top: auto; padding: 24px 0 0; border-left: 0; gap: 8px; }
+.dh-folders-drawer .dh-nav-heading { display: block; }
+.dh-folders-drawer .dh-tool-slot .editor-report-bug { display: flex; align-items: center; gap: 12px; border: 0; color: var(--editor-text); background: transparent; font-size: 13px; text-align: left; width: 100%; }
+@media (max-width: 639px) { .diagrams-home .dh-brand-name { display: none; } }
+.dh-folders-trigger svg { width: 18px; height: 18px; flex: none; }

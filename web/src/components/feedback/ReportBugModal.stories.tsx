@@ -1,9 +1,26 @@
+import { useEffect } from 'react';
+import { useSettingsStore } from '../../state/settingsStore';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ReportBugModal } from './ReportBugModal';
 
 const meta: Meta<typeof ReportBugModal> = {
   title: 'Feedback/ReportBugModal',
   component: ReportBugModal,
+  decorators: [(Story, context) => {
+    const appearance = context.parameters.appearance === 'dark' ? 'dark' : 'light';
+    useEffect(() => {
+      const previous = document.documentElement.dataset.appearance;
+      const previousSettings = useSettingsStore.getState().settings;
+      document.documentElement.dataset.appearance = appearance;
+      useSettingsStore.setState({ settings: { ...previousSettings, appearance } });
+      return () => {
+        if (previous === undefined) delete document.documentElement.dataset.appearance;
+        else document.documentElement.dataset.appearance = previous;
+        useSettingsStore.setState({ settings: previousSettings });
+      };
+    }, [appearance]);
+    return <Story />;
+  }],
   args: {
     open: true,
     onOpenChange: () => {},
@@ -28,3 +45,6 @@ export const Anonymous: Story = { args: { signedIn: false } };
 export const SignedIn: Story = { args: { signedIn: true } };
 // No active diagram: the DSL toggle is hidden and the summary says "No diagram code".
 export const NoEditorContent: Story = { args: { dsl: '', view: 'hub' } };
+
+export const Dark: Story = { parameters: { appearance: 'dark' } };
+export const Narrow: Story = { globals: { viewport: { value: 'mobile1', isRotated: false } } };

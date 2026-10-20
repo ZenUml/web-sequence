@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import type { Page } from '../../domain/types';
-import { IconButton, TextInput, cn } from '../../ui';
+import type { Page, Appearance } from '../../domain/types';
+import { IconButton, PlusIcon, TextInput, cn } from '../../ui';
 import { ConfirmDialog } from '../modals/ConfirmDialog';
 
 export interface PageTabsProps {
@@ -15,6 +15,7 @@ export interface PageTabsProps {
   // 'light' = the white renderer header (.pv-head) — page tabs now live there
   // (redesign §02), so they must wear the light .rtab tokens instead of dark ink.
   surface?: 'dark' | 'light';
+  appearance?: Appearance;
 }
 
 export function PageTabs({
@@ -26,6 +27,7 @@ export function PageTabs({
   onRename,
   readOnly = false,
   surface = 'dark',
+  appearance,
 }: PageTabsProps) {
   const light = surface === 'light';
   // editingId: which tab is currently being renamed (null = none)
@@ -94,7 +96,7 @@ export function PageTabs({
             {isRenaming ? (
               <TextInput
                 ref={inputRef}
-                surface={surface}
+                surface={appearance ?? surface}
                 data-testid={`page-rename-${page.id}`}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -120,32 +122,38 @@ export function PageTabs({
                   if (e.key === ' ') { e.preventDefault(); onSwitch(page.id); }
                 }}
                 className={cn(
-                  'relative flex items-center gap-1 h-7 px-2.5 text-[11px] font-mono uppercase tracking-[0.1em]',
-                  'transition-colors duration-150 ease-draft select-none whitespace-nowrap cursor-pointer',
-                  'focus-visible:outline-none ring-draft',
-                  // Light (.rtab): a filled paper-100 pill when active, onlight tokens —
-                  // no accent underline. Dark (legacy): accent-soft tab + accent underline.
-                  light ? 'rounded-lg' : 'rounded-t',
+                  'relative flex items-center gap-1 select-none whitespace-nowrap cursor-pointer',
+                  'transition-colors duration-150 ease-draft focus-visible:outline-none',
+                  // Light (editor preview card): the active underline is drawn on the
+                  // label wrapper (styled in globals.css).
+                  // Dark (legacy): accent-soft tab + accent underline.
+                  light
+                    ? 'editor-page-tab'
+                    : 'h-7 px-2.5 text-[11px] font-mono uppercase tracking-[0.1em] rounded-t ring-draft',
                   isActive
                     ? light
-                      ? 'bg-paper-100 text-onlight-strong font-semibold'
+                      ? 'editor-page-tab--active'
                       : [
                           'bg-accent-soft text-ondark-strong',
                           'after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-accent after:rounded-t',
                         ]
                     : light
-                      ? 'text-onlight-muted hover:text-onlight-strong hover:bg-paper-100/60'
+                      ? 'editor-page-tab--idle'
                       : 'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
                 )}
               >
-                <span className="max-w-[180px] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={page.title}>
-                  {page.title}
+                {/* The label wrapper carries the light active underline, so label and
+                    underline share a centre even when the tab also holds a delete ×. */}
+                <span className={cn('relative flex min-w-0 items-center self-stretch', light && 'editor-page-tab-label')}>
+                  <span className="max-w-[180px] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={page.title}>
+                    {page.title}
+                  </span>
                 </span>
                 {canDelete && (
                   // Fix 1: IconButton is a sibling to the label text, not nested in a <button>
                   <IconButton
                     size="sm"
-                    surface={surface}
+                    surface={appearance ?? surface}
                     aria-label="Delete page"
                     data-testid={`page-delete-${page.id}`}
                     className="ml-0.5 h-4 w-4"
@@ -166,7 +174,7 @@ export function PageTabs({
       {!readOnly && (
         <IconButton
           size="sm"
-          surface={surface}
+          surface={appearance ?? surface}
           aria-label="Add page"
           data-testid="page-add"
           // Wrap so the click event is NOT forwarded as onAdd's first arg — onAdd
@@ -174,12 +182,9 @@ export function PageTabs({
           // the SyntheticEvent as `title`, rendering an object as a React child
           // (crashes the editor subtree). Caught by the multi-page E2E.
           onClick={() => onAdd()}
-          className="ml-1"
+          className={light ? 'editor-page-add' : 'ml-1'}
         >
-          {/* + icon */}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
-            <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <PlusIcon size={light ? 16 : 10} strokeWidth={light ? 1 : 1.5} />
         </IconButton>
       )}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Dialog, DialogContent } from './Dialog';
 
@@ -50,5 +50,87 @@ describe('Dialog', () => {
     expect(content.className).not.toMatch(/-translate-[xy]-1\/2/);
     const wrapper = content.parentElement as HTMLElement;
     expect(wrapper.className).toContain('place-items-center');
+  });
+});
+
+describe('DialogContent presentation props (backward compatible)', () => {
+  it('defaults keep the ink shell and serif title', () => {
+    render(
+      <Dialog open>
+        <DialogContent title="T">x</DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole('dialog').className).toContain('bg-ink-800');
+    expect(screen.getByRole('heading', { name: 'T' }).className).toContain('font-serif');
+  });
+
+  it('bare drops the ink surface and serif title; slot classes apply', () => {
+    render(
+      <Dialog open>
+        <DialogContent bare className="shell" titleClassName="ttl" closeClassName="cls" title="T">
+          x
+        </DialogContent>
+      </Dialog>,
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.className).toContain('shell');
+    expect(dialog.className).not.toContain('bg-ink-800');
+    expect(screen.getByRole('heading', { name: 'T' }).className).toBe('ttl');
+    expect(screen.getByLabelText('Close').className).toContain('cls');
+  });
+
+  it('closeDisabled disables the close button', () => {
+    render(
+      <Dialog open>
+        <DialogContent title="T" closeDisabled>x</DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByLabelText('Close')).toBeDisabled();
+  });
+
+  it('describedBy points the dialog description at body copy', () => {
+    render(
+      <Dialog open>
+        <DialogContent title="T" describedBy="body-copy">
+          <p id="body-copy">Body sentence.</p>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription('Body sentence.');
+  });
+});
+
+describe('DialogContent focus + overlay options', () => {
+  it('default: focus moves to the first control (close button)', async () => {
+    render(
+      <Dialog open>
+        <DialogContent title="T">x</DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Close')));
+  });
+
+  it('focusContentOnOpen: focus lands on the dialog container, Tab reaches the close button', async () => {
+    render(
+      <Dialog open>
+        <DialogContent title="T" focusContentOnOpen>
+          <button>action</button>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('dialog')));
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByLabelText('Close'));
+  });
+
+  it('overlayClassName replaces the default ink overlay colour', () => {
+    const { baseElement } = render(
+      <Dialog open>
+        <DialogContent title="T" overlayClassName="my-scrim">x</DialogContent>
+      </Dialog>,
+    );
+    const overlay = baseElement.querySelector('.my-scrim')!;
+    expect(overlay).not.toBeNull();
+    expect(overlay.className).not.toContain('bg-ink-950/55');
   });
 });

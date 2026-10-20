@@ -4,7 +4,7 @@
 // read, so it needs no Firebase auth/emulator: the inline DSL is the source. This
 // spec proves the embed surface:
 //   - the embed header (embed-header + embed-open-link) is shown;
-//   - the full-app CHROME is suppressed — the real header (header-title/header-menu),
+//   - the full-app CHROME is suppressed — the real header (header-title/header-new),
 //     the editor work surface (editor-region) and the editor (dsl-editor) are all
 //     ABSENT;
 //   - the inline `?code=` diagram renders its CONTENT in the preview iframe
@@ -16,7 +16,7 @@
 // invented). The chrome ids used for the ABSENCE assertions all EXIST in normal
 // (non-embed) editor mode, so their absence in embed is a genuine revert→fail
 // signal:
-//   - AppHeader.tsx exposes `header-title` + `header-menu` (there is NO `app-header`).
+//   - AppHeader.tsx exposes `header-title` + `header-new` (there is NO `app-header`).
 //   - Layout.tsx exposes `editor-region` — the split-pane editor work surface.
 //   - The editor is `dsl-editor`.
 // The Sidebar icon rail this contract previously leaned on (`sidebar-editor` /
@@ -68,7 +68,7 @@ test('CONTROL: normal (non-embed) editor mode renders the real header and editor
   await openEditor(page);
 
   await expect(page.getByTestId('header-title')).toBeVisible();
-  await expect(page.getByTestId('header-menu')).toBeVisible();
+  await expect(page.getByTestId('header-new')).toBeVisible();
   // f023f89 ("feat(hub): no-rail layout…") removed the Sidebar icon rail app-wide,
   // so the old `getByTestId(/^sidebar-/)` count-4 check could only fail; sidebar-*
   // ids exist in NO mode and can no longer ground the normal-vs-embed contrast.
@@ -103,7 +103,7 @@ test('?embed hides the real header and editor surface; shows the embed header', 
   // never fail and so guarded nothing); `editor-region` — pinned PRESENT by the
   // control — is the chrome element the embed branch genuinely suppresses.
   await expect(page.getByTestId('header-title')).toHaveCount(0);
-  await expect(page.getByTestId('header-menu')).toHaveCount(0);
+  await expect(page.getByTestId('header-new')).toHaveCount(0);
   await expect(page.getByTestId('editor-region')).toHaveCount(0);
   await expect(page.getByTestId('dsl-editor')).toHaveCount(0);
 });

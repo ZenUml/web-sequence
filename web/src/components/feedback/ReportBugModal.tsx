@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Dialog, DialogContent, Button, Textarea, Switch } from '../../ui';
 import { buildIssueUrl } from '../../services/bugReport';
+import { useSettingsStore } from '../../state/settingsStore';
+import './report-bug.css';
 
 // Verified contact page (same URL the Help modal links to). Used as the fallback
 // for reporters without a GitHub account.
@@ -29,6 +31,9 @@ export function ReportBugModal({
   openUrl = (url) => window.open(url, '_blank', 'noopener,noreferrer'),
   onSubmitted,
 }: ReportBugModalProps) {
+  const surface = useSettingsStore((s) => s.settings.appearance);
+  const descriptionId = useId();
+  const codeHelpId = useId();
   const hasDsl = !!(dsl && dsl.trim());
   const [description, setDescription] = useState('');
   const [includeDsl, setIncludeDsl] = useState(true);
@@ -63,64 +68,73 @@ export function ReportBugModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        bare
+        className="rb-dialog"
+        titleClassName="rb-title"
+        descriptionClassName="rb-helper"
+        bodyClassName="rb-body"
+        closeClassName="rb-close"
+        overlayClassName="rb-overlay"
+        restoreFocus
+        focusContentOnOpen
         title="Report a bug"
         description="Opens a prefilled GitHub issue — review it before submitting."
       >
-        <div data-testid="report-bug-modal" className="space-y-4">
-          <Textarea
-            data-testid="report-bug-description"
-            aria-label="Describe the bug"
-            placeholder="What went wrong? What did you expect to happen?"
-            rows={5}
-            className="w-full"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+        <div data-testid="report-bug-modal" className="rb-form">
+          <div className="rb-field">
+            <label className="rb-label" htmlFor={descriptionId}>What happened?</label>
+            <Textarea
+              id={descriptionId}
+              surface={surface}
+              data-testid="report-bug-description"
+              placeholder="What went wrong? What did you expect to happen?"
+              className="rb-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
           {hasDsl && (
-            <label className="flex items-center justify-between gap-3 text-[13px] text-ondark-muted">
-              <span>
-                Include my diagram code{' '}
-                <span className="text-ondark-faint">(will be public)</span>
-              </span>
+            <div className="rb-code-row">
+              <div>
+                <label className="rb-label" htmlFor={`${descriptionId}-include`}>Include diagram code</label>
+                <p id={codeHelpId} className="rb-code-help">Your diagram code will be public on GitHub.</p>
+              </div>
               <Switch
+                id={`${descriptionId}-include`}
+                surface={surface}
                 data-testid="report-bug-include-dsl"
-                aria-label="Include my diagram code"
+                aria-label="Include diagram code"
+                aria-describedby={codeHelpId}
                 checked={includeDsl}
                 onCheckedChange={setIncludeDsl}
               />
-            </label>
+            </div>
           )}
 
-          <div
-            data-testid="report-bug-summary"
-            className="rounded border border-ink-line/50 bg-ink-900/40 p-3 text-[12px] text-ondark-faint space-y-1"
-          >
-            <p className="font-mono uppercase tracking-[0.12em] text-[10px]">Attached</p>
-            <p>
-              App version {appVersion} · {view} · {signedIn ? 'signed in' : 'anonymous'}
-            </p>
-            <p>{hasDsl && includeDsl ? 'Your diagram code (public)' : 'No diagram code'}</p>
+          <div data-testid="report-bug-summary" className="rb-summary">
+            <p className="rb-summary-title">Attached information</p>
+            <p>App version {appVersion} · {view} · {signedIn ? 'signed in' : 'anonymous'}</p>
+            <p>{hasDsl && includeDsl ? 'Diagram code included (public)' : 'Diagram code excluded'}</p>
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-1">
-            <a
-              className="text-[12px] text-ondark-faint hover:text-ondark-muted underline underline-offset-2 rounded ring-draft"
-              href={CONTACT_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              No GitHub account? Contact us
+          <div className="rb-footer">
+            <a className="rb-contact" aria-label="No GitHub account? Contact us" href={CONTACT_URL} target="_blank" rel="noreferrer noopener">
+              Contact us
             </a>
-            <Button
-              variant="primary"
-              size="md"
-              data-testid="report-bug-submit"
-              disabled={!canSubmit}
-              onClick={handleSubmit}
-            >
-              Open GitHub issue
-            </Button>
+            <div className="rb-actions">
+              <Button surface={surface} size="md" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button
+                surface={surface}
+                variant="primary"
+                size="md"
+                data-testid="report-bug-submit"
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                Open GitHub issue
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { LRLanguage, LanguageSupport } from '@codemirror/language'
+import { LRLanguage, LanguageSupport, ensureSyntaxTree } from '@codemirror/language'
 import { CompletionContext, type Completion } from '@codemirror/autocomplete'
 import { parser } from './grammar/zenuml-parser.js'
 import { zenumlParticipantField } from './participantManager'
@@ -22,7 +22,12 @@ const zenuml = () => new LanguageSupport(zenumlLanguage)
 function stateAt(doc: string): EditorState {
   // zenumlParticipantField must come AFTER the language so it reads the parsed
   // tree — this mirrors the real integration wiring participantManager documents.
-  return EditorState.create({ doc, extensions: [zenuml(), zenumlParticipantField] })
+  const state = EditorState.create({ doc, extensions: [zenuml(), zenumlParticipantField] })
+  // The initial parse has a 20ms budget, so under parallel test load the tree can
+  // stop early and resolveZone sees a partial tree. Finish the parse and hand the
+  // tree to the state, as the editor's background parser does.
+  if (!ensureSyntaxTree(state, state.doc.length, 5000)) throw new Error('parse did not finish')
+  return state.update({}).state
 }
 
 /** Build the completion result at a cursor offset within `doc`. */

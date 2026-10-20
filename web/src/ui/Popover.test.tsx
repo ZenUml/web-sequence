@@ -35,4 +35,24 @@ describe('Popover', () => {
     // Radix renders content in a portal; query the whole document.
     expect(await screen.findByText('popover body')).toBeInTheDocument();
   });
+
+  it('puts the light surface on the portaled node and closes on Escape', async () => {
+    render(
+      <Popover>
+        <PopoverTrigger>Open</PopoverTrigger>
+        <PopoverContent className="caller-pop">
+          <span>popover body</span>
+        </PopoverContent>
+      </Popover>,
+    );
+    const trigger = screen.getByText('Open');
+    await userEvent.click(trigger);
+    const body = await screen.findByText('popover body');
+    const panel = body.closest('[data-ui-surface]') as HTMLElement;
+    expect(panel).toHaveAttribute('data-ui-surface', 'light');
+    expect(panel.className).toContain('ui-popover');
+    expect(panel.className).toContain('caller-pop');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByText('popover body')).not.toBeInTheDocument();
+  });
 });

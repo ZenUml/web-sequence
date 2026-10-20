@@ -34,7 +34,7 @@ describe('Console', () => {
     render(<Console open entries={[]} onClear={() => {}} onEval={() => {}} onToggle={() => {}} />);
     expect(screen.getByTestId('console-eval')).toHaveAccessibleName();
   });
-  it('shows a clean "No issues" pill when there are no error entries', () => {
+  it('shows no status pill on a clean run (count only)', () => {
     render(
       <Console
         open
@@ -44,10 +44,8 @@ describe('Console', () => {
         onToggle={() => {}}
       />,
     );
-    const pill = screen.getByTestId('console-status');
-    expect(pill).toHaveTextContent('No issues');
-    expect(pill).toHaveAttribute('data-clean', 'true');
-    // The total entry count is unaffected by the pill.
+    expect(screen.queryByTestId('console-status')).not.toBeInTheDocument();
+    expect(screen.queryByText(/no issues/i)).not.toBeInTheDocument();
     expect(screen.getByTestId('console-count')).toHaveTextContent('2');
   });
   it('shows a red error count pill when there are error entries', () => {

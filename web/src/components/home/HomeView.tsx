@@ -1,26 +1,20 @@
-import { useMemo, useState } from 'react';
-import type { Item, Folder, AppUser } from '../../domain/types';
-import {
-  SearchInput,
-  Button,
-  buttonClassName,
-  BrandLogo,
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-  cn,
-  Menu,
-  MenuTrigger,
-  MenuContent,
-  MenuItem,
-} from '../../ui';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { Item, Folder, AppUser, Appearance } from '../../domain/types';
+import { BrandLogo, Tooltip, Dialog, DialogContent } from '../../ui';
 import { useLibraryStore } from '../../state/libraryStore';
 import { TEMPLATES, blankTemplate } from '../../domain/templates';
-import { FolderList } from '../library/FolderList';
-import { ImportExportBar } from '../library/ImportExportBar';
 import { DiagramCard } from './DiagramCard';
+import { DeleteDiagramDialog } from './DeleteDiagramDialog';
+import { ProfileMenu, type ProfileMenuProps } from '../auth/ProfileMenu';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { HomeSidebar } from './HomeSidebar';
+import { MoveStatusPanel, useMoveController } from './moveController';
+import { FolderOutlineIcon, MoonIcon, PlusIcon, SunIcon } from './icons';
+import blankArt from './assets/template-blank.svg';
+import blackWhiteArt from './assets/template-black-white.svg';
+import blueArt from './assets/template-blue.svg';
+import classicArt from './assets/template-classic-uml.svg';
+import './home.css';
 
 function buildCounts(items: Item[], folders: Folder[]) {
   const c: Record<string, number> = { all: items.length, unfiled: 0 };
@@ -43,25 +37,72 @@ export interface HomeViewProps {
   onNewDiagram(): void;
   onBrowseTemplates(): void;
   // Create a diagram directly from a template's content and open it in the editor.
-  // The hub's "Start something new" quick-pick cards use this so a single click
-  // creates the chosen template — they must NOT reopen the CreateNewModal picker
-  // (which would force the user to select a template a second time).
+  // The "Start something new" cards use this so one click creates the chosen
+  // template — they must NOT reopen the CreateNewModal picker.
   onCreateFromTemplate(item: Partial<Item>): void;
   onOpenSignIn(): void;
   onLogout(): void;
-  onCreateFolder(name: string): void;
-  onRenameFolder(id: string, name: string): void;
-  onDeleteFolder(id: string): void;
-  // Per-card actions (card kebab menu — wired but UI pending).
-  onDeleteItem?(id: string): void;
+  // Folder writes. Return the persistence Promise so the sidebar can show pending
+  // and failure states (a rejection keeps the typed name and offers Try again).
+  onCreateFolder(name: string): Promise<void> | void;
+  onRenameFolder(id: string, name: string): Promise<void> | void;
+  onDeleteFolder(id: string): Promise<void> | void;
+  // Card actions. Delete returns a Promise so the confirmation dialog can show
+  // pending/failure states; it is only called after explicit confirmation.
+  onDeleteItem?(id: string): Promise<void>;
   onForkItem?(item: Item): void;
-  onMoveItem?(item: Item, folderId: string | null): void;
+  // Move a diagram to a folder (null = Not in a folder). Return the persistence
+  // Promise so failures can be shown and retried, and Undo can be offered.
+  onMoveItem?(item: Item, folderId: string | null): Promise<void> | void;
+  // HTML export stays available to callers; the Diagrams cards no longer offer it.
   onExportHtml?(item: Item): void;
-  // Toolbar actions.
+  // Library tools.
   onExportAll?(): void;
   onImport?(text: string): void;
+  // Preferred import entry: the picked File goes to the central import controller.
+  // When given, it is used instead of onImport. Pending until the Promise settles.
+  onImportFile?(file: File): Promise<void>;
+  // True while an import runs elsewhere; the Import button ignores new picks.
+  importPending?: boolean;
+  // Legacy onImport path only: reading the picked file failed.
+  onImportError?(error: unknown): void;
+  // Report a bug, rendered as the last Library tool (keeps it out of the card grid).
+  reportBug?: ReactNode;
+  // Global appearance (the same persisted setting the Editor uses).
+  appearance?: Appearance;
+  onToggleAppearance?(): void;
   readOnly?: boolean;
+  profile?: Omit<ProfileMenuProps, 'user' | 'onLogout'>;
+  itemsLoading?: boolean;
+  itemsError?: boolean;
+  onRetryItems?(): void;
+  foldersLoading?: boolean;
+  foldersError?: string | null;
+  onRetryFolders?(): void;
 }
+
+interface QuickStart {
+  id: string;
+  label: string;
+  description: string;
+  art: string;
+  item: Partial<Item>;
+}
+
+function templateItem(id: string): Partial<Item> {
+  const t = TEMPLATES.find((tpl) => tpl.id === id);
+  if (!t) throw new Error(`Missing template ${id}`);
+  return t.item;
+}
+
+// "Start something new" quick starts. Basic is intentionally not offered here; it
+// remains in TEMPLATES and in the full picker (Browse templates / CreateNewModal).
+export const QUICK_STARTS: QuickStart[] = [
+  { id: 'blank', label: 'Blank', description: 'Start with an empty diagram.', art: blankArt, item: blankTemplate() },
+  { id: 'black-white', label: 'Black & White', description: 'Sharp ink. Crisp shadows.', art: blackWhiteArt, item: templateItem('black-white') },
+  { id: 'blue', label: 'Blue', description: 'Soft blue. Rounded details.', art: blueArt, item: templateItem('blue') },
+  { id: 'starUMLTheme', label: 'Classic UML', description: 'Pale yellow. Rose-red lines.', art: classicArt, item: templateItem('starUMLTheme') },
+];
 
 export function HomeView({
   items,
@@ -78,11 +119,26 @@ export function HomeView({
   onDeleteFolder,
   onDeleteItem,
   onForkItem,
-  onExportHtml,
+  onMoveItem,
   onExportAll,
   onImport,
+  onImportFile,
+  importPending,
+  onImportError,
+  reportBug,
+  appearance = 'light',
+  onToggleAppearance,
   readOnly = false,
+  profile,
+  itemsLoading = false,
+  itemsError = false,
+  onRetryItems,
+  foldersLoading = false,
+  foldersError,
+  onRetryFolders,
 }: HomeViewProps) {
+  const narrow = useMediaQuery('(max-width: 639px)');
+  const [foldersOpen, setFoldersOpen] = useState(false);
   const query = useLibraryStore((s) => s.query);
   const activeFolderId = useLibraryStore((s) => s.activeFolderId);
   const sort = useLibraryStore((s) => s.sort);
@@ -90,10 +146,14 @@ export function HomeView({
   const setActiveFolder = useLibraryStore((s) => s.setActiveFolder);
   const setSort = useLibraryStore((s) => s.setSort);
 
-  // "Start something new" block collapsed state.
-  const [startHidden, setStartHidden] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   const counts = useMemo(() => buildCounts(items, folders), [items, folders]);
+  const canMove = Boolean(onMoveItem) && !readOnly && folders.length > 0;
+  const move = useMoveController({ items, folders, onMoveItem });
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -117,322 +177,282 @@ export function HomeView({
     return sorted;
   }, [items, folders, activeFolderId, query, sort]);
 
+  // "/" focuses search (the hint shown inside the field), unless typing elsewhere.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (!searchRef.current) return;
+      e.preventDefault();
+      searchRef.current.focus();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const libraryEmpty = items.length === 0;
+  const activeFolder =
+    activeFolderId !== null && activeFolderId !== 'unfiled' ? folders.find((f) => f.id === activeFolderId) ?? null : null;
   const hasResults = visible.length > 0;
+  const dark = appearance === 'dark';
+  const appearanceLabel = dark ? 'Switch to light appearance' : 'Switch to dark appearance';
+
+  const sidebar = <div className="dh-sidebar-wrapper">
+    {foldersLoading && <p role="status" className="dh-folder-read-status">Loading folders…</p>}
+    {foldersError && <div role="alert" className="dh-folder-read-status"><p>{foldersError}</p><button type="button" className="dh-button" onClick={onRetryFolders}>Try again</button></div>}
+    <HomeSidebar
+          folders={folders}
+          activeFolderId={activeFolderId}
+          counts={counts}
+          onSelectFolder={(id) => { setActiveFolder(id); setFoldersOpen(false); }}
+          onCreate={onCreateFolder}
+          onRename={onRenameFolder}
+          onDelete={onDeleteFolder}
+          readOnly={readOnly}
+          onExportAll={onExportAll}
+          onImport={onImport}
+          onImportFile={onImportFile}
+          importPending={importPending}
+          onImportError={onImportError}
+          reportBug={reportBug}
+          drag={move.drag}
+          dropTarget={move.dropTarget}
+          onDragOverTarget={move.setDropTarget}
+          onDropOnTarget={move.dropOn}
+          status={(!narrow || foldersOpen) && move.status ? <MoveStatusPanel status={move.status} earlier={move.earlier} onUndo={move.undo} onRetry={move.retry} onDismiss={move.dismiss} /> : null}
+        />
+  </div>;
 
   return (
-    <div className="flex flex-col h-full w-full" data-testid="home-view">
-      {/* Hub topbar — brand · search · actions */}
-      <header className="bg-ink-900 border-b border-ink-line/40 h-14 px-4 flex items-center gap-3 shrink-0">
-        {/* Brand mark */}
-        <div className="flex items-center gap-2 shrink-0">
-          <BrandIcon />
-          <span className="font-serif text-[17px] tracking-tight text-ondark-strong hidden sm:block">
-            ZenUML
+    <div className={move.status ? 'diagrams-home has-status' : 'diagrams-home'} data-testid="home-view">
+      <header className="dh-topbar">
+        <div className="dh-brand">
+          <span className="dh-brand-mark" aria-hidden="true">
+            <BrandLogo className="dh-brand-logo" />
           </span>
+          <span className="dh-brand-name">ZenUML</span>
         </div>
-
-        {/* Spacer pushes search to center */}
-        <div className="flex-1" />
-
-        {/* Search — centred; fixed 288px on sm+, full-width flex-shrink on mobile */}
-        <div className="relative flex-1 sm:flex-none sm:w-72 min-w-0">
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            surface="dark"
-            placeholder="Search your diagrams…"
-            data-testid="home-search"
-            className="w-full"
-          />
-          {!query && (
-            <kbd
-              aria-hidden="true"
-              className={cn(
-                'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2',
-                'inline-flex items-center justify-center h-5 min-w-[18px] px-1 rounded',
-                'bg-ink-700 border border-ink-line/50 font-mono text-[10px] text-ondark-faint select-none',
-              )}
-            >
-              /
-            </kbd>
+        <div className="dh-topbar-actions">
+          {narrow && <button type="button" className="dh-button dh-button--secondary dh-folders-trigger" aria-haspopup="dialog" aria-expanded={foldersOpen} onClick={() => setFoldersOpen(true)}><FolderOutlineIcon />Folders</button>}
+          <button type="button" className="dh-button dh-button--primary dh-new" data-testid="home-new" onClick={onNewDiagram}>
+            <PlusIcon />
+            New
+          </button>
+          {onToggleAppearance && (
+            <Tooltip surface={appearance} label={appearanceLabel}>
+              <button
+                type="button"
+                className="dh-appearance"
+                data-testid="home-appearance"
+                aria-label={appearanceLabel}
+                onClick={onToggleAppearance}
+              >
+                {dark ? <SunIcon /> : <MoonIcon />}
+              </button>
+            </Tooltip>
           )}
-        </div>
-
-        {/* Spacer mirrors brand width to keep search centred */}
-        <div className="flex-1" />
-
-        {/* Right-hand actions — import/export · split New button · avatar/sign-in */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Library-level bulk import/export. Re-homed from the retired LibraryPanel
-              (hub transition orphaned it — AppRoot kept passing the handlers but no
-              view rendered them, leaving import/export unreachable). Lives in the
-              ALWAYS-present header row, not the results-gated grid heading, so an
-              empty library can still import. Hidden on mobile (<sm) like Sign-in.
-              NOT gated on readOnly/auth: this is a local-first app — a signed-out
-              user's local library is exactly what import/export backs up (legacy
-              LibraryPanel never auth-gated these either). */}
-          {onExportAll && onImport && (
-            <div className="hidden sm:block">
-              <ImportExportBar onExportAll={onExportAll} onImport={onImport} />
-            </div>
-          )}
-          {/* Split New button: primary "New" + caret opening a mini-menu */}
-          <div className="flex items-stretch">
-            <Button
-              variant="primary"
-              size="md"
-              data-testid="home-new"
-              onClick={onNewDiagram}
-              className="rounded-r-none border-r border-white/20"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-3.5 w-3.5" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
-              <span className="hidden sm:inline">New</span>
-            </Button>
-            <Menu>
-              <MenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="More new diagram options"
-                  className={buttonClassName({
-                    variant: 'primary',
-                    className: 'rounded-l-none px-1.5 border-l border-white/20',
-                  })}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </MenuTrigger>
-              <MenuContent align="end">
-                <MenuItem onSelect={onNewDiagram}>Blank diagram</MenuItem>
-                <MenuItem onSelect={onBrowseTemplates}>From template…</MenuItem>
-              </MenuContent>
-            </Menu>
-          </div>
-
           {user ? (
-            <button
-              type="button"
-              data-testid="home-avatar"
-              onClick={onLogout}
-              title={`Signed in as ${user.displayName ?? user.email ?? user.uid}. Click to sign out.`}
-              aria-label="Account"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center shrink-0 rounded-full',
-                'bg-accent text-white text-[12px] font-bold select-none',
-                'ring-draft transition-opacity hover:opacity-80',
-              )}
-            >
-              {(user.displayName ?? user.email ?? '?').charAt(0).toUpperCase()}
-            </button>
+            <ProfileMenu user={user} onLogout={onLogout} {...profile} surface={appearance} menuClassName="editor-hifi-account-menu" />
           ) : (
-            <Button
-              variant="subtle"
-              size="md"
-              data-testid="home-signin"
-              onClick={onOpenSignIn}
-              className="hidden sm:flex"
-            >
+            <button type="button" className="dh-button dh-button--secondary" data-testid="home-signin" onClick={onOpenSignIn}>
               Sign in
-            </Button>
+            </button>
           )}
         </div>
       </header>
 
-      {/* Body — sidebar + main */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Folder sidebar — 236px per design spec */}
-        <aside
-          className="hidden sm:flex sm:flex-col w-[236px] shrink-0 bg-ink-950 border-r border-ink-line/40 overflow-y-auto px-2 py-3"
-          data-testid="home-sidebar"
-        >
-          <FolderList
-            folders={folders}
-            activeFolderId={activeFolderId}
-            counts={counts}
-            onSelectFolder={setActiveFolder}
-            onCreate={onCreateFolder}
-            onRename={onRenameFolder}
-            onDelete={onDeleteFolder}
-            readOnly={readOnly}
-          />
-        </aside>
+      <div className="dh-body">
+        {!narrow && sidebar}
+        {narrow && !foldersOpen && move.status && <MoveStatusPanel status={move.status} earlier={move.earlier} onUndo={move.undo} onRetry={move.retry} onDismiss={move.dismiss} />}
+        <Dialog open={foldersOpen && narrow} onOpenChange={setFoldersOpen}>
+          <DialogContent title="Folders" bare restoreFocus className="dh-dialog dh-folders-drawer" overlayClassName="bg-black/40" bodyClassName="dh-folders-drawer-body">
+            {narrow && sidebar}
+          </DialogContent>
+        </Dialog>
 
-        {/* Main diagram grid */}
-        <main className="flex-1 bg-blueprint overflow-y-auto">
-          {/* "Start something new" — collapsible template row */}
-          {!libraryEmpty && !query && !startHidden && (
-            <div className="border-b border-ink-line/40 px-5 py-4" data-testid="home-start-block">
-              <div className="flex items-baseline gap-2 mb-3">
-                <span className="font-sans font-semibold text-[13px] text-ondark-strong">Start something new</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ondark-faint">templates &amp; styles</span>
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() => setStartHidden(true)}
-                  className="font-sans text-[12px] text-ondark-faint hover:text-ondark-muted transition-colors duration-150"
-                >
-                  Hide
-                </button>
-              </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {QUICK_TEMPLATES.map((t) => (
+        <main className="dh-surface">
+          {!query && (
+            <section className="dh-section" aria-labelledby="dh-start-heading" data-testid="home-start-block">
+              <h2 id="dh-start-heading" className="dh-section-title">Start something new</h2>
+              <div className="dh-templates">
+                {QUICK_STARTS.map((t) => (
                   <button
                     key={t.id}
                     type="button"
+                    className="dh-template"
                     data-testid={`home-template-${t.id}`}
                     onClick={() => onCreateFromTemplate(t.item)}
-                    className={cn(
-                      'flex flex-col items-start gap-1.5 rounded-lg border border-ink-line/40 p-3 shrink-0 w-36',
-                      'bg-ink-900 hover:border-accent/60 hover:bg-ink-800 transition-colors duration-150 ring-draft text-left',
-                    )}
                   >
-                    <div className="h-16 w-full rounded bg-ink-800 flex items-center justify-center text-ondark-faint text-[9px] font-mono">
-                      {t.glyph}
-                    </div>
-                    <span className="font-sans text-[11px] font-medium text-ondark-strong">{t.label}</span>
+                    <span className="dh-template-art">
+                      <img src={t.art} alt="" draggable={false} />
+                    </span>
+                    <span className="dh-pocket dh-pocket--template">
+                      <span className="dh-template-title">{t.label}</span>
+                      <span className="dh-template-desc">{t.description}</span>
+                    </span>
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Empty library — first-run CTA */}
-          {libraryEmpty && !query && (
-            <div
-              className="flex flex-col items-center justify-center gap-4 h-full min-h-[320px] px-8"
-              data-testid="home-empty"
-            >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-ink-line bg-ink-700 text-ondark-muted">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-7 w-7"
-                  aria-hidden="true"
-                >
-                  <path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-                </svg>
-              </div>
-              <div className="text-center">
-                <h2 className="font-serif text-[28px] leading-tight tracking-tight text-ondark-strong">
-                  No diagrams yet
-                </h2>
-                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-                  Start from scratch, or pick a styled template.
-                </p>
-              </div>
-              <div className="mt-1 flex items-center gap-2">
-                <Button
-                  variant="primary"
-                  size="md"
-                  data-testid="home-empty-new"
-                  onClick={onNewDiagram}
-                >
+          {itemsLoading ? (
+            <div className="dh-empty" role="status" data-testid="home-library-loading">Loading diagrams…</div>
+          ) : itemsError ? (
+            <div className="dh-empty" role="alert"><p>Couldn't load your diagrams. Try again.</p><button type="button" className="dh-button dh-button--secondary" onClick={onRetryItems}>Try again</button></div>
+          ) : libraryEmpty && !query ? (
+            <div className="dh-empty" data-testid="home-empty">
+              <h2 className="dh-empty-title">No diagrams yet</h2>
+              <p className="dh-empty-text">Start from scratch, or pick a styled template.</p>
+              <div className="dh-empty-actions">
+                <button type="button" className="dh-button dh-button--primary" data-testid="home-empty-new" onClick={onNewDiagram}>
                   New diagram
-                </Button>
-                <Button
-                  variant="subtle"
-                  size="md"
-                  data-testid="home-empty-templates"
-                  onClick={onBrowseTemplates}
-                >
+                </button>
+                <button type="button" className="dh-button dh-button--secondary" data-testid="home-empty-templates" onClick={onBrowseTemplates}>
                   Browse templates
-                </Button>
+                </button>
               </div>
             </div>
-          )}
-
-          {/* No search matches */}
-          {!hasResults && query && (
-            <div className="flex flex-col items-center justify-center gap-2 h-full min-h-[240px]">
-              <h2 className="font-serif text-[22px] text-ondark-strong">No matches</h2>
-              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted">
-                Try a different search
-              </p>
-            </div>
-          )}
-
-          {/* Diagram grid */}
-          {hasResults && (
-            <div className="p-4 pt-5">
-              {/* "My diagrams" heading + sort */}
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <h2 className="font-sans font-semibold text-[13.5px] text-ondark-strong">
-                  My diagrams
-                  <span
-                    data-testid="home-count"
-                    className="ml-1.5 font-mono text-[11px] font-normal text-ondark-faint tabular-nums"
-                  >
-                    {visible.length}
-                  </span>
+          ) : (
+            <section className="dh-section" aria-labelledby="dh-diagrams-heading">
+              <div className="dh-diagrams-head">
+                <h2 id="dh-diagrams-heading" ref={headingRef} tabIndex={-1} className="dh-diagrams-title">
+                  Diagrams
+                  <span className="dh-count" data-testid="home-count">{visible.length}</span>
                 </h2>
-                <Select
-                  value={sort}
-                  onValueChange={(v) => setSort(v as 'updated' | 'title')}
-                >
-                  <SelectTrigger
-                    surface="dark"
-                    data-testid="home-sort"
-                    aria-label="Sort diagrams"
-                    className="shrink-0"
+                <div className="dh-search">
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search your diagrams…"
+                    aria-label="Search your diagrams"
+                    data-testid="home-search"
+                    className="dh-search-input"
+                  />
+                  {query ? (
+                    <button
+                      type="button"
+                      className="dh-search-clear"
+                      aria-label="Clear search"
+                      data-testid="search-clear"
+                      onClick={() => {
+                        setQuery('');
+                        searchRef.current?.focus();
+                      }}
+                    >
+                      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <kbd className="dh-search-kbd" aria-hidden="true">/</kbd>
+                  )}
+                </div>
+                <div className="dh-sort" role="group" aria-label="Sort diagrams" data-testid="home-sort">
+                  <button
+                    type="button"
+                    className={sort === 'updated' ? 'dh-sort-option is-selected' : 'dh-sort-option'}
+                    aria-pressed={sort === 'updated'}
+                    data-testid="home-sort-updated"
+                    onClick={() => setSort('updated')}
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated">Recent</SelectItem>
-                    <SelectItem value="title">Title</SelectItem>
-                  </SelectContent>
-                </Select>
+                    Last modified
+                  </button>
+                  <button
+                    type="button"
+                    className={sort === 'title' ? 'dh-sort-option is-selected' : 'dh-sort-option'}
+                    aria-pressed={sort === 'title'}
+                    data-testid="home-sort-title"
+                    onClick={() => setSort('title')}
+                  >
+                    Name A–Z
+                  </button>
+                </div>
               </div>
 
-              {/* Auto-fill card grid — minmax(232px) per design spec */}
-              <div
-                data-testid="home-grid"
-                className="grid gap-3"
-                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
-              >
-                {visible.map((item) => (
-                  <DiagramCard
-                    key={item.id}
-                    item={item}
-                    onClick={onOpen}
-                    onDelete={onDeleteItem}
-                    onFork={onForkItem}
-                    onExportHtml={onExportHtml}
-                  />
-                ))}
-              </div>
-            </div>
+              {!hasResults && query && (
+                <div className="dh-no-results" data-testid="home-no-results">
+                  <p className="dh-no-results-title">No matches</p>
+                  <p className="dh-no-results-text">
+                    No diagrams match “<span className="dh-no-results-term">{query.trim()}</span>”.
+                  </p>
+                  <button
+                    type="button"
+                    className="dh-button dh-button--secondary dh-no-results-clear"
+                    data-testid="home-no-results-clear"
+                    onClick={() => {
+                      setQuery('');
+                      searchRef.current?.focus();
+                    }}
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
+
+              {!hasResults && !query && activeFolder && (
+                <div className="dh-folder-empty" data-testid="home-folder-empty">
+                  <span className="dh-folder-empty-icon"><FolderOutlineIcon /></span>
+                  <p className="dh-folder-empty-title">No diagrams in this folder</p>
+                  <p className="dh-folder-empty-text">
+                    {canMove ? 'Drag a diagram here, or use Move to folder on a diagram.' : 'Drag a diagram here.'}
+                  </p>
+                </div>
+              )}
+
+              {!hasResults && !query && activeFolderId === 'unfiled' && (
+                <div className="dh-folder-empty" data-testid="home-unfiled-empty">
+                  <p className="dh-folder-empty-title">Every diagram is in a folder</p>
+                  <p className="dh-folder-empty-text">Diagrams you take out of a folder appear here.</p>
+                </div>
+              )}
+
+              {hasResults && (
+                <div className="dh-grid" data-testid="home-grid">
+                  {visible.map((item) => (
+                    <DiagramCard
+                      appearance={appearance}
+                      key={item.id}
+                      item={item}
+                      onOpen={onOpen}
+                      onFork={onForkItem}
+                      folders={canMove ? folders : undefined}
+                      currentTarget={move.targetOf(item)}
+                      onMove={canMove ? (it, to) => void move.moveItem(it, to) : undefined}
+                      onDragStart={move.startDrag}
+                      onDragEnd={move.endDrag}
+                      onRequestDelete={
+                        onDeleteItem
+                          ? (target, trigger) => {
+                              deleteTriggerRef.current = trigger;
+                              setDeleteTarget(target);
+                            }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           )}
         </main>
       </div>
+
+      {onDeleteItem && (
+        <DeleteDiagramDialog
+          item={deleteTarget}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async (item) => {
+            await onDeleteItem(item.id);
+            setDeleteTarget(null);
+          }}
+          returnFocusTo={deleteTriggerRef.current}
+          onDeleted={() => headingRef.current?.focus()}
+        />
+      )}
     </div>
   );
 }
-
-// ZenUML brand mark — the official logo (self-contained blue rounded square with the
-// Zen/UML wordmark). Sized to the prior 30px footprint so the header layout is unchanged.
-function BrandIcon() {
-  return <BrandLogo className="h-[30px] w-[30px] shrink-0" />;
-}
-
-// Quick-pick cards for the "Start something new" row. These are the REAL templates
-// (the same inventory the CreateNewModal offers) so a single click creates the chosen
-// diagram and opens it — no second selection. "Browse templates" still opens the full
-// picker for users who want to preview the styled looks before committing.
-const QUICK_TEMPLATES: { id: string; label: string; glyph: string; item: Partial<Item> }[] = [
-  { id: 'blank', label: 'Blank', glyph: '—', item: blankTemplate() },
-  ...TEMPLATES.map((t) => ({
-    id: t.id,
-    label: t.title,
-    glyph: t.id === 'basic' ? 'A→B' : 'Aa',
-    item: t.item,
-  })),
-];

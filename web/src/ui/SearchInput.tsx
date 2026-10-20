@@ -1,15 +1,18 @@
 import { forwardRef } from 'react';
 import { cn } from './cn';
 import { IconButton } from './IconButton';
+import { surfaceClass, type UISurface } from './surface';
+import './tokens.css';
 
 // Design-system search field: leading search glyph + input styled like TextInput,
 // plus a clear (×) affordance shown only when there's a value. `onChange` is
 // value-style (string), not the raw DOM event, to keep call sites terse.
+// `className` stays on the wrapper, matching the previous layout hook.
 export interface SearchInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   value?: string;
   onChange(value: string): void;
-  surface?: 'dark' | 'light';
+  surface?: UISurface;
   'data-testid'?: string;
 }
 
@@ -25,10 +28,9 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
   },
   ref,
 ) {
-  const isDark = surface === 'dark';
   const hasValue = value.length > 0;
   return (
-    <div className={cn('relative inline-flex items-center', className)}>
+    <div className={cn('ui-search', surfaceClass(surface), className)} data-ui-surface={surface}>
       <svg
         aria-hidden="true"
         viewBox="0 0 16 16"
@@ -36,30 +38,21 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
-        className={cn(
-          'pointer-events-none absolute left-2 h-4 w-4',
-          isDark ? 'text-ondark-faint' : 'text-onlight-faint',
-        )}
+        className="ui-search-icon"
       >
         <circle cx="7" cy="7" r="4.25" />
         <path d="m10.5 10.5 3 3" />
       </svg>
       <input
         ref={ref}
+        {...rest}
         type="search"
         value={value}
         placeholder={placeholder}
         data-testid={testId}
+        data-ui-surface={surface}
         onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          'h-8 rounded pl-8 pr-8 text-[13px] transition-colors duration-150 ease-draft w-full',
-          // Hide the native clear affordance — we render our own.
-          '[&::-webkit-search-cancel-button]:appearance-none',
-          isDark
-            ? 'bg-ink-800 text-ondark-strong border border-ink-line/50 placeholder:text-ondark-faint ring-draft'
-            : 'bg-paper-50 text-onlight-strong border border-paper-line placeholder:text-onlight-faint ring-draft-light',
-        )}
-        {...rest}
+        className={cn('ui-field', 'ui-field--control', 'ui-search-input', surfaceClass(surface))}
       />
       {hasValue ? (
         <IconButton
@@ -67,7 +60,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
           surface={surface}
           aria-label="Clear search"
           data-testid="search-clear"
-          className="absolute right-1"
+          className="ui-search-clear"
           onClick={() => onChange('')}
         >
           <svg
@@ -77,7 +70,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
-            className="h-3.5 w-3.5"
+            className="h-4 w-4"
           >
             <path d="m4 4 8 8M12 4l-8 8" />
           </svg>
