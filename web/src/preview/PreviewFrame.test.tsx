@@ -170,6 +170,24 @@ describe('PreviewFrame', () => {
     }
   });
 
+  it('switches HTML theme without revealing unsaved DSL when auto-preview is off', () => {
+    const base = { css: '', stickyOffset: 0, autoPreview: false };
+    const { container, rerender } = render(<PreviewFrame {...base} code="A.b" />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => { window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })); });
+    rerender(<PreviewFrame {...base} code="C.d" />);
+    post.mockClear();
+    rerender(<PreviewFrame {...base} code="C.d" theme="theme-clean-dark" />);
+
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', code: 'A.b', options: expect.objectContaining({ theme: 'theme-clean-dark', renderMode: 'html' }) }),
+      '*',
+    );
+    expect(post).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
+  });
+
   it('with autoPreview OFF, the imperative render() forces a re-render of the current code', () => {
     const ref = createRef<PreviewHandle>();
     const { container, rerender } = render(
@@ -273,6 +291,61 @@ describe('PreviewFrame', () => {
     });
     expect(iframe.style.width).toBe('');
     expect(iframe.style.height).toBe('');
+    expect(iframe.style.transform).toBe('');
+    expect(iframe.className).toContain('h-full');
+  });
+
+  // Editor zoom (app-side): a manual zoom sizes the iframe to wrapper/scale and
+  // scales it back from the top-left, and the effective scale is reported.
+  it('editor zoom: manual zoom scales the iframe from the top-left and reports the scale', () => {
+    const onZoomChange = vi.fn();
+    const { container } = render(
+      <PreviewFrame code="A.b" css="" stickyOffset={0} zoom={{ kind: 'manual', scale: 2 }} onZoomChange={onZoomChange} />,
+    );
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe.style.transform).toBe('scale(2)');
+    expect(iframe.style.transformOrigin).toBe('0 0');
+    expect(iframe.style.width).toBe('50%');
+    expect(iframe.style.height).toBe('50%');
+    expect(onZoomChange).toHaveBeenLastCalledWith(2);
+  });
+
+  // DISCRIMINATING: fit-width uses viewport width / diagram width (not height).
+  it('editor zoom: fit width resolves against the wrapper and diagram widths', () => {
+    class FakeRO {
+      constructor(private cb: ResizeObserverCallback) {}
+      observe(el: Element) {
+        Object.defineProperty(el, 'clientWidth', { value: 800, configurable: true });
+        Object.defineProperty(el, 'clientHeight', { value: 300, configurable: true });
+        this.cb([{ target: el } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    const prev = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeRO as unknown as typeof ResizeObserver;
+    try {
+      const onZoomChange = vi.fn();
+      const { container } = render(
+        <PreviewFrame code="A.b" css="" stickyOffset={0} zoom={{ kind: 'fit-width' }} onZoomChange={onZoomChange} />,
+      );
+      const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+      Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: vi.fn() }, configurable: true });
+      act(() => {
+        window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'contentSize', width: 400, height: 600 } }));
+      });
+      expect(onZoomChange).toHaveBeenLastCalledWith(2);
+      expect(container.querySelector('iframe')!.style.transform).toBe('scale(2)');
+    } finally {
+      globalThis.ResizeObserver = prev;
+    }
+  });
+
+  it('editor zoom: present (fit) mode ignores the editor zoom', () => {
+    const { container } = render(
+      <PreviewFrame code="A.b" css="" stickyOffset={0} fit zoom={{ kind: 'manual', scale: 2 }} />,
+    );
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
     expect(iframe.style.transform).toBe('');
     expect(iframe.className).toContain('h-full');
   });

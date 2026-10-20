@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { keymap, type EditorView } from '@codemirror/view';
 import { getIndentation, getIndentUnit } from '@codemirror/language';
+import { snippet, hasNextSnippetField } from '@codemirror/autocomplete';
 import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { CodeEditor } from './CodeEditor';
 
@@ -167,6 +168,35 @@ describe('CodeEditor', () => {
     await waitFor(() => expect(getIndentUnit(ref.current!.view!.state)).toBe(8));
     expect(ref.current!.view).toBe(view); // not remounted
     expect(dslBlockBodyIndent(ref.current!.view!)).toBe(8);
+  });
+
+  // Parents (AppRoot) pass a fresh onChange function on every render. @uiw lists
+  // `onChange` in its StateEffect.reconfigure deps, so an unstable handler made every
+  // keystroke reconfigure the editor and wipe the lazily-appended snippet state: the
+  // slash-command tab stops (.cm-snippetField) vanished right after insertion.
+  it('keeps active snippet fields when the parent re-renders with a new onChange', async () => {
+    const first = vi.fn();
+    const ref = createRef<ReactCodeMirrorRef>();
+    const { rerender } = render(
+      <CodeEditor ref={ref} value="" language="dsl" onChange={first} testId="dsl-editor" />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    snippet('${Svc}.${method}() {')(view, null, 0, 0);
+    expect(hasNextSnippetField(view.state)).toBe(true);
+    const doc = view.state.doc.toString();
+
+    const second = vi.fn();
+    rerender(<CodeEditor ref={ref} value={doc} language="dsl" onChange={second} testId="dsl-editor" />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ref.current!.view).toBe(view);
+    expect(hasNextSnippetField(view.state)).toBe(true);
+
+    // The latest handler still receives edits.
+    first.mockClear();
+    view.dispatch({ changes: { from: 0, insert: 'X' } });
+    expect(second).toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled();
   });
 
   it('Mod-Shift-f does NOT format/mutate a read-only (ACSS) editor (FIX 6a)', async () => {

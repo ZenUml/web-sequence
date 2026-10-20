@@ -1059,15 +1059,17 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       expect((await options(page)).join('\n')).not.toContain('Alice');
     });
 
-  test('U4 — multi-line garbage: no crash, zero error markers', async ({ page }) => {
+  // Written before the @zenuml/core language server was wired (edae7b6e, 2026-06-13).
+  // It now publishes parser errors as lint diagnostics, so garbage is correctly
+  // flagged. Valid/incomplete DSL zero-marker coverage stays in U and W.
+  test('U4 — multi-line garbage: no crash, the language server flags it', async ({ page }) => {
       await clearEditor(page);
       await page.keyboard.type('!!!###');
       await page.keyboard.press('Enter');
       await page.keyboard.type('@@@ <<>> ::');
       await page.keyboard.press('Enter');
       await page.keyboard.type('}}} ))) ...');
-      await page.waitForTimeout(400);
-      expect(await errorMarkerCount(page)).toBe(0);
+      await expect.poll(() => errorMarkerCount(page)).toBeGreaterThanOrEqual(1);
       await expect.poll(() => getEditorText(page)).toContain('!!!');
     });
 
@@ -1240,10 +1242,11 @@ test.describe('W. i18n / quotes / special chars / long DSL', () => {
     await clearEditor(page);
     await page.keyboard.type('@Actor 🚀X');
     await page.waitForTimeout(300);
-    // The renderer rejects emoji-led identifiers; the editor must not crash and (no
-    // linter is wired) shows no error marker. The editor stays responsive: a follow-up
-    // line still parses and completes.
-    expect(await errorMarkerCount(page)).toBe(0);
+    // The renderer rejects emoji-led identifiers; the editor must not crash. Since
+    // edae7b6e the @zenuml/core language server flags the same rejection as a lint
+    // diagnostic (this test predates it and said "no linter is wired"). The editor
+    // stays responsive: a follow-up line still parses and completes.
+    await expect.poll(() => errorMarkerCount(page)).toBeGreaterThanOrEqual(1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('@Actor Bob');
     await page.keyboard.press('Enter');

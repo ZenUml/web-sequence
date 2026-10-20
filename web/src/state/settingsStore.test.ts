@@ -1,6 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useSettingsStore } from './settingsStore';
 import { DEFAULT_SETTINGS } from '../domain/types';
+
+// The store's initial appearance must match the value main.tsx applied before
+// first paint. Seeding it from DEFAULT_SETTINGS ('light') made AppRoot's appearance
+// effect flip a dark user's <html data-appearance> dark → light → dark on reload.
+describe('settingsStore initial appearance', () => {
+  it('seeds appearance from the stored value so boot does not flash light', async () => {
+    window.localStorage.setItem('appearance', JSON.stringify('dark'));
+    vi.resetModules();
+    const fresh = await import('./settingsStore');
+    expect(fresh.useSettingsStore.getState().settings.appearance).toBe('dark');
+    window.localStorage.removeItem('appearance');
+  });
+});
 
 describe('settingsStore', () => {
   beforeEach(() => useSettingsStore.setState({ settings: DEFAULT_SETTINGS, cloudKeys: new Set(), userKeys: new Set() }));

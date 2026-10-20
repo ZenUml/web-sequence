@@ -8,7 +8,7 @@ export const DEFAULT_STARTER = {
   title: 'Untitled',
   // Match the editor Hi-Fi baseline: the preview card starts at roughly 27% of
   // a 1440px desktop viewport while keeping the DSL pane usable.
-  mainSizes: [26.7, 73.3],
+  mainSizes: [26.8, 73.2],
   js: 'Alice -> Bob: Hello\nBob -> Alice: Hi back',
   css: '',
   html: '',

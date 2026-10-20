@@ -467,11 +467,14 @@ test.describe('J. negative / edge', () => {
     await expect.poll(() => getEditorText(page)).toContain('Client->DB: query');
   });
 
-  test('J2 — garbage does not crash and shows no error markers', async ({ page }) => {
+  // Written 2026-06-10 when no DSL linter was wired. Since edae7b6e (2026-06-13) the
+  // @zenuml/core language server publishes parser errors as lint diagnostics, so
+  // garbage is now correctly flagged. No-false-positive coverage stays in J1/J4 and
+  // section W (valid or incomplete DSL must show zero markers).
+  test('J2 — garbage does not crash; the language server flags it', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('!!!@@@###');
-    await page.waitForTimeout(300);
-    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => errorMarkerCount(page)).toBeGreaterThanOrEqual(1);
     await expect.poll(() => getEditorText(page)).toContain('!!!');
   });
 

@@ -1,9 +1,8 @@
 // Triggers a browser file download of a text payload. Guarded for jsdom, where
 // URL.createObjectURL is "Not implemented" — under test we no-op rather than throw
 // (the caller's logic, not the actual download, is what's exercised in unit tests).
-export function downloadText(filename: string, text: string, mime = 'application/octet-stream'): void {
+export function downloadBlob(filename: string, blob: Blob): void {
   if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return;
-  const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement('a');
@@ -15,4 +14,8 @@ export function downloadText(filename: string, text: string, mime = 'application
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export function downloadText(filename: string, text: string, mime = 'application/octet-stream'): void {
+  downloadBlob(filename, new Blob([text], { type: mime }));
 }

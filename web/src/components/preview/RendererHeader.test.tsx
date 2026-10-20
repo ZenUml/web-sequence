@@ -2,16 +2,25 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RendererHeader } from './RendererHeader';
 
+function zoomHandlers(label = '100%') {
+  return {
+    label,
+    onFitWidth: vi.fn(),
+    onFitHeight: vi.fn(),
+    onFitDiagram: vi.fn(),
+    onZoomOut: vi.fn(),
+    onZoomIn: vi.fn(),
+    onActualSize: vi.fn(),
+  };
+}
+
 function setup(overrides: Partial<React.ComponentProps<typeof RendererHeader>> = {}) {
-  const onPresent = vi.fn();
-  const onFit = vi.fn();
   const props = {
     pageTabs: <div data-testid="tabs-slot">tabs</div>,
-    onPresent,
     ...overrides,
   };
   render(<RendererHeader {...props} />);
-  return { onPresent, onFit, props };
+  return { props };
 }
 
 describe('RendererHeader', () => {
@@ -20,55 +29,60 @@ describe('RendererHeader', () => {
     expect(screen.getByTestId('tabs-slot')).toHaveTextContent('tabs');
   });
 
-  it('defaults the zoom label to 100%', () => {
+  it('has no Present control (Present lives in the app header only)', () => {
+    setup({ zoom: zoomHandlers() });
+    expect(screen.queryByTestId('renderer-present')).toBeNull();
+    expect(screen.queryByRole('button', { name: /present/i })).toBeNull();
+  });
+
+  it('renders no zoom controls or fixed zoom text when zoom is not wired', () => {
     setup();
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Zoom' })).toBeNull();
+    expect(screen.queryByText('100%')).toBeNull();
   });
 
-  it('respects an explicit zoomLabel', () => {
-    setup({ zoomLabel: '75%' });
-    expect(screen.getByText('75%')).toBeInTheDocument();
-    expect(screen.queryByText('100%')).not.toBeInTheDocument();
+  it('shows the effective zoom label and wires every zoom control', () => {
+    const zoom = zoomHandlers('75%');
+    setup({ zoom });
+    expect(screen.getByTestId('renderer-zoom-label')).toHaveTextContent('75%');
+    fireEvent.click(screen.getByRole('button', { name: 'Fit to width' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fit to height' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fit diagram' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom out' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    fireEvent.click(screen.getByTestId('renderer-zoom-label'));
+    expect(zoom.onFitWidth).toHaveBeenCalledTimes(1);
+    expect(zoom.onFitHeight).toHaveBeenCalledTimes(1);
+    expect(zoom.onFitDiagram).toHaveBeenCalledTimes(1);
+    expect(zoom.onZoomOut).toHaveBeenCalledTimes(1);
+    expect(zoom.onZoomIn).toHaveBeenCalledTimes(1);
+    expect(zoom.onActualSize).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onPresent when the Present control is clicked', () => {
-    const { onPresent } = setup();
-    fireEvent.click(screen.getByTestId('renderer-present'));
-    expect(onPresent).toHaveBeenCalledTimes(1);
+  it('orders fit width, fit height, fit diagram, then minus / zoom / plus', () => {
+    setup({ zoom: zoomHandlers() });
+    const names = Array.from(screen.getByRole('group', { name: 'Zoom' }).querySelectorAll('button')).map(
+      (b) => b.getAttribute('aria-label'),
+    );
+    expect(names).toEqual(['Fit to width', 'Fit to height', 'Fit diagram', 'Zoom out', 'Zoom 100%. Reset to 100%', 'Zoom in']);
   });
 
-  it('exposes an accessible name on the Present control', () => {
+  it('renders Download only when a handler is provided', () => {
+    const onDownload = vi.fn();
+    setup({ onDownload });
+    fireEvent.click(screen.getByTestId('renderer-download'));
+    expect(onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT render a Refresh control when no onRefresh handler is provided (#824)', () => {
     setup();
-    expect(screen.getByTestId('renderer-present')).toHaveAttribute('aria-label', 'Present');
+    expect(screen.queryByTestId('renderer-refresh')).toBeNull();
   });
 
-  it('does not render the Fit control when onFit is omitted', () => {
-    setup();
-    expect(screen.queryByTestId('renderer-fit')).not.toBeInTheDocument();
-  });
-
-  // #824: the manual Refresh control follows the same "render only when wired" rule as
-  // Fit, so the default UI (auto-preview ON ⇒ no onRefresh) shows no extra control.
-  it('does not render the Refresh control when onRefresh is omitted', () => {
-    setup();
-    expect(screen.queryByTestId('renderer-refresh')).not.toBeInTheDocument();
-  });
-
-  it('renders the Refresh control and calls onRefresh when a handler is provided', () => {
+  it('renders a Refresh control and calls onRefresh when wired (#824)', () => {
     const onRefresh = vi.fn();
     setup({ onRefresh });
-    const refresh = screen.getByTestId('renderer-refresh');
-    expect(refresh).toHaveAttribute('aria-label', 'Refresh preview');
-    fireEvent.click(refresh);
+    fireEvent.click(screen.getByTestId('renderer-refresh'));
     expect(onRefresh).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders the Fit control and calls onFit when a handler is provided', () => {
-    const onFit = vi.fn();
-    setup({ onFit });
-    const fit = screen.getByTestId('renderer-fit');
-    expect(fit).toHaveAttribute('aria-label', 'Fit to screen');
-    fireEvent.click(fit);
-    expect(onFit).toHaveBeenCalledTimes(1);
   });
 });

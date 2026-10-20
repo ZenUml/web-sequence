@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppHeader } from './AppHeader';
 import type { AppUser } from '../../domain/types';
@@ -55,13 +55,12 @@ describe('AppHeader', () => {
     expect(screen.queryByTestId('profile-trigger')).not.toBeInTheDocument();
   });
 
-  // Spec: signed-out shows a *subtle* "Sign in" button (not ghost). `subtle` emits
-  // the ink-700 fill on the dark surface; `ghost` is transparent.
-  it('header-login uses the subtle button variant', () => {
+  // Spec: signed-out "Sign in" is a secondary outline button, like Fork / Share.
+  it('header-login uses the shared secondary button style', () => {
     render(<AppHeader {...baseProps} user={null} />);
     const login = screen.getByTestId('header-login');
-    expect(login.className).toContain('bg-ink-700/70');
-    expect(login.className).not.toContain('bg-transparent');
+    expect(login.className).toContain('editor-button--secondary');
+    expect(screen.getByTestId('header-fork').className).toContain('editor-button--secondary');
   });
 
   it('shows profile-trigger when user is set', () => {
@@ -70,13 +69,14 @@ describe('AppHeader', () => {
     expect(screen.queryByTestId('header-login')).not.toBeInTheDocument();
   });
 
-  // The standalone New/Duplicate/Save top-level buttons are gone — they retired
-  // into the app menu (logo ▾) and document menu (filename ▾).
-  it('no longer renders the retired top-level New/Duplicate/Save buttons', () => {
-    render(<AppHeader {...baseProps} />);
+  // New/Save stay in the app menu; Fork is a visible document action.
+  it('renders Fork as a top-level action and keeps New/Save in the app menu', async () => {
+    const onFork = vi.fn();
+    render(<AppHeader {...baseProps} onFork={onFork} />);
     expect(screen.queryByTestId('header-new')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('header-fork')).not.toBeInTheDocument();
     expect(screen.queryByTestId('header-save')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('header-fork'));
+    expect(onFork).toHaveBeenCalledTimes(1);
   });
 
   // ---- App menu (logo brand ▾) ----
@@ -182,48 +182,29 @@ describe('AppHeader', () => {
     expect(onOpenPricing).toHaveBeenCalled();
   });
 
-  // ---- Header Pricing link (signed-out) ----
-  // Signed-in users reach pricing via the account menu (ProfileMenu "Upgrade plan" /
-  // "My Plan"). Signed-out users have no account menu, so the only pricing path was
-  // buried in the app menu (logo ▾). Surface a visible "Pricing" link in the header
-  // for signed-out users — gated by paymentEnabled, like the app-menu item.
-  it('shows a visible header Pricing link when signed out and paymentEnabled', async () => {
-    const onOpenPricing = vi.fn();
-    render(<AppHeader {...baseProps} user={null} paymentEnabled onOpenPricing={onOpenPricing} />);
-    const link = screen.getByTestId('header-pricing-link');
-    expect(link).toBeInTheDocument();
-    await userEvent.click(link);
-    expect(onOpenPricing).toHaveBeenCalled();
-  });
-
-  it('hides the header Pricing link when payments are disabled', () => {
-    render(<AppHeader {...baseProps} user={null} paymentEnabled={false} />);
+  // ---- Pricing ----
+  // The header shows only Sign in for signed-out users; Pricing stays reachable in
+  // the app menu (covered above) and the signed-in account menu.
+  it('does not render a separate header Pricing link', () => {
+    render(<AppHeader {...baseProps} user={null} paymentEnabled />);
     expect(screen.queryByTestId('header-pricing-link')).not.toBeInTheDocument();
   });
 
-  // No duplicate affordance when signed in: ProfileMenu already carries Upgrade/My Plan.
-  it('does not show the header Pricing link when signed in', () => {
-    render(<AppHeader {...baseProps} user={mockUser} paymentEnabled />);
-    expect(screen.queryByTestId('header-pricing-link')).not.toBeInTheDocument();
-  });
+  // ---- Title (no document menu chevron) ----
 
-  // ---- Document menu (filename ▾) ----
-
-  it('document menu Duplicate calls onFork', async () => {
-    const onFork = vi.fn();
-    render(<AppHeader {...baseProps} onFork={onFork} />);
-    await userEvent.click(screen.getByTestId('filemenu-trigger'));
-    await userEvent.click(await screen.findByTestId('filemenu-duplicate'));
-    expect(onFork).toHaveBeenCalled();
-  });
-
-  it('document menu Rename focuses the title field', async () => {
+  it('has no document menu arrow; the title itself is the rename field', () => {
     render(<AppHeader {...baseProps} />);
-    await userEvent.click(screen.getByTestId('filemenu-trigger'));
-    await userEvent.click(await screen.findByTestId('filemenu-rename'));
-    // Focus is deferred past the menu's close (Radix restores focus to its
-    // trigger on close), so wait for the title to receive it.
-    await waitFor(() => expect(screen.getByTestId('header-title')).toHaveFocus());
+    expect(screen.queryByTestId('filemenu-trigger')).not.toBeInTheDocument();
+    expect(screen.getByTestId('header-title')).toHaveAttribute('aria-label', 'Diagram title');
+  });
+
+  it('renders the Diagrams breadcrumb when onGoHome is provided', async () => {
+    const onGoHome = vi.fn();
+    render(<AppHeader {...baseProps} onGoHome={onGoHome} />);
+    const link = screen.getByTestId('header-go-home');
+    expect(link).toHaveTextContent('Diagrams');
+    await userEvent.click(link);
+    expect(onGoHome).toHaveBeenCalledTimes(1);
   });
 
   // #826: the title field now edits a local DRAFT and commits on Enter/blur (not on
@@ -291,12 +272,21 @@ describe('AppHeader', () => {
     expect(el).toHaveAttribute('aria-label', '2 unsaved changes');
   });
 
-  // Signed-out: auto-save is local-only — never claim a misleading "Saved".
-  it('shows neutral "Local only" (not "Saved") when signed out and clean', () => {
+  // Signed-out: saves go to this device only — never claim a cloud "Saved".
+  it('shows "Saved locally" (not cloud "Saved") when signed out and clean', () => {
     render(<AppHeader {...baseProps} user={null} unsavedCount={0} />);
     const el = screen.getByTestId('header-savestate');
     expect(el).toHaveAttribute('data-state', 'local');
-    expect(el).toHaveTextContent(/local only/i);
+    expect(el).toHaveTextContent('Saved locally');
+  });
+
+  // A brand-new signed-out diagram has not been written anywhere yet: never claim
+  // "Saved locally" before the first local save.
+  it('shows neutral "Local only" for a signed-out diagram not yet saved on this device', () => {
+    render(<AppHeader {...baseProps} user={null} unsavedCount={0} savedLocally={false} />);
+    const el = screen.getByTestId('header-savestate');
+    expect(el).toHaveAttribute('data-state', 'local-new');
+    expect(el).toHaveTextContent('Local only');
     expect(el).not.toHaveTextContent(/saved/i);
   });
 
@@ -309,13 +299,13 @@ describe('AppHeader', () => {
     expect(el).not.toHaveTextContent(/unsaved/i);
   });
 
-  // Signed-out auto-save is local-only — it must NOT flash "Saving…" (there is no
-  // cloud sync to report). Signed-out always reads "Local only".
-  it('shows "Local only" (not "Saving…") when signed out even while saving', () => {
-    render(<AppHeader {...baseProps} user={null} saving dirty unsavedCount={1} />);
-    const el = screen.getByTestId('header-savestate');
-    expect(el).toHaveAttribute('data-state', 'local');
-    expect(el).not.toHaveTextContent(/saving/i);
+  // Signed-out local saves are real saves: pending and in-flight states are
+  // reported truthfully instead of a constant label.
+  it('shows Unsaved then Saving… for signed-out local saves', () => {
+    const { rerender } = render(<AppHeader {...baseProps} user={null} dirty unsavedCount={1} />);
+    expect(screen.getByTestId('header-savestate')).toHaveAttribute('data-state', 'dirty');
+    rerender(<AppHeader {...baseProps} user={null} saving dirty unsavedCount={1} />);
+    expect(screen.getByTestId('header-savestate')).toHaveAttribute('data-state', 'saving');
   });
 
   // Metadata edits (rename / page ops) set `dirty` but not `unsavedCount`. The
@@ -337,38 +327,55 @@ describe('AppHeader', () => {
     expect(onPresent).toHaveBeenCalled();
   });
 
-  // ---- Responsive (CSS-only, RHm) ----
-  // jsdom has no real CSS, so we can't assert the label is visually hidden at a
-  // given viewport. Instead assert the structure that makes it CSS-collapsible:
-  // the label span carries `hidden md:inline`, and the button keeps an accessible
-  // name (aria-label) + its icon so it's never an unlabelled icon below md.
-  it('Present label is responsive (hidden md:inline) and keeps an accessible name + icon', () => {
+  // Present is the filled primary action; its icon + aria-label keep it named
+  // when the visible label collapses at narrow widths (CSS).
+  it('Present is the primary action with an accessible name + icon', () => {
     render(<AppHeader {...baseProps} />);
     const present = screen.getByTestId('header-present');
-    // Accessible name persists even when the visible text collapses below md.
     expect(present).toHaveAttribute('aria-label', 'Present');
-    // The play icon (svg) stays regardless of width.
+    expect(present.className).toContain('editor-button--primary');
     expect(present.querySelector('svg')).toBeInTheDocument();
-    // The visible "Present" text lives in a span gated by Tailwind `hidden md:inline`.
-    const label = screen.getByText('Present');
-    expect(label.className).toContain('hidden');
-    expect(label.className).toContain('md:inline');
+    expect(screen.getByText('Present').className).toContain('editor-button-label');
   });
 
-  // The Phase-1 essentials must never be gated behind a responsive class — they
-  // stay in the tree at every width (the condense only touches Share/Present labels).
-  it('keeps logo + filename + savestate + account in the tree (not responsively removed)', () => {
+  it('keeps logo + title + savestate + account in the tree', () => {
     render(<AppHeader {...baseProps} user={mockUser} />);
     expect(screen.getByTestId('header-menu')).toBeInTheDocument();
-    expect(screen.getByTestId('filemenu-trigger')).toBeInTheDocument();
     expect(screen.getByTestId('header-title')).toBeInTheDocument();
     expect(screen.getByTestId('header-savestate')).toBeInTheDocument();
     expect(screen.getByTestId('profile-trigger')).toBeInTheDocument();
   });
 
-  it('renders a divider separating the account zone from the action group', () => {
-    render(<AppHeader {...baseProps} />);
-    expect(screen.getByTestId('header-account-divider')).toBeInTheDocument();
+  it('orders document actions Fork, Share, Present', () => {
+    render(<AppHeader {...baseProps} actions={<button data-testid="share-btn">Share</button>} />);
+    const ids = Array.from(document.querySelectorAll('.editor-document-actions button')).map((b) => b.getAttribute('data-testid'));
+    expect(ids).toEqual(['header-fork', 'share-btn', 'header-present']);
+  });
+
+  // ---- Sidebar toggle + appearance ----
+
+  it('renders the code-pane toggle only when wired and reports its state', async () => {
+    const onToggleEditor = vi.fn();
+    const { rerender } = render(<AppHeader {...baseProps} />);
+    expect(screen.queryByTestId('header-toggle-editor')).not.toBeInTheDocument();
+    rerender(<AppHeader {...baseProps} onToggleEditor={onToggleEditor} editorCollapsed={false} />);
+    const toggle = screen.getByTestId('header-toggle-editor');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(toggle);
+    expect(onToggleEditor).toHaveBeenCalledTimes(1);
+    rerender(<AppHeader {...baseProps} onToggleEditor={onToggleEditor} editorCollapsed />);
+    expect(screen.getByTestId('header-toggle-editor')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('renders the appearance toggle with a label for the next appearance', async () => {
+    const onToggleAppearance = vi.fn();
+    const { rerender } = render(<AppHeader {...baseProps} appearance="light" onToggleAppearance={onToggleAppearance} />);
+    const toggle = screen.getByTestId('header-appearance');
+    expect(toggle).toHaveAttribute('aria-label', 'Switch to dark appearance');
+    await userEvent.click(toggle);
+    expect(onToggleAppearance).toHaveBeenCalledTimes(1);
+    rerender(<AppHeader {...baseProps} appearance="dark" onToggleAppearance={onToggleAppearance} />);
+    expect(screen.getByTestId('header-appearance')).toHaveAttribute('aria-label', 'Switch to light appearance');
   });
 
   it('renders injected actions (e.g. Share) in the right group', () => {

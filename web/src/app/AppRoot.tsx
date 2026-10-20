@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
-import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
+import { PreviewFrame, type PreviewHandle, type PreviewExportSnapshot } from '../preview/PreviewFrame';
+import { ACTUAL_SIZE, formatZoom, zoomIn, zoomOut, type PreviewZoom } from '../preview/previewZoom';
+import { applyAppearance, previewThemeFor } from './appearance';
 import { Console, type ConsoleEntry } from '../preview/Console';
 import { filterStarterNoise } from '../preview/consoleFilter';
 import { useEditorStore } from '../state/editorStore';
@@ -16,6 +18,7 @@ import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue }
 import { Layout } from '../components/Layout';
 import { PageTabs } from '../components/pages/PageTabs';
 import { RendererHeader } from '../components/preview/RendererHeader';
+import { ExportDialog } from '../components/preview/ExportDialog';
 import { CssPanel } from '../components/editor/CssPanel';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
@@ -92,9 +95,6 @@ export function AppRoot() {
   useOnlineStatus();
 
   const item = useEditorStore((s) => s.currentItem);
-  // AppHeader owns document control state and handlers, while this target lets the
-  // controls render inside the floating preview card so they follow split dragging.
-  const [documentChromeTarget, setDocumentChromeTarget] = useState<HTMLDivElement | null>(null);
   const setDsl = useEditorStore((s) => s.setDsl);
   const setCss = useEditorStore((s) => s.setCss);
   const setCssMode = useEditorStore((s) => s.setCssMode);
@@ -131,10 +131,22 @@ export function AppRoot() {
   saveRef.current = save;
 
   const previewRef = useRef<PreviewHandle>(null);
+  const [exportRequest, setExportRequest] = useState<{ snapshot: PreviewExportSnapshot | null; title: string } | null>(null);
+  function openExport() {
+    const snapshot = previewRef.current?.getExportSnapshot();
+    const current = useEditorStore.getState().currentItem;
+    if (current) setExportRequest({ snapshot: snapshot ?? null, title: current.title || 'diagram' });
+  }
   const consoleOpen = useUiStore((s) => s.consoleOpen);
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  const editorCollapsed = useUiStore((s) => s.editorCollapsed);
+  const toggleEditorCollapsed = useUiStore((s) => s.toggleEditorCollapsed);
+  // Editor preview zoom (app-side; see previewZoom.ts). `zoomScale` is the
+  // effective scale reported back by PreviewFrame, shown as the zoom label.
+  const [previewZoom, setPreviewZoom] = useState<PreviewZoom>(ACTUAL_SIZE);
+  const [zoomScale, setZoomScale] = useState(1);
   // Mobile (≤767px) renders the preview as the native vector SVG (fit-to-width) instead
   // of the fixed-px HTML diagram, which overflows a phone viewport. Present/fullscreen
   // keeps the HTML scale-to-fit-both-axes path (a deliberate "show it big" view), so SVG
@@ -185,6 +197,8 @@ export function AppRoot() {
   // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
   const settings = useSettingsStore((s) => s.settings);
   const mergeSettings = useSettingsStore((s) => s.merge);
+  // Global light/dark appearance: mirror the persisted setting onto <html>.
+  useEffect(() => { applyAppearance(settings.appearance); }, [settings.appearance]);
 
   // M04: plan-limit notice + pricing billing-period state.
   const [limitNoticeOpen, setLimitNoticeOpen] = useState(false);
@@ -1086,6 +1100,13 @@ export function AppRoot() {
   const editorFontFamily =
     settings.editorFont === 'other' ? settings.editorCustomFont : settings.editorFont;
 
+  // Signed-out save state: itemService writes every save to localStore under the
+  // item id, so "Saved locally" is only claimed once that record exists. Re-read on
+  // each render; markSaved()/dirty changes re-render after every save.
+  const savedLocally = (() => {
+    try { return window.localStorage.getItem(item.id) !== null; } catch { return false; }
+  })();
+
   return (
     <div data-testid="editor-shell" className="editor-hifi-shell flex flex-col h-full w-full">
       {/* One-time "saved locally" notice for signed-out users (REQ-PST) */}
@@ -1202,6 +1223,7 @@ export function AppRoot() {
         unsavedCount={unsavedCount}
         dirty={dirty}
         saving={saving}
+        savedLocally={savedLocally}
         onPresent={toggleFullscreen}
         user={user}
         lastProvider={lastProvider}
@@ -1227,11 +1249,11 @@ export function AppRoot() {
         onOpenCheatSheet={() => openModal('cheatsheet')}
         onOpenShortcuts={() => openModal('shortcuts')}
         onGoHome={goHome}
-        // Mobile keeps the document actions in the always-visible global header;
-        // the preview pane is mounted but hidden while the Edit tab is active.
-        // Desktop portals them into the floating preview card so they follow the
-        // draggable split.
-        documentChromeTarget={isMobile ? null : documentChromeTarget}
+        // Desktop only: mobile already switches Edit | Preview with its tabs.
+        editorCollapsed={editorCollapsed}
+        onToggleEditor={isMobile ? undefined : toggleEditorCollapsed}
+        appearance={settings.appearance}
+        onToggleAppearance={() => handleSettingChange('appearance', settings.appearance === 'dark' ? 'light' : 'dark')}
         actions={
           <ShareButton
             disabled={shareReadOnly}
@@ -1253,27 +1275,19 @@ export function AppRoot() {
             focused. The Sidebar icon rail (Editor/Library/Templates) is intentionally
             absent; navigation back to the library uses the "← Your diagrams" breadcrumb. */}
         <Layout
+          editorCollapsed={editorCollapsed && !isMobile}
           editor={
             (
             <div className="editor-source-pane flex flex-col h-full">
               {/* Page tabs now live on the RENDERER side (preview slot), above the
                   diagram — pages are a property of the rendered document, not the DSL
                   (per design §02). The editor pane just edits whichever page is active. */}
-              {/* #6 / IA fix: each editor pane carries its OWN header so the two
-                  stacked CodeMirror surfaces are unambiguous. The DSL pane is the
-                  PRIMARY surface (mono "DSL" label leading, accent rule). The CSS pane
-                  is a collapsible CssPanel: collapsed to a thin "Custom CSS ▸" strip
-                  when empty, expanding to the editor + its pre-processor Select. CSS
-                  modes are live (computeCss feeds previewCss); the DSL is rendered by
+              {/* The DSL editor fills the column (no redundant heading). The CSS pane
+                  is a collapsible CssPanel row at the bottom ("Custom CSS" + Report a
+                  bug), expanding to the editor + its pre-processor Select. CSS modes
+                  are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
               <div className="editor-source-stack flex flex-1 min-h-0 flex-col">
-                {/* DSL pane header — primary surface marker */}
-                <div className="editor-pane-header flex items-center justify-between gap-3 px-2 py-1.5 border-b border-ink-line/40">
-                  <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-accent-onDark">
-                    <span className="h-3 w-0.5 rounded-full bg-accent-onDark/70" aria-hidden="true" />
-                    DSL
-                  </span>
-                </div>
                 <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
               </div>
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
@@ -1283,6 +1297,19 @@ export function AppRoot() {
               <CssPanel
                 key={`css-panel-${item.currentPageId}`}
                 isEmpty={!item.css || item.css.trim().length === 0}
+                trailing={
+                  <ReportBugButton
+                    placement="inline"
+                    dsl={item.js ?? ''}
+                    appVersion={APP_VERSION}
+                    view="editor"
+                    signedIn={!!user}
+                    onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'editor' })}
+                    onSubmitted={({ includedDsl }) =>
+                      track('bug_report_submitted', { category: 'feedback', label: 'editor', included_dsl: includedDsl })
+                    }
+                  />
+                }
                 headerControls={
                   <>
                     {/* ACSS mode: the CSS editor is read-only (atomizer scans HTML); the
@@ -1292,6 +1319,7 @@ export function AppRoot() {
                         size="sm"
                         variant="subtle"
                         surface="light"
+                        className="editor-css-acss-button"
                         data-testid="acss-settings-open"
                         onClick={() => openModal('acss')}
                       >
@@ -1303,7 +1331,7 @@ export function AppRoot() {
                         data-testid="css-mode-select"
                         aria-label="CSS pre-processor mode"
                         surface="light"
-                        className="h-7"
+                        className="editor-css-mode-select h-7"
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -1324,13 +1352,7 @@ export function AppRoot() {
           preview={
             <div className={fullscreen ? 'fixed inset-0 z-50 surface-paper flex flex-col' : 'editor-preview-stage relative h-full flex flex-col'}>
               <div className={fullscreen ? 'editor-preview-panel editor-preview-panel--fullscreen flex flex-col h-full' : 'editor-preview-panel flex flex-col h-full'}>
-              <div
-                ref={setDocumentChromeTarget}
-                data-testid="editor-document-chrome-slot"
-                className={fullscreen ? 'editor-document-chrome-slot editor-document-chrome-slot--hidden' : 'editor-document-chrome-slot'}
-                aria-hidden={fullscreen ? true : undefined}
-              />
-              {/* Renderer header (diagram side): page tabs + zoom/Fit/Present controls.
+              {/* Renderer header (diagram side): page tabs + download/refresh/zoom.
                   In Present (fullscreen) mode the chrome is hidden — only an Exit
                   affordance remains so the diagram presents clean. */}
               {fullscreen ? (
@@ -1346,7 +1368,18 @@ export function AppRoot() {
                 </Button>
               ) : (
                 <RendererHeader
-                  onPresent={toggleFullscreen}
+                  onDownload={openExport}
+                  // Zoom applies to the desktop HTML preview. The mobile SVG preview
+                  // already fits its width natively, so it shows no zoom group.
+                  zoom={isMobile ? undefined : {
+                    label: formatZoom(zoomScale),
+                    onFitWidth: () => setPreviewZoom({ kind: 'fit-width' }),
+                    onFitHeight: () => setPreviewZoom({ kind: 'fit-height' }),
+                    onFitDiagram: () => setPreviewZoom({ kind: 'fit' }),
+                    onZoomOut: () => setPreviewZoom(zoomOut(zoomScale)),
+                    onZoomIn: () => setPreviewZoom(zoomIn(zoomScale)),
+                    onActualSize: () => setPreviewZoom(ACTUAL_SIZE),
+                  }}
                   // #824: surface a manual Refresh ONLY when auto-preview is off, so the
                   // default UI (auto-preview on) is unchanged. Forces a one-shot render.
                   onRefresh={settings.autoPreview ? undefined : () => previewRef.current?.render()}
@@ -1364,13 +1397,16 @@ export function AppRoot() {
                   }
                 />
               )}
-              {/* Center the rendered diagram with breathing room instead of clinging
-                  to the top-left of the pane. */}
-              <div className="flex-1 min-h-0 flex items-center justify-center p-4">
+              <div className="editor-preview-canvas flex-1 min-h-0 flex items-center justify-center">
                 <PreviewFrame
                   ref={previewRef}
                   code={item.js}
                   css={previewCss}
+                  // Dark appearance renders the diagram with core's darcula theme;
+                  // ExportDialog reads the same theme from the export snapshot.
+                  theme={previewThemeFor(settings.appearance)}
+                  zoom={isMobile ? ACTUAL_SIZE : previewZoom}
+                  onZoomChange={setZoomScale}
                   // #824: gate the debounced auto re-render on the Settings toggle. When
                   // OFF, edits don't re-render until the manual Refresh control fires.
                   autoPreview={settings.autoPreview}
@@ -1402,15 +1438,11 @@ export function AppRoot() {
           }
         />
       </div>
-      <ReportBugButton
-        dsl={item?.js ?? ''}
-        appVersion={APP_VERSION}
-        view="editor"
-        signedIn={!!user}
-        onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'editor' })}
-        onSubmitted={({ includedDsl }) =>
-          track('bug_report_submitted', { category: 'feedback', label: 'editor', included_dsl: includedDsl })
-        }
+      <ExportDialog
+        open={exportRequest !== null}
+        onOpenChange={(open) => { if (!open) setExportRequest(null); }}
+        snapshot={exportRequest?.snapshot ?? null}
+        title={exportRequest?.title ?? 'diagram'}
       />
     </div>
   );

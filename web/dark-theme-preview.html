@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZenUML HTML dark theme preview</title>
+  <style>
+    body { margin: 0; padding: 24px; font: 14px system-ui, sans-serif; color: #e8eaf0; background: #141820; }
+    header { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+    h1 { font-size: 18px; margin: 0; }
+    label { margin-left: auto; }
+    select, button { padding: 7px 10px; color: #e8eaf0; background: #28303d; border: 1px solid #536074; border-radius: 5px; }
+    iframe { box-sizing: border-box; width: 560px; max-width: 100%; height: 430px; border: 1px solid #536074; border-radius: 6px; background: #111628; }
+    #status { min-width: 100px; color: #b9c7da; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ZenUML HTML renderer theme preview</h1>
+    <span id="status">Loading…</span>
+    <label for="theme">Theme</label>
+    <select id="theme">
+      <option value="theme-clean-dark">Clean dark</option>
+      <option value="theme-dark">Dark</option>
+      <option value="theme-darcula">Darcula</option>
+      <option value="theme-default">Default</option>
+    </select>
+    <button id="save" type="button">Download renderer PNG</button>
+  </header>
+  <iframe id="preview" title="ZenUML HTML diagram"></iframe>
+  <script type="module" src="/src/preview/darkThemePreview.ts"></script>
+</body>
+</html>
