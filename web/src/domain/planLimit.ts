@@ -27,3 +27,18 @@ export function isOverFileLimit(input: {
   const { subscription, ownedIds } = input;
   return ownedIds.length > limitFor(subscription);
 }
+
+// Imports are an atomic batch, so evaluate the projected distinct ownership set
+// before saveItems starts its Firestore batch. Existing IDs are merges, not new
+// capacity. Unlike the legacy single-save check above, this uses the declared cap
+// for the complete post-import set.
+export function isImportOverFileLimit(input: {
+  subscription: Subscription | null | undefined;
+  ownedIds: string[];
+  importedIds: string[];
+}): boolean {
+  const { subscription, ownedIds, importedIds } = input;
+  const projectedIds = new Set(ownedIds);
+  for (const id of importedIds) projectedIds.add(id);
+  return projectedIds.size > limitFor(subscription);
+}

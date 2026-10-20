@@ -28,7 +28,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useBootItem } from '../hooks/useBootItem';
 import { useAutoSave } from '../hooks/useAutoSave';
-import { useImportOnLogin } from '../hooks/useImportOnLogin';
+import { ImportPreflightError, useImportOnLogin } from '../hooks/useImportOnLogin';
 import { makeItemService } from '../services/itemService';
 import { getSharedItem, createShare } from '../services/cloudFunctions';
 import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds, setUserSetting } from '../services/userService';
@@ -53,7 +53,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
-import { isOverFileLimit, limitFor } from '../domain/planLimit';
+import { isImportOverFileLimit, isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
 import { detectFromEnv, parseEmbedCode } from './runtimeMode';
 import { CANONICAL_APP_ORIGIN } from '../config/shareOrigin';
@@ -208,7 +208,7 @@ export function AppRoot() {
 
   // M04: subscription (load + derive plan on auth) — `loading` gates the plan-limit
   // race guard (§1). analytics.track binds the current userId. paddle = checkout.
-  const { subscription, planType, subscribed, loading: subLoading, reload: reloadSubscription } =
+  const { subscription, planType, subscribed, loading: subLoading, loadFailed: subLoadFailed, reload: reloadSubscription, retryFailedLoad: retrySubscriptionLoad } =
     useSubscription();
   const { track } = useAnalytics();
   const { openCheckout } = usePaddle();
@@ -393,6 +393,7 @@ export function AppRoot() {
   );
 
   // Import-on-login: when the user signs in with local diagrams, offer to import them.
+  const importPlanRetryArmed = useRef<string | null>(null);
   const {
     pending: importPending,
     count: importCount,
@@ -404,13 +405,46 @@ export function AppRoot() {
     checkError: importCheckError,
     retryCheck: retryImportCheck,
   } = useImportOnLogin(useCallback((records, guard) => {
-    if (!guard) return itemService.saveItems(records);
+    if (!guard) throw new ImportPreflightError('check');
+    if (subLoading) {
+      importPlanRetryArmed.current = guard.uid;
+      throw new ImportPreflightError('check');
+    }
+    if (subLoadFailed && importPlanRetryArmed.current !== guard.uid) {
+      importPlanRetryArmed.current = guard.uid;
+      throw new ImportPreflightError('check');
+    }
     const token = library.identity.current();
-    return itemService.saveItems(records, {
-      expectedUid: guard.uid,
-      isCurrent: () => token.uid === guard.uid && library.identity.isCurrent(token),
-    });
-  }, [itemService, library.identity]));
+    return (async () => {
+      let checkedSubscription = subscription;
+      if (subLoadFailed) {
+        try {
+          checkedSubscription = await retrySubscriptionLoad(guard.uid);
+        } catch {
+          throw new ImportPreflightError('check');
+        }
+      }
+      importPlanRetryArmed.current = null;
+      let ownedIds: string[];
+      try {
+        ownedIds = await getUserItemIds(guard.uid);
+      } catch {
+        // A failed ownership read cannot prove the batch fits. Keep local records
+        // intact and let the user retry when the count can be read.
+        throw new ImportPreflightError('check');
+      }
+      if (token.uid !== guard.uid || !library.identity.isCurrent(token) || useAuthStore.getState().user?.uid !== guard.uid) {
+        throw new Error('Account changed during import preflight');
+      }
+      if (isImportOverFileLimit({ subscription: checkedSubscription, ownedIds, importedIds: Object.keys(records) })) {
+        throw new ImportPreflightError('quota');
+      }
+      await itemService.saveItems(records, {
+        expectedUid: guard.uid,
+        isCurrent: () => token.uid === guard.uid && library.identity.isCurrent(token),
+      });
+    })();
+  }, [itemService, library.identity, subscription, subLoading, subLoadFailed, retrySubscriptionLoad]));
 
   // Read URL params reactively via TanStack Router so navigation (e.g. goHome) triggers a re-render.
   const search = useSearch({ from: indexRoute.id });
@@ -1511,6 +1545,7 @@ export function AppRoot() {
         onOpenChange={(open) => { if (!open) setExportRequest(null); }}
         snapshot={exportRequest?.snapshot ?? null}
         title={exportRequest?.title ?? 'diagram'}
+        onExported={(format) => track(format === 'png' ? 'downloadPng' : 'downloadSvg', { category: 'ui' })}
       />
     </div>
   );

@@ -9,6 +9,18 @@ import { useExportFeedbackStore } from '../components/library/exportFeedbackStor
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
+// The dialog's own tests verify that its callback fires only after the browser
+// download handoff succeeds. Here a tiny seam proves AppRoot wires that callback
+// to the legacy-compatible analytics event.
+vi.mock('../components/preview/ExportDialog', () => ({
+  ExportDialog: ({ open, onExported }: { open: boolean; onExported?: (format: 'png' | 'svg') => void }) => open ? (
+    <div>
+      <button data-testid="test-export-png" onClick={() => onExported?.('png')}>PNG downloaded</button>
+      <button data-testid="test-export-svg" onClick={() => onExported?.('svg')}>SVG downloaded</button>
+    </div>
+  ) : null,
+}));
+
 // ─── Router harness (hub PRs #800/#801: HomeView + reactive ?id= routing) ─────
 // The Hub-navigation PRs (#800 "Approach A Hub navigation — HomeView, no-rail
 // editor, breadcrumb", #801 mobile follow-up) made AppRoot read the URL through
@@ -699,6 +711,109 @@ describe('AppRoot — M04 save-seam plan limit', () => {
   });
 });
 
+describe('AppRoot — import-on-login quota preflight', () => {
+  const signedInUser = { uid: 'u1', email: 'u1@test.com', displayName: 'U', photoURL: null };
+
+  async function bootWithLocalItem(id: string) {
+    const localItems = await import('../services/localItems');
+    await localItems.add(id);
+    await localStore.set(id, { id, title: id, js: '', css: '', html: '', htmlMode: 'html', cssMode: 'css', jsMode: 'js', pages: [], currentPageId: '', updatedOn: 1 });
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => { useAuthStore.setState({ user: signedInUser, authReady: true, online: true }); });
+    await screen.findByRole('dialog', { name: 'Import local diagrams?' });
+  }
+
+  it('blocks the whole import over the exact free cap and preserves local copies for retry', async () => {
+    itemSvc.saveItems.mockClear();
+    userSvc.getUserItemIds.mockResolvedValue(['owned-a', 'owned-b', 'owned-c']);
+    await bootWithLocalItem('new-local');
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/exceed your account diagram limit/);
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(await localStore.get('new-local', null)).not.toBeNull();
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(false);
+  });
+
+  it('allows an import containing only IDs already owned at the free cap', async () => {
+    userSvc.getUserItemIds.mockResolvedValue(['owned-a', 'owned-b', 'owned-c']);
+    await bootWithLocalItem('owned-a');
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalledWith(expect.objectContaining({ 'owned-a': expect.any(Object) }), expect.any(Object)));
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(true);
+  });
+
+  it('does not upload or mark the import complete when the cloud ownership count fails', async () => {
+    itemSvc.saveItems.mockClear();
+    userSvc.getUserItemIds.mockRejectedValue(new Error('permission-denied'));
+    await bootWithLocalItem('local-retry');
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/couldn't check/i);
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(await localStore.get('local-retry', null)).not.toBeNull();
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(false);
+  });
+
+  it('shows a check error for a failed plan read, then retries the read and imports under the paid limit', async () => {
+    itemSvc.saveItems.mockClear();
+    subSvc.retrieveSubscription.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(
+      { status: 'active', passthrough: '{"planType":"basic-monthly"}' } as never,
+    );
+    userSvc.getUserItemIds.mockResolvedValue(['owned-a', 'owned-b', 'owned-c']);
+    await bootWithLocalItem('paid-local');
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(1));
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/couldn't check/i);
+    expect(screen.getByTestId('import-error')).not.toHaveTextContent(/remove cloud diagrams or upgrade/i);
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(await localStore.get('paid-local', null)).not.toBeNull();
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(false);
+
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalledWith(
+      expect.objectContaining({ 'paid-local': expect.any(Object) }), expect.any(Object),
+    ));
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(true);
+  });
+
+  it('keeps the import local when a plan retry fails again', async () => {
+    itemSvc.saveItems.mockClear();
+    subSvc.retrieveSubscription.mockRejectedValue(new Error('offline'));
+    await bootWithLocalItem('still-local');
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(1));
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/couldn't check/i);
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(2));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/couldn't check/i);
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(await localStore.get('still-local', null)).not.toBeNull();
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(false);
+  });
+
+  it('does not upload to either account when identity changes during a plan retry', async () => {
+    itemSvc.saveItems.mockClear();
+    let resolveRetry!: (value: unknown) => void;
+    const delayedRetry = new Promise((resolve) => { resolveRetry = resolve; });
+    subSvc.retrieveSubscription.mockRejectedValueOnce(new Error('offline'))
+      .mockReturnValueOnce(delayedRetry as never).mockResolvedValueOnce(null);
+    await bootWithLocalItem('switch-local');
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(1));
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    expect(await screen.findByTestId('import-error')).toHaveTextContent(/couldn't check/i);
+    await userEvent.click(screen.getByTestId('import-confirm'));
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      useAuthStore.setState({ user: { ...signedInUser, uid: 'u2' }, authReady: true, online: true });
+    });
+    await act(async () => { resolveRetry({ status: 'active', passthrough: '{"planType":"plus-monthly"}' }); });
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(await localStore.get('switch-local', null)).not.toBeNull();
+    expect(await localStore.get(LS_KEYS.askedToImportCreations, false)).toBe(false);
+  });
+});
+
 describe('AppRoot — M04 custom-CSS Plus gate', () => {
   it('signed-in FREE user editing CSS → pricing modal opens + CSS unchanged', async () => {
     const { useEditorStore: store } = await import('../state/editorStore');
@@ -1069,6 +1184,20 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       .filter((p) => p && p.event === event);
     return calls.at(-1);
   }
+
+  it('tracks successful PNG and SVG downloads with UI category and no invented content properties', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await userEvent.click(screen.getByTestId('renderer-download'));
+    await userEvent.click(await screen.findByTestId('test-export-png'));
+    await waitFor(() => expect(lastEnvelope('downloadPng')).toEqual(expect.objectContaining({ category: 'ui' })));
+    expect(lastEnvelope('downloadPng')).not.toHaveProperty('diagramCode');
+
+    await userEvent.click(screen.getByTestId('renderer-download'));
+    await userEvent.click(await screen.findByTestId('test-export-svg'));
+    await waitFor(() => expect(lastEnvelope('downloadSvg')).toEqual(expect.objectContaining({ category: 'ui' })));
+    expect(lastEnvelope('downloadSvg')).not.toHaveProperty('diagramCode');
+  });
 
   it("'Free Limit' (over-cap save) uses legacy category '3 diagrams limit' + label 'Save'", async () => {
     userSvc.getUserItemIds.mockResolvedValue(['a', 'b', 'c', 'd']); // over free cap

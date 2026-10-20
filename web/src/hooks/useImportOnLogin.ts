@@ -12,8 +12,13 @@ export const IMPORT_ERRORS = {
   save: "Couldn't import your diagrams. They're still saved in this browser. Try again.",
   flag: "Your diagrams were imported, but this choice couldn't be saved. Try again.",
   dismiss: "Couldn't save \"Don't ask again\". Your local diagrams were not changed. Select Don't ask again to try again.",
-  check: "Couldn't check for diagrams saved in this browser. Your local diagrams were not changed. Try again.",
+  check: "Couldn't check your diagrams or account limit. Your local diagrams were not changed. Try again.",
+  quota: 'This import would exceed your account diagram limit. Your local diagrams are still saved in this browser. Remove cloud diagrams or upgrade, then try again.',
 } as const;
+
+export class ImportPreflightError extends Error {
+  constructor(readonly kind: 'check' | 'quota') { super(kind); }
+}
 
 // Narrow guard passed as the 2nd saveItems argument: the account this import was
 // started for. A guard-aware service must write to `uid` (or refuse) and must not
@@ -187,7 +192,10 @@ export function useImportOnLogin(
           await saveItems(records, { uid: startUid });
         } catch (e) {
           console.error('[import] saving local diagrams failed', e);
-          if (isCurrent()) { setError(IMPORT_ERRORS.save); setFailedAction('import'); }
+          if (isCurrent()) {
+            setError(e instanceof ImportPreflightError ? IMPORT_ERRORS[e.kind] : IMPORT_ERRORS.save);
+            setFailedAction('import');
+          }
           return;
         }
         // An obsolete attempt's success is not recorded anywhere it could be

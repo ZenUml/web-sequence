@@ -167,6 +167,75 @@ test('IOL-3 — declining keeps locals untouched, no cloud write', async ({ page
   expect((await queryItemsByOwner(uid)).length).toBe(0);
 });
 
+test('IOL-4 — import batch over the free cap stays local and can be retried', async ({ page }, testInfo) => {
+  const email = 'iol4-quota@test.local';
+  const uid = uidForEmail(email);
+  await setDoc(`users/${uid}`, { items: { ownedA: true, ownedB: true, ownedC: true } });
+  await gotoFresh(page);
+  await typeDsl(page, 'A\nB\nA->B: local quota item');
+  await saveViaShortcut(page);
+  await page.locator('[data-testid="confirm-cancel"]').click().catch(() => {});
+  await signInViaEmulator(page, { email });
+  await expect(page.locator('[data-testid="import-confirm"]')).toBeVisible({ timeout: 15_000 });
+  await page.waitForTimeout(1_500); // subscription read must resolve before the cap decision
+  await page.locator('[data-testid="import-confirm"]').click();
+  await expect(page.locator('[data-testid="import-error"]')).toContainText('exceed your account diagram limit');
+  await page.screenshot({ path: testInfo.outputPath('IOL-4-blocked-import.png'), fullPage: true });
+
+  const userDoc = await getDoc(`users/${uid}`);
+  expect(Object.keys(userDoc.items).sort()).toEqual(['ownedA', 'ownedB', 'ownedC']);
+  const localIndex = await page.evaluate(() => JSON.parse(localStorage.getItem('items') || '{}'));
+  expect(Object.keys(localIndex).length).toBeGreaterThan(0);
+  expect(await page.evaluate(() => localStorage.getItem('askedToImportCreations'))).toBeNull();
+});
+
+test('EXP-1 — PNG and SVG analytics fire only after successful browser downloads', async ({ page }) => {
+  const tracked = [];
+  await page.route('**/track*', async (route) => {
+    const payload = route.request().postDataJSON();
+    tracked.push(payload);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  // Keep analytics local and observable: clear the debug short-circuit only for this
+  // page, then intercept every /track request so nothing leaves the loopback app.
+  await page.addInitScript(() => { document.cookie = 'wmdebug=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; });
+  await gotoFresh(page);
+  await typeDsl(page, 'Alice->Bob: export validation');
+  await expect(page.frameLocator('[data-testid="preview-iframe"]').locator('.participant').first()).toBeVisible({ timeout: 20_000 });
+  await page.locator('[data-testid="renderer-download"]').click();
+  await expect(page.locator('[data-testid="export-download"]')).toBeEnabled({ timeout: 30_000 });
+
+  // Force the browser handoff to fail once. The dialog should remain open and must
+  // not emit the success event until a later download succeeds.
+  await page.evaluate(() => {
+    window.__restoreCreateObjectURL = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = () => { throw new Error('Browser download unavailable'); };
+  });
+  await page.locator('[data-testid="export-download"]').click();
+  await expect(page.getByRole('alert')).toContainText('Browser download unavailable');
+  expect(tracked.filter((event) => event.event === 'downloadPng')).toHaveLength(0);
+  await page.evaluate(() => { URL.createObjectURL = window.__restoreCreateObjectURL; });
+
+  let before = tracked.length;
+  const pngDownload = page.waitForEvent('download');
+  await page.locator('[data-testid="export-download"]').click();
+  expect(await (await pngDownload).failure()).toBeNull();
+  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'downloadPng'))
+    .toEqual([expect.objectContaining({ category: 'ui' })]);
+
+  await page.locator('[data-testid="renderer-download"]').click();
+  await expect(page.locator('[data-testid="export-download"]')).toBeEnabled({ timeout: 30_000 });
+  await page.getByRole('combobox', { name: 'Format' }).click();
+  await page.getByRole('option', { name: 'SVG image' }).click();
+  before = tracked.length;
+  const svgDownload = page.waitForEvent('download');
+  await page.locator('[data-testid="export-download"]').click();
+  expect(await (await svgDownload).failure()).toBeNull();
+  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'downloadSvg'))
+    .toEqual([expect.objectContaining({ category: 'ui' })]);
+  expect(tracked.some((event) => event.event === 'downloadSvg' && 'diagramCode' in event)).toBe(false);
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // §5 Folders  (FLD-1, FLD-3, FLD-4, FLD-5)  — FLD-2 stays fixme (see cloud.fixme.spec.js)
 // ════════════════════════════════════════════════════════════════════════════

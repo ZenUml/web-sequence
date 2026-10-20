@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { useImportOnLogin } from './useImportOnLogin';
+import { IMPORT_ERRORS, ImportPreflightError, useImportOnLogin } from './useImportOnLogin';
 import { useAuthStore } from '../state/authStore';
 import * as localItems from '../services/localItems';
 import { localStore } from '../services/storage';
@@ -176,6 +176,46 @@ describe('useImportOnLogin', () => {
 // ── Account-flows hardening (2026-10-20). Each test below was written RED against
 // the pre-change hook and reproduces a concrete defect before the fix.
 describe('useImportOnLogin — failure, busy and identity safety', () => {
+  it('keeps local records retryable when quota preflight blocks the cloud batch', async () => {
+    await localItems.add('local-a');
+    await localStore.set('local-a', makeItem('local-a'));
+    useAuthStore.setState({ user: SIGNED_IN_USER, online: true });
+    const saveItems = vi.fn()
+      .mockRejectedValueOnce(new ImportPreflightError('quota'))
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useImportOnLogin(saveItems));
+    await waitFor(() => expect(result.current.pending).toBe(true));
+
+    await act(async () => { await result.current.doImport(); });
+    expect(result.current.error).toBe(IMPORT_ERRORS.quota);
+    expect(result.current.pending).toBe(true);
+    expect(await localStore.get<Item | null>('local-a', null)).toMatchObject({ id: 'local-a', title: 'local-a' });
+    expect(await localStore.get('askedToImportCreations', false)).toBe(false);
+
+    await act(async () => { await result.current.doImport(); });
+    expect(result.current.pending).toBe(false);
+    expect(await localStore.get('askedToImportCreations', false)).toBe(true);
+  });
+
+  it('fails closed when import ownership count cannot be checked and allows a retry', async () => {
+    await localItems.add('local-a');
+    await localStore.set('local-a', makeItem('local-a'));
+    useAuthStore.setState({ user: SIGNED_IN_USER, online: true });
+    const saveItems = vi.fn()
+      .mockRejectedValueOnce(new ImportPreflightError('check'))
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useImportOnLogin(saveItems));
+    await waitFor(() => expect(result.current.pending).toBe(true));
+
+    await act(async () => { await result.current.doImport(); });
+    expect(result.current.error).toBe(IMPORT_ERRORS.check);
+    expect(result.current.pending).toBe(true);
+    expect(await localStore.get('askedToImportCreations', false)).toBe(false);
+
+    await act(async () => { await result.current.doImport(); });
+    expect(result.current.pending).toBe(false);
+  });
+
   async function seed(ids: string[], { withRecords = ids }: { withRecords?: string[] } = {}) {
     for (const id of ids) await localItems.add(id);
     for (const id of withRecords) await localStore.set(id, makeItem(id));
