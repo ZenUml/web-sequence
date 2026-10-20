@@ -328,8 +328,7 @@ test('SHR-6 — Fork a shared item → owned editable copy (leaves readonly)', a
   await signInViaEmulator(page);
   await page.goto(`/?id=${id}&share-token=${token}`);
   await expect(page.locator('[data-testid="header-savestate"]')).toHaveAttribute('data-state', 'readonly', { timeout: 15_000 });
-  await page.locator('[data-testid="filemenu-trigger"]').click();
-  await page.locator('[data-testid="filemenu-duplicate"]').click();
+  await page.locator('[data-testid="header-fork"]').click();
   await expect(page.locator('[data-testid="header-savestate"]')).not.toHaveAttribute('data-state', 'readonly', { timeout: 15_000 });
 });
 
@@ -445,17 +444,16 @@ test('PST-3 — read-only (shared) item: savestate readonly, Fork offered', asyn
   const token = 'pst3-token';
   await seedItem(ownerUid, id, { title: 'RO', isShared: true, shareToken: token });
   // Suppress the one-time onboarding/pledge modals BEFORE boot — their Radix overlay
-  // otherwise intercepts the filemenu-trigger click on this bare (non-gotoFresh) goto.
+  // otherwise intercepts the header-fork check on this bare (non-gotoFresh) goto.
   await suppressOneTimeModals(page);
   await page.goto(`/?id=${id}&share-token=${token}`);
   await expect(editorLocator(page)).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('[data-testid="header-savestate"]')).toHaveAttribute('data-state', 'readonly', { timeout: 15_000 });
-  // Fork (filemenu-duplicate) is the offered escape from read-only. NOTE: header-save
+  // Fork (header-fork) is the offered escape from read-only. NOTE: header-save
   // (in the app menu) is NOT a disabled control — save() is a no-op for read-only items
   // (AppRoot save(): `if (it.isReadOnly) return`), so we assert Fork is present rather
   // than asserting a disabled Save that the component never renders.
-  await page.locator('[data-testid="filemenu-trigger"]').click();
-  await expect(page.locator('[data-testid="filemenu-duplicate"]')).toBeVisible();
+  await expect(page.locator('[data-testid="header-fork"]')).toBeVisible();
 });
 
 test('PST-4 — read-only item is NOT written to the last-code slot', async ({ page }) => {
@@ -487,8 +485,7 @@ test('HDR-4 — Fork duplicates a shared item into an owned editable copy', asyn
   await signInViaEmulator(page);
   await page.goto(`/?id=${id}&share-token=${token}`);
   await expect(page.locator('[data-testid="header-savestate"]')).toHaveAttribute('data-state', 'readonly', { timeout: 15_000 });
-  await page.locator('[data-testid="filemenu-trigger"]').click();
-  await page.locator('[data-testid="filemenu-duplicate"]').click();
+  await page.locator('[data-testid="header-fork"]').click();
   await expect(page.locator('[data-testid="header-savestate"]')).not.toHaveAttribute('data-state', 'readonly', { timeout: 15_000 });
 });
 

@@ -9,6 +9,11 @@ export interface ReportBugButtonProps {
   signedIn: boolean;
   onOpen?(): void;
   onSubmitted?(meta: { includedDsl: boolean }): void;
+  /**
+   * 'fab' (default): persistent bottom-right floating button (hub).
+   * 'inline': quiet text link for the editor's code-column footer.
+   */
+  placement?: 'fab' | 'inline';
 }
 
 function BugIcon() {
@@ -31,8 +36,9 @@ function BugIcon() {
   );
 }
 
-// Persistent bottom-right FAB. position:fixed, so its DOM position within the app
-// tree is irrelevant — only z-index matters (sits below the Dialog overlay z-40).
+// Persistent bottom-right FAB by default. position:fixed, so its DOM position within
+// the app tree is irrelevant — only z-index matters (sits below the Dialog overlay
+// z-40). The editor renders the inline placement inside its code-column footer.
 export function ReportBugButton({
   dsl,
   appVersion,
@@ -40,10 +46,27 @@ export function ReportBugButton({
   signedIn,
   onOpen,
   onSubmitted,
+  placement = 'fab',
 }: ReportBugButtonProps) {
   const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(true);
+    onOpen?.();
+  };
   return (
     <>
+      {placement === 'inline' ? (
+        <button
+          type="button"
+          data-testid="report-bug-fab"
+          aria-label="Report a bug"
+          onClick={handleOpen}
+          className="editor-report-bug"
+        >
+          <BugIcon />
+          <span>Report a bug</span>
+        </button>
+      ) : (
       <Button
         variant="primary"
         size="md"
@@ -53,14 +76,12 @@ export function ReportBugButton({
         // (h-8 = 32px, see preview/Console.tsx) docked at the editor's
         // bottom-right so the FAB doesn't cover it.
         className={cn('fixed bottom-12 right-4 z-30 shadow-pop')}
-        onClick={() => {
-          setOpen(true);
-          onOpen?.();
-        }}
+        onClick={handleOpen}
       >
         <BugIcon />
         <span className="hidden md:inline">Report a bug</span>
       </Button>
+      )}
       <ReportBugModal
         open={open}
         onOpenChange={setOpen}

@@ -20,10 +20,12 @@ export interface CssPanelProps {
   headerControls: ReactNode;
   /** The expanded body — the parent passes the CSS CodeEditor. */
   children: ReactNode;
+  /** Trailing content on the panel's row in both states (e.g. Report a bug). */
+  trailing?: ReactNode;
 }
 
-// A right-pointing chevron (rotates to point down when expanded) — mirrors the
-// design's `.cssbar svg` (path d="M9 18l6-6-6-6").
+// Chevron: points down while collapsed and flips up when expanded (the panel
+// opens upward from the bottom of the code column).
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -35,21 +37,20 @@ function Chevron({ open }: { open: boolean }) {
       strokeLinejoin="round"
       aria-hidden="true"
       className={cn(
-        'h-[13px] w-[13px] shrink-0 transition-transform duration-150 ease-draft',
-        open && 'rotate-90',
+        'h-[18px] w-[18px] shrink-0 transition-transform duration-150 ease-draft',
+        open && 'rotate-180',
       )}
     >
-      <path d="M9 18l6-6-6-6" />
+      <path d="M8 10l4 4 4-4" />
     </svg>
   );
 }
 
 /**
- * Collapsible CSS section for the editor pane. Recreates the design's `.cssbar`
- * collapsed strip and the expanded header + editor body using repo Tailwind tokens.
- *
- * The design's `--ink-870` (#121723) has no token in the repo scale; `ink-850`
- * (#141925) is the nearest existing token and is used for the strip/header chrome.
+ * Collapsible CSS section at the bottom of the editor's code column. Collapsed it
+ * is a single row (chevron + "Custom CSS" + optional trailing action); expanded it
+ * adds the CSS mode controls and the CSS editor body. Colors come from the editor
+ * semantic tokens in globals.css.
  */
 export function CssPanel({
   isEmpty,
@@ -57,6 +58,7 @@ export function CssPanel({
   onToggle,
   headerControls,
   children,
+  trailing,
 }: CssPanelProps) {
   const isControlled = collapsed !== undefined;
   // Uncontrolled default: collapsed iff the CSS is empty.
@@ -70,43 +72,39 @@ export function CssPanel({
 
   if (resolvedCollapsed) {
     return (
-      <button
-        type="button"
-        data-testid="css-panel-strip"
-        aria-expanded={false}
-        aria-label="Expand custom CSS"
-        onClick={() => setOpen(true)}
-        className="editor-css-panel-strip flex h-9 w-full items-center gap-2 border-t border-ink-line bg-ink-850 px-3.5 text-left text-[12px] text-ondark-muted transition-colors duration-150 ease-draft ring-draft hover:text-ondark-strong"
-      >
-        <Chevron open={false} />
-        <span>Custom CSS</span>
-        {isEmpty && (
-          <span className="ml-auto font-mono text-[10px] tracking-[0.08em] text-ondark-faint">
-            empty · click to expand
-          </span>
-        )}
-      </button>
+      <div className="editor-css-panel-strip">
+        <button
+          type="button"
+          data-testid="css-panel-strip"
+          aria-expanded={false}
+          aria-label="Expand custom CSS"
+          onClick={() => setOpen(true)}
+          className="editor-css-panel-toggle"
+        >
+          <Chevron open={false} />
+          <span>Custom CSS</span>
+        </button>
+        {trailing}
+      </div>
     );
   }
 
   return (
-    <div
-      data-testid="css-panel-expanded"
-      className="editor-css-panel flex flex-1 min-h-0 flex-col border-t border-ink-line"
-    >
-      <div className="editor-css-panel-header flex items-center justify-between gap-3 border-b border-ink-line/40 bg-ink-850 px-2 py-1.5">
+    <div data-testid="css-panel-expanded" className="editor-css-panel">
+      <div className="editor-css-panel-header">
         <button
           type="button"
           data-testid="css-panel-collapse"
           aria-expanded
           aria-label="Collapse custom CSS"
           onClick={() => setOpen(false)}
-          className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-ondark-muted transition-colors duration-150 ease-draft ring-draft hover:text-ondark-strong"
+          className="editor-css-panel-toggle"
         >
           <Chevron open />
-          CSS
+          <span>Custom CSS</span>
         </button>
-        <div className="flex items-center gap-2">{headerControls}</div>
+        <div className="editor-css-panel-controls">{headerControls}</div>
+        {trailing}
       </div>
       <div className="flex-1 min-h-0">{children}</div>
     </div>

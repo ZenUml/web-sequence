@@ -151,99 +151,402 @@ body {
 }
 
 /* ============================================================================
-   Editor Hi-Fi surface
+   Core Editor surface (Figma 32:4370 Editor Light, 32:4188 Soft Dark Darcula)
 
-   The editor is the one product surface that uses the light teal workspace from
-   the current Figma baseline. Keep these overrides under the editor shell so
-   library, dialogs, and other pages continue to use the Drafting Table tokens.
-   The renderer itself remains the existing PreviewFrame/iframe; this layer only
-   defines the editor chrome around that renderer.
+   Semantic tokens for the editor chrome. Light is the default; the global
+   appearance preference sets <html data-appearance="dark">. Tokens live on the
+   root so Radix portals (menus, selects, tooltips opened from the editor) and the
+   `ink` CodeMirror theme (src/editor/themes.ts) follow the same appearance.
+   Other pages keep the Drafting Table tokens above; editor rules below are scoped
+   under .editor-hifi-shell or the explicit editor portal classes.
    ========================================================================== */
+:root {
+  --editor-brand: #2e94d4;
+  --editor-primary: #217bb3;
+  --editor-primary-hover: #1c6d9f;
+  --editor-primary-press: #175d89;
+  --editor-on-primary: #ffffff;
+
+  --editor-bg: #eff6fb;
+  --editor-surface: #ffffff;
+  --editor-toolbar: #f8f9fa;
+  --editor-canvas: #ffffff;
+  --editor-border: #e3e8ed;
+  --editor-divider: #d9dde3;
+  --editor-text: #1c2024;
+  --editor-text-secondary: #60646c;
+  --editor-text-faint: #8b8d98;
+  --editor-link: #176593;
+  --editor-hover: rgba(33, 123, 179, 0.08);
+  --editor-press: rgba(33, 123, 179, 0.14);
+  --editor-danger: #b42318;
+  --editor-danger-soft: rgba(180, 35, 24, 0.1);
+  --editor-focus: #176593;
+  --editor-shadow: 0 6px 24px -4px rgba(28, 54, 80, 0.12), 0 0 0 1px rgba(28, 54, 80, 0.04);
+
+  --editor-secondary-bg: #ffffff;
+  --editor-secondary-text: #1c2024;
+  --editor-secondary-border: #d5dce5;
+  --editor-secondary-hover: #eaf2f8;
+  --editor-secondary-press: #dce8f1;
+  --editor-disabled-bg: #e8edf2;
+  --editor-disabled-text: #7a8794;
+
+  /* `ink` code theme palette (light). */
+  --code-bg: var(--editor-bg);
+  --code-fg: #1c2024;
+  --code-muted: #60646c;
+  --code-keyword: #176593;
+  --code-string: #1d7a5f;
+  --code-function: #217bb3;
+  --code-invalid: #b42318;
+  --code-caret: #2e94d4;
+  --code-selection: rgba(46, 148, 212, 0.22);
+  --code-selection-match: rgba(46, 148, 212, 0.12);
+  --code-line-highlight: #e6edf5;
+}
+
+:root[data-appearance='dark'] {
+  --editor-bg: #303944;
+  --editor-surface: #343f4b;
+  --editor-toolbar: #3b424e;
+  --editor-canvas: #2b2b2b;
+  --editor-border: #444b57;
+  --editor-divider: #505967;
+  --editor-text: #eef2f6;
+  --editor-text-secondary: #b8c3cf;
+  --editor-text-faint: #8794a3;
+  --editor-link: #79bde4;
+  --editor-hover: rgba(154, 205, 250, 0.1);
+  --editor-press: rgba(154, 205, 250, 0.16);
+  --editor-danger: #ff8a80;
+  --editor-danger-soft: rgba(255, 138, 128, 0.14);
+  --editor-focus: #9acdfa;
+  --editor-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  --editor-secondary-bg: #3b424e;
+  --editor-secondary-text: #edf0f5;
+  --editor-secondary-border: #444b57;
+  --editor-secondary-hover: #485465;
+  --editor-secondary-press: #526175;
+  --editor-disabled-bg: #39424d;
+  --editor-disabled-text: #8794a3;
+
+  --code-fg: #edf0f5;
+  --code-muted: #a8b0bd;
+  --code-keyword: #9acdfa;
+  --code-string: #a5d6a7;
+  --code-function: #79bde4;
+  --code-invalid: #ff8a80;
+  --code-caret: #79bde4;
+  --code-selection: rgba(154, 205, 250, 0.24);
+  --code-selection-match: rgba(154, 205, 250, 0.14);
+  --code-line-highlight: #414d5d;
+}
+
 .editor-hifi-shell {
-  --editor-bg: #edf4ef;
-  --editor-panel: #fffefc;
-  --editor-line: #d6e4dc;
-  --editor-line-strong: #c4d7ce;
-  --editor-ink: #2b514a;
-  --editor-muted: #5c6e61;
-  --editor-accent: #0f6d58;
-  --editor-accent-solid: #147d68;
-  --editor-accent-soft: #e0f0eb;
+  color-scheme: light;
   background: var(--editor-bg);
-  color: var(--editor-ink);
+  color: var(--editor-text);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+:root[data-appearance='dark'] .editor-hifi-shell {
+  color-scheme: dark;
+}
+
+.editor-hifi-shell :focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: 2px;
+}
+
+.editor-hifi-shell * {
+  scrollbar-color: var(--editor-divider) transparent;
+}
+
+.editor-hifi-shell *::-webkit-scrollbar-thumb {
+  background: var(--editor-divider);
+  background-clip: content-box;
+}
+
+/* ---- Shared editor controls --------------------------------------------- */
+.editor-hifi-shell .editor-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.editor-hifi-shell .editor-button--primary {
+  background: var(--editor-primary);
+  color: var(--editor-on-primary);
+}
+
+.editor-hifi-shell .editor-button--primary:hover {
+  background: var(--editor-primary-hover);
+}
+
+.editor-hifi-shell .editor-button--primary:active {
+  background: var(--editor-primary-press);
+}
+
+.editor-hifi-shell .editor-button--secondary,
+.editor-hifi-shell .editor-document-share button {
+  background: var(--editor-secondary-bg) !important;
+  border: 1px solid var(--editor-secondary-border) !important;
+  color: var(--editor-secondary-text) !important;
+}
+
+.editor-hifi-shell .editor-button--secondary:hover,
+.editor-hifi-shell .editor-document-share button:hover {
+  background: var(--editor-secondary-hover) !important;
+}
+
+.editor-hifi-shell .editor-button--secondary:active,
+.editor-hifi-shell .editor-document-share button:active {
+  background: var(--editor-secondary-press) !important;
+}
+
+.editor-hifi-shell .editor-button:disabled,
+.editor-hifi-shell .editor-document-share button:disabled {
+  background: var(--editor-disabled-bg) !important;
+  border-color: var(--editor-disabled-bg) !important;
+  color: var(--editor-disabled-text) !important;
+  cursor: not-allowed;
+}
+
+.editor-hifi-shell .editor-icon-button,
+.editor-hifi-shell .editor-tool-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  color: var(--editor-text-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.editor-hifi-shell .editor-icon-button:hover,
+.editor-hifi-shell .editor-tool-button:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+
+.editor-hifi-shell .editor-icon-button:active,
+.editor-hifi-shell .editor-tool-button:active {
+  background: var(--editor-press);
+}
+
+/* ---- Header (56px; buttons 36px) ---------------------------------------- */
 .editor-hifi-shell .editor-hifi-header {
+  display: flex;
   flex-shrink: 0;
-  background-color: var(--editor-bg) !important;
-  background-image: none !important;
-  border-color: var(--editor-line) !important;
-  border-bottom-width: 0;
-  color: var(--editor-ink);
+  align-items: center;
+  gap: 0;
+  height: 56px;
+  padding: 0 12px 0 24px;
+  background: var(--editor-bg);
+  color: var(--editor-text);
 }
 
-.editor-hifi-shell .editor-hifi-header .text-ondark-strong,
-.editor-hifi-shell .editor-hifi-header .text-ondark-muted,
-.editor-hifi-shell .editor-hifi-header .text-ondark-faint,
-.editor-hifi-shell .editor-hifi-header .text-accent-onDark {
-  color: var(--editor-ink) !important;
+.editor-hifi-shell .editor-header-nav {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
 }
 
-.editor-hifi-shell .editor-hifi-header .text-ondark-muted,
-.editor-hifi-shell .editor-hifi-header .text-ondark-faint {
-  color: var(--editor-muted) !important;
+.editor-hifi-shell [data-testid='header-menu'] {
+  height: 36px;
+  gap: 8px;
+  margin-left: -4px;
+  padding: 0 4px;
+  border-radius: 6px;
+  color: var(--editor-text-secondary);
 }
 
-.editor-hifi-shell .editor-hifi-header [class*='bg-ink-'],
-.editor-hifi-shell .editor-hifi-header [class*='bg-blueprint'] {
-  background-color: transparent !important;
-  background-image: none !important;
+.editor-hifi-shell [data-testid='header-menu']:hover {
+  background: var(--editor-hover);
 }
 
-.editor-hifi-shell .editor-hifi-header [class*='border-ink-'] {
-  border-color: var(--editor-line) !important;
+.editor-hifi-shell [data-testid='header-menu'] svg[aria-label='ZenUML'] {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
 }
 
-.editor-hifi-shell .editor-hifi-header [class*='hover:bg-white']:hover,
-.editor-hifi-shell .editor-hifi-header [class*='hover:bg-ink']:hover {
-  background-color: var(--editor-accent-soft) !important;
+.editor-hifi-shell [data-testid='header-menu'] .text-ondark-muted {
+  color: var(--editor-text-secondary) !important;
 }
 
-.editor-hifi-shell .editor-hifi-header .bg-accent,
-.editor-hifi-shell .editor-hifi-header .bg-accent-press {
-  background-color: var(--editor-accent-solid) !important;
-  color: #fff !important;
+.editor-hifi-shell .editor-sidebar-toggle[aria-pressed='false'] {
+  color: var(--editor-text);
 }
 
-.editor-hifi-shell .editor-hifi-header .bg-accent-soft {
-  background-color: var(--editor-accent-soft) !important;
+.editor-hifi-shell .editor-document-chrome {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  min-width: 0;
+  margin-left: 20px;
 }
 
-.editor-hifi-shell .editor-hifi-header .text-accent,
-.editor-hifi-shell .editor-hifi-header .text-ok {
-  color: var(--editor-accent) !important;
+.editor-hifi-shell .editor-breadcrumb {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
 }
 
-.editor-hifi-shell .editor-hifi-header input {
+.editor-hifi-shell .editor-breadcrumb-link {
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--editor-text);
+  white-space: nowrap;
+}
+
+.editor-hifi-shell .editor-breadcrumb-link:hover {
+  background: var(--editor-hover);
+  color: var(--editor-link);
+}
+
+.editor-hifi-shell .editor-breadcrumb-separator {
+  margin: 0 10px 0 4px;
+  font-size: 15px;
+  color: var(--editor-text-secondary);
+  user-select: none;
+}
+
+.editor-hifi-shell .editor-document-file {
+  display: flex;
+  min-width: 0;
+}
+
+.editor-hifi-shell .editor-title-input {
+  width: auto;
+  min-width: 4ch;
+  max-width: 260px;
+  height: 32px;
+  padding: 0 4px;
+  border: 1px solid transparent !important;
+  border-radius: 6px;
   background: transparent !important;
-  border-color: transparent !important;
-  color: var(--editor-ink) !important;
+  color: var(--editor-text) !important;
+  font-size: 17px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  field-sizing: content;
 }
 
-.editor-hifi-shell .editor-hifi-header input::placeholder {
-  color: var(--editor-muted) !important;
+.editor-hifi-shell .editor-title-input:hover {
+  background: var(--editor-hover) !important;
 }
 
-.editor-hifi-shell .editor-hifi-header svg[aria-label='ZenUML'] rect {
-  fill: var(--editor-accent-solid) !important;
+.editor-hifi-shell .editor-title-input:focus {
+  border-color: var(--editor-focus) !important;
+  background: var(--editor-surface) !important;
+  box-shadow: none;
 }
 
-.editor-hifi-shell .editor-hifi-header [data-testid='header-menu'] {
-  padding-right: 14px;
-  border-right: 1px solid var(--editor-line);
-  border-radius: 0;
+.editor-hifi-shell .editor-document-save {
+  display: flex;
+  flex: 0 0 auto;
+  margin-left: 40px;
 }
 
+.editor-hifi-shell .editor-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--editor-text-secondary);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.editor-hifi-shell .editor-save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--editor-text-faint);
+}
+
+.editor-hifi-shell .editor-save-state[data-state='saving'] .editor-save-dot {
+  background: var(--editor-brand);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.editor-hifi-shell .editor-save-state[data-state='dirty'] .editor-save-dot {
+  background: #d18b1f;
+}
+
+.editor-hifi-shell .editor-save-state[data-state='saved'] .editor-save-dot {
+  background: #2e9d6b;
+}
+
+.editor-hifi-shell .editor-header-spacer {
+  flex: 1 1 auto;
+  min-width: 12px;
+}
+
+.editor-hifi-shell .editor-document-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-hifi-shell .editor-document-fork {
+  width: 80px;
+  padding: 0 12px;
+}
+
+.editor-hifi-shell .editor-document-share button {
+  width: 92px;
+  height: 36px;
+  gap: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.editor-hifi-shell .editor-document-present {
+  width: 116px;
+}
+
+.editor-hifi-shell .editor-global-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+}
+
+.editor-hifi-shell .editor-global-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-hifi-shell .editor-sign-in {
+  padding: 0 15px;
+  font-size: 14px;
+}
+
+/* ---- Body: code column + floating preview card --------------------------- */
 .editor-hifi-shell .editor-layout,
 .editor-hifi-shell .editor-region,
 .editor-hifi-shell .editor-source-pane,
@@ -251,195 +554,108 @@ body {
   background: var(--editor-bg);
 }
 
-.editor-hifi-shell .editor-pane-header,
-.editor-hifi-shell .editor-source-stack,
 .editor-hifi-shell .editor-source-pane {
-  border-color: var(--editor-line) !important;
+  padding: 32px 12px 0 24px;
 }
 
-.editor-hifi-shell .editor-pane-header {
-  border-bottom-width: 0;
-}
-
-.editor-hifi-shell .editor-pane-header .text-accent-onDark {
-  color: var(--editor-accent) !important;
-}
-
-.editor-hifi-shell .editor-pane-header .bg-accent-onDark {
-  background-color: var(--editor-accent) !important;
-}
-
-/* CodeMirror owns its editor and gutter surfaces through the selected theme.
-   Keep the shell background as the loading/empty fallback, but do not override
-   `.cm-editor`, `.cm-scroller`, or `.cm-gutters`: users' saved theme choices
-   must continue to apply live inside the teal workspace. */
-
-.editor-hifi-shell .editor-preview-stage {
-  min-width: 0;
-  min-height: 0;
-  padding: 12px 24px 20px 0;
-  background: var(--editor-bg);
-}
-
-.editor-hifi-shell .editor-preview-panel {
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--editor-panel);
-  border: 0;
-  border-radius: 14px;
-  box-shadow: 0 6px 24px -4px rgba(36, 61, 51, 0.12);
-}
-
-.editor-hifi-shell .editor-preview-panel--fullscreen {
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.editor-hifi-shell .editor-renderer-header {
-  flex-shrink: 0;
-  background: var(--editor-panel) !important;
-  border-color: var(--editor-line) !important;
-  color: var(--editor-ink);
-}
-
-.editor-hifi-shell .editor-renderer-header .text-ondark-muted,
-.editor-hifi-shell .editor-renderer-header .text-ondark-strong {
-  color: var(--editor-muted) !important;
-}
-
-.editor-hifi-shell .editor-renderer-header button {
-  color: var(--editor-ink);
-}
-
-.editor-hifi-shell .editor-renderer-header button:hover {
-  background: var(--editor-accent-soft);
-  color: var(--editor-accent);
-}
-
-.editor-hifi-shell .editor-page-tabs {
-  scrollbar-width: none;
-}
-
-.editor-hifi-shell .editor-page-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.editor-hifi-shell .editor-page-tabs .bg-paper-100 {
-  background: var(--editor-accent-soft) !important;
-  color: var(--editor-ink) !important;
-}
-
-.editor-hifi-shell .editor-page-tabs .text-onlight-muted,
-.editor-hifi-shell .editor-page-tabs .text-onlight-strong {
-  color: var(--editor-ink) !important;
-}
-
-.editor-hifi-shell .editor-page-tabs .text-onlight-muted {
-  color: var(--editor-muted) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .bg-paper-50,
-.editor-hifi-shell .editor-source-pane .bg-paper-100 {
-  background: var(--editor-panel) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .border-paper-line {
-  border-color: var(--editor-line) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .text-onlight-strong,
-.editor-hifi-shell .editor-source-pane .text-onlight-muted,
-.editor-hifi-shell .editor-source-pane .text-onlight-faint {
-  color: var(--editor-ink) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .text-onlight-muted,
-.editor-hifi-shell .editor-source-pane .text-onlight-faint {
-  color: var(--editor-muted) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .bg-accent-soft {
-  background: var(--editor-accent-soft) !important;
-}
-
-.editor-hifi-shell .editor-source-pane .text-accent {
-  color: var(--editor-accent) !important;
+/* The CodeMirror theme owns the editor surface (users' saved code themes still
+   apply). The default `ink` theme reads --code-* and so matches this surface. */
+.editor-hifi-shell .editor-source-stack .cm-editor {
+  height: 100%;
 }
 
 .editor-hifi-shell .editor-css-panel-strip,
-.editor-hifi-shell .editor-css-panel-header,
-.editor-hifi-shell .editor-css-panel {
+.editor-hifi-shell .editor-css-panel-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 12px;
+  border-top: 1px solid var(--editor-divider);
   background: var(--editor-bg);
-  border-color: var(--editor-line) !important;
-  color: var(--editor-ink);
+  color: var(--editor-text);
 }
 
-.editor-hifi-shell .editor-css-panel-strip:hover,
-.editor-hifi-shell .editor-css-panel-header button:hover {
-  background: var(--editor-accent-soft);
-  color: var(--editor-ink);
+.editor-hifi-shell .editor-css-panel {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  flex-direction: column;
+  padding-bottom: 12px;
 }
 
-.editor-hifi-shell .editor-css-panel-strip .text-ondark-muted,
-.editor-hifi-shell .editor-css-panel-header .text-ondark-muted,
-.editor-hifi-shell .editor-css-panel-header .text-ondark-strong {
-  color: var(--editor-muted) !important;
+.editor-hifi-shell .editor-css-panel-header {
+  margin-bottom: 0;
 }
 
-.editor-hifi-shell .editor-console {
-  flex-shrink: 0;
-  background: var(--editor-panel);
-  border-color: var(--editor-line) !important;
-  color: var(--editor-muted);
+.editor-hifi-shell .editor-css-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 6px 0 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--editor-text);
+  white-space: nowrap;
 }
 
-.editor-hifi-shell .editor-console .text-ondark-muted,
-.editor-hifi-shell .editor-console .text-ondark-strong {
-  color: var(--editor-muted) !important;
+.editor-hifi-shell .editor-css-panel-toggle svg {
+  color: var(--editor-text-secondary);
 }
 
-.editor-hifi-shell .editor-console .text-ok {
-  color: var(--editor-accent) !important;
+.editor-hifi-shell .editor-css-panel-toggle:hover {
+  color: var(--editor-link);
 }
 
-.editor-hifi-shell .editor-console .text-danger-onDark {
-  color: #b23a33 !important;
+.editor-hifi-shell .editor-css-panel-controls {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
-.editor-hifi-shell .editor-console input {
-  border-color: var(--editor-line) !important;
-  color: var(--editor-ink) !important;
+.editor-hifi-shell .editor-css-mode-select,
+.editor-hifi-shell .editor-css-acss-button {
+  background: var(--editor-secondary-bg) !important;
+  border-color: var(--editor-secondary-border) !important;
+  color: var(--editor-secondary-text) !important;
 }
 
-.editor-hifi-shell .editor-console input::placeholder {
-  color: var(--editor-muted) !important;
+.editor-hifi-shell .editor-report-bug {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin-left: auto;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--editor-text-secondary);
+  white-space: nowrap;
 }
 
-.editor-hifi-shell .editor-console button {
-  color: var(--editor-muted);
+.editor-hifi-shell .editor-report-bug svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.6;
 }
 
-.editor-hifi-shell .editor-console button:hover {
-  background: var(--editor-accent-soft);
-  color: var(--editor-ink);
+.editor-hifi-shell .editor-report-bug:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
 }
 
-/* Keep the full resize hit target; reveal the grip only while interacting. */
+/* Split gutter: 12px hit target, no permanent rule; a grip appears on hover/focus. */
 .editor-hifi-shell .editor-split-gutter {
   position: relative;
-  flex: 0 0 10px;
+  flex: 0 0 12px;
   background: transparent;
   cursor: col-resize;
-}
-
-.editor-hifi-shell .editor-split-gutter:focus-visible {
-  outline: none;
-}
-
-.editor-hifi-shell .editor-split-gutter:focus-visible::before {
-  box-shadow: 0 0 0 3px var(--editor-accent-soft);
 }
 
 .editor-hifi-shell .editor-split-gutter::after {
@@ -447,339 +663,473 @@ body {
 }
 
 .editor-hifi-shell .editor-split-gutter::before {
-  content: '⋮';
+  content: '';
   position: absolute;
-  z-index: 1;
   top: 50%;
   left: 50%;
-  width: 16px;
-  height: 30px;
-  border: 1px solid var(--editor-line-strong);
-  border-radius: 8px;
-  background: var(--editor-panel);
-  color: var(--editor-muted);
-  font-size: 14px;
-  line-height: 25px;
-  text-align: center;
+  width: 4px;
+  height: 48px;
+  border-radius: 2px;
+  background: var(--editor-divider);
   transform: translate(-50%, -50%);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
 .editor-hifi-shell .editor-split-gutter:hover::before,
-.editor-hifi-shell .editor-split-gutter:focus-visible::before,
-.editor-hifi-shell .editor-split-gutter:active::before {
+.editor-hifi-shell .editor-split-gutter:active::before,
+.editor-hifi-shell .editor-split-gutter:focus-visible::before {
   opacity: 1;
-  border-color: var(--editor-accent);
-  color: var(--editor-accent);
+  background: var(--editor-brand);
 }
 
-/* Document controls are mounted into this slot inside the preview card. The
-   controls remain owned by AppHeader, but their layout belongs to the card so
-   they follow a dragged split and can wrap when the card gets narrow. */
-.editor-hifi-shell .editor-document-chrome-slot {
+.editor-hifi-shell .editor-split-gutter:focus-visible {
+  outline: none;
+}
+
+.editor-hifi-shell .editor-preview-stage {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px 12px 12px 0;
+  background: var(--editor-bg);
+}
+
+.editor-hifi-shell .editor-layout--collapsed .editor-preview-stage {
+  padding-left: 12px;
+}
+
+.editor-hifi-shell .editor-preview-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--editor-surface);
+  box-shadow: var(--editor-shadow);
+}
+
+.editor-hifi-shell .editor-preview-panel--fullscreen {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.editor-hifi-shell .editor-preview-panel--fullscreen .editor-preview-canvas {
+  padding: 16px;
+}
+
+.editor-hifi-shell .editor-preview-canvas {
+  padding: 20px 24px;
+  background: var(--editor-canvas);
+}
+
+/* ---- Preview toolbar ------------------------------------------------------ */
+.editor-hifi-shell .editor-renderer-header {
   display: flex;
   flex: 0 0 auto;
-  min-width: 0;
-  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  height: 45px;
+  padding: 0 24px 0 20px;
+  border-bottom: 1px solid var(--editor-divider);
+  background: var(--editor-toolbar);
+  color: var(--editor-text);
 }
 
-.editor-hifi-shell .editor-document-chrome-slot--hidden {
+.editor-hifi-shell .editor-renderer-tabs {
+  display: flex;
+  align-self: stretch;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.editor-hifi-shell .editor-page-tabs {
+  align-items: stretch;
+  gap: 4px;
+  scrollbar-width: none;
+}
+
+.editor-hifi-shell .editor-page-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.editor-hifi-shell .editor-document-chrome {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  min-height: 64px;
-  padding: 12px 24px;
-  box-sizing: border-box;
-}
-
-.editor-hifi-shell .editor-document-file {
-  display: flex;
-  flex: 0 1 120px;
-  align-items: center;
-  min-width: 0;
-  width: 120px;
-  max-width: 120px;
-  padding: 0;
-  border: 0 !important;
-  border-radius: 0;
-  background: transparent !important;
-}
-
-.editor-hifi-shell .editor-document-file input {
-  width: 90px;
-  max-width: 90px;
-  height: 32px;
-  padding: 0 !important;
-  font-size: 16px;
+.editor-hifi-shell .editor-page-tab {
+  height: 44px;
+  padding: 0 12px;
+  font-size: 11px;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border-color: transparent !important;
-  background: transparent !important;
-  color: var(--editor-ink) !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.editor-hifi-shell .editor-document-file input:focus {
-  border-color: var(--editor-line-strong) !important;
+.editor-hifi-shell .editor-page-tab--active {
+  color: var(--editor-link);
 }
 
-.editor-hifi-shell .editor-document-file button {
-  color: var(--editor-muted) !important;
-}
-
-.editor-hifi-shell .editor-document-file button:hover {
-  color: var(--editor-accent) !important;
-}
-
-.editor-hifi-shell .editor-document-save {
-  flex: 0 0 auto;
-  pointer-events: none;
-}
-
-.editor-hifi-shell .editor-document-save [data-testid='header-savestate'] {
-  color: var(--editor-muted) !important;
-  font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
-  font-size: 12px;
-}
-
-.editor-hifi-shell .editor-document-save [data-testid='header-savestate'] .text-ok {
-  color: var(--editor-accent) !important;
-}
-
-.editor-hifi-shell .editor-document-save [data-testid='header-savestate'][data-state='local']::before {
+/* Anchored to the label (not the tab) so a delete × does not shift it off-centre.
+   It extends over the tab's 12px side padding. */
+.editor-hifi-shell .editor-page-tab--active .editor-page-tab-label::after {
   content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--editor-accent);
+  position: absolute;
+  right: -12px;
+  bottom: 0;
+  left: -12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--editor-brand);
 }
 
-.editor-hifi-shell .editor-document-actions {
+.editor-hifi-shell .editor-page-tab--idle {
+  color: var(--editor-text-secondary);
+}
+
+.editor-hifi-shell .editor-page-tab--idle:hover {
+  color: var(--editor-text);
+}
+
+.editor-hifi-shell .editor-page-tab:focus-visible {
+  outline-offset: -2px;
+}
+
+.editor-hifi-shell .editor-page-tab button {
+  color: var(--editor-text-secondary);
+}
+
+.editor-hifi-shell .editor-page-tab input {
+  height: 28px;
+  border-color: var(--editor-focus) !important;
+  background: var(--editor-surface) !important;
+  color: var(--editor-text) !important;
+}
+
+.editor-hifi-shell .editor-page-add {
+  align-self: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 6px;
+  color: var(--editor-text-secondary) !important;
+}
+
+.editor-hifi-shell .editor-page-add:hover {
+  background: var(--editor-hover) !important;
+  color: var(--editor-text) !important;
+}
+
+.editor-hifi-shell .editor-renderer-tools {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
+  gap: 24px;
   margin-left: auto;
 }
 
-.editor-hifi-shell .editor-document-share {
+.editor-hifi-shell .editor-download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--editor-secondary-border);
+  border-radius: 6px;
+  background: var(--editor-secondary-bg);
+  color: var(--editor-secondary-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.editor-hifi-shell .editor-download-button:hover {
+  background: var(--editor-secondary-hover);
+}
+
+.editor-hifi-shell .editor-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-hifi-shell .editor-zoom-gap {
+  width: 8px;
+}
+
+.editor-hifi-shell .editor-zoom-label {
+  min-width: 40px;
+  height: 32px;
+  padding: 0 2px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--editor-text);
+}
+
+.editor-hifi-shell .editor-zoom-label:hover {
+  background: var(--editor-hover);
+}
+
+/* ---- Console ------------------------------------------------------------- */
+.editor-hifi-shell .editor-console {
+  flex-shrink: 0;
+  border-top: 1px solid var(--editor-divider);
+  background: var(--editor-surface);
+  color: var(--editor-text-secondary);
+}
+
+.editor-hifi-shell .editor-console--collapsed {
+  height: 44px;
+  overflow: hidden;
+}
+
+.editor-hifi-shell .editor-console-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 43px;
+  padding: 0 24px 0 16px;
+  user-select: none;
+}
+
+.editor-hifi-shell .editor-console-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
+}
+
+.editor-hifi-shell .editor-console-toggle:hover {
+  color: var(--editor-text);
+}
+
+.editor-hifi-shell .editor-console-toggle--error {
+  color: var(--editor-danger);
+}
+
+.editor-hifi-shell .editor-console-chevron {
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
-  width: 92px;
+  transition: transform 0.15s ease;
 }
 
-.editor-hifi-shell .editor-document-share button {
-  width: 100%;
-  background: var(--editor-panel) !important;
-  border-color: var(--editor-line-strong) !important;
-  color: var(--editor-ink) !important;
+.editor-hifi-shell .editor-console-errors {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--editor-danger-soft);
+  color: var(--editor-danger);
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.editor-hifi-shell .editor-document-share button:hover {
-  background: var(--editor-accent-soft) !important;
+.editor-hifi-shell .editor-console-clear {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
 }
 
-.editor-hifi-shell .editor-document-present {
-  flex: 0 0 auto;
-  width: 116px;
-  justify-content: center;
-  background: var(--editor-accent-solid) !important;
-  border-color: var(--editor-accent-solid) !important;
-  color: #fff !important;
+.editor-hifi-shell .editor-console-clear:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
 }
 
-/* On desktop the document chrome belongs to the floating preview card. The
-   existing AppHeader still owns these controls and their behavior; the explicit
-   slot above puts them in the floating card without coupling their position to
-   the viewport or the current split percentage. */
-@media (min-width: 768px) {
-  .editor-hifi-shell {
-    position: relative;
-  }
+.editor-hifi-shell .editor-console-log {
+  color: var(--editor-text);
+}
 
-  .editor-hifi-shell .editor-pane-header {
-    min-height: 64px;
-    padding-left: 24px !important;
-    padding-right: 24px !important;
-  }
+.editor-hifi-shell .editor-console-error {
+  color: var(--editor-danger);
+}
 
-  .editor-hifi-shell .editor-hifi-header {
-    position: static;
-    z-index: 20;
-    overflow: visible;
-  }
+.editor-hifi-shell .editor-console-eval {
+  border-top: 1px solid var(--editor-divider);
+  color: var(--editor-text);
+}
 
-  .editor-hifi-shell .editor-global-account-divider {
+.editor-hifi-shell .editor-console-eval::placeholder {
+  color: var(--editor-text-faint);
+}
+
+/* ---- Portals opened from the editor (menus, selects) --------------------- */
+.editor-hifi-menu,
+.editor-hifi-select-menu {
+  background: var(--editor-surface) !important;
+  border-color: var(--editor-border) !important;
+  color: var(--editor-text) !important;
+  box-shadow: 0 10px 28px rgba(28, 54, 80, 0.16) !important;
+}
+
+.editor-hifi-menu [data-highlighted],
+.editor-hifi-select-menu [data-highlighted] {
+  background: var(--editor-hover) !important;
+  color: var(--editor-link) !important;
+}
+
+.editor-hifi-menu [class*='text-ondark-'],
+.editor-hifi-select-menu [class*='text-ondark-'] {
+  color: var(--editor-text-secondary) !important;
+}
+
+.editor-hifi-menu [class*='bg-ink-line'],
+.editor-hifi-select-menu [class*='bg-ink-line'] {
+  background: var(--editor-border) !important;
+}
+
+/* ---- Mid-width desktop: keep the header on one line --------------------- */
+@media (min-width: 768px) and (max-width: 1180px) {
+  .editor-hifi-shell .editor-button-label,
+  .editor-hifi-shell .editor-document-share button span,
+  .editor-hifi-shell .editor-download-label {
     display: none;
   }
 
-  .editor-hifi-shell .editor-global-account {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .editor-hifi-shell .editor-document-fork,
+  .editor-hifi-shell .editor-document-share button,
+  .editor-hifi-shell .editor-document-present {
+    width: 36px;
+    padding: 0;
   }
 
-  .editor-hifi-shell .editor-breadcrumb-separator {
-    display: none;
+  .editor-hifi-shell .editor-document-share {
+    width: 36px;
   }
 
-  .editor-hifi-shell > [data-testid='report-bug-fab'] {
-    top: 92px;
-    left: 270px;
-    right: auto;
-    bottom: auto;
-    background: transparent !important;
-    color: var(--editor-muted) !important;
-    box-shadow: none !important;
+  .editor-hifi-shell .editor-document-save {
+    margin-left: 16px;
   }
 
-  .editor-hifi-shell > [data-testid='report-bug-fab']:hover {
-    background: var(--editor-accent-soft) !important;
-    color: var(--editor-accent) !important;
+  .editor-hifi-shell .editor-global-actions {
+    margin-left: 16px;
+  }
+
+  .editor-hifi-shell .editor-renderer-tools {
+    gap: 12px;
+  }
+
+  .editor-hifi-shell .editor-zoom-group {
+    gap: 2px;
+  }
+
+  .editor-hifi-shell .editor-zoom-gap {
+    width: 2px;
   }
 }
 
-/* Mobile keeps document actions on both tabs in a compact two-row header. */
+@media (min-width: 768px) and (max-width: 960px) {
+  .editor-hifi-shell .editor-document-save {
+    display: none;
+  }
+}
+
+/* ---- Mobile (< md): two-row header, Edit | Preview tabs ------------------- */
 @media (max-width: 767px) {
   .editor-hifi-shell .editor-hifi-header {
     display: grid;
-    grid-template-columns: 56px 34px minmax(0, 1fr) auto;
-    gap: 6px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 6px;
     height: auto;
     padding: 8px 12px;
   }
 
-  .editor-hifi-shell .editor-hifi-header > .flex-1,
-  .editor-hifi-shell .editor-global-account-divider,
-  .editor-hifi-shell .editor-document-chrome-slot {
+  .editor-hifi-shell .editor-header-nav {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .editor-hifi-shell .editor-header-spacer {
     display: none;
   }
 
-  .editor-hifi-shell .editor-hifi-header [data-testid='header-menu'] {
-    padding-right: 0;
-    border-right: 0;
+  .editor-hifi-shell .editor-global-actions {
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 0;
   }
 
   .editor-hifi-shell .editor-document-chrome {
-    display: contents;
-  }
-
-  .editor-hifi-shell .editor-global-actions {
-    grid-column: 3 / 5;
-    grid-row: 1;
-    justify-self: end;
-  }
-
-  .editor-hifi-shell .editor-global-account {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .editor-hifi-shell .editor-document-file {
-    grid-column: 1 / 4;
+    grid-column: 1 / 3;
     grid-row: 2;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-  }
-
-  .editor-hifi-shell .editor-document-file input {
-    flex: 1;
-    width: 0;
-    max-width: none;
+    margin-left: 0;
   }
 
   .editor-hifi-shell .editor-document-save {
     display: none;
   }
 
+  .editor-hifi-shell .editor-title-input {
+    max-width: 100%;
+  }
+
   .editor-hifi-shell .editor-document-actions {
-    grid-column: 4;
+    grid-column: 3;
     grid-row: 2;
     gap: 6px;
-    margin-left: 0;
   }
 
+  .editor-hifi-shell .editor-button-label,
+  .editor-hifi-shell .editor-document-share button span {
+    display: none;
+  }
+
+  .editor-hifi-shell .editor-document-fork,
   .editor-hifi-shell .editor-document-share,
-  .editor-hifi-shell .editor-document-present {
-    width: 36px;
-  }
-
   .editor-hifi-shell .editor-document-share button,
   .editor-hifi-shell .editor-document-present {
+    width: 36px;
     padding: 0;
   }
 
-  .editor-hifi-shell .editor-hifi-header .editor-document-share button {
-    background: var(--editor-panel) !important;
+  .editor-hifi-shell .editor-source-pane {
+    padding: 12px 12px 0;
   }
 
-  .editor-hifi-shell .editor-hifi-header .editor-document-present {
-    background: var(--editor-accent-solid) !important;
-    border-color: var(--editor-accent-solid) !important;
-    color: #fff !important;
-  }
-}
-
-.editor-hifi-shell .editor-layout-mobile,
-.editor-hifi-shell .editor-mobile-tabs {
-  background: var(--editor-bg);
-  border-color: var(--editor-line) !important;
-}
-
-.editor-hifi-shell .editor-mobile-tabs [aria-pressed='true'] {
-  background: var(--editor-accent-soft) !important;
-  color: var(--editor-ink) !important;
-}
-
-.editor-hifi-shell .editor-mobile-tabs [aria-pressed='false'] {
-  color: var(--editor-muted) !important;
-}
-
-/* The menu and Select content are Radix portals, so they are marked explicitly
-   at the call site rather than depending on their ancestor in the app tree. */
-.editor-hifi-menu,
-.editor-hifi-select-menu {
-  background: #fffefc !important;
-  border-color: #d6e4dc !important;
-  color: #2b514a !important;
-  box-shadow: 0 10px 28px rgba(43, 81, 74, 0.14) !important;
-}
-
-.editor-hifi-menu [data-highlighted],
-.editor-hifi-select-menu [data-highlighted] {
-  background: #e0f0eb !important;
-  color: #0f6d58 !important;
-}
-
-.editor-hifi-menu [class*='text-ondark-'],
-.editor-hifi-select-menu [class*='text-ondark-'] {
-  color: #5c6e61 !important;
-}
-
-.editor-hifi-menu [class*='bg-ink-line'],
-.editor-hifi-select-menu [class*='bg-ink-line'] {
-  background: #d6e4dc !important;
-}
-
-@media (max-width: 767px) {
   .editor-hifi-shell .editor-preview-stage {
     padding: 0;
   }
 
   .editor-hifi-shell .editor-preview-panel {
     border-radius: 0;
-    border-left: 0;
-    border-right: 0;
     box-shadow: none;
   }
+
+  .editor-hifi-shell .editor-renderer-header {
+    padding: 0 12px;
+  }
+
+  .editor-hifi-shell .editor-renderer-tools {
+    gap: 8px;
+  }
+
+  .editor-hifi-shell .editor-download-label {
+    display: none;
+  }
+
+  .editor-hifi-shell .editor-download-button {
+    padding: 0 8px;
+  }
+}
+
+.editor-hifi-shell .editor-layout-mobile,
+.editor-hifi-shell .editor-mobile-tabs {
+  background: var(--editor-bg);
+  border-color: var(--editor-divider) !important;
+}
+
+.editor-hifi-shell .editor-mobile-tabs [aria-pressed='true'] {
+  background: var(--editor-surface) !important;
+  color: var(--editor-text) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.editor-hifi-shell .editor-mobile-tabs [aria-pressed='false'] {
+  color: var(--editor-text-secondary) !important;
 }

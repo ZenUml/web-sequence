@@ -6,7 +6,16 @@ import { cn } from '../ui/cn';
 
 type MobileTab = 'edit' | 'preview';
 
-export function Layout({ editor, preview }: { editor: React.ReactNode; preview: React.ReactNode }) {
+export function Layout({
+  editor,
+  preview,
+  editorCollapsed = false,
+}: {
+  editor: React.ReactNode;
+  preview: React.ReactNode;
+  /** Desktop only: hide the code pane and give the preview the full width. */
+  editorCollapsed?: boolean;
+}) {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const item = useEditorStore((s) => s.currentItem);
@@ -16,18 +25,17 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
   useEffect(() => {
     // Mobile renders a single pane (no split.js) — never instantiate Split there.
     // `isMobile` is in the dep array so split re-inits when crossing the breakpoint.
-    if (isMobile) return;
+    if (isMobile || editorCollapsed) return;
     if (!leftRef.current || !rightRef.current) return;
-    // The Hi-Fi baseline gives the renderer the larger working area: at a 1440px
-    // desktop viewport the preview card begins around x=392px, with the editor
-    // retaining enough width for readable DSL. A persisted drag still wins.
-    const sizes = item?.mainSizes ?? [26.7, 73.3];
+    // The editor design gives the renderer the larger working area: at a 1440px
+    // desktop viewport the code area spans x24..368 and the preview card begins
+    // at x392 (12px gutter). A persisted drag still wins.
+    const sizes = useEditorStore.getState().currentItem?.mainSizes ?? item?.mainSizes ?? [26.8, 73.2];
     let inst: ReturnType<typeof Split> | undefined;
     try {
       inst = Split([leftRef.current, rightRef.current], {
-        // A slightly wider gutter gives the split an explicit draggable affordance
-        // at desktop sizes while preserving the same two-pane interaction.
-        sizes, minSize: 240, gutterSize: 10, direction: 'horizontal',
+        // A 12px gutter: wide enough to grab, invisible until hover/focus.
+        sizes, minSize: 240, gutterSize: 12, direction: 'horizontal',
         gutter: (_index, direction) => {
           const gutter = document.createElement('div');
           gutter.className = `editor-split-gutter gutter gutter-${direction}`;
@@ -58,9 +66,10 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
     }
     return () => inst?.destroy();
     // Intentionally read `mainSizes` once at init (desktop must stay identical — adding
-    // `item` would re-init split on every page switch). Re-init only on breakpoint change.
+    // `item` would re-init split on every page switch). Re-init on breakpoint change and
+    // when the code pane is shown again (restoring the persisted split sizes).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile]);
+  }, [isMobile, editorCollapsed]);
 
   // Mobile (< md): single pane with a segmented Edit | Preview control (design §03).
   if (isMobile) {
@@ -100,9 +109,10 @@ export function Layout({ editor, preview }: { editor: React.ReactNode; preview: 
 
   // Desktop (≥ md): unchanged split.js two-pane (editor | preview).
   return (
-    <div className="editor-layout flex h-full w-full">
-      <div ref={leftRef} data-testid="editor-region" aria-label="Editor" className="editor-region h-full min-w-0 overflow-hidden">{editor}</div>
-      <div ref={rightRef} data-testid="preview-region" aria-label="Preview" className="preview-region h-full min-w-0 overflow-hidden">{preview}</div>
+    <div className={cn('editor-layout flex h-full w-full', editorCollapsed && 'editor-layout--collapsed')}>
+      {/* Collapsed: the code pane stays mounted (editor state survives) but hidden. */}
+      <div ref={leftRef} data-testid="editor-region" aria-label="Editor" hidden={editorCollapsed} className={cn('editor-region h-full min-w-0 overflow-hidden', editorCollapsed && 'hidden')}>{editor}</div>
+      <div ref={rightRef} data-testid="preview-region" aria-label="Preview" className={cn('preview-region h-full min-w-0 overflow-hidden', editorCollapsed && 'w-full')}>{preview}</div>
     </div>
   );
 }

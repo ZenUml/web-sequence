@@ -120,16 +120,37 @@ export async function acceptCompletion(page: Page): Promise<void> {
 }
 
 /**
- * Count error markers shown in the editor. The DSL editor wires NO linter
- * (modes.ts: the Lezer linter is intentionally disabled; AppRoot passes no
- * diagnostics to dsl-editor), so on valid DSL this MUST be 0 — the assertion
- * guards against a future linter false-positiving on renderer-valid DSL.
+ * Count error markers shown in the editor (inline ranges + gutter markers, so one
+ * diagnostic counts 2). The DSL editor's only diagnostics source is the
+ * @zenuml/core language server (CodeEditor lspDiagnosticsLinter, since edae7b6e),
+ * which reports parser errors. The Lezer linter stays disabled and AppRoot passes
+ * no diagnostics to dsl-editor. On renderer-valid DSL this MUST be 0: the assertion
+ * guards against the linter false-positiving on valid DSL.
  */
 export async function errorMarkerCount(page: Page): Promise<number> {
   const root = editorRoot(page);
   const inline = await root.locator('.cm-lintRange-error').count();
   const gutter = await root.locator('.cm-lint-marker-error').count();
   return inline + gutter;
+}
+
+/**
+ * Texts of the lint tooltips for each inline error range, read by hovering it.
+ * Used to pin WHICH diagnostic is shown, not just that one exists.
+ */
+export async function errorMessages(page: Page): Promise<string[]> {
+  const ranges = editorRoot(page).locator('.cm-lintRange-error');
+  const n = await ranges.count();
+  const messages: string[] = [];
+  for (let i = 0; i < n; i++) {
+    await ranges.nth(i).hover();
+    const tip = page.locator('.cm-tooltip-lint').first();
+    await tip.waitFor();
+    messages.push(await tip.innerText());
+    await page.mouse.move(0, 0);
+    await tip.waitFor({ state: 'detached' });
+  }
+  return messages;
 }
 
 /**

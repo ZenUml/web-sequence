@@ -281,16 +281,50 @@ describe('AppRoot', () => {
     expect(useUiStore.getState().fullscreen).toBe(true);
   });
 
-  it('mounts document controls in the preview slot and hides that slot in fullscreen', async () => {
-    const { container, getByTestId } = render(<AppRoot />);
-    const slot = await screen.findByTestId('editor-document-chrome-slot');
-    await waitFor(() => expect(slot.querySelector('[data-testid="editor-document-chrome"]')).toBeTruthy());
-    expect(slot.querySelector('[data-testid="header-title"]')).toBeTruthy();
+  it('renders document controls in the app header, not inside the preview card', async () => {
+    const { container } = render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const header = container.querySelector('header')!;
+    expect(header.querySelector('[data-testid="header-title"]')).toBeTruthy();
+    expect(header.querySelector('[data-testid="header-fork"]')).toBeTruthy();
+    expect(header.querySelector('[data-testid="header-present"]')).toBeTruthy();
+    expect(screen.queryByTestId('editor-document-chrome-slot')).toBeNull();
     expect(container.querySelectorAll('[data-testid="header-title"]')).toHaveLength(1);
+    // Present lives only in the header (no duplicate renderer Present).
+    expect(screen.queryByTestId('renderer-present')).toBeNull();
+  });
 
-    await userEvent.click(getByTestId('header-present'));
-    expect(slot).toHaveClass('editor-document-chrome-slot--hidden');
-    expect(slot).toHaveAttribute('aria-hidden', 'true');
+  it('appearance toggle applies immediately and persists via the settings path', async () => {
+    const syncSet = vi.spyOn(syncStore, 'set');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await userEvent.click(screen.getByTestId('header-appearance'));
+    await waitFor(() => expect(document.documentElement.dataset.appearance).toBe('dark'));
+    expect(syncSet).toHaveBeenCalledWith('appearance', 'dark');
+    await userEvent.click(screen.getByTestId('header-appearance'));
+    await waitFor(() => expect(document.documentElement.dataset.appearance).toBe('light'));
+    expect(syncSet).toHaveBeenCalledWith('appearance', 'light');
+    syncSet.mockRestore();
+  });
+
+  it('sidebar toggle hides and restores the code pane', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const region = screen.getByTestId('editor-region');
+    expect(region).not.toHaveAttribute('hidden');
+    await userEvent.click(screen.getByTestId('header-toggle-editor'));
+    expect(screen.getByTestId('editor-region')).toHaveAttribute('hidden');
+    expect(screen.getByTestId('header-toggle-editor')).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(screen.getByTestId('header-toggle-editor'));
+    expect(screen.getByTestId('editor-region')).not.toHaveAttribute('hidden');
+  });
+
+  it('renders Report a bug inline in the code column, beside Custom CSS', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const bug = screen.getByTestId('report-bug-fab');
+    expect(screen.getByTestId('editor-region')).toContainElement(bug);
+    expect(bug.closest('.editor-css-panel-strip')).toBeTruthy();
   });
 
   it('renders the AppHeader with title input + save-state indicator', async () => {

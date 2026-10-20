@@ -94,7 +94,10 @@ export interface Settings {
   preserveConsoleLogs: boolean;
   refreshOnResize: boolean;
   lightVersion: boolean;
+  appearance: Appearance;           // global light/dark app chrome, default 'light'
 }
+
+export type Appearance = 'light' | 'dark';
 
 export const DEFAULT_SETTINGS: Settings = {
   preserveLastCode: true, replaceNewTab: false,
@@ -109,4 +112,5 @@ export const DEFAULT_SETTINGS: Settings = {
   // the app menu. (Anonymous/read-only saves are still guarded inside save().)
   autoPreview: true, autoSave: true, preserveConsoleLogs: true,
   refreshOnResize: false, lightVersion: false,
+  appearance: 'light',
 };

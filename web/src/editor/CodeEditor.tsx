@@ -7,7 +7,7 @@ import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { indentUnit } from '@codemirror/language';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
-import { forwardRef, useEffect, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_THEME, resolveTheme } from './themes';
 import { languageExtension, type EditorLanguage } from './modes';
 import { editorKeymap, formatCss } from './keymap';
@@ -143,6 +143,12 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  // Stable handler for <CodeMirror onChange>. @uiw lists `onChange` in its
+  // StateEffect.reconfigure deps, and parents pass a fresh function every render, so
+  // passing `onChange` through directly reconfigured the editor on every keystroke.
+  // Reconfigure drops the snippet state that snippet() appends lazily, so slash-command
+  // tab stops vanished right after insertion (same failure mode as BASIC_SETUP_* below).
+  const stableOnChange = useCallback((next: string) => onChangeRef.current(next), []);
   // Keep latest onZoneChange without rebuilding extensions — the updateListener
   // reads through this ref, so the `extensions` memo can stay keyed on `language`.
   const onZoneChangeRef = useRef(onZoneChange);
@@ -335,7 +341,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
         theme="none"
         readOnly={readOnly}
         extensions={extensions}
-        onChange={onChange}
+        onChange={stableOnChange}
         onCreateEditor={(view) => {
           viewRef.current = view;
         }}
