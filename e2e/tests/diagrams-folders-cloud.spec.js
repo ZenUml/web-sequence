@@ -84,7 +84,7 @@ async function openHub(page, email, appearance = 'light') {
   await page.evaluate((a) => localStorage.setItem('appearance', JSON.stringify(a)), appearance);
   await signInViaEmulator(page, { email });
   await gotoHome(page);
-  await expect(page.locator('[data-testid="home-avatar"]')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-testid="profile-trigger"]')).toBeVisible({ timeout: 15_000 });
 }
 
 async function folderIdOf(itemId) {
@@ -356,11 +356,15 @@ test.describe('390 touch', () => {
 test.describe('390 touch folders', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('FDR-11: tap a folder, then rename and delete it from the strip', async ({ page }) => {
+  test('FDR-11: open the folder drawer, then rename and delete its folder', async ({ page }) => {
     const email = 'fdr11@test.local';
     const uid = await seedAccount(email, { items: [{ id: 'fdr11-a', title: 'Sign-in flow', folderId: 'fd-auth' }] });
     await openHub(page, email);
+    await page.getByRole('button', { name: 'Folders' }).tap();
     await page.getByTestId('folder-fd-auth').tap();
+    // Selecting a folder closes the mobile drawer. Reopen it to reach that row's
+    // Rename and Delete controls.
+    await page.getByRole('button', { name: 'Folders' }).tap();
     const rename = page.getByRole('button', { name: 'Rename folder Authentication' });
     await expect(rename).toBeInViewport();
     await rename.tap();
@@ -371,7 +375,6 @@ test.describe('390 touch folders', () => {
     await expect.poll(() => folderNames(uid)).toEqual(['Checkout', 'Identity']);
     await expect(page.getByTestId('folder-rename-fd-auth')).toBeHidden();
     await expect(page.getByTestId('folder-fd-auth')).toContainText('Identity');
-    await page.getByTestId('folder-fd-auth').tap();
     const del = page.getByRole('button', { name: 'Delete folder Identity' });
     await expect(del).toBeInViewport();
     await del.tap();

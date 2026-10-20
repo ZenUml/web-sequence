@@ -62,12 +62,14 @@ function seedItem(uid, id, extra = {}) {
 // §9 Authentication  (AUTH-1..6)
 // ════════════════════════════════════════════════════════════════════════════
 
-test('AUTH-1 — login modal lists Google/GitHub/Facebook/Twitter', async ({ page }) => {
+test('AUTH-1 — login modal lists the supported Google and GitHub providers', async ({ page }) => {
   await gotoFresh(page);
   await page.locator('[data-testid="header-login"]').click();
-  for (const id of ['google', 'github', 'facebook', 'twitter']) {
+  for (const id of ['google', 'github']) {
     await expect(page.locator(`[data-testid="login-${id}"]`)).toBeVisible();
   }
+  await expect(page.locator('[data-testid="login-facebook"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="login-twitter"]')).toHaveCount(0);
 });
 
 test('AUTH-2 — sign-in → profile menu shows the plan row (free)', async ({ page }) => {
@@ -335,7 +337,7 @@ test('SHR-6 — Fork a shared item → owned editable copy (leaves readonly)', a
 test('SHR-7 — bad share link → ShareErrorNotice with "Start fresh"', async ({ page }) => {
   await page.goto('/?id=does-not-exist&share-token=bad');
   await expect(page.locator('[data-testid="share-error"]')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('[data-testid="share-error-fresh"]')).toBeVisible();
+  await expect(page.locator('[data-testid="share-error-home"]')).toBeVisible();
 });
 
 test('SHR-8 — Share button disabled for read-only items', async ({ page }) => {
@@ -347,7 +349,8 @@ test('SHR-8 — Share button disabled for read-only items', async ({ page }) => 
   await signInViaEmulator(page);
   await page.goto(`/?id=${id}&share-token=${token}`);
   await expect(editorLocator(page)).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('[data-testid="share-button"]')).toBeDisabled();
+  // Read-only diagrams do not offer a share control, so they cannot be re-shared.
+  await expect(page.locator('[data-testid="share-button"]')).toHaveCount(0);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
