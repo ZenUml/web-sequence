@@ -114,25 +114,22 @@ test.beforeEach(async ({ page }) => {
 // ──────────────────────────────────────────────────────────────────────────────
 // ANL-1: landed_in_editor fires once per editor boot, carrying the bootKind label.
 //
-// On a fresh slate (storage cleared by openEditor's default navigation reaching a
-// no-last-code state) bare '/' boots and useBootItem resolves to kind 'new', so
-// onResolved → track('landed_in_editor', {label:'new'}). We assert EXACTLY ONE such
-// event fires for the single boot, and that its label is a real bootKind.
+// Playwright gives each test a fresh browser context. Remove the last-code value
+// before the single measured navigation; then bare '/' resolves to kind 'new' and
+// onResolved → track('landed_in_editor', {label:'new'}). Do not navigate to '/' once
+// to clear storage and then again to measure: the first boot's fire-and-forget POST
+// can arrive after a buffer reset and be mistaken for a duplicate from the second.
 // ──────────────────────────────────────────────────────────────────────────────
 test('ANL-1: landed_in_editor fires once per editor boot with a bootKind label', async ({
   page,
 }) => {
   const analytics = await interceptAnalytics(page);
 
-  // Start from a clean slate so the boot resolution is deterministic ('new').
-  // The FIRST goto('/') exists only to get an origin we can clear storage on — it
-  // boots the editor too (and fires its own landed_in_editor). We then RESET the
-  // captured buffer so the assertion measures exactly ONE boot: the openEditor
-  // navigation below. (Two boots → two events confirms per-boot firing; we isolate
-  // a single boot here to assert the once-per-boot count cleanly.)
-  await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
-  analytics.events.length = 0; // discard the pre-clear boot's events
+  // The test gets a fresh context; keep the app-origin navigation to one editor boot.
+  // This init script is installed before it and does not wait for application boot.
+  await page.addInitScript(() => {
+    try { localStorage.removeItem('code'); } catch { /* storage may be unavailable */ }
+  });
   await openEditor(page);
 
   // landed_in_editor is emitted from useBootItem.onResolved during boot. Poll until
@@ -146,18 +143,12 @@ test('ANL-1: landed_in_editor fires once per editor boot with a bootKind label',
   await page.waitForTimeout(500);
 
   const landed = analytics.of('landed_in_editor');
-  // Exactly once per THIS boot — useBootItem guards onResolved with a booted ref, so
-  // a StrictMode double-mount must not double-fire within a single boot.
+  // Exactly once for the single editor boot.
   expect(landed.length).toBe(1);
 
   // The label is the resolved bootKind — a REAL BootResult kind, never empty/garbage.
-  // We don't pin the exact kind here (the prior boot's seeded sample can populate the
-  // last-code slot, so this single boot may resolve to 'new' OR 'lastcode' depending
-  // on ordering); the dedicated 'lastcode' test below proves the label TRACKS the
-  // resolution branch. What this test asserts is the once-per-boot count + a valid,
-  // navigation-category label envelope.
-  const VALID_BOOT_KINDS = ['new', 'lastcode', 'item', 'code', 'shared'];
-  expect(VALID_BOOT_KINDS).toContain(landed[0].label);
+  // With the last-code slot cleared in the fresh context, this boot resolves to new.
+  expect(landed[0].label).toBe('new');
   // Envelope parity: editor-boot events are category 'navigation'.
   expect(landed[0].category).toBe('navigation');
 });
