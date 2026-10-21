@@ -1,0 +1,755 @@
+[
+  {
+    "name": "theme-default-html-png-alpha",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "png",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 26728,
+      "partial": 36,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "theme-default-html-png-backed",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "png",
+    "backingColor": "#202833",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 185640
+    }
+  },
+  {
+    "name": "theme-default-html-svg-alpha",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "svg",
+    "width": 238,
+    "height": 195,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 6676,
+      "partial": 28,
+      "opaque": 39706
+    }
+  },
+  {
+    "name": "theme-default-html-svg-backed",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "svg",
+    "backingColor": "#202833",
+    "width": 238,
+    "height": 195,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 46410
+    }
+  },
+  {
+    "name": "theme-default-svg-png-alpha",
+    "theme": "theme-default",
+    "renderMode": "svg",
+    "format": "png",
+    "width": 444,
+    "height": 358,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 40,
+      "partial": 36,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "theme-default-svg-png-backed",
+    "theme": "theme-default",
+    "renderMode": "svg",
+    "format": "png",
+    "backingColor": "#202833",
+    "width": 444,
+    "height": 358,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 158952
+    }
+  },
+  {
+    "name": "theme-default-svg-svg-alpha",
+    "theme": "theme-default",
+    "renderMode": "svg",
+    "format": "svg",
+    "width": 222,
+    "height": 179,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 4,
+      "partial": 28,
+      "opaque": 39706
+    }
+  },
+  {
+    "name": "theme-default-svg-svg-backed",
+    "theme": "theme-default",
+    "renderMode": "svg",
+    "format": "svg",
+    "backingColor": "#202833",
+    "width": 222,
+    "height": 179,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 39738
+    }
+  },
+  {
+    "name": "theme-dark-html-png-alpha",
+    "theme": "theme-dark",
+    "renderMode": "html",
+    "format": "png",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 26728,
+      "partial": 36,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "theme-dark-html-png-backed",
+    "theme": "theme-dark",
+    "renderMode": "html",
+    "format": "png",
+    "backingColor": "#202833",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 185640
+    }
+  },
+  {
+    "name": "theme-dark-html-svg-alpha",
+    "theme": "theme-dark",
+    "renderMode": "html",
+    "format": "svg",
+    "width": 238,
+    "height": 195,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 6676,
+      "partial": 28,
+      "opaque": 39706
+    }
+  },
+  {
+    "name": "theme-dark-html-svg-backed",
+    "theme": "theme-dark",
+    "renderMode": "html",
+    "format": "svg",
+    "backingColor": "#202833",
+    "width": 238,
+    "height": 195,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 46410
+    }
+  },
+  {
+    "name": "theme-dark-svg-png-alpha",
+    "theme": "theme-dark",
+    "renderMode": "svg",
+    "format": "png",
+    "width": 444,
+    "height": 358,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 40,
+      "partial": 36,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "theme-dark-svg-png-backed",
+    "theme": "theme-dark",
+    "renderMode": "svg",
+    "format": "png",
+    "backingColor": "#202833",
+    "width": 444,
+    "height": 358,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 158952
+    }
+  },
+  {
+    "name": "theme-dark-svg-svg-alpha",
+    "theme": "theme-dark",
+    "renderMode": "svg",
+    "format": "svg",
+    "width": 222,
+    "height": 179,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 4,
+      "partial": 28,
+      "opaque": 39706
+    }
+  },
+  {
+    "name": "theme-dark-svg-svg-backed",
+    "theme": "theme-dark",
+    "renderMode": "svg",
+    "format": "svg",
+    "backingColor": "#202833",
+    "width": 222,
+    "height": 179,
+    "corners": [
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ],
+      [
+        32,
+        40,
+        51,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 39738
+    }
+  },
+  {
+    "name": "custom-colors-alpha",
+    "theme": "theme-dark",
+    "renderMode": "html",
+    "format": "png",
+    "css": ".zenuml .frame{background:#fff!important}.zenuml .participant{background:#0747a6!important;color:white!important}",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 26728,
+      "partial": 36,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "author-half-alpha",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "png",
+    "css": ".zenuml .bg-skin-canvas{background:rgba(255,0,0,.5)!important}",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        255,
+        0,
+        0,
+        128
+      ],
+      [
+        255,
+        0,
+        0,
+        128
+      ],
+      [
+        255,
+        0,
+        0,
+        128
+      ],
+      [
+        255,
+        0,
+        0,
+        128
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 26764,
+      "opaque": 158876
+    }
+  },
+  {
+    "name": "author-half-backed",
+    "theme": "theme-default",
+    "renderMode": "html",
+    "format": "png",
+    "backingColor": "#202833",
+    "css": ".zenuml .bg-skin-canvas{background:rgba(255,0,0,.5)!important}",
+    "width": 476,
+    "height": 390,
+    "corners": [
+      [
+        144,
+        20,
+        25,
+        255
+      ],
+      [
+        144,
+        20,
+        25,
+        255
+      ],
+      [
+        144,
+        20,
+        25,
+        255
+      ],
+      [
+        144,
+        20,
+        25,
+        255
+      ]
+    ],
+    "alphaCounts": {
+      "clear": 0,
+      "partial": 0,
+      "opaque": 185640
+    }
+  }
+]
