@@ -16,3 +16,5 @@ Frame and element colors remain painted. Only the default outer canvas is transp
 npm publication, WebSequence merge, push and deployments remain paused. No production release occurred during this local task.
 
 Blue follow-up (`55530f3d`): new and exact previously generated bundled Blue CSS now keep the outer canvas transparent. Author-edited CSS is preserved. 20 focused unit tests, typecheck and both Blue browser cases passed; actual PNG corners alpha 0 and frame alpha 255.
+
+Blue geometry follow-up (`fc1c7d53`): integrated arrow/activation alignment and lifeline starts below translucent headers. Updated Blue screenshot/export above; see ../blue-integrated/preview.html and geometry.json for same-candidate proof.
