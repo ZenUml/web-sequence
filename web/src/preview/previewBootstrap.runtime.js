@@ -194,19 +194,31 @@
       (async function () {
         try {
           var renderMode = (msg.options && msg.options.renderMode) || 'html';
+          var theme = (msg.options && msg.options.theme) || 'theme-default';
+          // Native HTML and SVG skins paint the diagram itself. Match the iframe
+          // page outside their bounds to the native dark canvas color.
+          var themeStyle = document.getElementById('zenuml-theme-base');
+          if (!themeStyle) {
+            themeStyle = document.createElement('style');
+            themeStyle.id = 'zenuml-theme-base';
+            document.head.insertBefore(themeStyle, document.getElementById('zenumlstyle'));
+          }
+          themeStyle.textContent = (theme === 'theme-dark' || theme === 'theme-clean-dark' || theme === 'theme-darcula')
+            ? 'html,body{background:#1f1f1f}'
+            : '';
           if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
             // Native vector SVG (mobile). Pure render — no React commit, no
             // onContentChange (the editor pane stays the source of truth on mobile).
-            // Clear any HTML-only skin correction left by a prior dark HTML render.
-            var previousThemeStyle = document.getElementById('zenuml-theme-base');
-            if (previousThemeStyle) previousThemeStyle.textContent = '';
             // renderToSvg is synchronous and measures text with canvas, so the
             // core's bundled font must be loaded first (app.render does this
             // itself). Loads once, never rejects; absent before @zenuml/core 4.4.
             if (typeof window.zenuml.ensureDiagramFontsLoaded === 'function') {
               await window.zenuml.ensureDiagramFontsLoaded();
             }
-            var result = window.zenuml.renderToSvg(msg.code, { theme: 'theme-default' });
+            if (typeof window.zenuml.ensureDiagramIconsLoaded === 'function') {
+              await window.zenuml.ensureDiagramIconsLoaded(msg.code);
+            }
+            var result = window.zenuml.renderToSvg(msg.code, { theme: theme });
             showSvgMount(result && result.svg);
             currentSvgResult = result || null;
             currentRenderMode = 'svg';
@@ -216,23 +228,6 @@
             showHtmlMount();
             currentSvgResult = null;
             currentRenderMode = 'html';
-            var theme = (msg.options && msg.options.theme) || 'theme-default';
-            // core 4.7.2's clean-dark skin leaves participant names blue on blue.
-            // This small base correction colors the iframe around the diagram.
-            // User CSS remains in #zenumlstyle and can override it.
-            var themeStyle = document.getElementById('zenuml-theme-base');
-            if (!themeStyle) {
-              themeStyle = document.createElement('style');
-              themeStyle.id = 'zenuml-theme-base';
-              document.head.insertBefore(themeStyle, document.getElementById('zenumlstyle'));
-            }
-            // Darcula (the editor's dark appearance): core 4.7.2 leaves the page and
-            // the outer .bg-skin-canvas wrapper white around the dark diagram.
-            themeStyle.textContent = theme === 'theme-clean-dark'
-              ? 'html,body{background:#111628}.theme-clean-dark .participant-name{color:#e8ecff}'
-              : theme === 'theme-darcula'
-                ? 'html,body{background:#2b2b2b}.zenuml .bg-skin-canvas{--color-bg-canvas:#2b2b2b}'
-                : '';
             await app.render(msg.code, {
               enableMultiTheme: false,
               enableParticipantStyleEditing: !!(msg.options && msg.options.enableParticipantStyleEditing),

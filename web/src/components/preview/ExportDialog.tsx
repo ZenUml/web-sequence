@@ -132,7 +132,7 @@ export function ExportDialog({ open, onOpenChange, snapshot, title, initialForma
               {snapshot && choice === 'match' && resolveExportTheme(snapshot, choice) === 'theme-default' && (
                 <p>The current diagram uses Light, so both theme choices look the same.</p>
               )}
-              {!svgAllowed && <p>{snapshot?.css.trim() ? 'Use PNG to preserve custom CSS. SVG uses a different diagram structure.' : 'SVG supports Light only. Choose Light to download SVG.'}</p>}
+              {!svgAllowed && snapshot?.css.trim() && <p>Use PNG to preserve custom CSS. SVG uses a different diagram structure.</p>}
               {!snapshot && <p role="status">The diagram is still rendering. Close this window and try again.</p>}
             </div>
             {error && <p role="alert" className="dl-error">{error}</p>}

@@ -28,8 +28,8 @@ describe('appearance', () => {
     expect(document.documentElement.dataset.appearance).toBe('light');
   });
 
-  it('maps dark appearance to the darcula renderer theme', () => {
-    expect(previewThemeFor('dark')).toBe('theme-darcula');
+  it('maps dark appearance to the native dark renderer theme', () => {
+    expect(previewThemeFor('dark')).toBe('theme-dark');
     expect(previewThemeFor('light')).toBe('theme-default');
   });
 });
@@ -39,8 +39,8 @@ it('keeps exact bundled styles on their Light base while arbitrary/edited CSS fo
     expect(previewThemeFor('dark', template.item.css)).toBe('theme-default');
     expect(previewThemeFor('dark', LEGACY_STYLE_TEMPLATE_CSS[template.id])).toBe('theme-default');
     expect(previewThemeFor('dark', template.item.css!.replace('#032C72', '#123456') + '\n/* user edit */')).toBe('theme-default');
-    expect(previewThemeFor('dark', LEGACY_STYLE_TEMPLATE_CSS[template.id] + '\n/* user edit */')).toBe('theme-darcula');
+    expect(previewThemeFor('dark', LEGACY_STYLE_TEMPLATE_CSS[template.id] + '\n/* user edit */')).toBe('theme-dark');
   }
-  expect(previewThemeFor('dark', '.participant{background:green}')).toBe('theme-darcula');
-  expect(previewThemeFor('dark', '')).toBe('theme-darcula');
+  expect(previewThemeFor('dark', '.participant{background:green}')).toBe('theme-dark');
+  expect(previewThemeFor('dark', '')).toBe('theme-dark');
 });

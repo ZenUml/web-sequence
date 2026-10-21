@@ -7,7 +7,7 @@
 // SURFACE NOTES:
 //   - The renderer header's Download diagram control opens ExportDialog, which
 //     previews the current diagram and downloads PNG or SVG. SVG is intentionally
-//     unavailable with custom CSS or a non-Light export theme.
+//     unavailable with custom CSS; native dark SVG is supported.
 //   - EXP-3 checks the supported bulk JSON export (also covered by library.spec.js).
 //   - Malformed import (EXP-4): ImportFeedback surfaces an actionable alert.
 //   - Merge behavior is checked by EXP-5.
@@ -20,6 +20,8 @@ import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor, gotoHome } from './helpers/hub';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
+// A local override still runs local-only assertions; staging URLs remain excluded.
+const isRemoteTarget = !!process.env.PW_BASE_URL && !/^https?:\/\/(localhost|127\.0\.0\.1)(?::|\/|$)/.test(process.env.PW_BASE_URL);
 
 // Deployed sites load third-party analytics/CDN scripts that throw uncaught errors
 // we don't own; treat those as noise (copied verbatim from smoke/library specs).
@@ -115,7 +117,7 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
 // ──────────────────────────────────────────────────────────────────────────────
 test('EXP-1 Download diagram exports a non-empty PNG image', async ({ page }) => {
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'checks a local browser download and image bytes',
   );
 
@@ -152,7 +154,7 @@ test('EXP-1 Download diagram exports a non-empty PNG image', async ({ page }) =>
 // ──────────────────────────────────────────────────────────────────────────────
 test('EXP-2 Download diagram exports valid SVG with diagram content', async ({ page }) => {
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'checks a local browser download and SVG document',
   );
 
@@ -200,7 +202,7 @@ test('EXP-3 Export all downloads JSON containing the saved diagram', async ({
   page,
 }) => {
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'HTML export reads the downloaded file off disk — local app only',
   );
 
@@ -235,7 +237,7 @@ test('EXP-4 importing malformed JSON shows actionable import feedback', async ({
   page,
 }) => {
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'drives a hidden file input via setInputFiles — local app only',
   );
 
@@ -269,7 +271,7 @@ test('EXP-5 importing an overlapping set skips duplicate IDs — only new rows a
   page,
 }) => {
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'drives a hidden file input via setInputFiles — local app only',
   );
 

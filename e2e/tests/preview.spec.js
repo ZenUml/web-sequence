@@ -26,6 +26,8 @@ import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
+// A local override still runs local-only assertions; staging URLs remain excluded.
+const isRemoteTarget = !!process.env.PW_BASE_URL && !/^https?:\/\/(localhost|127\.0\.0\.1)(?::|\/|$)/.test(process.env.PW_BASE_URL);
 
 // Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
 // analytics/CDN scripts that throw uncaught errors we don't own; treat those as
@@ -222,7 +224,7 @@ test('PRV-4: console eval runs JS in the preview iframe and echoes the result', 
   // exercises the srcdoc iframe's script execution; gate it off the staging gate so
   // it self-skips when targeting a remote host (mirrors production-build.spec.js).
   test.skip(
-    !!process.env.PW_BASE_URL,
+    isRemoteTarget,
     'console eval runs JS against the local srcdoc iframe; not run on the staging gate',
   );
 
@@ -270,7 +272,7 @@ test('PRV-4: console eval runs JS in the preview iframe and echoes the result', 
 // Gated off the staging gate (PW_BASE_URL): it depends on local render timing, like the
 // other render-timing specs (PRV-4 / production-build).
 test.skip(
-  !!process.env.PW_BASE_URL,
+  isRemoteTarget,
   'PRV-6 relies on local render timing (debounce window); not run on the staging gate',
 );
 test('PRV-6: with auto-preview OFF, editing does not re-render until manual Refresh', async ({

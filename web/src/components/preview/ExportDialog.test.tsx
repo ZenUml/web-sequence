@@ -14,7 +14,7 @@ vi.mock('../../services/renderExport', async (importOriginal) => ({
 }));
 vi.mock('../../services/download', () => ({ downloadBlob: downloadBlobMock }));
 
-const snapshot: PreviewExportSnapshot = { code: 'A->B: Hello', css: '', theme: 'theme-darcula', renderMode: 'html' };
+const snapshot: PreviewExportSnapshot = { code: 'A->B: Hello', css: '', theme: 'theme-dark', renderMode: 'html' };
 const onOpenChange = vi.fn();
 
 function deferred<T>() {
@@ -161,7 +161,9 @@ describe('ExportDialog', () => {
 
     expect(screen.getByRole('img', { name: 'Diagram export preview' })).toHaveAttribute('src', 'data:image/png;base64,Y3VycmVudA==');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    await expectSvgDisabled();
+    await userEvent.click(screen.getByRole('combobox', { name: 'Export format' }));
+    expect(await screen.findByRole('option', { name: 'SVG image' })).not.toHaveAttribute('aria-disabled', 'true');
+    await userEvent.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'Download PNG' })).toBeEnabled();
     expect(downloadBlobMock).not.toHaveBeenCalled();
     expect(onOpenChange).not.toHaveBeenCalled();
@@ -256,12 +258,11 @@ describe('ExportDialog', () => {
     await waitFor(() => expect(renderExportMock).toHaveBeenCalledWith(snapshot, 'match', 'png', expect.any(AbortSignal)));
   });
 
-  it('explains and disables SVG when Match resolves to a dark HTML theme', async () => {
+  it('allows native dark SVG with Match current theme', async () => {
     localStorage.setItem('zenuml.export.themeChoice', 'match');
     render(<ExportDialog open onOpenChange={onOpenChange} snapshot={snapshot} title="Example" initialFormat="svg" />);
-    expect(screen.getByRole('combobox', { name: 'Export format' })).toHaveTextContent('PNG image');
-    await expectSvgDisabled();
-    expect(screen.getByText(/SVG supports Light only/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Export format' })).toHaveTextContent('SVG image');
+    expect(screen.queryByText(/SVG supports Light only/)).not.toBeInTheDocument();
     await screen.findByRole('img', { name: 'Diagram export preview' });
   });
 
