@@ -8,4 +8,4 @@ The iframe receives the initial theme and palette in its `srcdoc` before core lo
 
 Image exports preserve transparency outside the diagram frame by default. A caller of `renderDiagramExport(snapshot, choice, format, signal?, backingColor?)` may pass an opaque `backingColor` to flatten behind the document once. HTML exports forward this option to core. Native SVG exports ask core to render with that option; native PNG rasterizes that SVG without another background fill. Custom HTML CSS remains supported in PNG and unavailable in SVG.
 
-These are local candidate changes. npm publication, WebSequence merge, and deployment are paused pending review of the actual images and export samples.
+The dependency is the published `@zenuml/core` 4.9.0 package in both WebSequence manifests and lockfiles. The linked artifact reports record the earlier local candidate that established pixel and geometry behavior; the official package also passed WebSequence unit, build, and focused browser checks before this branch was submitted for CI. WebSequence production deployment remains a separate release action.
