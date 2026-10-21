@@ -1,0 +1,9 @@
+# Document surface integration
+
+WebSequence supplies the SoftDark role palette in `src/preview/documentPalette.ts` when it requests `theme-dark`. Light diagrams receive no custom palette. The same theme and palette reach core's constructor before its first render, every later HTML render, native SVG render, and the separate export iframe. Explicit document CSS remains in the final `#zenumlstyle` rail, after core styles.
+
+The core surface contract is `app.getSurface().backgroundColor` for HTML and `renderToSvg(...).surface.backgroundColor` for native SVG. This is the resolved opaque base color. It is not a representation of background images or gradients. The preview iframe paints its page with this base and sends `{ type: 'surface', token, cssRevision, backgroundColor }` to the host after a committed render and after each CSS-only update. The host accepts only its latest render token and CSS revision, then paints the preview surround with that color. The renderer sends `surfaceContract: true` in the render acknowledgement when the formal API is available.
+
+The published `@zenuml/core` 4.8.1 package lacks this API. `previewBootstrap.runtime.js` keeps its previous native dark base in a marked compatibility branch. `renderExport.ts` keeps its private DOM sizing and delayed capture only for that branch. Remove those two branches after WebSequence upgrades to a published core version with the surface and intrinsic export bounds contract. Until then, the package manifest and lockfile remain pinned to 4.8.1; the separate local candidate used for integration checks is not a released dependency.
+
+Native SVG mode is used on narrow editor viewports while arbitrary custom CSS stays on the HTML renderer. The native SVG PNG raster path first fills its canvas from the SVG result's resolved surface, so rounded corners and gutters have an opaque base. HTML PNG and HTML/SVG export backgrounds are owned by core.

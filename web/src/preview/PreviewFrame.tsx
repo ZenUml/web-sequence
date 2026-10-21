@@ -4,6 +4,7 @@ import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
 import { detectFromEnv } from '../app/runtimeMode';
 import { ACTUAL_SIZE, resolveZoom, type PreviewZoom, type Size } from './previewZoom';
+import { documentPaletteFor } from './documentPalette';
 
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
@@ -66,10 +67,12 @@ export interface PreviewFrameProps {
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
   onExitPresentation?: () => void;
+  /** Resolved opaque document base from core, including document CSS overrides. */
+  onSurfaceChange?: (backgroundColor: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, theme = 'theme-default', autoPreview = true, embed, fit = false, svgMode = false, readOnly = false, zoom = ACTUAL_SIZE, onZoomChange, onCodeChange, onConsole, onError, onExitPresentation },
+  { code, css, stickyOffset, theme = 'theme-default', autoPreview = true, embed, fit = false, svgMode = false, readOnly = false, zoom = ACTUAL_SIZE, onZoomChange, onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
@@ -106,18 +109,20 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   participantStyleEditingRef.current = !embedMode && !fit && !svgMode && !readOnly;
   const presentingRef = useRef(false);
   presentingRef.current = fit && !embedMode;
-  const cbRef = useRef({ onCodeChange, onConsole, onError, onExitPresentation });
-  cbRef.current = { onCodeChange, onConsole, onError, onExitPresentation };
+  const cbRef = useRef({ onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange });
+  cbRef.current = { onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
   // `ready` (and on subsequent css changes) rather than baked into the document.
   // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
   // no chrome flash on first paint.
-  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
+  const initialAppearance = useRef({ theme, palette: documentPaletteFor(theme) });
+  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode, initialTheme: initialAppearance.current.theme, initialPalette: initialAppearance.current.palette }), [embedMode]);
 
   const renderOptions = (): RenderOptions => ({
     enableMultiTheme: false,
     enableParticipantStyleEditing: participantStyleEditingRef.current,
     theme: themeRef.current,
+    palette: documentPaletteFor(themeRef.current),
     stickyOffset: stickyRef.current,
     renderMode: svgModeRef.current ? 'svg' : 'html',
   });
@@ -134,6 +139,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const RENDER_ACK_MS = 250;
   const RENDER_MAX_RETRIES = 4;
   const renderSeq = useRef(0);
+  const cssRevision = useRef(0);
   const lastRenderedCode = useRef(code);
   const pendingRender = useRef<{ token: number; code: string; options: RenderOptions; tries: number } | null>(null);
   const lastAcknowledged = useRef<PreviewExportSnapshot | null>(null);
@@ -142,7 +148,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     if (ackTimer.current) clearTimeout(ackTimer.current);
     ackTimer.current = setTimeout(() => {
       const p = pendingRender.current;
-      if (!p || p.tries >= RENDER_MAX_RETRIES) { pendingRender.current = null; return; }
+      // Exhausting delivery retries does not prove the last render failed: core
+      // may still be committing it. Keep the token so its late ack can establish
+      // the export snapshot and stop any stale surface from taking over.
+      if (!p || p.tries >= RENDER_MAX_RETRIES) return;
       p.tries += 1;
       post({ type: 'render', code: p.code, options: p.options, token: p.token });
       armAck();
@@ -173,7 +182,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
           // Push the LATEST css on ready so css that resolved before the heavy
           // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
           // dropped — the empty initial <style> would otherwise stay empty.
-          post({ type: 'updateCss', css: cssRef.current });
+          post({ type: 'updateCss', css: cssRef.current, revision: ++cssRevision.current });
           break;
         case 'rendered':
           // Ack for acknowledged render delivery: the iframe applied this token's render,
@@ -188,6 +197,11 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
             pendingRender.current = null;
             if (ackTimer.current) clearTimeout(ackTimer.current);
           }
+          break;
+        case 'surface':
+          if (msg.token !== renderSeq.current || msg.cssRevision !== cssRevision.current) break;
+          if (typeof msg.backgroundColor !== 'string' || !msg.backgroundColor.trim()) break;
+          cbRef.current.onSurfaceChange?.(msg.backgroundColor);
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
@@ -247,7 +261,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // changes instead of rebuilding/reloading the iframe.
   useEffect(() => {
     if (!readyRef.current) return;
-    post({ type: 'updateCss', css });
+    post({ type: 'updateCss', css, revision: ++cssRevision.current });
     if (lastAcknowledged.current) lastAcknowledged.current = { ...lastAcknowledged.current, css };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [css]);

@@ -18,7 +18,57 @@
   var app = null;
   var currentRenderMode = 'html';
   var currentSvgResult = null;
+  var currentTheme = 'theme-default';
+  var appliedRenderToken;
+  var cssRevision = 0;
+  var renderGeneration = 0;
+  var hasRendered = false;
   function post(msg) { parent.postMessage(msg, '*'); }
+  // The initial appearance is part of srcdoc, so core's constructor never paints
+  // a default-theme frame while waiting for the first render postMessage.
+  function initialOptions() {
+    var root = document.documentElement;
+    var theme = root.getAttribute('data-zenuml-initial-theme') || 'theme-default';
+    var rawPalette = root.getAttribute('data-zenuml-initial-palette');
+    var palette;
+    if (rawPalette) {
+      try { palette = JSON.parse(decodeURIComponent(rawPalette)); } catch (e) {}
+    }
+    return { theme: theme, palette: palette };
+  }
+  function baseStyle() {
+    var style = document.getElementById('zenuml-theme-base');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'zenuml-theme-base';
+      document.head.insertBefore(style, document.getElementById('zenumlstyle'));
+    }
+    return style;
+  }
+  function applyBase(color) {
+    var initial = document.getElementById('zenuml-initial-base');
+    if (initial && initial.parentNode) initial.parentNode.removeChild(initial);
+    baseStyle().textContent = color ? 'html,body{background:' + color + '}' : '';
+  }
+  // 4.8.1 compatibility only. Delete when WebSequence upgrades to the first
+  // published core release with getSurface()/result.surface.
+  function legacyBase(theme) {
+    return (theme === 'theme-dark' || theme === 'theme-clean-dark' || theme === 'theme-darcula') ? '#1f1f1f' : '';
+  }
+  function resolvedSurface() {
+    var surface = currentRenderMode === 'svg'
+      ? currentSvgResult && currentSvgResult.surface
+      : app && typeof app.getSurface === 'function' && app.getSurface();
+    if (surface && typeof surface.backgroundColor === 'string') return surface.backgroundColor;
+    // Old core has no public surface contract; retain its exact previous dark
+    // base until the dependency is published and upgraded.
+    return legacyBase(currentTheme) || '#ffffff';
+  }
+  function postSurface(token) {
+    var color = resolvedSurface();
+    if (app && typeof app.getSurface === 'function' || currentSvgResult && currentSvgResult.surface) applyBase(color);
+    post({ type: 'surface', token: token, cssRevision: cssRevision, backgroundColor: color });
+  }
   // Keyboard events in an iframe do not bubble to the host window.
   window.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') post({ type: 'escape' });
@@ -117,7 +167,7 @@
       embeddedStyle.textContent = customStyle.textContent;
       clone.insertBefore(embeddedStyle, clone.firstChild);
     }
-    return { svg: new XMLSerializer().serializeToString(clone), width: currentSvgResult.width, height: currentSvgResult.height };
+    return { svg: new XMLSerializer().serializeToString(clone), width: currentSvgResult.width, height: currentSvgResult.height, surface: currentSvgResult.surface };
   }
 
   function svgToPngDataUrl(result) {
@@ -137,6 +187,10 @@
           canvas.height = Math.max(1, Math.round(height * scale));
           var context = canvas.getContext('2d');
           if (!context) throw new Error('Canvas is unavailable');
+          if (result.surface && result.surface.backgroundColor) {
+            context.fillStyle = result.surface.backgroundColor;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+          }
           context.drawImage(image, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/png'));
         } catch (err) { reject(err); }
@@ -177,7 +231,9 @@
 
   window.addEventListener('load', function () {
     try {
-      app = new window.zenuml.default('#mounting-point');
+      var initial = initialOptions();
+      currentTheme = initial.theme;
+      app = new window.zenuml.default('#mounting-point', false, initial);
       keepUserCssLast();
       post({ type: 'ready' });
     } catch (e) {
@@ -191,21 +247,15 @@
     if (!msg || typeof msg !== 'object') return;
 
     if (msg.type === 'render' && app) {
+      var generation = ++renderGeneration;
       (async function () {
         try {
           var renderMode = (msg.options && msg.options.renderMode) || 'html';
           var theme = (msg.options && msg.options.theme) || 'theme-default';
-          // Native HTML and SVG skins paint the diagram itself. Match the iframe
-          // page outside their bounds to the native dark canvas color.
-          var themeStyle = document.getElementById('zenuml-theme-base');
-          if (!themeStyle) {
-            themeStyle = document.createElement('style');
-            themeStyle.id = 'zenuml-theme-base';
-            document.head.insertBefore(themeStyle, document.getElementById('zenumlstyle'));
-          }
-          themeStyle.textContent = (theme === 'theme-dark' || theme === 'theme-clean-dark' || theme === 'theme-darcula')
-            ? 'html,body{background:#1f1f1f}'
-            : '';
+          currentTheme = theme;
+          // Preserve the exact published-core background on the compatibility
+          // path. Contract-aware core supplies the actual base after rendering.
+          if (typeof app.getSurface !== 'function') applyBase(legacyBase(theme));
           if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
             // Native vector SVG (mobile). Pure render — no React commit, no
             // onContentChange (the editor pane stays the source of truth on mobile).
@@ -218,7 +268,8 @@
             if (typeof window.zenuml.ensureDiagramIconsLoaded === 'function') {
               await window.zenuml.ensureDiagramIconsLoaded(msg.code);
             }
-            var result = window.zenuml.renderToSvg(msg.code, { theme: theme });
+            if (generation !== renderGeneration) return;
+            var result = window.zenuml.renderToSvg(msg.code, { theme: theme, palette: msg.options && msg.options.palette });
             showSvgMount(result && result.svg);
             currentSvgResult = result || null;
             currentRenderMode = 'svg';
@@ -232,14 +283,19 @@
               enableMultiTheme: false,
               enableParticipantStyleEditing: !!(msg.options && msg.options.enableParticipantStyleEditing),
               theme: theme,
+              palette: msg.options && msg.options.palette,
               onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
               stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
             });
           }
+          if (generation !== renderGeneration) return;
           keepUserCssLast();
+          hasRendered = true;
+          appliedRenderToken = msg.token;
+          postSurface(msg.token);
           // Echo the token so the host can confirm THIS render landed (ack+retry for
           // WebKit's dropped-postMessage race). undefined when the host sent no token.
-          post({ type: 'rendered', token: msg.token });
+          post({ type: 'rendered', token: msg.token, surfaceContract: typeof app.getSurface === 'function' });
           // Report the diagram's natural content size (width × height) in ALL modes
           // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
           // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout
@@ -253,9 +309,11 @@
         }
       })();
     } else if (msg.type === 'updateCss') {
+      cssRevision = typeof msg.revision === 'number' ? msg.revision : cssRevision + 1;
       var styleEl = document.getElementById('zenumlstyle');
       if (styleEl) styleEl.textContent = msg.css || '';
       keepUserCssLast();
+      if (hasRendered) postSurface(appliedRenderToken);
     } else if (msg.type === 'getPng') {
       (async function () {
         try {

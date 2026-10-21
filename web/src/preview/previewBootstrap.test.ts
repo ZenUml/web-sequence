@@ -7,11 +7,11 @@ import BOOTSTRAP from './previewBootstrap.runtime.js?raw';
 
 describe('previewBootstrap.runtime.js', () => {
   it('instantiates the engine on #mounting-point and posts ready', () => {
-    expect(BOOTSTRAP).toContain("new window.zenuml.default('#mounting-point')");
+    expect(BOOTSTRAP).toContain("new window.zenuml.default('#mounting-point', false, initial)");
     expect(BOOTSTRAP).toContain("type: 'ready'");
   });
   it('passes the requested native theme to both SVG and HTML renderers', () => {
-    expect(BOOTSTRAP).toContain('renderToSvg(msg.code, { theme: theme })');
+    expect(BOOTSTRAP).toContain('renderToSvg(msg.code, { theme: theme, palette: msg.options && msg.options.palette })');
     expect(BOOTSTRAP).toContain("theme: theme,");
     expect(BOOTSTRAP).toContain('msg.options');
     expect(BOOTSTRAP).not.toContain('window.location.search');
@@ -48,7 +48,7 @@ describe('previewBootstrap.runtime.js', () => {
       createElement: () => ({ id: '', textContent: '' }),
       head: { insertBefore: vi.fn() },
       querySelector: () => null,
-      documentElement: { scrollHeight: 100, scrollWidth: 100 },
+      documentElement: { scrollHeight: 100, scrollWidth: 100, getAttribute: () => null },
     };
     const frameConsole = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug'].map((level) => [level, vi.fn()]));
     new Function('window', 'document', 'parent', 'console', 'requestAnimationFrame', 'ResizeObserver', BOOTSTRAP)(
@@ -73,7 +73,7 @@ describe('previewBootstrap.runtime.js', () => {
     expect(postMessage).toHaveBeenCalledWith({ type: 'codeChange', code: 'A #FF0000' }, '*');
   });
   it('uses native dark theme and preserves the page background when switching to SVG', async () => {
-    document.head.innerHTML = '<style id="zenumlstyle"></style>';
+    document.head.innerHTML = '<style id="zenuml-initial-base">html,body{background:#343F4B}</style><style id="zenumlstyle"></style>';
     document.body.innerHTML = '<div id="diagram"><div id="mounting-point"></div></div>';
     const listeners: Record<string, (event?: any) => void> = {};
     const parent = { postMessage: vi.fn() };
@@ -97,10 +97,79 @@ describe('previewBootstrap.runtime.js', () => {
 
     listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'html', theme: 'theme-default' } } });
     expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('');
+    expect(document.getElementById('zenuml-initial-base')).toBeNull();
 
     listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'svg', theme: 'theme-dark' } } });
     await vi.waitFor(() => expect(frameWindow.zenuml.renderToSvg).toHaveBeenCalledWith('A.b', { theme: 'theme-dark' }));
     expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#1f1f1f}');
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+  });
+  it('uses the core document surface after render and refreshes it for CSS-only edits', async () => {
+    document.head.innerHTML = '<style id="zenumlstyle"></style>';
+    document.body.innerHTML = '<div id="diagram"><div id="mounting-point"></div></div>';
+    const listeners: Record<string, (event?: any) => void> = {};
+    const parent = { postMessage: vi.fn() };
+    const renderCore = vi.fn(async () => {});
+    const getSurface = vi.fn(() => ({ backgroundColor: document.getElementById('zenumlstyle')?.textContent.includes('#abc123') ? '#abc123' : '#efefef' }));
+    const frameWindow = {
+      zenuml: { default: class { render = renderCore; getSurface = getSurface; } },
+      addEventListener: (type: string, listener: (event?: any) => void) => { listeners[type] = listener; },
+    };
+    const frameConsole = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug'].map((level) => [level, vi.fn()]));
+    new Function('window', 'document', 'parent', 'console', 'requestAnimationFrame', 'ResizeObserver', BOOTSTRAP)(
+      frameWindow, document, parent, frameConsole, vi.fn(), undefined,
+    );
+    listeners.load();
+    listeners.message({ source: parent, data: { type: 'render', token: 7, code: 'A.b', options: { theme: 'theme-dark' } } });
+    await vi.waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith(
+      { type: 'surface', token: 7, cssRevision: 0, backgroundColor: '#efefef' }, '*',
+    ));
+    expect(document.getElementById('zenuml-theme-base')?.textContent).toContain('#efefef');
+    listeners.message({ source: parent, data: { type: 'updateCss', revision: 2, css: 'html,body{background:#abc123}' } });
+    expect(renderCore).toHaveBeenCalledTimes(1);
+    expect(getSurface).toHaveBeenCalledTimes(2);
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      { type: 'surface', token: 7, cssRevision: 2, backgroundColor: '#abc123' }, '*',
+    );
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+  });
+  it('passes the initial dark palette before the first render and rejects a late older render', async () => {
+    document.documentElement.setAttribute('data-zenuml-initial-theme', 'theme-dark');
+    document.documentElement.setAttribute('data-zenuml-initial-palette', encodeURIComponent(JSON.stringify({ canvasBg: '#343F4B' })));
+    document.head.innerHTML = '<style id="zenumlstyle"></style>';
+    document.body.innerHTML = '<div id="diagram"><div id="mounting-point"></div></div>';
+    const listeners: Record<string, (event?: any) => void> = {};
+    const parent = { postMessage: vi.fn() };
+    const resolutions = new Map<string, () => void>();
+    const renderCore = vi.fn((code: string) => new Promise<void>((resolve) => resolutions.set(code, resolve)));
+    const constructorOptions = vi.fn();
+    const frameWindow = {
+      zenuml: { default: class {
+        constructor(_mount: string, _naked: boolean, options: unknown) { constructorOptions(options); }
+        render = renderCore;
+        getSurface = () => ({ backgroundColor: '#343F4B' });
+      } },
+      addEventListener: (type: string, listener: (event?: any) => void) => { listeners[type] = listener; },
+    };
+    const frameConsole = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug'].map((level) => [level, vi.fn()]));
+    new Function('window', 'document', 'parent', 'console', 'requestAnimationFrame', 'ResizeObserver', BOOTSTRAP)(
+      frameWindow, document, parent, frameConsole, vi.fn(), undefined,
+    );
+    listeners.load();
+    expect(constructorOptions).toHaveBeenCalledWith({ theme: 'theme-dark', palette: { canvasBg: '#343F4B' } });
+    listeners.message({ source: parent, data: { type: 'render', token: 1, code: 'old', options: { theme: 'theme-dark' } } });
+    listeners.message({ source: parent, data: { type: 'render', token: 2, code: 'new', options: { theme: 'theme-dark' } } });
+    resolutions.get('new')!();
+    await vi.waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'surface', token: 2 }), '*',
+    ));
+    resolutions.get('old')!();
+    await Promise.resolve();
+    expect(parent.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'surface', token: 1 }), '*');
+    document.documentElement.removeAttribute('data-zenuml-initial-theme');
+    document.documentElement.removeAttribute('data-zenuml-initial-palette');
     document.body.innerHTML = '';
     document.head.innerHTML = '';
   });

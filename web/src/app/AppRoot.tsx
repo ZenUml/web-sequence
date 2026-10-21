@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle, type PreviewExportSnapshot } from '../preview/PreviewFrame';
+import { documentPaletteFor } from '../preview/documentPalette';
 import { ACTUAL_SIZE, formatZoom, zoomIn, zoomOut, type PreviewZoom } from '../preview/previewZoom';
 import { applyAppearance, previewThemeFor } from './appearance';
 import { Console, type ConsoleEntry } from '../preview/Console';
@@ -232,6 +233,12 @@ export function AppRoot() {
 
   // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
   const settings = useSettingsStore((s) => s.settings);
+  const previewTheme = previewThemeFor(settings.appearance, item?.css ?? '');
+  const surfaceKey = `${item?.id ?? ''}:${previewTheme}`;
+  const [documentSurface, setDocumentSurface] = useState<{ key: string; color: string } | null>(null);
+  const visibleSurface = documentSurface?.key === surfaceKey
+    ? documentSurface.color
+    : documentPaletteFor(previewTheme)?.canvasBg ?? '#ffffff';
   const mergeSettings = useSettingsStore((s) => s.merge);
   // Global light/dark appearance: mirror the persisted setting onto <html>.
   useEffect(() => { applyAppearance(settings.appearance); }, [settings.appearance]);
@@ -973,13 +980,15 @@ export function AppRoot() {
             bleeding beyond the viewport. */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
+            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto" style={{ backgroundColor: visibleSurface }}>
               <PreviewFrame
                 ref={previewRef}
                 code={item.js}
                 css={item.cssMode === 'css' ? item.css : transpiledCss}
                 stickyOffset={stickyOffset}
                 autoPreview={settings.autoPreview}
+                theme={previewTheme}
+                onSurfaceChange={(color) => setDocumentSurface({ key: surfaceKey, color })}
               />
             </div>
           ) : (
@@ -1509,7 +1518,7 @@ export function AppRoot() {
                   }
                 />
               )}
-              <div className="editor-preview-canvas flex-1 min-h-0 flex items-center justify-center">
+              <div className="editor-preview-canvas flex-1 min-h-0 flex items-center justify-center" style={{ backgroundColor: visibleSurface }}>
                 <PreviewFrame
                   ref={previewRef}
                   code={item.js}
@@ -1517,7 +1526,8 @@ export function AppRoot() {
                   css={previewCss}
                   // Dark appearance renders the diagram with core's native dark theme;
                   // ExportDialog reads the same theme from the export snapshot.
-                  theme={previewThemeFor(settings.appearance, item.css)}
+                  theme={previewTheme}
+                  onSurfaceChange={(color) => setDocumentSurface({ key: surfaceKey, color })}
                   zoom={isMobile ? ACTUAL_SIZE : previewZoom}
                   onZoomChange={setZoomScale}
                   // #824: gate the debounced auto re-render on the Settings toggle. When
