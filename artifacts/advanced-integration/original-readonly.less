@@ -1,0 +1,125 @@
+@fragmentBorderColor: rgba(4, 46, 110, 0.30);
+@nameBackgroundColor: rgba(4, 46, 110, 0.10);
+@labelTextColor: #032C72;
+@messageLineColor: #032C72;
+@occuranceBorderColor: #032C72;
+@occuranceBackgroundColor: #fff;
+@participantLineColor: #032C72;
+@participantBorderColor: #032C72;
+@participantTextColor: #032C72;
+@participantBackgroundColor: rgba(146, 192, 240, 0.30);
+@dividerBackgroundColor: #E28553;
+@dividerBorderColor: #E28553;
+@dividerTextColor: #E28553;
+
+#diagram {
+  .sequence-diagram {
+    .divider {
+      .name {
+        padding: 2px 6px 2px 6px;
+        border-radius: 4px;
+        margin: 0px;
+        border-color: @dividerBorderColor;
+        color: @dividerTextColor;
+      }
+      .left {
+        background: @dividerBackgroundColor;
+      }
+      .right {
+        background: @dividerBackgroundColor;
+      }
+    }
+    .lifeline {
+      .participant {
+        font-weight: 400;
+        border: 2px solid @participantBorderColor;
+        background: @participantBackgroundColor;      
+        label {
+          text-decoration: underline;
+          color: @participantTextColor;
+        }
+      }
+      .line {
+        border-left-color: @participantLineColor;
+      }
+    }
+    .message {
+      .name {
+        padding-bottom: 1px;
+        color: @messageLineColor;
+      }
+      border-bottom-color: @messageLineColor;
+      svg {
+        polyline {
+          fill: @messageLineColor;
+          stroke: @messageLineColor;
+        }
+      }
+    }
+    .message.self {
+      svg>polyline:not(.head) {
+        fill: none;
+      }
+    }
+    .occurrence {
+      background-color: white;
+      border: 2px solid @occuranceBorderColor;
+      background-color: @occuranceBackgroundColor;
+    }
+    .fragment {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      border: 1px solid @fragmentBorderColor;
+      .fragment.par>.block>.statement-container:not(:first-child), .segment:not(:first-child) {
+        border-top: 1px solid @fragmentBorderColor;
+      }
+      .header {
+        .name {
+          padding: 4px 4px 4px 6px;
+          background: @nameBackgroundColor;
+          label { /* name label */
+            background: transparent;
+            padding: 0px;
+            color: @labelTextColor;
+          }
+        }
+      }
+    }
+    .statement-container {
+      margin-bottom: 8px;
+    }
+  }
+}
+/* ZenUML bundled template: light canvas */
+#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .sequence-diagram { color: @labelTextColor; }
+#diagram .sequence-diagram .message svg { color: @messageLineColor; }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .participant-name { color: @participantTextColor; text-decoration: underline; }
+#diagram .sequence-diagram .message .name { color: @messageLineColor; }
+#diagram .sequence-diagram .fragment .header .name,
+#diagram .sequence-diagram .fragment .header .condition { color: @labelTextColor; }
+#diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 4px !important; margin: 0 !important; border-color: @dividerBorderColor !important; color: @dividerTextColor !important; }
+#diagram .sequence-diagram .divider .left,
+#diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+
+
+/* Advanced alignment repairs: scoped to this template's 2px blue borders. */
+#diagram .sequence-diagram .lifeline .participant {
+  /* Opaque equivalent of the existing translucent blue: hides the lifeline inside the header. */
+  background-color: #deecfb;
+}
+#diagram .sequence-diagram .creation .message {
+  /* Raise the creation line to the target header's visual centre and stop before its border. */
+  top: -4.5px;
+  width: calc(100% - 35.15px) !important;
+}
+#diagram .sequence-diagram .creation .occurrence {
+  /* Share the creation participant's lower border and centre its activation on the lifeline. */
+  transform: translate(-2px, -4px);
+}
+#diagram .sequence-diagram .occurrence[data-belongs-to="MF"] {
+  /* This nested activation inherits a 3px horizontal offset from its message nesting. */
+  transform: translateX(-3px);
+}

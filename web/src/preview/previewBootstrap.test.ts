@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 // text via Vite's `?raw` so the content assertions stay bulletproof — a content
 // revert still fails these tests.
 import BOOTSTRAP from './previewBootstrap.runtime.js?raw';
+import { getCompleteHtml } from './previewHtml';
 
 describe('previewBootstrap.runtime.js', () => {
   it('instantiates the engine on #mounting-point and posts ready', () => {
@@ -101,6 +102,44 @@ describe('previewBootstrap.runtime.js', () => {
     listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'svg', theme: 'theme-dark' } } });
     await vi.waitFor(() => expect(frameWindow.zenuml.renderToSvg).toHaveBeenCalledWith('A.b', { theme: 'theme-dark' }));
     expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#1f1f1f}');
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+  });
+  it('retires the initial dark page style before a light render, including custom light-base renders', async () => {
+    const initial = new DOMParser().parseFromString(getCompleteHtml({ theme: 'theme-dark' }), 'text/html');
+    document.head.innerHTML = initial.head.innerHTML;
+    document.body.innerHTML = '<div id="diagram"><div id="mounting-point"><div class="zenuml"><div id="canvas" class="bg-skin-canvas theme-default"></div></div></div></div>';
+    const coreStyle = document.createElement('style');
+    coreStyle.textContent = '.zenuml .bg-skin-canvas{background-color:white}.zenuml .bg-skin-canvas.theme-dark{background-color:#1f1f1f}';
+    document.head.append(coreStyle);
+    const canvas = document.getElementById('canvas')!;
+    const listeners: Record<string, (event?: any) => void> = {};
+    const parent = { postMessage: vi.fn() };
+    const renderCore = vi.fn(async (_code: string, options: { theme: string }) => {
+      if (options.theme === 'theme-default') expect(document.getElementById('zenuml-first-paint')).toBeNull();
+      canvas.className = `bg-skin-canvas ${options.theme}`;
+    });
+    const frameWindow = {
+      zenuml: { default: class { render = renderCore; } },
+      addEventListener: (type: string, listener: (event?: any) => void) => { listeners[type] = listener; },
+    };
+    const frameConsole = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug'].map((level) => [level, vi.fn()]));
+    new Function('window', 'document', 'parent', 'console', 'requestAnimationFrame', 'ResizeObserver', BOOTSTRAP)(
+      frameWindow, document, parent, frameConsole, vi.fn(), undefined,
+    );
+    listeners.load();
+    expect(document.getElementById('zenuml-first-paint')).not.toBeNull();
+    expect(getComputedStyle(document.body).backgroundColor).toBe('rgb(31, 31, 31)');
+    // Core owns its constructor canvas; its brief white state is fixed in core.
+    expect(getComputedStyle(canvas).backgroundColor).toBe('rgb(255, 255, 255)');
+    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { theme: 'theme-dark' } } });
+    await vi.waitFor(() => expect(renderCore).toHaveBeenCalledTimes(1));
+    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { theme: 'theme-default' } } });
+    await vi.waitFor(() => expect(renderCore).toHaveBeenCalledTimes(2));
+    expect(document.getElementById('zenuml-first-paint')).toBeNull();
+    expect(getComputedStyle(canvas).backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(document.body).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(getComputedStyle(document.body).colorScheme).not.toBe('dark');
     document.body.innerHTML = '';
     document.head.innerHTML = '';
   });

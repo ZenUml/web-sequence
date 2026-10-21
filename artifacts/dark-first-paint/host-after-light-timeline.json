@@ -1,0 +1,130 @@
+{
+  "states": [
+    {
+      "t": 412,
+      "appearance": "light",
+      "html": "rgb(239, 246, 251)",
+      "body": "rgb(239, 246, 251)",
+      "shell": null,
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1784,
+      "appearance": "light",
+      "html": "rgb(239, 246, 251)",
+      "body": "rgb(239, 246, 251)",
+      "shell": "rgb(239, 246, 251)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": null
+    },
+    {
+      "t": 1788,
+      "appearance": "light",
+      "html": "rgb(239, 246, 251)",
+      "body": "rgb(239, 246, 251)",
+      "shell": "rgb(239, 246, 251)",
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1790,
+      "appearance": "light",
+      "html": "rgb(239, 246, 251)",
+      "body": "rgb(239, 246, 251)",
+      "shell": "rgb(239, 246, 251)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": null
+    },
+    {
+      "t": 4264,
+      "appearance": "light",
+      "html": "rgb(239, 246, 251)",
+      "body": "rgb(239, 246, 251)",
+      "shell": "rgb(239, 246, 251)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": "rgb(255, 255, 255)"
+    }
+  ],
+  "paint": [
+    {
+      "name": "first-paint",
+      "t": 936
+    },
+    {
+      "name": "first-contentful-paint",
+      "t": 1800
+    }
+  ],
+  "origin": 1792555126130.1,
+  "screenshots": [
+    {
+      "file": "host-after-light-00.jpg",
+      "traceTime": 201178599743
+    },
+    {
+      "file": "host-after-light-01.jpg",
+      "traceTime": 201178608991
+    },
+    {
+      "file": "host-after-light-02.jpg",
+      "traceTime": 201178616480
+    },
+    {
+      "file": "host-after-light-03.jpg",
+      "traceTime": 201178625027
+    },
+    {
+      "file": "host-after-light-04.jpg",
+      "traceTime": 201178641244
+    },
+    {
+      "file": "host-after-light-05.jpg",
+      "traceTime": 201178647317
+    },
+    {
+      "file": "host-after-light-06.jpg",
+      "traceTime": 201178655284
+    },
+    {
+      "file": "host-after-light-07.jpg",
+      "traceTime": 201178663948
+    },
+    {
+      "file": "host-after-light-08.jpg",
+      "traceTime": 201178680746
+    },
+    {
+      "file": "host-after-light-09.jpg",
+      "traceTime": 201178689162
+    },
+    {
+      "file": "host-after-light-10.jpg",
+      "traceTime": 201179515159
+    },
+    {
+      "file": "host-after-light-11.jpg",
+      "traceTime": 201180388811
+    },
+    {
+      "file": "host-after-light-12.jpg",
+      "traceTime": 201180390785
+    },
+    {
+      "file": "host-after-light-13.jpg",
+      "traceTime": 201180397357
+    },
+    {
+      "file": "host-after-light-14.jpg",
+      "traceTime": 201182872220
+    },
+    {
+      "file": "host-after-light-15.jpg",
+      "traceTime": 201182882422
+    },
+    {
+      "file": "host-after-light-16.jpg",
+      "traceTime": 201182888587
+    }
+  ]
+}

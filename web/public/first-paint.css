@@ -1,0 +1,16 @@
+/* The preceding classic head script chooses the appearance before this sheet paints. */
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+  background: #eff6fb;
+  color-scheme: light;
+}
+
+:root[data-appearance='dark'],
+:root[data-appearance='dark'] body,
+:root[data-appearance='dark'] #app {
+  background: #303944;
+  color-scheme: dark;
+}

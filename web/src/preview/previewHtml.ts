@@ -7,6 +7,7 @@ import zenumlUrl from '@zenuml/core/dist/zenuml?url';
 // <script src=...> on the same `?url` rail as zenumlUrl is `'self'`-compliant in
 // both web and extension contexts.
 import bootstrapUrl from './previewBootstrap.runtime.js?url';
+import type { RenderOptions } from './previewProtocol';
 
 // The fixed ZenUML mount structure (ported from legacy computes.js). The DSL is
 // NOT inlined — it arrives via `render` postMessages, so the iframe is built
@@ -25,6 +26,9 @@ export interface PreviewParts {
   // patching @zenuml/core by display:none-ing its own DOM hooks from inside the
   // isolated srcdoc iframe.
   embed?: boolean;
+  // Initial renderer theme, used only for the iframe page before @zenuml/core starts.
+  // Later theme changes use the existing render message and do not reload srcdoc.
+  theme?: RenderOptions['theme'];
 }
 
 // Embed-only chrome suppression. Targets @zenuml/core's rendered DOM hooks:
@@ -45,6 +49,11 @@ export const EMBED_CHROME_SUPPRESS_CSS =
   '.footer{display:none !important}.header.bg-skin-title{display:none !important}';
 
 export function getCompleteHtml(parts: PreviewParts = {}): string {
+  // Match the iframe page to the selected native canvas while core loads. Core
+  // owns its own canvas from construction onward; this style never targets it.
+  const firstPaintStyle = parts.theme === 'theme-dark'
+    ? '<style id="zenuml-first-paint">html,body{background: #1f1f1f;color-scheme:dark}</style>'
+    : '';
   const embedStyle = parts.embed
     ? `<style id="zenuml-embed-suppress">${EMBED_CHROME_SUPPRESS_CSS}</style>`
     : '';
@@ -52,6 +61,7 @@ export function getCompleteHtml(parts: PreviewParts = {}): string {
 <html>
 <head>
 <meta charset="UTF-8" />
+${firstPaintStyle}
 <style id="zenumlstyle"></style>
 ${embedStyle}</head>
 <body>
