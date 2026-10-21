@@ -1515,7 +1515,7 @@ export function AppRoot() {
                   code={item.js}
                   readOnly={!!item.isReadOnly}
                   css={previewCss}
-                  // Dark appearance renders the diagram with core's darcula theme;
+                  // Dark appearance renders the diagram with core's native dark theme;
                   // ExportDialog reads the same theme from the export snapshot.
                   theme={previewThemeFor(settings.appearance, item.css)}
                   zoom={isMobile ? ACTUAL_SIZE : previewZoom}

@@ -258,6 +258,22 @@ describe('PreviewFrame', () => {
     expect(post).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'render', code: 'C.d' }), '*');
   });
 
+  it('switches SVG theme without revealing unsaved DSL when auto-preview is off', () => {
+    const base = { css: '', stickyOffset: 0, autoPreview: false, svgMode: true };
+    const { container, rerender } = render(<PreviewFrame {...base} code="A.b" theme="theme-default" />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const post = vi.fn();
+    Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
+    act(() => window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'ready' } })));
+    rerender(<PreviewFrame {...base} code="C.d" theme="theme-default" />);
+    post.mockClear();
+    rerender(<PreviewFrame {...base} code="C.d" theme="theme-dark" />);
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'render', code: 'A.b', options: expect.objectContaining({ theme: 'theme-dark', renderMode: 'svg' }) }),
+      '*',
+    );
+  });
+
   it('with autoPreview OFF, the imperative render() forces a re-render of the current code', () => {
     const ref = createRef<PreviewHandle>();
     const { container, rerender } = render(

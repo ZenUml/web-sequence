@@ -10,8 +10,8 @@ describe('previewBootstrap.runtime.js', () => {
     expect(BOOTSTRAP).toContain("new window.zenuml.default('#mounting-point')");
     expect(BOOTSTRAP).toContain("type: 'ready'");
   });
-  it('keeps SVG on the default theme and reads HTML options from the message', () => {
-    expect(BOOTSTRAP).toContain("renderToSvg(msg.code, { theme: 'theme-default' })");
+  it('passes the requested native theme to both SVG and HTML renderers', () => {
+    expect(BOOTSTRAP).toContain('renderToSvg(msg.code, { theme: theme })');
     expect(BOOTSTRAP).toContain("theme: theme,");
     expect(BOOTSTRAP).toContain('msg.options');
     expect(BOOTSTRAP).not.toContain('window.location.search');
@@ -72,7 +72,7 @@ describe('previewBootstrap.runtime.js', () => {
     renderCore.mock.calls[0][1].onContentChange('A #FF0000');
     expect(postMessage).toHaveBeenCalledWith({ type: 'codeChange', code: 'A #FF0000' }, '*');
   });
-  it('clears the dark HTML correction before switching to SVG', () => {
+  it('uses native dark theme and preserves the page background when switching to SVG', async () => {
     document.head.innerHTML = '<style id="zenumlstyle"></style>';
     document.body.innerHTML = '<div id="diagram"><div id="mounting-point"></div></div>';
     const listeners: Record<string, (event?: any) => void> = {};
@@ -90,18 +90,17 @@ describe('previewBootstrap.runtime.js', () => {
     );
     listeners.load();
     listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'html', theme: 'theme-clean-dark' } } });
-    expect(document.getElementById('zenuml-theme-base')?.textContent).toContain('html,body{background:#111628}');
+    expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#1f1f1f}');
 
-    // Darcula (editor dark appearance): the iframe page matches the diagram canvas
-    // instead of leaving a white page around the dark diagram.
-    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'html', theme: 'theme-darcula' } } });
-    expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#2b2b2b}.zenuml .bg-skin-canvas{--color-bg-canvas:#2b2b2b}');
+    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'html', theme: 'theme-dark' } } });
+    expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#1f1f1f}');
 
     listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'html', theme: 'theme-default' } } });
     expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('');
 
-    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'svg', theme: 'theme-clean-dark' } } });
-    expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('');
+    listeners.message({ source: parent, data: { type: 'render', code: 'A.b', options: { renderMode: 'svg', theme: 'theme-dark' } } });
+    await vi.waitFor(() => expect(frameWindow.zenuml.renderToSvg).toHaveBeenCalledWith('A.b', { theme: 'theme-dark' }));
+    expect(document.getElementById('zenuml-theme-base')?.textContent).toBe('html,body{background:#1f1f1f}');
     document.body.innerHTML = '';
     document.head.innerHTML = '';
   });
@@ -155,7 +154,7 @@ describe('previewBootstrap.runtime.js', () => {
     listeners.message({ source: parent, data: { type: "updateCss", css: ".zenuml .participant{color:red}" } });
     expect(lastStyleId()).toBe("zenumlstyle");
     expect(document.getElementById("zenumlstyle")!.textContent).toBe(".zenuml .participant{color:red}");
-    // The dark-theme base correction stays BEFORE the user rail, so users can override it.
+    // The page background stays before the user rail, so custom CSS can override it.
     const ids = [...document.head.children].map((el) => el.id);
     expect(ids.indexOf("zenuml-theme-base")).toBeLessThan(ids.indexOf("zenumlstyle"));
   });

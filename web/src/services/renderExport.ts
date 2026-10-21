@@ -6,23 +6,11 @@ export type ExportThemeChoice = 'light' | 'match';
 export type ExportFormat = 'png' | 'svg';
 
 export function resolveExportTheme(snapshot: PreviewExportSnapshot, choice: ExportThemeChoice): RenderOptions['theme'] {
-  return choice === 'match' && snapshot.renderMode === 'html' ? snapshot.theme : 'theme-default';
+  return choice === 'match' ? snapshot.theme : 'theme-default';
 }
 
-export function canExportSvg(snapshot: PreviewExportSnapshot, choice: ExportThemeChoice): boolean {
-  return !snapshot.css.trim() && resolveExportTheme(snapshot, choice) === 'theme-default';
-}
-
-function exportBackgroundCss(theme: RenderOptions['theme']): string {
-  const background = theme === 'theme-darcula' ? '#2b2b2b'
-    : theme === 'theme-clean-dark' ? '#111628'
-      : null;
-  if (!background) return '';
-  // core.getPng captures #mounting-point with a white fallback background. Its
-  // child canvas shrinks to content, leaving a transparent right gutter. Paint
-  // the actual export root and the canvas skin; user CSS follows this rule and
-  // can override either declaration.
-  return `#mounting-point,.zenuml{background:${background}}.zenuml .bg-skin-canvas{--color-bg-canvas:${background}}\n`;
+export function canExportSvg(snapshot: PreviewExportSnapshot, _choice: ExportThemeChoice): boolean {
+  return !snapshot.css.trim();
 }
 
 /** Render a snapshot in a separate iframe so export never repaints the live preview. */
@@ -33,9 +21,7 @@ export async function renderDiagramExport(
   signal?: AbortSignal,
 ): Promise<string> {
   if (format === 'svg' && !canExportSvg(snapshot, choice)) {
-    throw new Error(snapshot.css.trim()
-      ? 'SVG export does not support custom CSS. Use PNG to preserve custom CSS.'
-      : 'SVG export only supports the Light theme.');
+    throw new Error('SVG export does not support custom CSS. Use PNG to preserve custom CSS.');
   }
   const iframe = document.createElement('iframe');
   const abort = new AbortController();
@@ -83,7 +69,7 @@ export async function renderDiagramExport(
       renderMode: snapshot.renderMode,
       enableParticipantStyleEditing: false,
     };
-    post({ type: 'updateCss', css: exportBackgroundCss(options.theme) + snapshot.css });
+    post({ type: 'updateCss', css: snapshot.css });
     post({ type: 'render', code: snapshot.code, options, token });
     await rendered;
     // Core commits layout after its render promise. Read the actual DOM twice so

@@ -27,7 +27,7 @@ export interface PreviewFrameProps {
   css: string;
   readOnly?: boolean;
   stickyOffset: number;
-  /** HTML renderer theme. SVG rendering keeps its existing default theme. */
+  /** Native HTML and SVG renderer theme. */
   theme?: RenderOptions['theme'];
   autoPreview?: boolean;
   /**
@@ -230,7 +230,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // A theme switch restyles the last visible diagram even when auto-preview is
   // disabled. Keep unsaved DSL edits hidden until the user presses Refresh.
   useEffect(() => {
-    if (!readyRef.current || svgModeRef.current) return;
+    if (!readyRef.current) return;
     postRender(autoPreview ? codeRef.current : lastRenderedCode.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);

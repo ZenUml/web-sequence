@@ -31,9 +31,8 @@ export function readStoredAppearance(): Appearance {
   }
 }
 
-// The dark editor frame is the "Soft Dark · Darcula" design, so the HTML
-// renderer uses @zenuml/core's darcula theme in dark appearance.
+// @zenuml/core 4.8.1 uses one native dark palette in HTML and SVG.
 export function previewThemeFor(appearance: Appearance, documentCss = ''): RenderOptions['theme'] {
   if (usesTemplateLightBase(documentCss)) return 'theme-default';
-  return appearance === 'dark' ? 'theme-darcula' : 'theme-default';
+  return appearance === 'dark' ? 'theme-dark' : 'theme-default';
 }
