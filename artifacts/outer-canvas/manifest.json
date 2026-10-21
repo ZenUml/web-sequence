@@ -17,5 +17,12 @@
     "npm": "paused",
     "wsMerge": "paused",
     "published": false
+  },
+  "blueTemplateFollowup": {
+    "webCommit": "55530f3d",
+    "outerAlpha": 0,
+    "frameAlpha": 255,
+    "focusedTests": 20,
+    "browserTests": 2
   }
 }
