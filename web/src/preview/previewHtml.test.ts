@@ -38,6 +38,14 @@ describe('getCompleteHtml', () => {
     const html = getCompleteHtml({});
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).toContain(MOUNT_HTML);
+    expect(html).toContain('id="zenuml-host-backing">html,body{background:transparent}');
+  });
+
+  it('keeps the iframe transparent without treating palette canvas as host color', () => {
+    const html = getCompleteHtml({ initialPalette: { canvasBg: '#ffffff' } });
+    expect(html).toContain('id="zenuml-host-backing">html,body{background:transparent}');
+    expect(decodeURIComponent(html)).toContain('"canvasBg":"#ffffff"');
+    expect(html).not.toContain('zenuml-initial-base');
   });
 
   // M05 embed chrome suppression. DISCRIMINATING: the suppression <style> must be

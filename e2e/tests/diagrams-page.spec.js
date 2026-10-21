@@ -201,6 +201,20 @@ test('DGM-7: the Blue quick start creates the Blue template diagram', async ({ p
   await expect(page.locator('[data-testid="dsl-editor"] .cm-content')).toContainText('Get order by id', { timeout: 15_000 });
 });
 
+test('DGM-7b: Blue keeps a white frame and transparent canvas inside the dark workspace', async ({ page }) => {
+  await seed(page, FIXTURES, 'dark');
+  await gotoDiagrams(page);
+  await page.locator('[data-testid="home-template-blue"]').click();
+  await expect(page.locator('[data-testid="dsl-editor"] .cm-content')).toContainText('Get order by id', { timeout: 15_000 });
+  const workspace = page.locator('.editor-preview-canvas');
+  const frame = page.frameLocator('[data-testid="preview-iframe"]');
+  await expect(frame.locator('.bg-skin-canvas')).toBeVisible({ timeout: 20_000 });
+  await expect.poll(() => workspace.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(52, 63, 75)');
+  await expect.poll(() => frame.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(() => frame.locator('.bg-skin-canvas').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(() => frame.locator('.frame.bg-skin-frame').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
+});
+
 test('DGM-8: appearance toggles immediately, persists, and matches the Editor', async ({ page }) => {
   await seed(page);
   await gotoDiagrams(page);
@@ -219,6 +233,7 @@ test('DGM-8: appearance toggles immediately, persists, and matches the Editor', 
   await page.locator('[data-testid="home-card-fx-checkout"]').getByRole('button', { name: 'Open Checkout flow' }).click();
   await expect(page.locator('[data-testid="dsl-editor"]')).toBeVisible();
   await expect(html).toHaveAttribute('data-appearance', 'dark');
+  await expect.poll(() => page.locator('.editor-preview-canvas').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(52, 63, 75)');
   await expect(page.locator('[data-testid="header-appearance"]')).toHaveAccessibleName('Switch to light appearance');
 });
 

@@ -1,0 +1,28 @@
+{
+  "core": {
+    "path": "/Users/pengxiao/.codex/worktrees/core-document-surface/zenuml-core",
+    "head": "b2e5ed182081d6425473d6e1c553a85c90b7024c",
+    "branch": "codex/transparent-outer-canvas"
+  },
+  "web": {
+    "path": "/Users/pengxiao/.codex/worktrees/document-surface-contract/web-sequence",
+    "head": "ed28ea41a931eb8c9a9c63f364522588879d4711",
+    "branch": "codex/consume-document-surface"
+  },
+  "candidate": {
+    "version": "4.8.1-local-outer-transparent",
+    "sha256": "a1a443f2025622dc2d48fd66aa4d27e395b090f9233f9c269767d36417229db1"
+  },
+  "release": {
+    "npm": "paused",
+    "wsMerge": "paused",
+    "published": false
+  },
+  "blueTemplateFollowup": {
+    "webCommit": "55530f3d",
+    "outerAlpha": 0,
+    "frameAlpha": 255,
+    "focusedTests": 20,
+    "browserTests": 2
+  }
+}

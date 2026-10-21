@@ -1,6 +1,7 @@
 import { getCompleteHtml } from '../preview/previewHtml';
 import type { PreviewExportSnapshot } from '../preview/PreviewFrame';
 import type { FrameMessage, RenderOptions } from '../preview/previewProtocol';
+import { documentPaletteFor } from '../preview/documentPalette';
 
 export type ExportThemeChoice = 'light' | 'match';
 export type ExportFormat = 'png' | 'svg';
@@ -19,6 +20,7 @@ export async function renderDiagramExport(
   choice: ExportThemeChoice,
   format: ExportFormat,
   signal?: AbortSignal,
+  backingColor?: string,
 ): Promise<string> {
   if (format === 'svg' && !canExportSvg(snapshot, choice)) {
     throw new Error('SVG export does not support custom CSS. Use PNG to preserve custom CSS.');
@@ -31,6 +33,8 @@ export async function renderDiagramExport(
   iframe.title = 'Diagram export renderer';
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;left:-100000px;top:0;width:1600px;height:1200px;border:0;pointer-events:none';
+  const theme = resolveExportTheme(snapshot, choice);
+  const palette = documentPaletteFor(theme);
 
   const waitFor = (predicate: (message: FrameMessage) => boolean, timeoutMs = 15000) => new Promise<FrameMessage>((resolve, reject) => {
     if (abort.signal.aborted) {
@@ -55,37 +59,27 @@ export async function renderDiagramExport(
 
   try {
     const ready = waitFor((message) => message.type === 'ready');
-    iframe.srcdoc = getCompleteHtml();
+    iframe.srcdoc = getCompleteHtml({ initialTheme: theme, initialPalette: palette });
     document.body.appendChild(iframe);
     await ready;
     const post = (message: unknown) => iframe.contentWindow?.postMessage(message, '*');
-    const theme = resolveExportTheme(snapshot, choice);
     const token = 1;
     const rendered = waitFor((message) => message.type === 'rendered' && message.token === token);
     const options: RenderOptions = {
       enableMultiTheme: false,
       theme,
+      palette,
       stickyOffset: 0,
       renderMode: snapshot.renderMode,
       enableParticipantStyleEditing: false,
     };
-    post({ type: 'updateCss', css: snapshot.css });
+    post({ type: 'updateCss', css: snapshot.css, revision: 1 });
     post({ type: 'render', code: snapshot.code, options, token });
     await rendered;
-    // Core commits layout after its render promise. Read the actual DOM twice so
-    // long/wide diagrams do not inherit the provisional first contentSize report.
-    for (let pass = 0; pass < 2; pass += 1) {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      const doc = iframe.contentDocument;
-      const width = doc?.querySelector('.bg-skin-canvas')?.scrollWidth ?? doc?.getElementById('diagram')?.scrollWidth ?? 0;
-      const height = doc?.getElementById('diagram')?.scrollHeight ?? 0;
-      if (width > 0) iframe.style.width = `${width + 24}px`;
-      if (height > 0) iframe.style.height = `${height + 24}px`;
-    }
     const output = waitFor((message) => format === 'png'
       ? message.type === 'png' && message.id === 2
       : message.type === 'svg' && message.id === 2);
-    post({ type: format === 'png' ? 'getPng' : 'getSvg', id: 2 });
+    post({ type: format === 'png' ? 'getPng' : 'getSvg', id: 2, backingColor });
     const result = await output;
     const value = result.type === 'png' ? result.dataUrl : result.type === 'svg' ? result.svg : null;
     if (!value) throw new Error('Diagram export returned no image.');

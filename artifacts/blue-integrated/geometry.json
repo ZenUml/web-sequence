@@ -1,0 +1,172 @@
+{
+  "headers": [
+    {
+      "name": "Client",
+      "header": {
+        "left": 47,
+        "right": 127,
+        "top": 78,
+        "bottom": 118,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 87,
+        "right": 88,
+        "top": 118,
+        "bottom": 982,
+        "width": 1,
+        "height": 864
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    },
+    {
+      "name": "SGW",
+      "header": {
+        "left": 171,
+        "right": 251,
+        "top": 78,
+        "bottom": 118,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 211,
+        "right": 212,
+        "top": 118,
+        "bottom": 982,
+        "width": 1,
+        "height": 864
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    },
+    {
+      "name": "svc",
+      "header": {
+        "left": 271,
+        "right": 351,
+        "top": 78,
+        "bottom": 118,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 311,
+        "right": 312,
+        "top": 118,
+        "bottom": 982,
+        "width": 1,
+        "height": 864
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    },
+    {
+      "name": "X",
+      "header": {
+        "left": 404,
+        "right": 484,
+        "top": 186,
+        "bottom": 226,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 444,
+        "right": 445,
+        "top": 226,
+        "bottom": 982,
+        "width": 1,
+        "height": 756
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    },
+    {
+      "name": "rep",
+      "header": {
+        "left": 504,
+        "right": 584,
+        "top": 78,
+        "bottom": 118,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 544,
+        "right": 545,
+        "top": 118,
+        "bottom": 982,
+        "width": 1,
+        "height": 864
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    },
+    {
+      "name": "MF",
+      "header": {
+        "left": 710,
+        "right": 790,
+        "top": 78,
+        "bottom": 118,
+        "width": 80,
+        "height": 40
+      },
+      "line": {
+        "left": 750,
+        "right": 751,
+        "top": 118,
+        "bottom": 982,
+        "width": 1,
+        "height": 864
+      },
+      "gap": 0,
+      "bottomGap": 0,
+      "fill": "rgba(146, 192, 240, 0.3)"
+    }
+  ],
+  "activations": [
+    {
+      "name": "SGW",
+      "centerDelta": 0
+    },
+    {
+      "name": "svc",
+      "centerDelta": 0
+    },
+    {
+      "name": "rep",
+      "centerDelta": 0
+    },
+    {
+      "name": "MF",
+      "centerDelta": 0
+    },
+    {
+      "name": "X",
+      "centerDelta": 0
+    }
+  ],
+  "creation": {
+    "edgeDelta": 0,
+    "centerDelta": 0,
+    "sharedBorder": -2
+  },
+  "paint": {
+    "canvas": "rgba(0, 0, 0, 0)",
+    "frame": "rgb(255, 255, 255)",
+    "workspace": "rgb(52, 63, 75)"
+  },
+  "coreScripts": [
+    "http://127.0.0.1:4467/@fs/Users/pengxiao/.codex/worktrees/document-surface-contract/web-sequence/web/node_modules/@zenuml/core/dist/zenuml.js",
+    "http://127.0.0.1:4467/src/preview/previewBootstrap.runtime.js?t=1792561045655"
+  ]
+}

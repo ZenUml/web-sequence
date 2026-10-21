@@ -232,6 +232,7 @@ export function AppRoot() {
 
   // M04: settings live-apply via settingsStore.merge; persist split (syncStore + cloud).
   const settings = useSettingsStore((s) => s.settings);
+  const previewTheme = previewThemeFor(settings.appearance, item?.css ?? '');
   const mergeSettings = useSettingsStore((s) => s.merge);
   // Global light/dark appearance: mirror the persisted setting onto <html>.
   useEffect(() => { applyAppearance(settings.appearance); }, [settings.appearance]);
@@ -973,13 +974,14 @@ export function AppRoot() {
             bleeding beyond the viewport. */}
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           {item ? (
-            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line bg-paper-50 shadow-pop overflow-auto">
+            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line shadow-pop overflow-auto" style={{ backgroundColor: 'var(--editor-canvas)' }}>
               <PreviewFrame
                 ref={previewRef}
                 code={item.js}
                 css={item.cssMode === 'css' ? item.css : transpiledCss}
                 stickyOffset={stickyOffset}
                 autoPreview={settings.autoPreview}
+                theme={previewTheme}
               />
             </div>
           ) : (
@@ -1517,7 +1519,7 @@ export function AppRoot() {
                   css={previewCss}
                   // Dark appearance renders the diagram with core's native dark theme;
                   // ExportDialog reads the same theme from the export snapshot.
-                  theme={previewThemeFor(settings.appearance, item.css)}
+                  theme={previewTheme}
                   zoom={isMobile ? ACTUAL_SIZE : previewZoom}
                   onZoomChange={setZoomScale}
                   // #824: gate the debounced auto re-render on the Settings toggle. When

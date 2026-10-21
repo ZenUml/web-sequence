@@ -1,0 +1,42 @@
+[
+  {
+    "pair": "theme-default-html-png-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-default-html-svg-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-default-svg-png-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-default-svg-svg-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-dark-html-png-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-dark-html-svg-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-dark-svg-png-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  },
+  {
+    "pair": "theme-dark-svg-svg-alpha",
+    "maxDelta": 1,
+    "pixelsOverOne": 0
+  }
+]

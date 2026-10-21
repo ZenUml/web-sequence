@@ -4,6 +4,7 @@ import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
 import { detectFromEnv } from '../app/runtimeMode';
 import { ACTUAL_SIZE, resolveZoom, type PreviewZoom, type Size } from './previewZoom';
+import { documentPaletteFor } from './documentPalette';
 
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
@@ -112,12 +113,14 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // `ready` (and on subsequent css changes) rather than baked into the document.
   // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
   // no chrome flash on first paint.
-  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
+  const initialAppearance = useRef({ theme, palette: documentPaletteFor(theme) });
+  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode, initialTheme: initialAppearance.current.theme, initialPalette: initialAppearance.current.palette }), [embedMode]);
 
   const renderOptions = (): RenderOptions => ({
     enableMultiTheme: false,
     enableParticipantStyleEditing: participantStyleEditingRef.current,
     theme: themeRef.current,
+    palette: documentPaletteFor(themeRef.current),
     stickyOffset: stickyRef.current,
     renderMode: svgModeRef.current ? 'svg' : 'html',
   });
@@ -142,7 +145,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     if (ackTimer.current) clearTimeout(ackTimer.current);
     ackTimer.current = setTimeout(() => {
       const p = pendingRender.current;
-      if (!p || p.tries >= RENDER_MAX_RETRIES) { pendingRender.current = null; return; }
+      // Exhausting delivery retries does not prove the last render failed: core
+      // may still be committing it. Keep the token so its late ack can establish
+      // the export snapshot and stop any stale surface from taking over.
+      if (!p || p.tries >= RENDER_MAX_RETRIES) return;
       p.tries += 1;
       post({ type: 'render', code: p.code, options: p.options, token: p.token });
       armAck();
@@ -343,7 +349,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       title="ZenUML preview"
       srcDoc={srcdoc}
       className={className}
-      style={style}
+      // A dark host color-scheme with a default-scheme srcdoc makes Chromium
+      // composite an opaque white iframe canvas even when both backgrounds
+      // compute as transparent. Keep the embedded canvas transparent too.
+      style={{ backgroundColor: 'transparent', colorScheme: 'normal', ...style }}
       allowFullScreen
     />
   );

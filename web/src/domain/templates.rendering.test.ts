@@ -46,7 +46,7 @@ describe('styled templates on the installed preview renderer', () => {
     ['black-white', 'rgb(255, 255, 255)', 'rgb(0, 0, 0)'],
     ['blue', 'rgba(146, 192, 240, 0.3)', 'rgb(3, 44, 114)'],
     ['starUMLTheme', 'rgb(255, 254, 200)', 'rgb(185, 64, 101)'],
-  ].map(([id, fill, border]) => ({ theme, id, fill, border }))))('$id $theme preserves canvas, names and participant styles after real Less compilation', async ({ theme, id, fill, border }) => {
+  ].map(([id, fill, border]) => ({ theme, id, fill, border }))))('$id $theme preserves canvas, frame intent, names and participant styles after real Less compilation', async ({ theme, id, fill, border }) => {
     const item = TEMPLATES.find(t => t.id === id)!.item;
     const compiled = await computeCss(item.css!, item.cssMode!, item.cssSettings);
     expect(compiled.errors).toBeUndefined();
@@ -57,7 +57,9 @@ describe('styled templates on the installed preview renderer', () => {
     const style = document.createElement('style');
     style.id = 'template-css'; style.textContent = compiled.code; document.head.append(style);
     const participant = document.querySelector('.participant')!;
-    expect(getComputedStyle(document.querySelector('.bg-skin-canvas')!).backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(document.querySelector('.bg-skin-canvas')!).backgroundColor).toBe(id === 'blue' ? 'rgba(0, 0, 0, 0)' : 'rgb(255, 255, 255)');
+    expect(document.querySelector('.frame.bg-skin-frame')).not.toBeNull();
+    if (id === 'blue') expect(getComputedStyle(document.querySelector('.bg-skin-canvas')!).getPropertyValue('--color-bg-frame').trim()).toBe('#fff');
     expect(getComputedStyle(document.querySelector('.participant-name')!).color).toBe(id === 'blue' ? 'rgb(3, 44, 114)' : 'rgb(0, 0, 0)');
     expect(getComputedStyle(document.querySelector('.message .name')!).color).toBe(id === 'blue' ? 'rgb(3, 44, 114)' : 'rgb(0, 0, 0)');
     expect(getComputedStyle(document.querySelector('.participant-name')!).textDecoration).toContain('underline');
@@ -74,7 +76,6 @@ describe('styled templates on the installed preview renderer', () => {
     }
     expect(getComputedStyle(document.querySelector('.message svg')!).color).toBe(id === 'blue' ? 'rgb(3, 44, 114)' : id === 'starUMLTheme' ? 'rgb(185, 64, 101)' : 'rgb(0, 0, 0)');
     expect(getComputedStyle(document.querySelector('.lifeline .line')!).getPropertyValue('--color-border-base').trim().toLowerCase()).toBe(id === 'blue' ? '#032c72' : id === 'starUMLTheme' ? '#b94065' : 'rgba(0,0,0,0.4)');
-    expect(getComputedStyle(document.querySelector('.frame.bg-skin-frame')!).backgroundColor).not.toBe('rgb(43, 43, 43)');
     expect(getComputedStyle(participant).backgroundColor).toBe(fill);
     expect(getComputedStyle(participant).borderTopColor).toBe(border);
   });

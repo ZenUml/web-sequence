@@ -6,6 +6,8 @@ export interface RenderOptions {
   // Explicit false also resets core's stored flag when switching modes.
   enableParticipantStyleEditing: boolean;
   theme: 'theme-default' | 'theme-dark' | 'theme-clean-dark' | 'theme-darcula';
+  /** Semantic document colors understood by core releases with the surface API. */
+  palette?: Record<string, string>;
   stickyOffset: number; // from the host router search params — NOT window.location inside the iframe
   // Renderer selection. 'html' (default) = @zenuml/core's interactive React diagram.
   // 'svg' = the native vector SVG (renderToSvg), used on mobile where the fixed-px HTML
@@ -21,9 +23,9 @@ export type HostMessage =
   // tight timing (prod build), leaving the preview stale — the ack+retry makes delivery
   // reliable across engines. Optional so existing tests/callers still type-check.
   | { type: 'render'; code: string; options: RenderOptions; token?: number }
-  | { type: 'updateCss'; css: string }
-  | { type: 'getPng'; id: number }
-  | { type: 'getSvg'; id: number }
+  | { type: 'updateCss'; css: string; revision?: number }
+  | { type: 'getPng'; id: number; backingColor?: string }
+  | { type: 'getSvg'; id: number; backingColor?: string }
   | { type: 'evalConsole'; id: number; expr: string };
 
 // iframe → host
