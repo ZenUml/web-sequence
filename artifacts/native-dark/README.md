@@ -42,3 +42,7 @@ Local telemetry proxy requests fail without the optional backend emulator; rende
 - Final preview/export Chromium suite: 10 passed, 1 pre-existing skip. Localhost PW_BASE_URL now runs local-only assertions; deployed targets retain skips.
 - Permanent native-dark browser regression: 1/1 passed; checks actual runtime version, native theme class and native canvas/text/lifeline/arrow colors.
 - Final production rebuild after mobile page-background fix: passed.
+
+## Follow-up: unified preview surface
+
+The outer editor canvas still used Darcula `#2b2b2b`, while the iframe and native canvas used `#1f1f1f`. This produced a visible inset rectangle. The dark `--editor-canvas` token now matches `#1f1f1f`; light mode and document CSS are unchanged. A browser assertion failed on the old outer color and passed after the fix. Live browser measurements confirmed all three backgrounds match. [Verified screenshot](unified-canvas.png).

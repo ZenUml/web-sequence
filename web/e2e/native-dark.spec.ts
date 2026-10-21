@@ -18,11 +18,13 @@ test('dark appearance uses the published native diagram skin', async ({ page }) 
     const message = doc.querySelector('.message');
     const lifeline = doc.querySelector('.lifeline .line');
     if (!canvas || !participant || !message || !lifeline) return null;
+    const outerCanvas = doc.defaultView?.frameElement?.parentElement?.closest('.editor-preview-canvas');
     const skin = getComputedStyle(canvas);
     return {
       version: (window as typeof window & { zenuml?: { default?: { version?: string } } }).zenuml?.default?.version,
       nativeClass: canvas.classList.contains('theme-dark'),
       canvas: skin.backgroundColor,
+      outerCanvas: outerCanvas ? getComputedStyle(outerCanvas).backgroundColor : null,
       participant: getComputedStyle(participant).color,
       lifeline: getComputedStyle(lifeline).getPropertyValue('--color-border-base').trim(),
       message: getComputedStyle(message).color,
@@ -32,6 +34,7 @@ test('dark appearance uses the published native diagram skin', async ({ page }) 
     version: '4.8.1',
     nativeClass: true,
     canvas: 'rgb(31, 31, 31)',
+    outerCanvas: 'rgb(31, 31, 31)',
     participant: 'rgb(251, 251, 251)',
     lifeline: '#e1e1e1',
     message: 'rgb(251, 251, 251)',
