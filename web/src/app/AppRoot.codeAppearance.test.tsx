@@ -112,14 +112,15 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  window.history.replaceState({}, '', '/?id=t-boot');
+  // The hub owns '/', so use an inline editor payload. It reaches the editor without
+  // pretending that a missing owned item should fall back to a blank document.
+  window.history.replaceState({}, '', '/?code=A%3AB');
   for (const k of Object.keys(captured)) delete captured[k];
   for (const k of Object.keys(mounts)) delete mounts[k];
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   window.localStorage.clear();
-  window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
 });
 

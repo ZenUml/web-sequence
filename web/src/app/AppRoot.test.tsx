@@ -96,7 +96,20 @@ vi.mock('../services/cloudFunctions', () => ({
 // save-seam tests can assert setItem's 3rd-arg ({ skipCloud }) decision (M04 Task 16).
 const itemSvc = vi.hoisted(() => ({
   setItem: vi.fn(async (_id: string, _item: unknown, _opts?: { skipCloud?: boolean }): Promise<{status:'local'|'cloud'|'queued'} | undefined> => undefined),
-  getItem: vi.fn(async () => { throw new Error('not found'); }),
+  // Most editor tests boot through ?id=t-boot. Return a stable owned document for
+  // that route; individual missing-document tests override this seam to reject.
+  getItem: vi.fn(async (id: string) => ({
+    id,
+    title: 'Test diagram',
+    js: 'A->B: test',
+    css: '',
+    html: '',
+    htmlMode: 'html',
+    cssMode: 'css',
+    jsMode: 'js',
+    pages: [],
+    currentPageId: '',
+  })),
   saveLastCode: vi.fn(),
   saveItems: vi.fn(async () => {}),
   removeItem: vi.fn(async () => {}),
@@ -169,13 +182,9 @@ beforeEach(async () => {
   useImportFeedbackStore.getState().reset();
   useExportFeedbackStore.getState().reset();
   // Hub view gating (PRs #800/#801): '/' with no ?id= now renders the HomeView
-  // library grid, NOT the editor. Almost every test in this file asserts editor
-  // internals (editor-region, dsl-editor, header-title, console…), so default every
-  // test onto an editor URL. The mocked itemService.getItem rejects ('not found'),
-  // so useBootItem resolves kind:'new' and seeds the SAME fresh editable item the
-  // pre-hub '/' boot produced — each test's original intent is preserved. Home-view-
-  // and embed-specific tests override the URL per-test via history.replaceState
-  // before render() (the file's existing convention; afterEach restores '/').
+  // library grid, NOT the editor. Most tests assert editor internals, so default
+  // them onto a stable owned editor URL. Home-view- and embed-specific tests
+  // override the URL before render() (the file's existing convention).
   window.history.replaceState({}, '', '/?id=t-boot');
   // The default editor URL makes every boot call getItem('t-boot'); clear the call
   // log so per-test assertions (e.g. the by-value embed's "getItem NOT called")
@@ -191,7 +200,6 @@ beforeEach(async () => {
   // The upgrade pledge may open on boot/auth-ready when a stored version is behind.
   // Seed the current version here; dedicated trigger tests set their own baselines.
   window.localStorage.clear();
-  window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
   // Reset M04 spies + restore default subscription (free / resolved).
   itemSvc.setItem.mockReset().mockResolvedValue(undefined);
@@ -962,20 +970,13 @@ describe('AppRoot — M04 modal reachability', () => {
 });
 
 describe('AppRoot — M04 one-time triggers', () => {
-  // Discriminating (adversarial review #2): a user MIGRATING from the legacy app has
-  // lastSeenVersion set (via chrome.storage.sync → syncStore) but NO localStorage
-  // `onboarded` key — legacy never wrote that key (it was a COOKIE, app.jsx:318-320),
-  // and there is no backfill. Legacy gated onboarding on `!lastSeenVersion` ONLY
-  // (app.jsx:314), so it would NOT re-onboard such a user. The rewrite must do the
-  // same: a stored version remains the baseline for the upgrade pledge.
-  it('does not show Welcome to a migrating legacy user (lastSeenVersion set, no `onboarded` key)', async () => {
-    window.localStorage.removeItem(LS_KEYS.onboarded); // legacy never set this key
+  it('does not interrupt a returning user whose version baseline is current', async () => {
     window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION)); // returning user
     render(<AppRoot />);
     await screen.findByTestId('header-title');
     // Let the async boot effects settle; no first-run modal is shown.
     await waitFor(() => expect(screen.getByTestId('header-title')).toBeInTheDocument());
-    expect(screen.queryByTestId('onboarding-modal')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('opens the SupportPledge modal when lastSeenVersion is behind APP_VERSION', async () => {
@@ -988,7 +989,6 @@ describe('AppRoot — M04 one-time triggers', () => {
   });
 
   it('does not interrupt a first visit and silently records the upgrade baseline', async () => {
-    window.localStorage.removeItem(LS_KEYS.onboarded);
     window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
     const { useUiStore } = await import('../state/uiStore');
     render(<AppRoot />);
@@ -996,13 +996,12 @@ describe('AppRoot — M04 one-time triggers', () => {
       expect(window.localStorage.getItem(LS_KEYS.lastSeenVersion)).toBe(JSON.stringify(APP_VERSION)),
     );
     expect(useUiStore.getState().activeModal).toBeNull();
-    expect(screen.queryByTestId('onboarding-modal')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   // The pledge is for upgrades only. A missing version baseline must never be
   // interpreted as version 0.0.0 and open the pledge for a first-time visitor.
   it('does NOT open the pledge when lastSeenVersion is empty (first-timer, wrong audience)', async () => {
-    window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
     window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
     const { useUiStore } = await import('../state/uiStore');
     render(<AppRoot />);
@@ -1022,7 +1021,6 @@ describe('AppRoot — M04 one-time triggers', () => {
   // who already saw it (wrong audience, REQ-MOD-3). Reverting the !pledgeModalSeen gate
   // makes the pledge open here → fails.
   it('does NOT re-open the pledge for a legacy user who already dismissed it (pledgeModalSeen=true)', async () => {
-    window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
     window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify('0.0.1')); // behind APP_VERSION
     window.localStorage.setItem(LS_KEYS.pledgeModalSeen, JSON.stringify(true)); // already saw it (legacy)
     const { useUiStore } = await import('../state/uiStore');
@@ -1054,7 +1052,6 @@ describe('AppRoot — lastSeenVersion storage backend (adversarial review #1)', 
     const localSet = vi.spyOn(localStore, 'set');
     const localGet = vi.spyOn(localStore, 'get');
     try {
-      window.localStorage.removeItem(LS_KEYS.onboarded);
       window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
       render(<AppRoot />);
       await screen.findByTestId('header-title');
@@ -1093,7 +1090,6 @@ describe('AppRoot — pledge latch + dismiss persistence (adversarial review #1 
     const localSet = vi.spyOn(localStore, 'set');
     const syncSet = vi.spyOn(syncStore, 'set');
     try {
-      window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
       window.localStorage.setItem(LS_KEYS.lastSeenVersion, behind);
       window.localStorage.removeItem(LS_KEYS.pledgeModalSeen);
       render(<AppRoot />);
@@ -1115,7 +1111,6 @@ describe('AppRoot — pledge latch + dismiss persistence (adversarial review #1 
     const localSet = vi.spyOn(localStore, 'set');
     const syncSet = vi.spyOn(syncStore, 'set');
     try {
-      window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
       window.localStorage.setItem(LS_KEYS.lastSeenVersion, behind);
       window.localStorage.removeItem(LS_KEYS.pledgeModalSeen);
       render(<AppRoot />);
@@ -1957,7 +1952,6 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
 
   it('?embed does not open the pledge or initialize the version baseline', async () => {
     // Embed mode skips one-time prompts and leaves the normal-app baseline alone.
-    window.localStorage.removeItem(LS_KEYS.onboarded);
     window.localStorage.removeItem(LS_KEYS.lastSeenVersion);
     window.history.replaceState({}, '', '/?embed&code=A.b');
     const { useUiStore } = await import('../state/uiStore');

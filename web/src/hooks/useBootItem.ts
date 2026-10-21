@@ -33,6 +33,7 @@ export type BootResult =
   // failure: 'unavailable' only for an explicit backend refusal (400/403/404…);
   // network/5xx/unknown errors are 'retryable' (see services/sharedItemError).
   | { kind: 'share-error'; failure: SharedItemFailure }
+  | { kind: 'item-error' }
   | { kind: 'new' };
 
 /**
@@ -107,7 +108,7 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
           // fall through
         }
       }
-      return { kind: 'new' };
+      return { kind: 'item-error' };
     }
   }
 
@@ -144,6 +145,9 @@ export interface UseBootItemResult {
   // silently fall back to a blank new diagram). Same as shareStatus==='unavailable'.
   shareError: boolean;
   clearShareError(): void;
+  /** A requested owned/local item could not be loaded. */
+  itemError: boolean;
+  clearItemError(): void;
   shareStatus: ShareStatus;
   // Fresh request with the CURRENT id/share-token. No-op unless the last attempt
   // failed retryably, so repeated clicks cannot stack requests.
@@ -176,6 +180,7 @@ export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): U
   const booted = useRef(false);
   const loadItem = useEditorStore((s) => s.loadItem);
   const newItem = useEditorStore((s) => s.newItem);
+  const [itemError, setItemError] = useState(false);
 
   const depsRef = useRef(deps);
   depsRef.current = deps;
@@ -320,6 +325,11 @@ export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): U
         case 'share-error':
           // Unreachable without share params (handled above); never seed an item.
           break;
+        case 'item-error':
+          // A URL asked for a specific diagram. Do not replace its failed load with
+          // a starter diagram; that makes an access problem look like a renderer bug.
+          setItemError(true);
+          break;
         case 'new':
           newItem();
           break;
@@ -347,6 +357,8 @@ export function useBootItem(deps: BootDeps, authReady: boolean, skip = false): U
   return {
     shareError: shareStatus === 'unavailable',
     clearShareError: () => setShareStatus('idle'),
+    itemError,
+    clearItemError: () => setItemError(false),
     shareStatus,
     retryShare,
   };

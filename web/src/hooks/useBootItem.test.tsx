@@ -98,14 +98,15 @@ describe('resolveBootItem (pure resolver)', () => {
     expect(deps.getItem).toHaveBeenCalledWith('own-1');
   });
 
-  // Branch 2 error fallback → new
-  it('falls through to new when getItem throws (not found/unauthorized)', async () => {
+  // An explicit diagram URL must never render a starter diagram when the
+  // requested item cannot be loaded. The caller needs a clear access state instead.
+  it('returns item-error when getItem throws and no matching local draft exists', async () => {
     const deps = makeBaseDeps({
       idParam: 'own-1',
       getItem: vi.fn(async () => { throw new Error('Item not found'); }),
     });
     const result = await resolveBootItem(deps);
-    expect(result.kind).toBe('new');
+    expect(result.kind).toBe('item-error');
   });
 
   // New lifecycle: a never-saved blank diagram (New) lives only in the last-code
@@ -123,14 +124,14 @@ describe('resolveBootItem (pure resolver)', () => {
     expect(result).toEqual({ kind: 'lastcode', item: draft });
   });
 
-  it('still falls through to new on an ?id= miss when the last-code draft has another id', async () => {
+  it('returns item-error on an ?id= miss when the last-code draft has another id', async () => {
     const deps = makeBaseDeps({
       idParam: 'blank-1',
       preserveLastCode: true,
       getItem: vi.fn(async () => { throw new Error('Item not found'); }),
       getLastCode: vi.fn(async () => makeItem({ id: 'other', js: '' })),
     });
-    expect((await resolveBootItem(deps)).kind).toBe('new');
+    expect((await resolveBootItem(deps)).kind).toBe('item-error');
   });
 
   it('does not read the last-code draft on an ?id= miss when preserveLastCode is off', async () => {
@@ -141,7 +142,7 @@ describe('resolveBootItem (pure resolver)', () => {
       getItem: vi.fn(async () => { throw new Error('Item not found'); }),
       getLastCode,
     });
-    expect((await resolveBootItem(deps)).kind).toBe('new');
+    expect((await resolveBootItem(deps)).kind).toBe('item-error');
     expect(getLastCode).not.toHaveBeenCalled();
   });
 

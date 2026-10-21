@@ -6,7 +6,6 @@ import { editorContent, clearEditor } from './helpers/editor';
 async function seedAndOpen(page: Page) {
   await page.addInitScript(() => {
     for (const [k, v] of Object.entries({
-      onboarded: 'true',
       lastSeenVersion: '"9999.0.0"',
       pledgeModalSeen: 'true',
       loginAndsaveMessageSeen: 'true',

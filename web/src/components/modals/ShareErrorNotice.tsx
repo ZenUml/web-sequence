@@ -3,6 +3,7 @@ import { Dialog, DialogContent, Button } from '../../ui';
 export interface ShareErrorNoticeProps {
   open: boolean;
   onOpenChange(o: boolean): void;
+  title?: string;
   message?: string;
   onGoHome(): void;
 }
@@ -12,13 +13,14 @@ export interface ShareErrorNoticeProps {
 export function ShareErrorNotice({
   open,
   onOpenChange,
+  title = "This shared link can't be opened",
   message,
   onGoHome,
 }: ShareErrorNoticeProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title="This shared link can't be opened"
+        title={title}
         description={message ?? "The link may have been removed or is no longer available."}
       >
         {/* DialogContent doesn't forward data-testid, so anchor it on an inner wrapper. */}

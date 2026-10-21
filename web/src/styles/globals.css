@@ -510,12 +510,6 @@ body {
   font-size: 14px;
 }
 
-/* The plus sits on the label's math axis (above the cap-height middle). */
-.editor-hifi-shell .editor-document-new svg {
-  position: relative;
-  top: -3px;
-}
-
 .editor-hifi-shell .editor-document-fork {
   width: 80px;
   padding: 0 12px;

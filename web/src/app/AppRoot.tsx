@@ -487,7 +487,7 @@ export function AppRoot() {
 
   // Boot: resolve the item to load (replaces the old STARTER seeding effect).
   // authReady gates resolution so a ?id= URL works for signed-in users (FIX 1 — boot race).
-  const { shareError, clearShareError, shareStatus, retryShare } = useBootItem({
+  const { shareError, clearShareError, itemError, clearItemError, shareStatus, retryShare } = useBootItem({
     idParam,
     shareToken,
     // Finding 1: full-app boot honours ?code= so the embed's "Open in ZenUML"
@@ -1170,15 +1170,29 @@ export function AppRoot() {
   // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
   // surface the error here at the guard instead of silently returning null. Start
   // fresh clears the flag and seeds a blank diagram.
-  if (!item || shareError) {
-    return shareError ? (
-      <ShareErrorNotice
-        open
-        // Every exit abandons the unavailable URL without creating an editable document.
-        onOpenChange={(o) => { if (!o) { goHome(); clearShareError(); } }}
-        onGoHome={() => { goHome(); clearShareError(); }}
-      />
-    ) : null;
+  if (!item || shareError || itemError) {
+    if (shareError) {
+      return (
+        <ShareErrorNotice
+          open
+          // Every exit abandons the unavailable URL without creating an editable document.
+          onOpenChange={(o) => { if (!o) { goHome(); clearShareError(); } }}
+          onGoHome={() => { goHome(); clearShareError(); }}
+        />
+      );
+    }
+    if (itemError) {
+      return (
+        <ShareErrorNotice
+          open
+          title="This diagram can't be opened"
+          message="It is not stored on this device. Sign in with the account that owns it, or ask for a share link."
+          onOpenChange={(o) => { if (!o) { goHome(); clearItemError(); } }}
+          onGoHome={() => { goHome(); clearItemError(); }}
+        />
+      );
+    }
+    return null;
   }
 
   // item is non-null here — the isHomeMode and !item early returns above guard this.

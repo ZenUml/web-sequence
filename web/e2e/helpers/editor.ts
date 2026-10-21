@@ -16,10 +16,9 @@
 
 import type { Page, Locator } from '@playwright/test';
 
-// Onboarding/version flags so the app boots straight into the editor with no
+// Version-prompt flags so the app boots straight into the editor with no
 // modal overlays intercepting keystrokes.
 const SEED_FLAGS: Record<string, string> = {
-  onboarded: 'true',
   lastSeenVersion: '"9999.0.0"',
   pledgeModalSeen: 'true',
   loginAndsaveMessageSeen: 'true',

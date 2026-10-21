@@ -80,6 +80,7 @@
     "@types/stylus": "^0.48.43",
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.8",
+    "antlr4": "4.11.0",
     "autoprefixer": "^10.5.0",
     "eslint": "^10.4.1",
     "jsdom": "^29.1.1",
