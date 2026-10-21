@@ -7,6 +7,27 @@ function saved(css: string, cssMode: Item['cssMode'] = 'less'): Item {
   return { id: 'saved-template', title: 'My existing diagram', js: 'A -> B: Edited DSL', css, html: '', htmlMode: 'html', cssMode, jsMode: 'js', pages: [], currentPageId: '' };
 }
 
+const transparentBlueBeforeGeometry = PREVIOUS_BUNDLED_BLUE_CSS.replace(
+  'background: #fff !important;',
+  'background: transparent !important; --color-bg-frame: #fff;',
+);
+const blueGeometryRules = `// The Blue occurrence has a 2px border; one less pixel of left padding keeps
+// each nested occurrence centered instead of accumulating a 1px offset.
+#diagram .sequence-diagram .occurrence { padding-left: 6px; }
+// Keep creation arrows at the participant's 2px border, independent of name width.
+// The core calculates the message width from that name, so only trim its line and arrow.
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message { top: -4px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:first-of-type { width: calc(100% - 1px); }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:nth-of-type(2) { right: 1px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .occurrence { transform: translateY(-4px); }
+`;
+const opaqueBlueWithGeometry = PREVIOUS_BUNDLED_BLUE_CSS + blueGeometryRules;
+const transparentBlueWithGeometry = transparentBlueBeforeGeometry + blueGeometryRules;
+const opaqueBlueWithHeaderFix = TEMPLATES.find(t => t.id === 'blue')!.item.css!.replace(
+  'background: transparent !important; --color-bg-frame: #fff;',
+  'background: #fff !important;',
+);
+
 describe('saved bundled template CSS compatibility', () => {
   it.each(Object.keys(LEGACY_STYLE_TEMPLATE_CSS))('upgrades only original %s CSS and is idempotent on reload', (id) => {
     const original = saved(LEGACY_STYLE_TEMPLATE_CSS[id]);
@@ -23,13 +44,20 @@ describe('saved bundled template CSS compatibility', () => {
     }
     expect(migrateToPages(saved(LEGACY_STYLE_TEMPLATE_CSS.blue, 'css')).css).toBe(LEGACY_STYLE_TEMPLATE_CSS.blue);
   });
-  it('migrates only the exact previously generated Blue CSS to a transparent outer canvas', () => {
-    const original = saved(PREVIOUS_BUNDLED_BLUE_CSS);
+  it.each([
+    ['opaque before geometry', PREVIOUS_BUNDLED_BLUE_CSS],
+    ['transparent before geometry', transparentBlueBeforeGeometry],
+    ['opaque with geometry', opaqueBlueWithGeometry],
+    ['transparent with geometry', transparentBlueWithGeometry],
+    ['opaque with header fix', opaqueBlueWithHeaderFix],
+  ])('migrates exact previously bundled Blue CSS (%s) and leaves edits alone', (_, css) => {
+    const original = saved(css);
     const migrated = migrateToPages(original);
     expect(migrated.css).toBe(TEMPLATES.find(t => t.id === 'blue')!.item.css);
     expect(migrated.css).toContain('background: transparent !important; --color-bg-frame: #fff;');
     expect(migrated.pages[0].css).toBe(migrated.css);
     expect(migrateToPages(migrated)).toEqual(migrated);
+    expect(migrateToPages(saved(css + '\n/* user edit */')).css).toBe(css + '\n/* user edit */');
   });
   it('upgrades page-owned source before switching and preserves its mirror on reload', () => {
     const original = { ...saved('stale mirror'), pages: [

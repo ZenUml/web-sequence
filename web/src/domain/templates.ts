@@ -124,9 +124,10 @@ ${TEMPLATE_LIGHT_BASE_MARKER}
   blue: `
 ${TEMPLATE_LIGHT_BASE_MARKER}
 #diagram .bg-skin-canvas { background: transparent !important; --color-bg-frame: #fff; }
-#diagram .sequence-diagram { color: @labelTextColor; }
+#diagram .sequence-diagram { color: @labelTextColor; --blue-participant-height: 2.5rem; }
 #diagram .sequence-diagram .message svg { color: @messageLineColor; }
-#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .lifeline .participant { height: var(--blue-participant-height); }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; margin-top: var(--blue-participant-height); }
 #diagram .sequence-diagram .participant-name { color: @participantTextColor; text-decoration: underline; }
 #diagram .sequence-diagram .message .name { color: @messageLineColor; }
 #diagram .sequence-diagram .fragment .header .name,
@@ -134,6 +135,15 @@ ${TEMPLATE_LIGHT_BASE_MARKER}
 #diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 4px !important; margin: 0 !important; border-color: @dividerBorderColor !important; color: @dividerTextColor !important; }
 #diagram .sequence-diagram .divider .left,
 #diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+// The Blue occurrence has a 2px border; one less pixel of left padding keeps
+// each nested occurrence centered instead of accumulating a 1px offset.
+#diagram .sequence-diagram .occurrence { padding-left: 6px; }
+// Keep creation arrows at the participant's 2px border, independent of name width.
+// The core calculates the message width from that name, so only trim its line and arrow.
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message { top: -4px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:first-of-type { width: calc(100% - 1px); }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:nth-of-type(2) { right: 1px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .occurrence { transform: translateY(-4px); }
 `,
   starUMLTheme: `
 ${TEMPLATE_LIGHT_BASE_MARKER}
@@ -152,8 +162,27 @@ export const LEGACY_STYLE_TEMPLATE_CSS = Object.fromEntries(
   LEGACY_TEMPLATES.filter(t => t.item.css).map(t => [t.id, t.item.css!]),
 ) as Readonly<Record<string, string>>;
 
+// Saved bundled Blue CSS is editable document source. Recognize exact shipped
+// variants only; even a one-character author edit must stay as authored.
+const BLUE_CANVAS_TRANSPARENT = 'background: transparent !important; --color-bg-frame: #fff;';
+const BLUE_CANVAS_OPAQUE = 'background: #fff !important;';
+const blueBeforeHeaderFix = TEMPLATE_STYLE_COMPAT.blue
+  .replace(' color: @labelTextColor; --blue-participant-height: 2.5rem; ', ' color: @labelTextColor; ')
+  .replace('#diagram .sequence-diagram .lifeline .participant { height: var(--blue-participant-height); }\n', '')
+  .replace(' --color-border-base: @participantLineColor; margin-top: var(--blue-participant-height); ', ' --color-border-base: @participantLineColor; ');
+const blueBeforeGeometryFix = blueBeforeHeaderFix.slice(
+  0, blueBeforeHeaderFix.indexOf('// The Blue occurrence has a 2px border;'),
+);
+const previousBundledBlueCss = new Set([
+  PREVIOUS_BUNDLED_BLUE_CSS,
+  LEGACY_STYLE_TEMPLATE_CSS.blue + blueBeforeGeometryFix,
+  LEGACY_STYLE_TEMPLATE_CSS.blue + blueBeforeHeaderFix,
+  LEGACY_STYLE_TEMPLATE_CSS.blue + blueBeforeHeaderFix.replace(BLUE_CANVAS_TRANSPARENT, BLUE_CANVAS_OPAQUE),
+  LEGACY_STYLE_TEMPLATE_CSS.blue + TEMPLATE_STYLE_COMPAT.blue.replace(BLUE_CANVAS_TRANSPARENT, BLUE_CANVAS_OPAQUE),
+]);
+
 export function upgradeLegacyTemplateCss(css: string): string {
-  if (css === PREVIOUS_BUNDLED_BLUE_CSS) return LEGACY_STYLE_TEMPLATE_CSS.blue + TEMPLATE_STYLE_COMPAT.blue;
+  if (previousBundledBlueCss.has(css)) return LEGACY_STYLE_TEMPLATE_CSS.blue + TEMPLATE_STYLE_COMPAT.blue;
   const match = Object.entries(LEGACY_STYLE_TEMPLATE_CSS).find(([, original]) => original === css);
   return match ? css + TEMPLATE_STYLE_COMPAT[match[0]] : css;
 }
