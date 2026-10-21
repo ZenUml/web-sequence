@@ -20,7 +20,6 @@ export const LS_KEYS = {
   loginAndSaveMessageSeen: 'loginAndsaveMessageSeen',
   askedToImportCreations: 'askedToImportCreations',
   pledgeModalSeen: 'pledgeModalSeen',
-  onboarded: 'onboarded',
   lastSeenVersion: 'lastSeenVersion',
   lastAuthProvider: 'lastAuthProvider',
 } as const;

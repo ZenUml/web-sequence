@@ -1,19 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  Button,
-  TextInput,
-  cn,
-  Menu,
-  MenuTrigger,
-  MenuContent,
-  MenuItem,
-  Tooltip,
-} from '../../ui';
-import { AppMenu } from './AppMenu';
+import { BrandLogo, PlusIcon, TextInput, Tooltip } from '../../ui';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
 import { ConfirmDialog } from '../modals/ConfirmDialog';
-import type { AppUser, PlanType } from '../../domain/types';
+import type { AppUser, Appearance, PlanType } from '../../domain/types';
 import type { ProviderName } from '../../services/types';
 
 export interface AppHeaderProps {
@@ -24,26 +14,29 @@ export interface AppHeaderProps {
   readOnly?: boolean;
   onTitleChange(t: string): void;
   onNew(): void;
-  onSave(): void;
   onFork(): void;
   onLogin(provider: ProviderName): void;
   onLogout(): void;
-  // Auto-save state. Save is now a pure indicator (the Save button is gone, ⌘S +
-  // the app-menu Save item remain). `saving` is true while a save is in flight;
+  // Auto-save state. Save is a pure indicator (manual save is ⌘S, handled by
+  // AppRoot). `saving` is true while a save is in flight;
   // `dirty` is the unsaved state (covers content AND metadata edits like rename/page
   // ops, which `unsavedCount` does not); clean + signed-in is "Saved". `unsavedCount`
   // is kept only for the precise count in the indicator's aria-label.
   dirty?: boolean;
   saving?: boolean;
+  saveError?: boolean;
+  syncPending?: boolean;
+  cloudWithheld?: boolean;
+  cloudConfirmed?: boolean;
+  onRetrySave?(): void;
+  // Signed-out only: whether this diagram has been written to this device yet.
+  // A brand-new diagram reads "Local only" until its first local save.
+  savedLocally?: boolean;
   // Present mode (the old Fullscreen) now lives top-right next to Share.
   onPresent(): void;
-  // M04 modal triggers (optional so existing AppHeader tests render without them).
-  onOpenSettings?(): void;
-  onOpenCreateNew?(): void;
-  onOpenHelp?(): void;
+  // Opens the plans dialog (informational, not checkout): from the account menu
+  // when signed in, from the sign-in dialog when signed out. Payment-gated.
   onOpenPricing?(): void;
-  onOpenCheatSheet?(): void;
-  onOpenShortcuts?(): void;
   // M04 subscription/profile state (forwarded to ProfileMenu). All optional.
   subscribed?: boolean;
   planType?: PlanType;
@@ -52,6 +45,7 @@ export interface AppHeaderProps {
   onManagePlan?(): void;
   // OAuth error surfaced inside the LoginModal (roadmap §9 carry-forward).
   loginError?: string | null;
+  pendingProvider?: ProviderName | null;
   // Optional CONTROLLED login-modal state so other surfaces (e.g. the anonymous
   // custom-CSS gate in AppRoot) can open sign-in. When omitted, AppHeader manages
   // it with internal state (existing-test compatibility).
@@ -60,51 +54,65 @@ export interface AppHeaderProps {
   // Optional extra action(s) rendered in the header's action group (e.g. ShareButton).
   // Kept optional so existing AppHeader tests render without it.
   actions?: ReactNode;
-  // Hub (Approach A): when provided, renders a "← Library" breadcrumb left of the
+  // Hub (Approach A): when provided, renders a "Diagrams /" breadcrumb left of the
   // title so the user can return to the home/library view. Omitted in classic mode.
   onGoHome?(): void;
+  // Code-pane toggle (desktop editor). Renders only when wired, so the control
+  // always collapses/expands the real code pane.
+  editorCollapsed?: boolean;
+  onToggleEditor?(): void;
+  // Global light/dark appearance. The toggle renders only when wired.
+  appearance?: Appearance;
+  onToggleAppearance?(): void;
 }
 
-function Chevron({ className }: { className?: string }) {
+function SidebarIcon() {
+  // Rectangle with a left split; no arrow (the state is carried by aria-pressed).
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      className={cn('h-3.5 w-3.5', className)}
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}
+      strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M9 4v16" />
     </svg>
   );
 }
 
-function CheckIcon() {
+function ForkIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-      className="h-3.5 w-3.5"
-      aria-hidden="true"
-    >
-      <path d="M5 12l5 5 9-11" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
+      strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+      <circle cx="6" cy="5" r="2.2" />
+      <circle cx="18" cy="5" r="2.2" />
+      <circle cx="6" cy="19" r="2.2" />
+      <path d="M6 7.2v9.6M18 7.2c0 5-12 3.8-12 9.6" />
     </svg>
   );
 }
 
 function PlayIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="none"
-      className="h-[15px] w-[15px]"
-      aria-hidden="true"
-    >
-      <path d="M8 5v14l11-7z" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+      strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path d="M7 4.5v15l12-7.5z" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
+      strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
+      strokeLinecap="round" className="h-5 w-5" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
     </svg>
   );
 }
@@ -118,28 +126,33 @@ export function AppHeader({
   readOnly = false,
   onTitleChange,
   onNew,
-  onSave,
   onFork,
   onLogin,
   onLogout,
   saving = false,
+  saveError = false,
+  syncPending = false,
+  cloudWithheld = false,
+  cloudConfirmed = false,
+  onRetrySave,
+  savedLocally = true,
   onPresent,
-  onOpenSettings,
-  onOpenCreateNew,
-  onOpenHelp,
   onOpenPricing,
-  onOpenCheatSheet,
-  onOpenShortcuts,
   subscribed = false,
   planType = 'free',
   paymentEnabled = false,
   onUpgrade,
   onManagePlan,
   loginError,
+  pendingProvider,
   loginOpen: loginOpenProp,
   onLoginOpenChange,
   actions,
   onGoHome,
+  editorCollapsed = false,
+  onToggleEditor,
+  appearance = 'light',
+  onToggleAppearance,
 }: AppHeaderProps) {
   const [loginOpenInternal, setLoginOpenInternal] = useState(false);
   // Controlled when the parent supplies loginOpen/onLoginOpenChange; else internal.
@@ -149,33 +162,19 @@ export function AppHeader({
     else setLoginOpenInternal(o);
   };
 
-  // #8: guard "New" against data loss. With unsaved edits, New first asks the user
-  // to confirm discarding them; only on confirm does onNew() fire. With a clean
-  // diagram (unsavedCount === 0) New is immediate (no friction for the common case).
-  // This guarded handler is shared with the app menu's New item.
+  // #8: guard "New" against data loss. With unsaved edits (content OR metadata such
+  // as a rename — the same `dirty` the save indicator reports), New first asks the
+  // user to confirm discarding them; only on confirm does onNew() fire. A clean
+  // diagram is already saved, so New is immediate.
   const [confirmNewOpen, setConfirmNewOpen] = useState(false);
   const handleNewClick = () => {
-    if (unsavedCount > 0) setConfirmNewOpen(true);
+    if (dirty ?? unsavedCount > 0) setConfirmNewOpen(true);
     else onNew();
   };
+  // Pricing is informational and exists only where payments are enabled.
+  const openPricing = paymentEnabled ? onOpenPricing : undefined;
 
-  // Rename (document menu) focuses the inline title field — the name itself is the
-  // editor, the menu item is just an accelerator to it.
   const titleRef = useRef<HTMLInputElement>(null);
-  // Rename should land focus on the title field. Radix restores focus to the menu
-  // trigger on close (onCloseAutoFocus), which would beat any focus() we call from
-  // onSelect. So we flag the intent and redirect focus in onCloseAutoFocus itself,
-  // preventing the default trigger-restore. (Canonical Radix pattern.)
-  const renameIntent = useRef(false);
-  const handleDocMenuCloseAutoFocus = (e: Event) => {
-    if (!renameIntent.current) return;
-    renameIntent.current = false;
-    e.preventDefault();
-    const el = titleRef.current;
-    if (!el) return;
-    el.focus();
-    el.select();
-  };
 
   // #826: title edit with a DRAFT buffer so Escape can revert without committing.
   // The field edits a local `draft`; the committed title (`title` prop, owned by the
@@ -221,230 +220,192 @@ export function AppHeader({
     }
   };
 
+  const darkAppearance = appearance === 'dark';
+
   return (
     <>
-      <header className={cn(
-        'bg-blueprint border-b border-ink-line/40 px-3 md:px-4 flex items-center gap-2 md:gap-3.5',
-        // Hub mode on mobile: two rows (nav row + title row). Single row on sm+ or outside hub.
-        onGoHome ? 'h-auto sm:h-14 flex-wrap py-1.5 sm:py-0' : 'h-14',
-      )}>
-        {/* App menu — the logo brand button (▾). Holds New / New from template /
-            Settings / Keyboard shortcuts / DSL cheat sheet / Help / Pricing / Save. */}
-        <AppMenu
-          onNew={handleNewClick}
-          onOpenCreateNew={onOpenCreateNew}
-          onOpenSettings={onOpenSettings}
-          onOpenShortcuts={onOpenShortcuts}
-          onOpenCheatSheet={onOpenCheatSheet}
-          onOpenHelp={onOpenHelp}
-          onOpenPricing={onOpenPricing}
-          onSave={onSave}
-          paymentEnabled={paymentEnabled}
-        />
-
-        {/* Hub breadcrumb — shown only when onGoHome is provided (Hub editor mode).
-            Design: icon-only back button · "Your diagrams" text button · "/" · [filename ▾]
-            The file menu pill follows immediately after this breadcrumb. */}
-        {onGoHome && (
-          <div className="flex items-center gap-1.5 shrink-0" data-testid="hub-breadcrumb">
-            {/* Back arrow — icon-only affordance */}
-            <button
-              type="button"
-              data-testid="header-go-home"
-              aria-label="Back to your diagrams"
-              onClick={onGoHome}
-              className={cn(
-                'grid place-items-center h-[34px] w-[34px] shrink-0 rounded-lg',
-                'text-ondark-muted hover:text-ondark-strong hover:bg-white/6',
-                'transition-colors duration-150 ease-draft ring-draft',
-              )}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-[18px] w-[18px]" aria-hidden="true">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            {/* "Your diagrams" — text label hidden on mobile, icon-only affordance remains */}
-            <button
-              type="button"
-              onClick={onGoHome}
-              aria-hidden="true"
-              tabIndex={-1}
-              className={cn(
-                'hidden sm:block font-sans text-[13.5px] text-ondark-muted whitespace-nowrap',
-                'hover:text-ondark-strong transition-colors duration-150 ease-draft',
-              )}
-            >
-              Your diagrams
-            </button>
-            {/* "/" separator — hidden on mobile too (arrow alone is sufficient) */}
-            <span className="hidden sm:inline text-ondark-faint text-[13px] select-none" aria-hidden="true">/</span>
-          </div>
-        )}
-
-        {/* File menu — inline-editable filename + a chevron opening the document
-            menu (Rename / Duplicate). The name + chevron sit together in a quiet
-            pill (.filemenu) so "this is the file and its actions" reads as a unit. */}
-        <div
-          className={cn(
-            'flex items-center gap-1.5 min-w-0 rounded-lg pl-2.5 pr-1 py-1',
-            'bg-ink-700/45 border border-ink-line/50',
-            // Hub mode on mobile: drop title to its own row, stretch full width.
-            onGoHome && 'w-full sm:w-auto order-last sm:order-none mb-1.5 sm:mb-0',
-          )}
-        >
-          <TextInput
-            ref={titleRef}
-            surface="dark"
-            value={draft}
-            data-testid="header-title"
-            aria-label="Diagram title"
-            readOnly={readOnly}
-            // .fname: quiet until hover/focus — transparent fill + borderless until
-            // the field is engaged, so the title reads as text, not a form control.
-            className={cn(
-              'min-w-0 h-7 bg-transparent border-transparent font-sans font-medium',
-              'text-[14px] text-ondark-strong',
-              'hover:bg-ink-800/60 focus:bg-ink-800 focus:border-ink-line/50',
-              // Hub mobile: fill the row; desktop/non-hub: fixed max-width.
-              onGoHome ? 'flex-1 sm:flex-none sm:max-w-[220px]' : 'max-w-[220px]',
-            )}
-            onFocus={() => {
-              editingTitle.current = true;
-            }}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleTitleKeyDown}
-            onBlur={() => {
-              // Commit on blur (commit-on-exit), then leave edit mode. Escape's blur
-              // already reverted the draft, so this commit is a no-op there (the draft
-              // equals the committed value → commitTitle skips onTitleChange).
-              if (editingTitle.current) {
-                editingTitle.current = false;
-                commitTitle(draft);
-              }
-              // Re-sync to the authoritative committed value once editing ends.
-              setDraft(committedTitleRef.current);
-            }}
-          />
-          <Menu>
-            <MenuTrigger asChild>
+      <header className="editor-hifi-header">
+        <div className="editor-header-nav">
+          {/* The logo is a plain brand mark; it opens no menu. */}
+          <span data-testid="header-logo" className="editor-brand-mark">
+            <BrandLogo className="h-[26px] w-[26px]" />
+          </span>
+          {onToggleEditor && (
+            <Tooltip surface={appearance} label={editorCollapsed ? 'Show code editor' : 'Hide code editor'}>
               <button
                 type="button"
-                data-testid="filemenu-trigger"
-                aria-label="Document menu"
-                className={cn(
-                  'grid place-items-center h-6 w-6 shrink-0 rounded',
-                  'text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
-                  'transition-colors duration-150 ease-draft ring-draft',
-                )}
+                data-testid="header-toggle-editor"
+                aria-label="Toggle code editor"
+                aria-pressed={!editorCollapsed}
+                onClick={onToggleEditor}
+                className="editor-icon-button editor-sidebar-toggle"
               >
-                <Chevron />
+                <SidebarIcon />
               </button>
-            </MenuTrigger>
-            <MenuContent align="start" onCloseAutoFocus={handleDocMenuCloseAutoFocus}>
-              <MenuItem
-                data-testid="filemenu-rename"
-                onSelect={() => {
-                  renameIntent.current = true;
-                }}
+            </Tooltip>
+          )}
+        </div>
+
+        <div data-testid="editor-document-chrome" className="editor-document-chrome">
+          {/* Breadcrumb: Diagrams / editable title. "Diagrams" returns to the hub. */}
+          {onGoHome && (
+            <div className="editor-breadcrumb" data-testid="hub-breadcrumb">
+              <button
+                type="button"
+                data-testid="header-go-home"
+                aria-label="Back to your diagrams"
+                onClick={onGoHome}
+                className="editor-breadcrumb-link"
               >
-                Rename
-              </MenuItem>
-              <MenuItem data-testid="filemenu-duplicate" onSelect={onFork}>
-                Duplicate
-              </MenuItem>
-              {/* Export / Move to trash — document-domain but need plumbing not
-                  present in Phase 1. Phase 3. */}
-            </MenuContent>
-          </Menu>
+                Diagrams
+              </button>
+              <span className="editor-breadcrumb-separator" aria-hidden="true">/</span>
+            </div>
+          )}
+          <div className="editor-document-file">
+            <TextInput
+              ref={titleRef}
+              surface={appearance}
+              value={draft}
+              data-testid="header-title"
+              aria-label="Diagram title"
+              readOnly={readOnly}
+              // Size the field to its text (CSS field-sizing where supported; the
+              // size attribute is the fallback, e.g. Safari).
+              size={Math.max(4, Math.min(28, draft.length + 1))}
+              className="editor-title-input"
+              onFocus={() => {
+                editingTitle.current = true;
+              }}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleTitleKeyDown}
+              onBlur={() => {
+                // Commit on blur (commit-on-exit), then leave edit mode. Escape's blur
+                // already reverted the draft, so this commit is a no-op there (the draft
+                // equals the committed value → commitTitle skips onTitleChange).
+                if (editingTitle.current) {
+                  editingTitle.current = false;
+                  commitTitle(draft);
+                }
+                // Re-sync to the authoritative committed value once editing ends.
+                setDraft(committedTitleRef.current);
+              }}
+            />
+          </div>
+
+          <div className="editor-document-save">
+            <SaveState
+              readOnly={readOnly}
+              signedIn={!!user}
+              savedLocally={savedLocally}
+              saving={saving}
+              saveError={saveError}
+              syncPending={syncPending || cloudWithheld}
+              cloudConfirmed={cloudConfirmed}
+              dirty={dirty ?? unsavedCount > 0}
+              unsavedCount={unsavedCount}
+            />
+          </div>
         </div>
 
-        {/* Auto-save state (.savestate) — sits left of the right-hand action group.
-            Never claims "Saved" when there is no real save target:
-            - readOnly: no save happens, so show a neutral "Read-only" (no dirty/saving).
-            - signed-out: auto-save is local-only, so show neutral "Local only".
-            - saving: "Saving…"; dirty: amber "Unsaved"; otherwise emerald "Saved". */}
-        {/* Hidden on the narrowest screens (< sm) so the save-state text doesn't crowd
-            the filename; the design's mobile header is intentionally minimal. */}
-        <div className="hidden sm:flex items-center">
-          <SaveState
-            readOnly={readOnly}
-            signedIn={!!user}
-            saving={saving}
-            dirty={dirty ?? unsavedCount > 0}
-            unsavedCount={unsavedCount}
-          />
-        </div>
+        <div className="editor-header-spacer" />
 
-        <div className="flex-1" />
-
-        {/* Top-right: the only shared verbs. Share (via actions) · Present · divider ·
-            account. Three jobs, clear order. */}
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-          {actions}
-          <Tooltip label="Present this diagram full-screen">
-            {/* Below md the label collapses to icon-only to avoid clipping. The
-                accessible name persists via aria-label so the control is never
-                an unlabelled icon. This is CSS-only (Tailwind responsive); no JS
-                media query touches the header. */}
-            <Button
-              variant="subtle"
-              size="md"
+        <div className="editor-document-actions editor-header-actions">
+          {/* The one primary toolbar action: a blank new diagram (guarded above). */}
+          {!readOnly && <Tooltip surface={appearance} label="Create a blank diagram">
+            <button
+              type="button"
+              data-testid="header-new"
+              aria-label="New"
+              onClick={handleNewClick}
+              className="editor-button editor-button--primary editor-document-new"
+            >
+              <PlusIcon />
+              <span className="editor-button-label">New</span>
+            </button>
+          </Tooltip>
+          }
+          <Tooltip surface={appearance} label="Fork: create an independent copy">
+            <button
+              type="button"
+              data-testid="header-fork"
+              aria-label="Fork"
+              onClick={onFork}
+              className="editor-button editor-button--secondary editor-document-fork"
+            >
+              <ForkIcon />
+              <span className="editor-button-label">Fork</span>
+            </button>
+          </Tooltip>
+          <div className="editor-document-share">{actions}</div>
+          <Tooltip surface={appearance} label="Present this diagram full-screen">
+            {/* Below md the label collapses to icon-only; aria-label keeps the name. */}
+            <button
+              type="button"
               data-testid="header-present"
               aria-label="Present"
               onClick={onPresent}
+              className="editor-button editor-button--secondary editor-document-present"
             >
               <PlayIcon />
-              <span className="hidden md:inline">Present</span>
-            </Button>
+              <span className="editor-button-label">Present</span>
+            </button>
           </Tooltip>
+        </div>
 
-          <div
-            aria-hidden="true"
-            data-testid="header-account-divider"
-            className="mx-0.5 h-6 w-px bg-ink-line/50 shrink-0"
-          />
+        <div className="editor-global-actions">
+          {onToggleAppearance && (
+            <Tooltip surface={appearance} label={darkAppearance ? 'Switch to light appearance' : 'Switch to dark appearance'}>
+              <button
+                type="button"
+                data-testid="header-appearance"
+                aria-label={darkAppearance ? 'Switch to light appearance' : 'Switch to dark appearance'}
+                onClick={onToggleAppearance}
+                className="editor-icon-button editor-appearance-toggle"
+              >
+                {darkAppearance ? <SunIcon /> : <MoonIcon />}
+              </button>
+            </Tooltip>
+          )}
 
-          {user ? (
-            <ProfileMenu
-              user={user}
-              onLogout={onLogout}
-              subscribed={subscribed}
-              planType={planType}
-              paymentEnabled={paymentEnabled}
-              onUpgrade={onUpgrade}
-              onManagePlan={onManagePlan}
-            />
-          ) : (
-            <>
-              {/* Signed-out users have no account menu (which carries Upgrade/My Plan
-                  for signed-in users), so surface a visible Pricing affordance here —
-                  gated by paymentEnabled like the app-menu item. A quiet ghost link so
-                  "Sign in" stays the primary action. The pricing modal handles the
-                  not-signed-in upgrade by routing back to sign-in. */}
-              {paymentEnabled && (
-                <Button
-                  variant="ghost"
-                  size="md"
-                  data-testid="header-pricing-link"
-                  onClick={() => onOpenPricing?.()}
-                >
-                  Pricing
-                </Button>
-              )}
-              <Tooltip label="Sign in to save and sync across devices">
-                <Button
-                  variant="subtle"
-                  size="md"
+          <div className="editor-global-account">
+            {user ? (
+              <ProfileMenu
+                surface={appearance}
+                user={user}
+                onLogout={onLogout}
+                subscribed={subscribed}
+                planType={planType}
+                paymentEnabled={paymentEnabled}
+                onUpgrade={onUpgrade}
+                onManagePlan={onManagePlan}
+                onOpenPricing={onOpenPricing}
+                menuClassName="editor-hifi-menu"
+              />
+            ) : (
+              // Signed out: Pricing is a small link inside the sign-in dialog.
+              <Tooltip surface={appearance} label="Sign in to save and sync across devices">
+                <button
+                  type="button"
                   data-testid="header-login"
                   onClick={() => setLoginOpen(true)}
+                  className="editor-button editor-button--secondary editor-sign-in"
                 >
                   Sign in
-                </Button>
+                </button>
               </Tooltip>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </header>
+      {!readOnly && (saveError || syncPending || cloudWithheld) && (
+        <div className="editor-save-feedback" role={saveError ? 'alert' : 'status'}>
+          <span>{saveError ? 'Couldn’t save. Your edits are still here.' : cloudWithheld ? 'Saved locally. Cloud save is paused at your plan limit.' : 'Saved locally. Cloud sync is pending.'}</span>
+          <button type="button" onClick={onRetrySave} disabled={saving} className="ring-draft underline">
+            {saveError ? 'Retry save' : 'Retry sync'}
+          </button>
+        </div>
+      )}
 
       <LoginModal
         open={loginOpen}
@@ -452,6 +413,14 @@ export function AppHeader({
         onLogin={onLogin}
         lastProvider={lastProvider}
         error={loginError}
+        pendingProvider={pendingProvider}
+        onOpenPricing={
+          openPricing &&
+          (() => {
+            setLoginOpen(false);
+            openPricing();
+          })
+        }
       />
 
       {/* #8: discard-unsaved-changes guard for "New". */}
@@ -469,83 +438,79 @@ export function AppHeader({
   );
 }
 
-// Quiet, mono, auto-save indicator. One element, one testid; the variant is
-// reported via `data-state` so tests assert the exact state, not brittle text.
+// Quiet auto-save indicator. One element, one testid; the variant is reported via
+// `data-state` so tests assert the exact state, not brittle text.
 function SaveState({
   readOnly,
   signedIn,
+  savedLocally,
   saving,
   dirty,
+  saveError,
+  syncPending,
+  cloudConfirmed,
   unsavedCount,
 }: {
   readOnly: boolean;
   signedIn: boolean;
+  savedLocally: boolean;
   saving: boolean;
   dirty: boolean;
+  saveError: boolean;
+  syncPending: boolean;
+  cloudConfirmed: boolean;
   unsavedCount: number;
 }) {
-  // Precedence (no false claims when there's no real save target):
-  // - readOnly: no save happens → neutral "Read-only".
-  // - signed-out: auto-save is local-only → neutral "Local only" (no Saving…/Unsaved
-  //   flash, since there's no cloud sync to report).
-  // - signed-in: Saving… → Unsaved (dirty) → Saved.
-  const state: 'readonly' | 'local' | 'saving' | 'dirty' | 'saved' = readOnly
+  // Precedence (no false claims):
+  // - readOnly: no save happens → "Read-only".
+  // - Saving… → Unsaved (dirty) → saved. Signed-out saves go to this device only,
+  //   so the clean signed-out state reads "Saved locally", never a cloud "Saved".
+  //   A signed-out diagram not yet written to this device reads "Local only".
+  const state: 'readonly' | 'local' | 'local-new' | 'saving' | 'dirty' | 'saved' | 'error' | 'queued' | 'unknown' = readOnly
     ? 'readonly'
-    : !signedIn
-      ? 'local'
-      : saving
-        ? 'saving'
-        : dirty
-          ? 'dirty'
-          : 'saved';
+    : saving
+      ? 'saving'
+      : saveError
+        ? 'error'
+      : dirty
+        ? 'dirty'
+        : syncPending
+          ? 'queued'
+        : signedIn && cloudConfirmed
+          ? 'saved'
+          : savedLocally
+            ? 'local'
+            : signedIn ? 'unknown' : 'local-new';
 
-  const base =
-    'inline-flex items-center gap-1.5 shrink-0 select-none font-mono ' +
-    'text-[12.5px] tracking-[0.02em]';
+  const label = {
+    readonly: 'Read-only',
+    unknown: 'Cloud status unknown',
+    error: 'Save failed',
+    queued: 'Saved locally · Sync pending',
+    saving: 'Saving…',
+    dirty: 'Unsaved',
+    saved: 'Saved',
+    local: 'Saved locally',
+    'local-new': 'Local only',
+  }[state];
 
-  if (state === 'saving') {
-    return (
-      <span data-testid="header-savestate" data-state="saving" className={cn(base, 'text-ondark-faint')}>
-        <span className="h-1.5 w-1.5 rounded-full bg-ondark-muted animate-pulse" aria-hidden="true" />
-        Saving…
-      </span>
-    );
-  }
-  if (state === 'dirty') {
-    return (
-      <span data-testid="header-savestate" data-state="dirty" className={cn(base, 'text-signal-amber')}
-        aria-label={
-          unsavedCount > 0
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      data-testid="header-savestate"
+      data-state={state}
+      className="editor-save-state"
+      aria-label={
+        state === 'dirty'
+          ? unsavedCount > 0
             ? `${unsavedCount} unsaved change${unsavedCount === 1 ? '' : 's'}`
             : 'Unsaved changes'
-        }
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-signal-amber" aria-hidden="true" />
-        Unsaved
-      </span>
-    );
-  }
-  if (state === 'saved') {
-    return (
-      <span data-testid="header-savestate" data-state="saved" className={cn(base, 'text-ondark-faint')}>
-        <span className="text-ok">
-          <CheckIcon />
-        </span>
-        Saved
-      </span>
-    );
-  }
-  if (state === 'local') {
-    return (
-      <span data-testid="header-savestate" data-state="local" className={cn(base, 'text-ondark-faint')}>
-        Local only
-      </span>
-    );
-  }
-  // readonly
-  return (
-    <span data-testid="header-savestate" data-state="readonly" className={cn(base, 'text-ondark-faint')}>
-      Read-only
+          : undefined
+      }
+    >
+      <span className="editor-save-dot" aria-hidden="true" />
+      {label}
     </span>
   );
 }

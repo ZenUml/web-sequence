@@ -1,109 +1,147 @@
 import type { ReactNode } from 'react';
-import { IconButton, Tooltip } from '../../ui';
+import type { Appearance } from '../../domain/types';
+import { Tooltip } from '../../ui';
 
-// RendererHeader — the white header bar (`.pv-head`) that sits ABOVE the diagram
-// on the renderer/preview side. Pure/presentational: no store access. It hosts a
-// `pageTabs` slot on the left (the `.rtabs` cluster) and a controls cluster on the
-// right (the `.pv-tools` cluster): a zoom label, an optional Fit button, and a
-// Present button.
+// RendererHeader — the toolbar at the top of the floating preview card. Pure and
+// presentational: no store access. Left: the page tabs slot. Right: Download,
+// optional Refresh, then the zoom group (fit width, fit height, fit diagram,
+// zoom out, current zoom, zoom in).
 //
-// This bar is the dark ink chrome (matching the editor side and the app header) —
-// every control here is `surface="dark"` and the bar itself is
-// `bg-ink-900 border-b border-ink-line`. Only the diagram canvas below stays warm paper.
-//
-// Zoom and Fit are presentational: PreviewFrame's imperative handle exposes only
-// `getPng`/`evalConsole`, so there is no zoom/fit API to wire in Phase 1. `zoomLabel`
-// defaults to "100%" and `onFit` is optional — the Fit button only renders when a
-// handler is supplied (no dead control). Present is the wired action (`onPresent`).
+// Every control renders only when its handler is supplied, so the toolbar never
+// shows a dead control. Present lives in the app header only.
 export interface RendererHeaderProps {
+  appearance?: Appearance;
   /** Left slot — integration passes `<PageTabs .../>` here. */
   pageTabs: ReactNode;
-  /** Wired: toggles Present (fullscreen) mode. */
-  onPresent(): void;
-  /** Optional fit-to-screen handler. Fit button only renders when provided. */
-  onFit?(): void;
+  /** Open the rendered diagram download preview. */
+  onDownload?(): void;
   /**
    * #824: optional manual re-render handler. The Refresh button renders ONLY when this
    * is supplied — AppRoot passes it solely when auto-preview is OFF, so the default UI
-   * (auto-preview ON, the 99% case) is unchanged and shows no extra control. Mirrors the
-   * onFit "render only when wired" pattern so there is never a dead button.
+   * (auto-preview ON, the 99% case) is unchanged and shows no extra control.
    */
   onRefresh?(): void;
-  /** Zoom percentage display, e.g. "100%". Presentational; defaults to "100%". */
-  zoomLabel?: string;
+  /** Zoom controls. The zoom group renders only when `zoom` is supplied. */
+  zoom?: {
+    label: string;
+    onFitWidth(): void;
+    onFitHeight(): void;
+    onFitDiagram(): void;
+    onZoomOut(): void;
+    onZoomIn(): void;
+    onActualSize(): void;
+  };
 }
 
-export function RendererHeader({
-  pageTabs,
-  onPresent,
-  onFit,
-  onRefresh,
-  zoomLabel = '100%',
-}: RendererHeaderProps) {
+function ToolButton({
+  label,
+  appearance = 'light',
+  testId,
+  onClick,
+  children,
+}: {
+  label: string;
+  appearance?: Appearance;
+  testId: string;
+  onClick(): void;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-2.5 h-11 px-3 bg-ink-900 border-b border-ink-line">
-      {/* .rtabs — left cluster, holds the page tabs slot */}
-      <div className="flex items-center gap-1 min-w-0">{pageTabs}</div>
+    <Tooltip surface={appearance} label={label}>
+      <button type="button" aria-label={label} data-testid={testId} onClick={() => onClick()} className="editor-tool-button">
+        {children}
+      </button>
+    </Tooltip>
+  );
+}
 
-      {/* .pv-tools — right controls cluster */}
-      <div className="ml-auto flex items-center gap-1">
-        {/* .zz — zoom percentage (presentational) */}
-        <span className="font-mono text-[11px] text-ondark-muted px-1.5 select-none">
-          {zoomLabel}
-        </span>
+const iconProps = {
+  width: 18,
+  height: 18,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.6,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+};
 
-        {/* #824: manual Refresh — only present when auto-preview is OFF (AppRoot gates
-            it by passing onRefresh conditionally). Lets the user re-render on demand so
-            "auto-preview off" stays usable. Matches the Fit/Present control styling. */}
+export function RendererHeader({ appearance = 'light', pageTabs, onDownload, onRefresh, zoom }: RendererHeaderProps) {
+  return (
+    <div className="editor-renderer-header">
+      <div className="editor-renderer-tabs">{pageTabs}</div>
+
+      <div className="editor-renderer-tools">
+        {onDownload && (
+          <Tooltip surface={appearance} label="Download diagram">
+            <button
+              type="button"
+              aria-label="Download diagram"
+              data-testid="renderer-download"
+              onClick={() => onDownload()}
+              className="editor-download-button"
+            >
+              <svg {...iconProps} width={16} height={16}>
+                <path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14" />
+              </svg>
+              <span className="editor-download-label">Download</span>
+            </button>
+          </Tooltip>
+        )}
+
+        {/* #824: manual Refresh — only present when auto-preview is OFF. */}
         {onRefresh && (
-          <Tooltip label="Refresh preview">
-            <IconButton
-              size="md"
-              surface="dark"
-              aria-label="Refresh preview"
-              data-testid="renderer-refresh"
-              onClick={() => onRefresh()}
-            >
-              {/* circular-refresh icon */}
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-                <path d="M21 4v5h-5" />
-              </svg>
-            </IconButton>
-          </Tooltip>
-        )}
-
-        {onFit && (
-          <Tooltip label="Fit to screen">
-            <IconButton
-              size="md"
-              surface="dark"
-              aria-label="Fit to screen"
-              data-testid="renderer-fit"
-              onClick={() => onFit()}
-            >
-              {/* fit/expand-corners icon */}
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-              </svg>
-            </IconButton>
-          </Tooltip>
-        )}
-
-        <Tooltip label="Present">
-          <IconButton
-            size="md"
-            surface="dark"
-            aria-label="Present"
-            data-testid="renderer-present"
-            onClick={() => onPresent()}
-          >
-            {/* present/screen-corners icon (matches design §02 Present glyph) */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M21 16v3a2 2 0 01-2 2h-3M8 21H5a2 2 0 01-2-2v-3" />
+          <ToolButton appearance={appearance} label="Refresh preview" testId="renderer-refresh" onClick={onRefresh}>
+            <svg {...iconProps}>
+              <path d="M20 12a8 8 0 1 1-2.35-5.65" />
+              <path d="M20 4.5v4h-4" />
             </svg>
-          </IconButton>
-        </Tooltip>
+          </ToolButton>
+        )}
+
+        {zoom && (
+          <div className="editor-zoom-group" role="group" aria-label="Zoom">
+            <ToolButton appearance={appearance} label="Fit to width" testId="renderer-fit-width" onClick={zoom.onFitWidth}>
+              <svg {...iconProps}>
+                <path d="M4 5v14M20 5v14M7.5 12h9M10 9.5 7.5 12l2.5 2.5M14 9.5l2.5 2.5-2.5 2.5" />
+              </svg>
+            </ToolButton>
+            <ToolButton appearance={appearance} label="Fit to height" testId="renderer-fit-height" onClick={zoom.onFitHeight}>
+              <svg {...iconProps}>
+                <path d="M5 4h14M5 20h14M12 7.5v9M9.5 10 12 7.5l2.5 2.5M9.5 14l2.5 2.5 2.5-2.5" />
+              </svg>
+            </ToolButton>
+            <ToolButton appearance={appearance} label="Fit diagram" testId="renderer-fit" onClick={zoom.onFitDiagram}>
+              <svg {...iconProps}>
+                <path d="M4 8.5V4h4.5M15.5 4H20v4.5M20 15.5V20h-4.5M8.5 20H4v-4.5" />
+                <rect x="9" y="9" width="6" height="6" rx="1" />
+              </svg>
+            </ToolButton>
+            <span className="editor-zoom-gap" aria-hidden="true" />
+            <ToolButton appearance={appearance} label="Zoom out" testId="renderer-zoom-out" onClick={zoom.onZoomOut}>
+              <svg {...iconProps}>
+                <path d="M6 12h12" />
+              </svg>
+            </ToolButton>
+            <Tooltip surface={appearance} label="Reset to 100%">
+              <button
+                type="button"
+                data-testid="renderer-zoom-label"
+                aria-label={`Zoom ${zoom.label}. Reset to 100%`}
+                onClick={() => zoom.onActualSize()}
+                className="editor-zoom-label"
+              >
+                {zoom.label}
+              </button>
+            </Tooltip>
+            <ToolButton appearance={appearance} label="Zoom in" testId="renderer-zoom-in" onClick={zoom.onZoomIn}>
+              <svg {...iconProps}>
+                <path d="M12 6v12M6 12h12" />
+              </svg>
+            </ToolButton>
+          </div>
+        )}
       </div>
     </div>
   );

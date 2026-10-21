@@ -20,12 +20,12 @@ Playwright implementation: `catalog.spec.ts`.)
 ## Harness — how to drive these (verified agent-browser recipe)
 
 ```
-# open + seed onboarding, reload, close the welcome modal, grab the editor ref
+# seed version-prompt flags, then open the editor
 agent-browser open http://localhost:3000
-agent-browser eval 'localStorage.setItem("onboarded","true");localStorage.setItem("lastSeenVersion","\"9999.0.0\"");localStorage.setItem("pledgeModalSeen","true");localStorage.setItem("loginAndsaveMessageSeen","true");"seeded"'
+agent-browser eval 'localStorage.setItem("lastSeenVersion","\"9999.0.0\"");localStorage.setItem("pledgeModalSeen","true");localStorage.setItem("loginAndsaveMessageSeen","true");"seeded"'
 agent-browser open http://localhost:3000
 agent-browser wait "[data-testid=dsl-editor] .cm-content"
-agent-browser snapshot -i            # close "Welcome to ZenUML" (Close button); find editor `textbox [ref=eNN]` (unnamed)
+agent-browser snapshot -i            # find editor `textbox [ref=eNN]` (unnamed)
 
 # CLEAR (start of EVERY case) — variable-free eval (the eval context PERSISTS across calls)
 agent-browser eval 'document.querySelector("[data-testid=dsl-editor] .cm-content").focus();document.execCommand("selectAll");document.execCommand("delete");"ok"'

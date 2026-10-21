@@ -6,6 +6,10 @@ import { applyPageEdit, switchPage, addPage, deletePage, migrateToPages } from '
 // Task 12 will make AppRoot import this instead of its local constant.
 export const DEFAULT_STARTER = {
   title: 'Untitled',
+  // Figma 32:4370 at a 1440px viewport: split.js sizes the pane as
+  // `pct% - 6px` (half the 12px split gutter), so 26.8056% gives a 380px pane:
+  // 16px padding + 352px code area + 12px, and the preview card at x392.
+  mainSizes: [26.8056, 73.1944],
   js: 'Alice -> Bob: Hello\nBob -> Alice: Hi back',
   css: '',
   html: '',
@@ -60,24 +64,24 @@ export const useEditorStore = create<EditorState>((set) => ({
   // FIX 4: loadItem resets all save counters so stale unsavedCount from a previous item
   // doesn't cause auto-save to fire on the freshly-loaded item.
   loadItem: (item) => set({ currentItem: migrateToPages(item), dirty: false, unsavedCount: 0, saving: false }),
-  setDsl: (js) => set((s) => s.currentItem
+  setDsl: (js) => set((s) => s.currentItem && !s.currentItem.isReadOnly
     ? { currentItem: applyPageEdit(s.currentItem, s.currentItem.currentPageId, { js }), dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
-  setCss: (css) => set((s) => s.currentItem
+  setCss: (css) => set((s) => s.currentItem && !s.currentItem.isReadOnly
     ? { currentItem: applyPageEdit(s.currentItem, s.currentItem.currentPageId, { css }), dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
-  setJsMode: (jsMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, jsMode }, dirty: true } : s),
-  setCssMode: (cssMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, cssMode }, dirty: true } : s),
-  setHtmlMode: (htmlMode) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, htmlMode }, dirty: true } : s),
-  setCssSettings: (cssSettings) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, cssSettings }, dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
-  addPage: (title) => set((s) => s.currentItem ? { currentItem: addPage(s.currentItem, title), dirty: true } : s),
-  deletePage: (pageId) => set((s) => s.currentItem ? { currentItem: deletePage(s.currentItem, pageId), dirty: true } : s),
+  setJsMode: (jsMode) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, jsMode }, dirty: true } : s),
+  setCssMode: (cssMode) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, cssMode }, dirty: true } : s),
+  setHtmlMode: (htmlMode) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, htmlMode }, dirty: true } : s),
+  setCssSettings: (cssSettings) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, cssSettings }, dirty: true, unsavedCount: s.unsavedCount + 1 } : s),
+  addPage: (title) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: addPage(s.currentItem, title), dirty: true } : s),
+  deletePage: (pageId) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: deletePage(s.currentItem, pageId), dirty: true } : s),
   // FIX 8: switchPage marks dirty so auto-save persists the page position change.
-  switchPage: (pageId) => set((s) => s.currentItem ? { currentItem: switchPage(s.currentItem, pageId), dirty: true } : s),
+  switchPage: (pageId) => set((s) => s.currentItem ? { currentItem: switchPage(s.currentItem, pageId), dirty: s.currentItem.isReadOnly ? s.dirty : true } : s),
   // Rename is a metadata edit: dirty=true, unsavedCount unchanged (same pattern as setTitle).
-  renamePage: (pageId, title) => set((s) => s.currentItem
+  renamePage: (pageId, title) => set((s) => s.currentItem && !s.currentItem.isReadOnly
     ? { currentItem: applyPageEdit(s.currentItem, pageId, { title }), dirty: true } : s),
   // FIX 5: setMainSizes updates mainSizes immutably via the store (avoids stale closure
   // mutation in Layout.tsx's onDragEnd; use getState() in the callback to avoid capture).
-  setMainSizes: (sizes) => set((s) => s.currentItem
+  setMainSizes: (sizes) => set((s) => s.currentItem && !s.currentItem.isReadOnly
     ? { currentItem: { ...s.currentItem, mainSizes: sizes }, dirty: true }
     : s),
   reset: () => set({ currentItem: null, dirty: false, unsavedCount: 0, saving: false }),
@@ -85,8 +89,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   setSaving: (saving) => set({ saving }),
   // Title/id changes are metadata edits: mark dirty so save is triggered, but do not
   // increment unsavedCount (which tracks content edits for autosave debounce logic).
-  setTitle: (title) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, title }, dirty: true } : s),
-  setItemId: (id) => set((s) => s.currentItem ? { currentItem: { ...s.currentItem, id }, dirty: true } : s),
+  setTitle: (title) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, title }, dirty: true } : s),
+  setItemId: (id) => set((s) => s.currentItem && !s.currentItem.isReadOnly ? { currentItem: { ...s.currentItem, id }, dirty: true } : s),
   newItem: () => {
     const fresh = migrateToPages({
       id: genItemId(),

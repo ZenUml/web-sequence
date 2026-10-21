@@ -11,9 +11,16 @@ export async function list(): Promise<string[]> {
   return Object.keys(map);
 }
 
-export async function add(id: string): Promise<void> {
+// `beforeWrite` (optional, synchronous) runs after the index read and immediately
+// before the index write is issued; it throws to stop that write (IE-C2-index).
+// Existing callers pass nothing and keep the old behaviour.
+export async function add(id: string, beforeWrite?: () => void): Promise<void> {
   const map = await localStore.get<ItemIndex>(LS_KEYS.items, {});
-  if (!map[id]) { map[id] = true; await localStore.set(LS_KEYS.items, map); }
+  if (!map[id]) {
+    beforeWrite?.();
+    map[id] = true;
+    await localStore.set(LS_KEYS.items, map);
+  }
 }
 
 export async function remove(id: string): Promise<void> {

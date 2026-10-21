@@ -2,7 +2,8 @@ import type { Item } from './types';
 
 // Curated "Create New" templates. Content PORTED VERBATIM from legacy
 // src/templates/template-{basic,black-white,blue,starUMLTheme}.json — copying
-// title/mainSizes/htmlMode/cssMode/jsMode/js/css/html. The legacy `layoutMode`
+// title/mainSizes/htmlMode/cssMode/jsMode/js/css/html; the three style sheets
+// receive the narrowly matched compatibility block below. The legacy `layoutMode`
 // field is intentionally DROPPED (not part of the rewrite's Item model).
 //
 // NOTE on titles: legacy black-white.json and blue.json BOTH carry the
@@ -20,7 +21,7 @@ export interface Template {
   item: Partial<Item>;
 }
 
-export const TEMPLATES: Template[] = [
+const LEGACY_TEMPLATES: Template[] = [
   {
     id: 'basic',
     title: 'Basic',
@@ -81,6 +82,72 @@ export const TEMPLATES: Template[] = [
     },
   },
 ];
+
+// Compatibility is explicit editable document CSS, limited to the three bundled
+// legacy styles. User-authored/edited CSS is never rewritten by this upgrade.
+export const TEMPLATE_LIGHT_BASE_MARKER = '/* ZenUML bundled template: light canvas */';
+
+const TEMPLATE_STYLE_COMPAT: Record<string, string> = {
+  'black-white': `
+${TEMPLATE_LIGHT_BASE_MARKER}
+#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .sequence-diagram { color: #000; }
+#diagram .sequence-diagram .message svg { color: @messageLineColor; }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .participant-name { color: #000; text-decoration: underline; }
+#diagram .sequence-diagram .message .name { color: @messageLineColor; }
+#diagram .sequence-diagram .fragment .header .name,
+#diagram .sequence-diagram .fragment .header .condition { color: #000; }
+#diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 0 !important; margin: 0 !important; border-color: @dividerBorderColor !important; box-shadow: 2px 2px 0 @dividerBorderColor; }
+#diagram .sequence-diagram .divider .left,
+#diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+`,
+  blue: `
+${TEMPLATE_LIGHT_BASE_MARKER}
+#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .sequence-diagram { color: @labelTextColor; }
+#diagram .sequence-diagram .message svg { color: @messageLineColor; }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .participant-name { color: @participantTextColor; text-decoration: underline; }
+#diagram .sequence-diagram .message .name { color: @messageLineColor; }
+#diagram .sequence-diagram .fragment .header .name,
+#diagram .sequence-diagram .fragment .header .condition { color: @labelTextColor; }
+#diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 4px !important; margin: 0 !important; border-color: @dividerBorderColor !important; color: @dividerTextColor !important; }
+#diagram .sequence-diagram .divider .left,
+#diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+`,
+  starUMLTheme: `
+${TEMPLATE_LIGHT_BASE_MARKER}
+#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .sequence-diagram { color: #000; }
+#diagram .sequence-diagram .message svg { color: @borderColor; }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @borderColor; }
+#diagram .sequence-diagram .participant-name { color: #000; text-decoration: underline; }
+#diagram .sequence-diagram .message .name,
+#diagram .sequence-diagram .fragment .header .name,
+#diagram .sequence-diagram .fragment .header .condition { color: #000; }
+`,
+};
+
+export const LEGACY_STYLE_TEMPLATE_CSS = Object.fromEntries(
+  LEGACY_TEMPLATES.filter(t => t.item.css).map(t => [t.id, t.item.css!]),
+) as Readonly<Record<string, string>>;
+
+export function upgradeLegacyTemplateCss(css: string): string {
+  const match = Object.entries(LEGACY_STYLE_TEMPLATE_CSS).find(([, original]) => original === css);
+  return match ? css + TEMPLATE_STYLE_COMPAT[match[0]] : css;
+}
+
+// The generated marker is editable document intent, so later palette edits keep
+// the template's Light diagram base while app chrome can remain Dark.
+export function usesTemplateLightBase(css = ''): boolean {
+  return css.includes(TEMPLATE_LIGHT_BASE_MARKER) || Object.values(LEGACY_STYLE_TEMPLATE_CSS).includes(css);
+}
+
+export const TEMPLATES: Template[] = LEGACY_TEMPLATES.map(template => ({
+  ...template,
+  item: { ...template.item, ...(template.item.css ? { css: upgradeLegacyTemplateCss(template.item.css) } : {}) },
+}));
 
 // Empty starter for a brand-new blank diagram. No fabricated DSL — genuinely
 // empty content with the default editor modes.

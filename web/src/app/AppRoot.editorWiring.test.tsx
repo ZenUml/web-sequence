@@ -106,16 +106,15 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Hub view gating (PRs #800/#801): '/' now renders HomeView, not the editor.
-  // Land on an editor URL; the mocked getItem rejects → useBootItem seeds a fresh
-  // 'new' item, same as the pre-hub boot (see AppRoot.test.tsx).
-  window.history.replaceState({}, '', '/?id=t-boot');
+  // An inline payload reaches the editor without requiring a stored owned item.
+  // A missing ?id= now correctly shows an unavailable-diagram notice.
+  window.history.replaceState({}, '', '/?code=A%3AB');
   for (const k of Object.keys(captured)) delete captured[k];
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   window.localStorage.clear();
-  // Suppress the one-time onboarding/pledge triggers (they'd perturb boot).
-  window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+  // Suppress the one-time upgrade-pledge trigger (it would perturb boot).
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
 });
 

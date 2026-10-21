@@ -231,11 +231,12 @@ describe('LibraryItemRow', () => {
     expect(del.className).toContain('data-[highlighted]:bg-danger/20');
     expect(del.className).not.toContain('data-[highlighted]:bg-accent-soft');
 
-    // Positive control: a neutral action still uses the base accent-soft highlight (the
-    // dark-menu base highlight), so the assertion above is about the conflict being
+    // Positive control: a neutral action retains the shared menu styling
+    // and default semantic tone, so the assertion above is about the conflict being
     // removed, not the class vanishing.
     const fork = await screen.findByTestId('lib-action-fork-item-1');
-    expect(fork.className).toContain('data-[highlighted]:bg-accent-soft');
+    expect(fork.className).toContain('ui-menu-item');
+    expect(fork).not.toHaveAttribute('data-tone', 'danger');
     expect(fork.className).not.toContain('data-[highlighted]:bg-danger/20');
   });
 

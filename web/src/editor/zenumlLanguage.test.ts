@@ -22,6 +22,8 @@
 //    Pick snippets where String appears as a grammar Atom (inside conditions, etc.).
 
 import { describe, it, expect } from 'vitest'
+import { EditorState } from '@codemirror/state'
+import { ensureSyntaxTree, foldable } from '@codemirror/language'
 import { highlightTree, classHighlighter } from '@lezer/highlight'
 import { zenumlLanguage, zenumlSupport, zenumlStream } from './zenumlLanguage'
 
@@ -428,5 +430,31 @@ describe('zenumlStream (legacy export — kept until modes.ts migration)', () =>
   it('marks identifiers as variableName and call targets as function', () => {
     expect(firstToken('Alice')).toBe('variableName')
     expect(firstToken('method(')).toBe('function')
+  })
+})
+
+// The DSL editor shows CodeMirror's fold gutter, but the language declared no fold
+// ranges, so `{ … }` blocks could never be folded and the column was dead space.
+describe('zenuml folding', () => {
+  function foldAt(doc: string, lineNo: number) {
+    const state = EditorState.create({ doc, extensions: [zenumlSupport()] })
+    const tree = ensureSyntaxTree(state, state.doc.length, 5000)
+    expect(tree).toBeTruthy()
+    const line = state.doc.line(lineNo)
+    return foldable(state, line.from, line.to)
+  }
+
+  it('folds the inside of a message block', () => {
+    const doc = 'A.b() {\n  C.d()\n  E.f()\n}'
+    expect(foldAt(doc, 1)).toEqual({ from: doc.indexOf('{') + 1, to: doc.lastIndexOf('}') })
+  })
+
+  it('folds the inside of a group block', () => {
+    const doc = 'group G {\n  A\n  B\n}'
+    expect(foldAt(doc, 1)).toEqual({ from: doc.indexOf('{') + 1, to: doc.lastIndexOf('}') })
+  })
+
+  it('offers no fold on a plain message line', () => {
+    expect(foldAt('A->B: hi\nB->A: ok', 1)).toBeNull()
   })
 })

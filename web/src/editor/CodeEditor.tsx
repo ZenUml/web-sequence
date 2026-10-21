@@ -1,13 +1,13 @@
-import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
+import CodeMirror, { ExternalChange, type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
-import { Compartment, Prec, type Extension } from '@codemirror/state';
+import { Compartment, EditorState, Prec, type Extension } from '@codemirror/state';
 import { linter, lintGutter, forceLinting, type Diagnostic } from '@codemirror/lint';
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import { indentUnit } from '@codemirror/language';
 import { abbreviationTracker } from '@emmetio/codemirror6-plugin';
 import { vim } from '@replit/codemirror-vim';
-import { forwardRef, useEffect, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_THEME, resolveTheme } from './themes';
 import { languageExtension, type EditorLanguage } from './modes';
 import { editorKeymap, formatCss } from './keymap';
@@ -29,7 +29,7 @@ export interface CodeEditorProps {
   testId?: string;
   themeId?: string;               // default DEFAULT_THEME ('ink' — calm drafting theme)
   fontFamily?: string;            // default 'FiraCode' (DEFAULT_SETTINGS.editorFont)
-  fontSize?: number;              // default 16 (DEFAULT_SETTINGS.fontSize)
+  fontSize?: number;              // default 15 (DEFAULT_SETTINGS.fontSize)
   keymap?: 'sublime' | 'vim';     // default 'sublime' (CM6 default keymap, no vim)
   // #825: indent unit wiring. `indentWith` selects spaces vs a tab; `indentSize` is the
   // number of spaces per level (ignored when indentWith === 'tabs'). Together they set
@@ -42,6 +42,9 @@ export interface CodeEditorProps {
   // DSL only: fires when the cursor's parse zone (head vs block) changes. Feeds the
   // context-sensitive Hint Bar. Ignored for CSS.
   onZoneChange?: (zone: SlashZone) => void;
+  // Called before a user edit lands in the buffer; return false to drop it (e.g. the
+  // Custom CSS sign-in / Plus gate). Value syncs from the parent are never guarded.
+  editGuard?: () => boolean;
 }
 
 // Resolve a stored editor-font setting to a real CSS font stack that ALWAYS ends in a
@@ -60,12 +63,97 @@ function fontStack(family: string): string {
   return name ? `${name}, ${FONT_FALLBACK}` : FONT_FALLBACK;
 }
 
+// Row metrics (Figma 32:4370 / 32:4188): at the default 15px code font, rows are an
+// explicit 24px and line numbers 13px. Both scale with the font-size setting; the
+// row height is a whole pixel so code rows and gutter rows stay on the same grid.
+const ROW_PER_FONT = 1.6;      // 15px -> 24px
+const NUMBER_PER_FONT = 13 / 15;
+
 function fontTheme(family: string, size: number): Extension {
+  const row = Math.round(size * ROW_PER_FONT);
+  const markerPad = (row - 16) / 2; // centres the lint marker's 16px glyph box in the row
   return EditorView.theme({
     '&': { fontSize: size + 'px' },
+    '.cm-scroller': { lineHeight: row + 'px' },
+    '.cm-gutter-lint .cm-lint-marker': { paddingTop: markerPad + 'px', paddingBottom: markerPad + 'px' },
     '.cm-content': { fontFamily: fontStack(family) },
+    '.cm-gutters': { fontSize: `${NUMBER_PER_FONT}em` },
   });
 }
+
+// Gutter lanes (Figma 32:4370 / 32:4188). The design has ONE visible lane: 32px of
+// right-aligned line numbers at the code area's left edge, then an 8px gap, so code
+// starts 40px from the editor edge. A 32px number lane + 12px fold + 16px lint
+// column cannot fit in those 40px, so fold and lint stay native CodeMirror gutters
+// (same handlers, same markers) but take no width; their markers overlay the lane:
+//
+//   |<- lint marker: 32x24 hit target over the lane, 3px severity bar at its left
+//   |  line numbers (32px, right-aligned, 4px right padding)  |<- fold toggle x-4..x+8
+//   x0                                                       x32       x40 code
+//
+// - Lane width is a minimum, not a clamp: 1-3 digit numbers fit, so code never moves
+//   between 1, 2 and 3 digits. A 4-digit line count (1000+) widens the lane.
+// - The current-row band is the theme's active-line colour on both the number cell
+//   and the line (whose 8px left padding is the gap), so it is one square band.
+// - No border: a theme's 1px gutter border would shift code by 1px.
+const LANE_PX = 32;
+const compactGutterTheme = EditorView.theme({
+  '.cm-gutters': { borderRight: 'none' },
+  '.cm-content': { paddingTop: '0' },
+  '.cm-line': { paddingLeft: '8px' },
+  '.cm-activeLine, .cm-activeLineGutter': { borderRadius: '0' },
+  // Visual order: lint (0px), numbers (32px), fold (0px).
+  '.cm-gutter-lint': { order: '0', width: '0', overflow: 'visible' },
+  '.cm-lineNumbers': { order: '1', minWidth: `${LANE_PX}px` },
+  '.cm-foldGutter': { order: '2', width: '0', overflow: 'visible' },
+  '.cm-lineNumbers .cm-gutterElement': { padding: '0 4px 0 0', minWidth: '0', textAlign: 'right' },
+  '.cm-foldGutter .cm-gutterElement, .cm-gutter-lint .cm-gutterElement': {
+    position: 'relative',
+    width: '0',
+    padding: '0',
+    overflow: 'visible',
+  },
+  // Fold toggle: 12px wide, the row's height, centred on the lane's right edge
+  // (between the numbers' 4px right padding and code). The gutter's own click
+  // handler still receives the click (it bubbles from the marker).
+  '.cm-foldGutter .cm-gutterElement > span': {
+    position: 'absolute',
+    zIndex: '2',
+    top: '0',
+    left: '-4px',
+    width: '12px',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: 'var(--code-muted, inherit)',
+  },
+  // Lint marker: @codemirror/lint binds its hover handler on this element, so its
+  // box is the hit target: the full lane cell (32 x row). The glyph is a 3px bar in
+  // the content box (severity colour), left of 3-digit numbers, so it never covers
+  // a number.
+  '.cm-gutter-lint .cm-lint-marker': {
+    content: 'normal',
+    position: 'absolute',
+    zIndex: '1',
+    top: '0',
+    left: '0',
+    display: 'block',
+    boxSizing: 'content-box',
+    width: '3px',
+    height: '16px',
+    // Vertical padding comes from fontTheme (it knows the row height), so only the
+    // horizontal sides are set here (longhands: a shorthand would override it).
+    paddingLeft: '0',
+    paddingRight: `${LANE_PX - 3}px`,
+    backgroundClip: 'content-box',
+    cursor: 'default',
+  },
+  '.cm-gutter-lint .cm-lint-marker-error': { backgroundColor: 'var(--code-invalid, #e5484d)' },
+  '.cm-gutter-lint .cm-lint-marker-warning': { backgroundColor: 'var(--code-warning, #e2a336)' },
+  '.cm-gutter-lint .cm-lint-marker-info': { backgroundColor: 'var(--code-function, #3e8fd6)' },
+});
 
 // #825: resolve the indent setting to the string CM6's `indentUnit` facet expects:
 // a run of `n` spaces, or a single tab. The facet's combine() validates that the
@@ -125,12 +213,13 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     testId,
     themeId = DEFAULT_THEME,
     fontFamily = 'FiraCode',
-    fontSize = 16,
+    fontSize = 15,
     keymap: keymapMode = 'sublime',
     indentWith = 'spaces',
     indentSize = 2,
     diagnostics = NO_DIAGNOSTICS,
     onZoneChange,
+    editGuard,
   },
   ref,
 ) {
@@ -143,8 +232,18 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  // Stable handler for <CodeMirror onChange>. @uiw lists `onChange` in its
+  // StateEffect.reconfigure deps, and parents pass a fresh function every render, so
+  // passing `onChange` through directly reconfigured the editor on every keystroke.
+  // Reconfigure drops the snippet state that snippet() appends lazily, so slash-command
+  // tab stops vanished right after insertion (same failure mode as BASIC_SETUP_* below).
+  const stableOnChange = useCallback((next: string) => onChangeRef.current(next), []);
   // Keep latest onZoneChange without rebuilding extensions — the updateListener
   // reads through this ref, so the `extensions` memo can stay keyed on `language`.
+  // Latest editGuard, read by the transaction filter below so the memoized
+  // extensions stay stable.
+  const editGuardRef = useRef(editGuard);
+  editGuardRef.current = editGuard;
   const onZoneChangeRef = useRef(onZoneChange);
   onZoneChangeRef.current = onZoneChange;
   // Last zone emitted, so the listener only fires onZoneChange on an actual change.
@@ -238,6 +337,15 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
 
     return [
       EditorView.lineWrapping,
+      compactGutterTheme,
+      // Drop a guarded user edit before it changes the doc. Gating in onChange was
+      // too late: the keystroke was already in the buffer while the store and
+      // preview stayed unchanged, so the editor showed text that was never saved.
+      EditorState.transactionFilter.of((tr) => {
+        const guard = editGuardRef.current;
+        if (!guard || !tr.docChanged || tr.annotation(ExternalChange)) return tr;
+        return guard() ? tr : [];
+      }),
       lintGutter(),
       lintCompartment.current.of(diagnosticsLinter(diagnostics)),
       themeCompartment.current.of(resolveTheme(themeId)),
@@ -332,10 +440,13 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
         ref={ref}
         value={value}
         height="100%"
+        // The @uiw root div sits between this box and .cm-editor; without a height
+        // the editor (and its number lane) would stop at the last line.
+        className="h-full"
         theme="none"
         readOnly={readOnly}
         extensions={extensions}
-        onChange={onChange}
+        onChange={stableOnChange}
         onCreateEditor={(view) => {
           viewRef.current = view;
         }}

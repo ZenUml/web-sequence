@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { keymap, type EditorView } from '@codemirror/view';
 import { getIndentation, getIndentUnit } from '@codemirror/language';
+import { snippet, hasNextSnippetField } from '@codemirror/autocomplete';
 import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { CodeEditor } from './CodeEditor';
 
@@ -167,6 +168,74 @@ describe('CodeEditor', () => {
     await waitFor(() => expect(getIndentUnit(ref.current!.view!.state)).toBe(8));
     expect(ref.current!.view).toBe(view); // not remounted
     expect(dslBlockBodyIndent(ref.current!.view!)).toBe(8);
+  });
+
+  // Parents (AppRoot) pass a fresh onChange function on every render. @uiw lists
+  // `onChange` in its StateEffect.reconfigure deps, so an unstable handler made every
+  // keystroke reconfigure the editor and wipe the lazily-appended snippet state: the
+  // slash-command tab stops (.cm-snippetField) vanished right after insertion.
+  it('keeps active snippet fields when the parent re-renders with a new onChange', async () => {
+    const first = vi.fn();
+    const ref = createRef<ReactCodeMirrorRef>();
+    const { rerender } = render(
+      <CodeEditor ref={ref} value="" language="dsl" onChange={first} testId="dsl-editor" />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    snippet('${Svc}.${method}() {')(view, null, 0, 0);
+    expect(hasNextSnippetField(view.state)).toBe(true);
+    const doc = view.state.doc.toString();
+
+    const second = vi.fn();
+    rerender(<CodeEditor ref={ref} value={doc} language="dsl" onChange={second} testId="dsl-editor" />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ref.current!.view).toBe(view);
+    expect(hasNextSnippetField(view.state)).toBe(true);
+
+    // The latest handler still receives edits.
+    first.mockClear();
+    view.dispatch({ changes: { from: 0, insert: 'X' } });
+    expect(second).toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  // Custom CSS is gated (sign-in / Plus). The gate used to run in onChange, AFTER the
+  // keystroke had already landed in the buffer; the store and preview stayed empty
+  // but the editor kept the stray text. editGuard must veto the edit before it lands.
+  it('editGuard returning false keeps the buffer unchanged and is asked once per edit', async () => {
+    const onChange = vi.fn();
+    const editGuard = vi.fn(() => false);
+    const ref = createRef<ReactCodeMirrorRef>();
+    render(
+      <CodeEditor ref={ref} value=".a{}" language="css" onChange={onChange} testId="css-editor" editGuard={editGuard} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    view.dispatch({ changes: { from: 0, insert: 'x' }, userEvent: 'input.type' });
+    expect(view.state.doc.toString()).toBe('.a{}');
+    expect(editGuard).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('editGuard returning true lets edits through, and external value syncs bypass it', async () => {
+    const onChange = vi.fn();
+    const editGuard = vi.fn(() => false);
+    const ref = createRef<ReactCodeMirrorRef>();
+    const { rerender } = render(
+      <CodeEditor ref={ref} value="" language="css" onChange={onChange} testId="css-editor" editGuard={editGuard} />,
+    );
+    await waitFor(() => expect(ref.current?.view).toBeTruthy());
+    const view = ref.current!.view!;
+    // A new value from the parent (e.g. loading another page) is not a user edit:
+    // it must sync even while the guard would refuse edits.
+    rerender(<CodeEditor ref={ref} value=".loaded{}" language="css" onChange={onChange} testId="css-editor" editGuard={editGuard} />);
+    await waitFor(() => expect(view.state.doc.toString()).toBe('.loaded{}'));
+    expect(editGuard).not.toHaveBeenCalled();
+
+    editGuard.mockReturnValue(true);
+    view.dispatch({ changes: { from: 0, insert: 'b' }, userEvent: 'input.type' });
+    expect(view.state.doc.toString()).toBe('b.loaded{}');
+    expect(onChange).toHaveBeenCalledWith('b.loaded{}');
   });
 
   it('Mod-Shift-f does NOT format/mutate a read-only (ACSS) editor (FIX 6a)', async () => {

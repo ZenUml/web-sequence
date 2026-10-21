@@ -1,4 +1,5 @@
 import type { Item, Page } from './types';
+import { upgradeLegacyTemplateCss } from './templates';
 
 // Collision-resistant page id. MUST NOT derive from a session-local counter:
 // page ids are persisted and restored across reloads (REQ-PG-2), so a
@@ -12,6 +13,11 @@ function genId(prefix = 'p'): string {
 }
 
 export function migrateToPages(item: Item): Item {
+  if (item.cssMode === 'less') {
+    const css = upgradeLegacyTemplateCss(item.css ?? '');
+    const pages = item.pages?.map(page => ({ ...page, css: upgradeLegacyTemplateCss(page.css ?? '') }));
+    item = { ...item, css, ...(pages ? { pages } : {}) };
+  }
   if (Array.isArray(item.pages) && item.pages.length > 0) {
     // Pages are the source of truth (REQ-DM-1); the top-level js/css are only a mirror
     // of the CURRENT page. A persisted/legacy item may carry a STALE mirror (saved out

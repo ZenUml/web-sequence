@@ -5,7 +5,7 @@ export interface RenderOptions {
   // The participant editor is available only in the normal HTML editor preview.
   // Explicit false also resets core's stored flag when switching modes.
   enableParticipantStyleEditing: boolean;
-  theme: 'theme-default';
+  theme: 'theme-default' | 'theme-dark' | 'theme-clean-dark' | 'theme-darcula';
   stickyOffset: number; // from the host router search params — NOT window.location inside the iframe
   // Renderer selection. 'html' (default) = @zenuml/core's interactive React diagram.
   // 'svg' = the native vector SVG (renderToSvg), used on mobile where the fixed-px HTML
@@ -23,15 +23,18 @@ export type HostMessage =
   | { type: 'render'; code: string; options: RenderOptions; token?: number }
   | { type: 'updateCss'; css: string }
   | { type: 'getPng'; id: number }
+  | { type: 'getSvg'; id: number }
   | { type: 'evalConsole'; id: number; expr: string };
 
 // iframe → host
 export type FrameMessage =
   | { type: 'ready' }
+  | { type: 'escape' }
   // `token` echoes the render message's token (acknowledged delivery — see HostMessage).
   | { type: 'rendered'; token?: number }
   | { type: 'codeChange'; code: string }
   | { type: 'png'; id: number; dataUrl: string | null }
+  | { type: 'svg'; id: number; svg: string | null }
   | { type: 'console'; level: string; args: string[] }
   | { type: 'evalResult'; id: number; ok: boolean; value: string }
   | { type: 'error'; message: string }
@@ -46,8 +49,8 @@ export type FrameMessage =
   | { type: 'contentSize'; width: number; height: number };
 
 const FRAME_TYPES = new Set([
-  'ready', 'rendered', 'codeChange', 'png', 'console', 'evalResult', 'error',
-  'contentSize',
+  'ready', 'rendered', 'codeChange', 'png', 'svg', 'console', 'evalResult', 'error',
+  'contentSize', 'escape',
 ]);
 
 export function isFrameMessage(data: unknown): data is FrameMessage {

@@ -1,9 +1,11 @@
+import './tokens.css';
 // Design-system primitives ("Drafting Table"). Future milestone UI imports from
 // here — do not hand-roll buttons/dialogs/styles. See
 // docs/superpowers/specs/2026-06-07-design-system.md.
 export { cn } from './cn';
 export { Button, buttonClassName, type ButtonProps } from './Button';
 export { BrandLogo } from './BrandLogo';
+export { PlusIcon } from './PlusIcon';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { Dialog, DialogTrigger, DialogClose, DialogContent } from './Dialog';
 export { TextInput, type TextInputProps } from './TextInput';

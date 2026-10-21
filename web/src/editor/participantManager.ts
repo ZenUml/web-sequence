@@ -86,7 +86,7 @@ function collectParticipants(state: EditorState): Set<string> {
 /**
  * CodeMirror StateField that tracks declared participant names.
  *
- * Recomputes only when the document changes. Returns a stable reference to the
+ * Recomputes when the document or its syntax tree changes. Returns a stable reference to the
  * prior set when the names have not actually changed, to avoid triggering
  * needless downstream recompute in facets and effects that subscribe to this
  * field.
@@ -100,8 +100,10 @@ export const zenumlParticipantField: StateField<ReadonlySet<string>> = StateFiel
   },
 
   update(value, tr: Transaction) {
-    // Short-circuit: if the document did not change the tree is unchanged.
-    if (!tr.docChanged) return value
+    // Short-circuit only when neither the doc nor the tree changed. The initial
+    // parse stops at 3000 chars / 20ms; the background parser later delivers the
+    // rest in a transaction that changes the tree but not the doc.
+    if (!tr.docChanged && syntaxTree(tr.state) === syntaxTree(tr.startState)) return value
 
     const next = collectParticipants(tr.state)
 

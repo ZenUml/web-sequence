@@ -114,10 +114,9 @@ test('HDR-1: typing a title and pressing Enter commits the new title', async ({
   await page.keyboard.press('Enter');
   await expect(title).toHaveValue(NEW_TITLE);
 
-  // Save the diagram (signed-out, local). Save lives in the header overflow menu; the
+  // Save the diagram (signed-out, local). Manual save is ⌘S; the
   // FIRST signed-out save opens the one-time "Saved on this device" notice — dismiss it.
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
   await expect(noticeCancel).toBeVisible();
   await noticeCancel.click();
@@ -199,8 +198,7 @@ test('HDR-2: pressing Escape reverts an in-progress title edit; Enter commits', 
   // Prove Enter committed into the actual item (not just the field): save + open the hub
   // and read the persisted card title — the COMMITTED value rode through, the reverted
   // TempEscapeTitle did not.
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
   await expect(noticeCancel).toBeVisible();
   await noticeCancel.click();

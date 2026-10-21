@@ -33,6 +33,7 @@ describe('Layout', () => {
       // No mobile tabs on desktop.
       expect(screen.queryByTestId('layout-tab-edit')).toBeNull();
       expect(screen.queryByTestId('layout-tab-preview')).toBeNull();
+      expect(document.querySelector('.editor-layout')).toBeInTheDocument();
     });
   });
 
@@ -82,9 +83,23 @@ describe('Layout', () => {
       expect(screen.getByTestId('layout-tab-edit')).toHaveAttribute('aria-pressed', 'false');
     });
 
+    it('shows presentation from Edit and restores the same mounted panes on exit', () => {
+      const { rerender } = render(<Layout editor={editor} preview={preview} />);
+      const editorNode = screen.getByTestId('editor-child');
+      const previewNode = screen.getByTestId('preview-child');
+      rerender(<Layout editor={editor} preview={preview} presenting />);
+      expect(screen.getByTestId('preview-region').classList.contains('hidden')).toBe(false);
+      rerender(<Layout editor={editor} preview={preview} presenting={false} />);
+      expect(screen.getByTestId('preview-region').classList.contains('hidden')).toBe(true);
+      expect(screen.getByTestId('editor-child')).toBe(editorNode);
+      expect(screen.getByTestId('preview-child')).toBe(previewNode);
+    });
+
     it('groups the tabs with an accessible role/name', () => {
       render(<Layout editor={editor} preview={preview} />);
       expect(screen.getByRole('group', { name: 'Editor or preview' })).toBeInTheDocument();
+      expect(document.querySelector('.editor-layout-mobile')).toBeInTheDocument();
+      expect(document.querySelector('.editor-mobile-tabs')).toBeInTheDocument();
     });
   });
 });

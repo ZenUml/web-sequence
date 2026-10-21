@@ -1,0 +1,202 @@
+/* Shared-link visitor loading / retryable-failure states (Figma 36:8669, 36:8736,
+   36:8803, 36:8870). Scoped to .share-visitor; colours come only from the global
+   --editor-* tokens so the whole surface — page, source column, floating panel,
+   text and icons — follows <html data-appearance>. Dark: panel = --editor-surface
+   (#343F4B), never a white block. Header/buttons reuse the Editor classes. */
+
+.share-visitor .share-visitor__brand {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 4px;
+  margin-left: -4px;
+}
+
+.share-visitor .share-visitor__brand svg {
+  border-radius: 6px;
+}
+
+.share-visitor .share-visitor__title {
+  padding: 0 4px;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--editor-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- Body: source column (x24..368 @1440) + floating panel (x392..1428) ---- */
+.share-visitor .share-visitor__body {
+  display: grid;
+  flex: 1 1 auto;
+  /* Same geometry as the Editor split (26.8 / 73.2 with a 12px gutter): source
+     content x24..368, panel x392..1428 at 1440px. */
+  grid-template-columns: minmax(240px, calc(26.8% - 6px)) minmax(0, 1fr);
+  column-gap: 12px;
+  min-height: 0;
+  background: var(--editor-bg);
+}
+
+.share-visitor .share-visitor__body--collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 0;
+}
+
+.share-visitor .share-visitor__body--collapsed .share-visitor__source {
+  display: none;
+}
+
+.share-visitor .share-visitor__body--collapsed .share-visitor__stage {
+  padding-left: 12px;
+}
+
+.share-visitor .share-visitor__source {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 12px 0 24px;
+}
+
+.share-visitor .share-visitor__eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
+}
+
+.share-visitor .share-visitor__source-message {
+  margin: 22px 0 0;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--editor-text-secondary);
+}
+
+.share-visitor .share-visitor__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.share-visitor .share-visitor__skeleton span {
+  display: block;
+  max-width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--editor-border);
+}
+
+.share-visitor .share-visitor__source-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: 8px 0 12px;
+  border-top: 1px solid var(--editor-divider);
+}
+
+.share-visitor .share-visitor__stage {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Centered content block starts ~35% down the panel (icon at y308 of 880). */
+.share-visitor .share-visitor__panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+  color: var(--editor-text);
+  text-align: center;
+}
+
+.share-visitor .share-visitor__panel::before {
+  content: '';
+  flex: 0 1 35%;
+}
+
+.share-visitor .share-visitor__panel:focus,
+.share-visitor .share-visitor__panel:focus-visible {
+  outline: none;
+}
+
+:root[data-appearance='dark'] .share-visitor .share-visitor__panel {
+  box-shadow: var(--editor-shadow), inset 0 0 0 1px var(--editor-border);
+}
+
+.share-visitor .share-visitor__message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.share-visitor .share-visitor__icon {
+  width: 36px;
+  height: 36px;
+  color: var(--editor-text-secondary);
+}
+
+.share-visitor .share-visitor__spinner {
+  animation: share-visitor-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-visitor .share-visitor__spinner {
+    animation: none;
+  }
+}
+
+@keyframes share-visitor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.share-visitor .share-visitor__heading {
+  margin: 24px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--editor-text);
+}
+
+.share-visitor .share-visitor__guidance {
+  margin: 13px 0 0;
+  max-width: 34ch;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--editor-text-secondary);
+}
+
+.share-visitor .share-visitor__retry {
+  margin-top: 28px;
+  padding: 0 22px;
+}
+
+/* ---- Mobile (< md): one column; the panel fills, no empty dual panes ----- */
+@media (max-width: 767px) {
+  .share-visitor .share-visitor__body {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  .share-visitor .share-visitor__source {
+    display: none;
+  }
+
+  .share-visitor .share-visitor__panel::before {
+    flex-basis: 28%;
+  }
+
+  /* Full-bleed on mobile (Editor drops radius/shadow): no edge ring either. */
+  :root[data-appearance='dark'] .share-visitor .share-visitor__panel {
+    box-shadow: none;
+  }
+}

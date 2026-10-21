@@ -18,6 +18,7 @@ import {
   tokenSpans,
   baseColor,
   errorMarkerCount,
+  errorMessages,
 } from './helpers/editor';
 
 test.beforeEach(async ({ page }) => {
@@ -467,11 +468,17 @@ test.describe('J. negative / edge', () => {
     await expect.poll(() => getEditorText(page)).toContain('Client->DB: query');
   });
 
-  test('J2 — garbage does not crash and shows no error markers', async ({ page }) => {
+  // Written 2026-06-10 when no DSL linter was wired. Since edae7b6e (2026-06-13) the
+  // @zenuml/core language server publishes parser errors as lint diagnostics. The
+  // renderer's ANTLR parser rejects this input at the same token ("mismatched input
+  // '!'" at 1:0), so exactly ONE diagnostic at the first `!` is the intended result.
+  // No-false-positive coverage stays in J1/J4 and section W (valid or incomplete DSL
+  // must show zero markers).
+  test('J2 — garbage does not crash; shows exactly the parser error', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('!!!@@@###');
-    await page.waitForTimeout(300);
-    expect(await errorMarkerCount(page)).toBe(0);
+    await expect.poll(() => errorMarkerCount(page)).toBe(2); // 1 inline range + 1 gutter marker
+    expect(await errorMessages(page)).toEqual([expect.stringContaining('Expecting end of file but found `!`.')]);
     await expect.poll(() => getEditorText(page)).toContain('!!!');
   });
 

@@ -32,8 +32,11 @@ function makeView(doc: string, anchor = 0): EditorView {
 
 /** Poll until `fn()` is true (or ~1s passes) — for the deferred composition flush. */
 async function waitFor(fn: () => boolean): Promise<void> {
-  const start = Date.now()
-  while (!fn() && Date.now() - start < 1000) {
+  // Cap by timer ticks, not wall-clock time. After an event-loop stall under
+  // parallel test load, expired timers run in expiry order, so the code's own
+  // short timer (e.g. the 60ms compositionend flush) runs within a few ticks; a
+  // 1s Date.now() cap could expire during the stall before that timer ran.
+  for (let tick = 0; tick < 100 && !fn(); tick++) {
     await new Promise((r) => setTimeout(r, 10))
   }
 }

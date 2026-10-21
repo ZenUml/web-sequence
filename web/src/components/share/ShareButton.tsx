@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Popover, PopoverTrigger, Button } from '../../ui';
 import { SharePopover, type SharePopoverProps } from './SharePopover';
 
-// Design §01 share glyph (three connected nodes). Decorative — the button carries
+// Editor share glyph (tray with an upward arrow). Decorative — the button carries
 // an explicit aria-label so the icon-only mobile state stays accessible.
 function ShareIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
-      className="h-[15px] w-[15px]" aria-hidden="true">
-      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-      <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+      strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path d="M12 15V3M7.5 7.5 12 3l4.5 4.5" />
+      <path d="M8 11H5v10h14V11h-3" />
     </svg>
   );
 }
