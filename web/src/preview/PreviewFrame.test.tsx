@@ -44,7 +44,7 @@ describe('PreviewFrame', () => {
     const message = post.mock.calls.find(([m]) => m.type === 'render')![0];
     expect(message.options.renderMode).toBe('html');
     expect(message.options.enableParticipantStyleEditing).toBe(false);
-    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css, revision: expect.any(Number) }), '*');
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css }), '*');
     act(() => window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'rendered', token: message.token } })));
     expect(ref.current!.getExportSnapshot()).toMatchObject({ code: item.js, css, renderMode: 'html' });
   });
@@ -625,37 +625,32 @@ describe('PreviewFrame', () => {
     }
   });
 
-  it('reports only the latest render surface and the latest CSS revision to its host', () => {
-    const onSurfaceChange = vi.fn();
-    const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} onSurfaceChange={onSurfaceChange} />);
+  it('keeps the iframe transparent and independent of document CSS and theme without remounting', () => {
+    const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} theme="theme-dark" />);
     const iframe = container.querySelector('iframe') as HTMLIFrameElement;
     const post = vi.fn();
     Object.defineProperty(iframe, 'contentWindow', { value: { postMessage: post }, configurable: true });
     const emit = (data: unknown) => act(() => window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data })));
     emit({ type: 'ready' });
-    const first = post.mock.calls.find(([message]) => message.type === 'render')![0].token;
-    rerender(<PreviewFrame code="A.b" css="html,body{background:#aabbcc}" stickyOffset={0} onSurfaceChange={onSurfaceChange} />);
-    const cssMessage = post.mock.calls.filter(([message]) => message.type === 'updateCss').at(-1)![0];
-    emit({ type: 'surface', token: first, cssRevision: cssMessage.revision - 1, backgroundColor: '#111111' });
-    expect(onSurfaceChange).not.toHaveBeenCalled();
-    emit({ type: 'surface', token: first, cssRevision: cssMessage.revision, backgroundColor: '#aabbcc' });
-    expect(onSurfaceChange).toHaveBeenLastCalledWith('#aabbcc');
-    rerender(<PreviewFrame code="A.b" css="html,body{background:#ddeeff}" stickyOffset={0} theme="theme-dark" onSurfaceChange={onSurfaceChange} />);
-    const second = post.mock.calls.filter(([message]) => message.type === 'render').at(-1)![0].token;
-    emit({ type: 'surface', token: first, cssRevision: cssMessage.revision, backgroundColor: '#111111' });
-    expect(onSurfaceChange).toHaveBeenCalledTimes(1);
-    const currentCss = post.mock.calls.filter(([message]) => message.type === 'updateCss').at(-1)![0];
-    emit({ type: 'surface', token: second, cssRevision: currentCss.revision, backgroundColor: '#ddeeff' });
-    expect(onSurfaceChange).toHaveBeenLastCalledWith('#ddeeff');
+    expect(iframe.style.backgroundColor).toBe('transparent');
+    expect(iframe.style.colorScheme).toBe('normal');
+    post.mockClear();
+    rerender(<PreviewFrame code="A.b" css="#diagram .bg-skin-canvas{background:#fff}" stickyOffset={0} theme="theme-default" />);
+    expect(container.querySelector('iframe')).toBe(iframe);
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ type: 'updateCss', css: expect.stringContaining('#fff') }), '*');
+    expect(post.mock.calls.filter(([message]) => message.type === 'surface' || message.type === 'updateBacking')).toHaveLength(0);
+    expect(iframe.style.backgroundColor).toBe('transparent');
+    expect(iframe.style.colorScheme).toBe('normal');
   });
 
-  it('seeds dark theme and SoftDark roles in srcdoc before core loads', () => {
+  it('seeds dark theme and SoftDark frame roles before core loads', () => {
     const { container, rerender } = render(<PreviewFrame code="A.b" css="" stickyOffset={0} theme="theme-dark" />);
     const iframe = container.querySelector('iframe')!;
     const srcdoc = iframe.getAttribute('srcdoc')!;
     expect(srcdoc).toContain('data-zenuml-initial-theme="theme-dark"');
-    expect(srcdoc).toContain('zenuml-initial-base');
-    expect(decodeURIComponent(srcdoc)).toContain('"canvasBg":"#343F4B"');
+    expect(srcdoc).toContain('id="zenuml-host-backing">html,body{background:transparent}');
+    expect(decodeURIComponent(srcdoc)).toContain('"frameBg":"#343F4B"');
+    expect(decodeURIComponent(srcdoc)).not.toContain('"canvasBg"');
     rerender(<PreviewFrame code="A.b" css="" stickyOffset={0} theme="theme-default" />);
     expect(container.querySelector('iframe')).toBe(iframe);
   });

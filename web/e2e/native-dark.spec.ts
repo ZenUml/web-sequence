@@ -10,12 +10,6 @@ async function openEditor(page: Page) {
   await expect(page.frameLocator('iframe[title="ZenUML preview"]').locator('.participant').first()).toBeVisible();
 }
 
-async function hasSurfaceContract(page: Page) {
-  return page.frameLocator('iframe[title="ZenUML preview"]').locator('body').evaluate(() =>
-    typeof (window as typeof window & { zenuml?: { default?: { prototype?: { getSurface?: unknown } } } }).zenuml?.default?.prototype?.getSurface === 'function',
-  );
-}
-
 async function readSurface(page: Page) {
   return page.locator('iframe[title="ZenUML preview"]').evaluate((iframe) => {
     const doc = (iframe as HTMLIFrameElement).contentDocument;
@@ -30,38 +24,36 @@ async function readSurface(page: Page) {
   });
 }
 
-test('dark preview surround follows the document surface', async ({ page }) => {
+test('workspace backing stays host-owned across document theme switches', async ({ page }) => {
   await openEditor(page);
   await page.getByTestId('header-appearance').click();
-  const expected = await hasSurfaceContract(page) ? 'rgb(52, 63, 75)' : 'rgb(31, 31, 31)';
-  await expect.poll(() => readSurface(page)).toEqual({ canvas: expected, outer: expected, body: expected });
+  await expect(page.locator('iframe[title="ZenUML preview"]')).toHaveCSS('color-scheme', 'normal');
+  await expect.poll(() => readSurface(page)).toEqual({ canvas: 'rgba(0, 0, 0, 0)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)' });
   await page.getByTestId('header-appearance').click();
-  await expect.poll(() => readSurface(page)).toMatchObject({
-    canvas: 'rgb(255, 255, 255)', outer: 'rgb(255, 255, 255)',
-  });
+  await expect.poll(() => readSurface(page)).toEqual({ canvas: 'rgba(0, 0, 0, 0)', outer: 'rgb(255, 255, 255)', body: 'rgba(0, 0, 0, 0)' });
   await page.getByTestId('header-appearance').click();
-  await expect.poll(() => readSurface(page)).toEqual({ canvas: expected, outer: expected, body: expected });
+  await expect.poll(() => readSurface(page)).toEqual({ canvas: 'rgba(0, 0, 0, 0)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)' });
 });
 
-test('CSS-only protocol updates the host surround without a DSL render', async ({ page }) => {
+test('CSS-only paint changes the document canvas while the host backing stays fixed', async ({ page }) => {
   await openEditor(page);
-  test.skip(!(await hasSurfaceContract(page)), 'Requires the unreleased core surface candidate.');
+  await page.getByTestId('header-appearance').click();
   // Custom CSS editing is account-gated in the UI. Send the same updateCss
   // message the host uses so this signed-out browser fixture covers the renderer.
   await page.locator('iframe[title="ZenUML preview"]').evaluate((iframe) =>
     (iframe as HTMLIFrameElement).contentWindow?.postMessage({
-      type: 'updateCss', revision: 1,
+      type: 'updateCss',
       css: '#diagram .bg-skin-canvas { background: #abc123 !important; }',
     }, '*'),
   );
   await expect.poll(() => page.frameLocator('iframe[title="ZenUML preview"]').locator('#zenumlstyle').textContent()).toContain('#abc123');
   await expect.poll(() => readSurface(page)).toEqual({
-    canvas: 'rgb(171, 193, 35)', outer: 'rgb(171, 193, 35)', body: 'rgb(171, 193, 35)',
+    canvas: 'rgb(171, 193, 35)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)',
   });
   await page.frameLocator('iframe[title="ZenUML preview"]').locator('body').evaluate(() =>
     parent.postMessage({ type: 'surface', token: -1, cssRevision: -1, backgroundColor: '#ff0000' }, '*'),
   );
-  expect((await readSurface(page))?.outer).toBe('rgb(171, 193, 35)');
+  expect((await readSurface(page))?.outer).toBe('rgb(52, 63, 75)');
 });
 
 test('explicit light Blue template stays light inside dark app chrome', async ({ page }) => {
@@ -71,27 +63,25 @@ test('explicit light Blue template stays light inside dark app chrome', async ({
   await page.getByTestId('home-template-blue').click();
   await expect(page.getByLabel('Diagram title')).toHaveValue('Advanced');
   await expect.poll(() => readSurface(page)).toMatchObject({
-    canvas: 'rgb(255, 255, 255)', outer: 'rgb(255, 255, 255)',
+    canvas: 'rgb(255, 255, 255)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)',
   });
 });
 
-test('mobile SVG and Present keep the resolved dark surround', async ({ page }) => {
+test('mobile SVG and Present keep the host dark workspace', async ({ page }) => {
   await openEditor(page);
   await page.getByTestId('header-appearance').click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   await expect(page.frameLocator('iframe[title="ZenUML preview"]').locator('#svg-mount > svg')).toBeVisible();
-  const expected = await hasSurfaceContract(page) ? 'rgb(52, 63, 75)' : 'rgb(31, 31, 31)';
-  await expect.poll(async () => (await readSurface(page))?.outer).toBe(expected);
+  await expect.poll(async () => (await readSurface(page))?.outer).toBe('rgb(52, 63, 75)');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByTestId('header-present').click();
   await expect(page.locator('.editor-preview-panel--fullscreen')).toBeVisible();
-  await expect.poll(async () => (await readSurface(page))?.outer).toBe(expected);
+  await expect.poll(async () => (await readSurface(page))?.outer).toBe('rgb(52, 63, 75)');
 });
 
-test('mobile native SVG PNG preview has an opaque document base at the corners', async ({ page }) => {
+test('mobile native SVG PNG preview preserves transparent outer corners', async ({ page }) => {
   await openEditor(page);
-  test.skip(!(await hasSurfaceContract(page)), 'Requires the unreleased core surface candidate.');
   await page.getByTestId('header-appearance').click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
@@ -113,5 +103,5 @@ test('mobile native SVG PNG preview has an opaque document base at the corners',
     const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data];
     return [pixel(0, 0), pixel(canvas.width - 1, 0), pixel(0, canvas.height - 1), pixel(canvas.width - 1, canvas.height - 1)];
   });
-  expect(corners).toEqual(Array.from({ length: 4 }, () => [52, 63, 75, 255]));
+  expect(corners.map(([, , , alpha]) => alpha)).toEqual([0, 0, 0, 0]);
 });

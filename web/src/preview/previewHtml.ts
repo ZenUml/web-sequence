@@ -53,15 +53,11 @@ export function getCompleteHtml(parts: PreviewParts = {}): string {
     : '';
   const initialPalette = parts.initialPalette ? encodeURIComponent(JSON.stringify(parts.initialPalette)) : '';
   const initialTheme = parts.initialTheme ?? 'theme-default';
-  // The palette contains only our fixed role colors. This base paints before the
-  // core bundle loads, while core's initial constructor receives the same roles.
-  const initialCanvas = parts.initialPalette?.canvasBg;
-  const initialBase = initialCanvas ? `<style id="zenuml-initial-base">html,body{background:${initialCanvas}}</style>` : '';
   return `<!DOCTYPE html>
 <html data-zenuml-initial-theme="${initialTheme}" data-zenuml-initial-palette="${initialPalette}">
 <head>
 <meta charset="UTF-8" />
-${initialBase}
+<style id="zenuml-host-backing">html,body{background:transparent}</style>
 <style id="zenumlstyle"></style>
 ${embedStyle}</head>
 <body>

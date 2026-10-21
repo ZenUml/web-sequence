@@ -20,6 +20,7 @@ export async function renderDiagramExport(
   choice: ExportThemeChoice,
   format: ExportFormat,
   signal?: AbortSignal,
+  backingColor?: string,
 ): Promise<string> {
   if (format === 'svg' && !canExportSvg(snapshot, choice)) {
     throw new Error('SVG export does not support custom CSS. Use PNG to preserve custom CSS.');
@@ -74,24 +75,11 @@ export async function renderDiagramExport(
     };
     post({ type: 'updateCss', css: snapshot.css, revision: 1 });
     post({ type: 'render', code: snapshot.code, options, token });
-    const completed = await rendered;
-    if (completed.type === 'rendered' && !completed.surfaceContract) {
-      // Published 4.8.1 compatibility: its export capture still depends on the
-      // iframe viewport width and commits after render resolves. Remove this
-      // private-DOM sizing once the formal core surface release is adopted.
-      for (let pass = 0; pass < 2; pass += 1) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-        const doc = iframe.contentDocument;
-        const width = doc?.querySelector('.bg-skin-canvas')?.scrollWidth ?? doc?.getElementById('diagram')?.scrollWidth ?? 0;
-        const height = doc?.getElementById('diagram')?.scrollHeight ?? 0;
-        if (width > 0) iframe.style.width = `${width + 24}px`;
-        if (height > 0) iframe.style.height = `${height + 24}px`;
-      }
-    }
+    await rendered;
     const output = waitFor((message) => format === 'png'
       ? message.type === 'png' && message.id === 2
       : message.type === 'svg' && message.id === 2);
-    post({ type: format === 'png' ? 'getPng' : 'getSvg', id: 2 });
+    post({ type: format === 'png' ? 'getPng' : 'getSvg', id: 2, backingColor });
     const result = await output;
     const value = result.type === 'png' ? result.dataUrl : result.type === 'svg' ? result.svg : null;
     if (!value) throw new Error('Diagram export returned no image.');

@@ -24,8 +24,8 @@ export type HostMessage =
   // reliable across engines. Optional so existing tests/callers still type-check.
   | { type: 'render'; code: string; options: RenderOptions; token?: number }
   | { type: 'updateCss'; css: string; revision?: number }
-  | { type: 'getPng'; id: number }
-  | { type: 'getSvg'; id: number }
+  | { type: 'getPng'; id: number; backingColor?: string }
+  | { type: 'getSvg'; id: number; backingColor?: string }
   | { type: 'evalConsole'; id: number; expr: string };
 
 // iframe → host
@@ -33,8 +33,7 @@ export type FrameMessage =
   | { type: 'ready' }
   | { type: 'escape' }
   // `token` echoes the render message's token (acknowledged delivery — see HostMessage).
-  | { type: 'rendered'; token?: number; surfaceContract?: boolean }
-  | { type: 'surface'; token?: number; cssRevision: number; backgroundColor: string }
+  | { type: 'rendered'; token?: number }
   | { type: 'codeChange'; code: string }
   | { type: 'png'; id: number; dataUrl: string | null }
   | { type: 'svg'; id: number; svg: string | null }
@@ -52,7 +51,7 @@ export type FrameMessage =
   | { type: 'contentSize'; width: number; height: number };
 
 const FRAME_TYPES = new Set([
-  'ready', 'rendered', 'surface', 'codeChange', 'png', 'svg', 'console', 'evalResult', 'error',
+  'ready', 'rendered', 'codeChange', 'png', 'svg', 'console', 'evalResult', 'error',
   'contentSize', 'escape',
 ]);
 

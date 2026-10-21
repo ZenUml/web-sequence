@@ -67,12 +67,10 @@ export interface PreviewFrameProps {
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
   onExitPresentation?: () => void;
-  /** Resolved opaque document base from core, including document CSS overrides. */
-  onSurfaceChange?: (backgroundColor: string) => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, theme = 'theme-default', autoPreview = true, embed, fit = false, svgMode = false, readOnly = false, zoom = ACTUAL_SIZE, onZoomChange, onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange },
+  { code, css, stickyOffset, theme = 'theme-default', autoPreview = true, embed, fit = false, svgMode = false, readOnly = false, zoom = ACTUAL_SIZE, onZoomChange, onCodeChange, onConsole, onError, onExitPresentation },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
@@ -109,8 +107,8 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   participantStyleEditingRef.current = !embedMode && !fit && !svgMode && !readOnly;
   const presentingRef = useRef(false);
   presentingRef.current = fit && !embedMode;
-  const cbRef = useRef({ onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange });
-  cbRef.current = { onCodeChange, onConsole, onError, onExitPresentation, onSurfaceChange };
+  const cbRef = useRef({ onCodeChange, onConsole, onError, onExitPresentation });
+  cbRef.current = { onCodeChange, onConsole, onError, onExitPresentation };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
   // `ready` (and on subsequent css changes) rather than baked into the document.
   // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
@@ -139,7 +137,6 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const RENDER_ACK_MS = 250;
   const RENDER_MAX_RETRIES = 4;
   const renderSeq = useRef(0);
-  const cssRevision = useRef(0);
   const lastRenderedCode = useRef(code);
   const pendingRender = useRef<{ token: number; code: string; options: RenderOptions; tries: number } | null>(null);
   const lastAcknowledged = useRef<PreviewExportSnapshot | null>(null);
@@ -182,7 +179,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
           // Push the LATEST css on ready so css that resolved before the heavy
           // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
           // dropped — the empty initial <style> would otherwise stay empty.
-          post({ type: 'updateCss', css: cssRef.current, revision: ++cssRevision.current });
+          post({ type: 'updateCss', css: cssRef.current });
           break;
         case 'rendered':
           // Ack for acknowledged render delivery: the iframe applied this token's render,
@@ -197,11 +194,6 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
             pendingRender.current = null;
             if (ackTimer.current) clearTimeout(ackTimer.current);
           }
-          break;
-        case 'surface':
-          if (msg.token !== renderSeq.current || msg.cssRevision !== cssRevision.current) break;
-          if (typeof msg.backgroundColor !== 'string' || !msg.backgroundColor.trim()) break;
-          cbRef.current.onSurfaceChange?.(msg.backgroundColor);
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
@@ -261,7 +253,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // changes instead of rebuilding/reloading the iframe.
   useEffect(() => {
     if (!readyRef.current) return;
-    post({ type: 'updateCss', css, revision: ++cssRevision.current });
+    post({ type: 'updateCss', css });
     if (lastAcknowledged.current) lastAcknowledged.current = { ...lastAcknowledged.current, css };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [css]);
@@ -357,7 +349,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       title="ZenUML preview"
       srcDoc={srcdoc}
       className={className}
-      style={style}
+      // A dark host color-scheme with a default-scheme srcdoc makes Chromium
+      // composite an opaque white iframe canvas even when both backgrounds
+      // compute as transparent. Keep the embedded canvas transparent too.
+      style={{ backgroundColor: 'transparent', colorScheme: 'normal', ...style }}
       allowFullScreen
     />
   );

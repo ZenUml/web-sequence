@@ -1,4 +1,6 @@
-# Document surface integration evidence
+# Historical opaque document surface integration evidence
+
+This directory records the earlier opaque-canvas candidate. The current local proposal makes only the default outer canvas transparent, keeps the frame and elements colored, and lets WebSequence own its workspace background. See [the current client contract](../../docs/outer-canvas-client-contract.md). These older images are retained as the comparison baseline.
 
 The candidate uses `@zenuml/core` version `4.8.1-local-patched-document-surface`, built locally from the companion core PR. It is not a published npm version. The committed dependency remains official 4.8.1 and uses the documented legacy path until a release is available.
 

@@ -3,7 +3,6 @@ import type { RenderOptions } from './previewProtocol';
 // SoftDark document roles. Core owns how these roles paint HTML, native SVG,
 // and exports; the web app supplies its product colors once at the boundary.
 export const SOFT_DARK_DOCUMENT_PALETTE = {
-  canvasBg: '#343F4B',
   frameBg: '#343F4B',
   frameBorder: '#516071',
   titleText: '#EEF2F6',

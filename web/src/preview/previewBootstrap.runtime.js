@@ -18,11 +18,9 @@
   var app = null;
   var currentRenderMode = 'html';
   var currentSvgResult = null;
-  var currentTheme = 'theme-default';
-  var appliedRenderToken;
-  var cssRevision = 0;
+  var currentSvgCode = null;
+  var currentSvgOptions = null;
   var renderGeneration = 0;
-  var hasRendered = false;
   function post(msg) { parent.postMessage(msg, '*'); }
   // The initial appearance is part of srcdoc, so core's constructor never paints
   // a default-theme frame while waiting for the first render postMessage.
@@ -35,39 +33,6 @@
       try { palette = JSON.parse(decodeURIComponent(rawPalette)); } catch (e) {}
     }
     return { theme: theme, palette: palette };
-  }
-  function baseStyle() {
-    var style = document.getElementById('zenuml-theme-base');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'zenuml-theme-base';
-      document.head.insertBefore(style, document.getElementById('zenumlstyle'));
-    }
-    return style;
-  }
-  function applyBase(color) {
-    var initial = document.getElementById('zenuml-initial-base');
-    if (initial && initial.parentNode) initial.parentNode.removeChild(initial);
-    baseStyle().textContent = color ? 'html,body{background:' + color + '}' : '';
-  }
-  // 4.8.1 compatibility only. Delete when WebSequence upgrades to the first
-  // published core release with getSurface()/result.surface.
-  function legacyBase(theme) {
-    return (theme === 'theme-dark' || theme === 'theme-clean-dark' || theme === 'theme-darcula') ? '#1f1f1f' : '';
-  }
-  function resolvedSurface() {
-    var surface = currentRenderMode === 'svg'
-      ? currentSvgResult && currentSvgResult.surface
-      : app && typeof app.getSurface === 'function' && app.getSurface();
-    if (surface && typeof surface.backgroundColor === 'string') return surface.backgroundColor;
-    // Old core has no public surface contract; retain its exact previous dark
-    // base until the dependency is published and upgraded.
-    return legacyBase(currentTheme) || '#ffffff';
-  }
-  function postSurface(token) {
-    var color = resolvedSurface();
-    if (app && typeof app.getSurface === 'function' || currentSvgResult && currentSvgResult.surface) applyBase(color);
-    post({ type: 'surface', token: token, cssRevision: cssRevision, backgroundColor: color });
   }
   // Keyboard events in an iframe do not bubble to the host window.
   window.addEventListener('keydown', function (event) {
@@ -147,15 +112,29 @@
     if (svgMount) svgMount.style.display = 'none';
   }
 
-  function visibleSvgResult() {
+  function visibleSvgResult(backingColor) {
     if (!currentSvgResult || !currentSvgResult.svg) return null;
+    // Let core validate and paint an explicit client backing. The normal view
+    // remains transparent and uses the already rendered SVG.
+    var source = backingColor
+      ? window.zenuml.renderToSvg(currentSvgCode, {
+          theme: currentSvgOptions.theme,
+          palette: currentSvgOptions.palette,
+          backingColor: backingColor
+        })
+      : currentSvgResult;
     var svgMount = document.getElementById('svg-mount');
     var visibleSvg = svgMount && svgMount.querySelector('svg');
-    if (!visibleSvg) return currentSvgResult;
+    if (backingColor) {
+      var holder = document.createElement('div');
+      holder.innerHTML = source.svg;
+      visibleSvg = holder.querySelector('svg');
+    }
+    if (!visibleSvg) return source;
     var clone = visibleSvg.cloneNode(true);
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width', String(currentSvgResult.width));
-    clone.setAttribute('height', String(currentSvgResult.height));
+    clone.setAttribute('width', String(source.width));
+    clone.setAttribute('height', String(source.height));
     clone.style.removeProperty('width');
     clone.style.removeProperty('max-width');
     clone.style.removeProperty('height');
@@ -167,7 +146,7 @@
       embeddedStyle.textContent = customStyle.textContent;
       clone.insertBefore(embeddedStyle, clone.firstChild);
     }
-    return { svg: new XMLSerializer().serializeToString(clone), width: currentSvgResult.width, height: currentSvgResult.height, surface: currentSvgResult.surface };
+    return { svg: new XMLSerializer().serializeToString(clone), width: source.width, height: source.height };
   }
 
   function svgToPngDataUrl(result) {
@@ -187,10 +166,6 @@
           canvas.height = Math.max(1, Math.round(height * scale));
           var context = canvas.getContext('2d');
           if (!context) throw new Error('Canvas is unavailable');
-          if (result.surface && result.surface.backgroundColor) {
-            context.fillStyle = result.surface.backgroundColor;
-            context.fillRect(0, 0, canvas.width, canvas.height);
-          }
           context.drawImage(image, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/png'));
         } catch (err) { reject(err); }
@@ -232,7 +207,6 @@
   window.addEventListener('load', function () {
     try {
       var initial = initialOptions();
-      currentTheme = initial.theme;
       app = new window.zenuml.default('#mounting-point', false, initial);
       keepUserCssLast();
       post({ type: 'ready' });
@@ -252,10 +226,6 @@
         try {
           var renderMode = (msg.options && msg.options.renderMode) || 'html';
           var theme = (msg.options && msg.options.theme) || 'theme-default';
-          currentTheme = theme;
-          // Preserve the exact published-core background on the compatibility
-          // path. Contract-aware core supplies the actual base after rendering.
-          if (typeof app.getSurface !== 'function') applyBase(legacyBase(theme));
           if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
             // Native vector SVG (mobile). Pure render — no React commit, no
             // onContentChange (the editor pane stays the source of truth on mobile).
@@ -272,12 +242,16 @@
             var result = window.zenuml.renderToSvg(msg.code, { theme: theme, palette: msg.options && msg.options.palette });
             showSvgMount(result && result.svg);
             currentSvgResult = result || null;
+            currentSvgCode = msg.code;
+            currentSvgOptions = { theme: theme, palette: msg.options && msg.options.palette };
             currentRenderMode = 'svg';
           } else {
             // HTML diagram (desktop / default). Unhide the React mount in case we are
             // switching back from SVG mode, then render as before.
             showHtmlMount();
             currentSvgResult = null;
+            currentSvgCode = null;
+            currentSvgOptions = null;
             currentRenderMode = 'html';
             await app.render(msg.code, {
               enableMultiTheme: false,
@@ -290,12 +264,9 @@
           }
           if (generation !== renderGeneration) return;
           keepUserCssLast();
-          hasRendered = true;
-          appliedRenderToken = msg.token;
-          postSurface(msg.token);
           // Echo the token so the host can confirm THIS render landed (ack+retry for
           // WebKit's dropped-postMessage race). undefined when the host sent no token.
-          post({ type: 'rendered', token: msg.token, surfaceContract: typeof app.getSurface === 'function' });
+          post({ type: 'rendered', token: msg.token });
           // Report the diagram's natural content size (width × height) in ALL modes
           // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
           // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout
@@ -309,17 +280,15 @@
         }
       })();
     } else if (msg.type === 'updateCss') {
-      cssRevision = typeof msg.revision === 'number' ? msg.revision : cssRevision + 1;
       var styleEl = document.getElementById('zenumlstyle');
       if (styleEl) styleEl.textContent = msg.css || '';
       keepUserCssLast();
-      if (hasRendered) postSurface(appliedRenderToken);
     } else if (msg.type === 'getPng') {
       (async function () {
         try {
           var dataUrl = currentRenderMode === 'svg'
-            ? await svgToPngDataUrl(visibleSvgResult())
-            : (app ? await app.getPng() : null);
+            ? await svgToPngDataUrl(visibleSvgResult(msg.backingColor))
+            : (app ? await app.getPng({ backingColor: msg.backingColor }) : null);
           post({ type: 'png', id: msg.id, dataUrl: dataUrl });
         } catch (err) {
           post({ type: 'png', id: msg.id, dataUrl: null });
@@ -328,10 +297,10 @@
     } else if (msg.type === 'getSvg') {
       (async function () {
         try {
-          var visibleResult = currentRenderMode === 'svg' ? visibleSvgResult() : null;
+          var visibleResult = currentRenderMode === 'svg' ? visibleSvgResult(msg.backingColor) : null;
           var svg = currentRenderMode === 'svg'
             ? (visibleResult && visibleResult.svg)
-            : (app ? await app.getSvg() : null);
+            : (app ? await app.getSvg({ backingColor: msg.backingColor }) : null);
           post({ type: 'svg', id: msg.id, svg: svg });
         } catch (err) {
           post({ type: 'svg', id: msg.id, svg: null });

@@ -31,7 +31,7 @@ export function readStoredAppearance(): Appearance {
   }
 }
 
-// @zenuml/core 4.8.1 uses one native dark palette in HTML and SVG.
+// Keep a bundled light template light while the application workspace stays dark.
 export function previewThemeFor(appearance: Appearance, documentCss = ''): RenderOptions['theme'] {
   if (usesTemplateLightBase(documentCss)) return 'theme-default';
   return appearance === 'dark' ? 'theme-dark' : 'theme-default';
