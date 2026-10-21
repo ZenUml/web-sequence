@@ -32,3 +32,7 @@ That repair includes document-specific creation-line/activation offsets and an o
 Opening the original localhost:4441 URL in this audit browser displayed the missing-diagram notice: its data is not stored in this browser context. Thus the original document's current saved CSS could not be reverified here. The saved independent geometry report confirms the historical repair on core4.7.2; this audit does not claim it has been reproduced on4.8.1.
 
 No source integration was required. PR843 remains the host first-paint change; core palette APIs in separate core PR509 remain out of scope. Production unchanged.
+
+## Follow-up
+
+The original was subsequently read in Chrome Conf App/Profile8. Its exact CSS/DSL was copied into a separate core4.8.1 document and verified. A reusable geometry correction was also added to the bundled Blue template. See [Advanced integration](../advanced-integration/README.md) for current evidence and live review copies; the earlier storage limitation above applies only to the isolated audit browser.

@@ -115,6 +115,15 @@ ${TEMPLATE_LIGHT_BASE_MARKER}
 #diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 4px !important; margin: 0 !important; border-color: @dividerBorderColor !important; color: @dividerTextColor !important; }
 #diagram .sequence-diagram .divider .left,
 #diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+// The Blue occurrence has a 2px border; one less pixel of left padding keeps
+// each nested occurrence centered instead of accumulating a 1px offset.
+#diagram .sequence-diagram .occurrence { padding-left: 6px; }
+// Keep creation arrows at the participant's 2px border, independent of name width.
+// The core calculates the message width from that name, so only trim its line and arrow.
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message { top: -4px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:first-of-type { width: calc(100% - 1px); }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .message-container > .message > svg:nth-of-type(2) { right: 1px; }
+#diagram .sequence-diagram .creation:not(.right-to-left) > .occurrence { transform: translateY(-4px); }
 `,
   starUMLTheme: `
 ${TEMPLATE_LIGHT_BASE_MARKER}

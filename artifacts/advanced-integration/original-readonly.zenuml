@@ -1,0 +1,23 @@
+Client->SGW."Get order by id" {
+  svc.Get(id) {
+    new X()
+    rep."load order" {
+      =="Start Here"==
+      MF."load order from mainframe"
+      =="End Here"==
+      if(order == null) {
+        @return 
+        SGW->Client:404
+      } else {
+        return order
+      }
+      
+      while(true) {
+        svc.refresh(data)
+      }
+      processOrder()
+    }
+    return order
+  }
+  return response
+}
