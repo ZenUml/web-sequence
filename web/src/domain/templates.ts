@@ -85,7 +85,26 @@ const LEGACY_TEMPLATES: Template[] = [
 
 // Compatibility is explicit editable document CSS, limited to the three bundled
 // legacy styles. User-authored/edited CSS is never rewritten by this upgrade.
+// Historical marker name is retained for saved template/theme detection. A light
+// framed diagram can now have a transparent outer canvas.
 export const TEMPLATE_LIGHT_BASE_MARKER = '/* ZenUML bundled template: light canvas */';
+
+// Exact output from the previous Blue compatibility block. Only this generated
+// value is migrated; author-edited CSS is left untouched.
+export const PREVIOUS_BUNDLED_BLUE_CSS = `${LEGACY_TEMPLATES.find(template => template.id === 'blue')!.item.css}
+${TEMPLATE_LIGHT_BASE_MARKER}
+#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .sequence-diagram { color: @labelTextColor; }
+#diagram .sequence-diagram .message svg { color: @messageLineColor; }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .participant-name { color: @participantTextColor; text-decoration: underline; }
+#diagram .sequence-diagram .message .name { color: @messageLineColor; }
+#diagram .sequence-diagram .fragment .header .name,
+#diagram .sequence-diagram .fragment .header .condition { color: @labelTextColor; }
+#diagram .sequence-diagram .divider .name { padding: 2px 6px !important; border-radius: 4px !important; margin: 0 !important; border-color: @dividerBorderColor !important; color: @dividerTextColor !important; }
+#diagram .sequence-diagram .divider .left,
+#diagram .sequence-diagram .divider .right { background: @dividerBackgroundColor !important; }
+`;
 
 const TEMPLATE_STYLE_COMPAT: Record<string, string> = {
   'black-white': `
@@ -104,7 +123,7 @@ ${TEMPLATE_LIGHT_BASE_MARKER}
 `,
   blue: `
 ${TEMPLATE_LIGHT_BASE_MARKER}
-#diagram .bg-skin-canvas { background: #fff !important; }
+#diagram .bg-skin-canvas { background: transparent !important; --color-bg-frame: #fff; }
 #diagram .sequence-diagram { color: @labelTextColor; }
 #diagram .sequence-diagram .message svg { color: @messageLineColor; }
 #diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
@@ -134,6 +153,7 @@ export const LEGACY_STYLE_TEMPLATE_CSS = Object.fromEntries(
 ) as Readonly<Record<string, string>>;
 
 export function upgradeLegacyTemplateCss(css: string): string {
+  if (css === PREVIOUS_BUNDLED_BLUE_CSS) return LEGACY_STYLE_TEMPLATE_CSS.blue + TEMPLATE_STYLE_COMPAT.blue;
   const match = Object.entries(LEGACY_STYLE_TEMPLATE_CSS).find(([, original]) => original === css);
   return match ? css + TEMPLATE_STYLE_COMPAT[match[0]] : css;
 }

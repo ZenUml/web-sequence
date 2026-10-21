@@ -56,15 +56,16 @@ test('CSS-only paint changes the document canvas while the host backing stays fi
   expect((await readSurface(page))?.outer).toBe('rgb(52, 63, 75)');
 });
 
-test('explicit light Blue template stays light inside dark app chrome', async ({ page }) => {
+test('Blue template keeps a light frame and transparent outer canvas in dark app chrome', async ({ page }) => {
   await openEditor(page);
   await page.getByTestId('header-appearance').click();
   await page.goto('/?view=diagrams');
   await page.getByTestId('home-template-blue').click();
   await expect(page.getByLabel('Diagram title')).toHaveValue('Advanced');
   await expect.poll(() => readSurface(page)).toMatchObject({
-    canvas: 'rgb(255, 255, 255)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)',
+    canvas: 'rgba(0, 0, 0, 0)', outer: 'rgb(52, 63, 75)', body: 'rgba(0, 0, 0, 0)',
   });
+  await expect.poll(() => page.frameLocator('iframe[title="ZenUML preview"]').locator('.frame.bg-skin-frame').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
 });
 
 test('mobile SVG and Present keep the host dark workspace', async ({ page }) => {

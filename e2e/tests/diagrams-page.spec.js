@@ -201,7 +201,7 @@ test('DGM-7: the Blue quick start creates the Blue template diagram', async ({ p
   await expect(page.locator('[data-testid="dsl-editor"] .cm-content')).toContainText('Get order by id', { timeout: 15_000 });
 });
 
-test('DGM-7b: Blue keeps its white document inside the dark workspace', async ({ page }) => {
+test('DGM-7b: Blue keeps a white frame and transparent canvas inside the dark workspace', async ({ page }) => {
   await seed(page, FIXTURES, 'dark');
   await gotoDiagrams(page);
   await page.locator('[data-testid="home-template-blue"]').click();
@@ -211,7 +211,8 @@ test('DGM-7b: Blue keeps its white document inside the dark workspace', async ({
   await expect(frame.locator('.bg-skin-canvas')).toBeVisible({ timeout: 20_000 });
   await expect.poll(() => workspace.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(52, 63, 75)');
   await expect.poll(() => frame.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
-  await expect.poll(() => frame.locator('.bg-skin-canvas').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
+  await expect.poll(() => frame.locator('.bg-skin-canvas').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(() => frame.locator('.frame.bg-skin-frame').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
 });
 
 test('DGM-8: appearance toggles immediately, persists, and matches the Editor', async ({ page }) => {
