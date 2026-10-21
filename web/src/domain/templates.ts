@@ -105,9 +105,10 @@ ${TEMPLATE_LIGHT_BASE_MARKER}
   blue: `
 ${TEMPLATE_LIGHT_BASE_MARKER}
 #diagram .bg-skin-canvas { background: #fff !important; }
-#diagram .sequence-diagram { color: @labelTextColor; }
+#diagram .sequence-diagram { color: @labelTextColor; --blue-participant-height: 2.5rem; }
 #diagram .sequence-diagram .message svg { color: @messageLineColor; }
-#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; }
+#diagram .sequence-diagram .lifeline .participant { height: var(--blue-participant-height); }
+#diagram .sequence-diagram .lifeline .line { --color-border-base: @participantLineColor; margin-top: var(--blue-participant-height); }
 #diagram .sequence-diagram .participant-name { color: @participantTextColor; text-decoration: underline; }
 #diagram .sequence-diagram .message .name { color: @messageLineColor; }
 #diagram .sequence-diagram .fragment .header .name,
@@ -142,9 +143,24 @@ export const LEGACY_STYLE_TEMPLATE_CSS = Object.fromEntries(
   LEGACY_TEMPLATES.filter(t => t.item.css).map(t => [t.id, t.item.css!]),
 ) as Readonly<Record<string, string>>;
 
+// Two earlier bundled Blue revisions were saved as editable CSS. Upgrade only
+// byte-for-byte copies; even a one-character author edit remains untouched.
+const BLUE_COMPAT_BEFORE_HEADER_FIX = TEMPLATE_STYLE_COMPAT.blue
+  .replace(' color: @labelTextColor; --blue-participant-height: 2.5rem; ', ' color: @labelTextColor; ')
+  .replace('#diagram .sequence-diagram .lifeline .participant { height: var(--blue-participant-height); }\n', '')
+  .replace(' --color-border-base: @participantLineColor; margin-top: var(--blue-participant-height); ', ' --color-border-base: @participantLineColor; ');
+const BLUE_COMPAT_BEFORE_GEOMETRY_FIX = BLUE_COMPAT_BEFORE_HEADER_FIX.slice(
+  0, BLUE_COMPAT_BEFORE_HEADER_FIX.indexOf('// The Blue occurrence has a 2px border;'),
+);
+
 export function upgradeLegacyTemplateCss(css: string): string {
   const match = Object.entries(LEGACY_STYLE_TEMPLATE_CSS).find(([, original]) => original === css);
-  return match ? css + TEMPLATE_STYLE_COMPAT[match[0]] : css;
+  if (match) return css + TEMPLATE_STYLE_COMPAT[match[0]];
+  const originalBlue = LEGACY_STYLE_TEMPLATE_CSS.blue;
+  if (css === originalBlue + BLUE_COMPAT_BEFORE_HEADER_FIX || css === originalBlue + BLUE_COMPAT_BEFORE_GEOMETRY_FIX) {
+    return originalBlue + TEMPLATE_STYLE_COMPAT.blue;
+  }
+  return css;
 }
 
 // The generated marker is editable document intent, so later palette edits keep

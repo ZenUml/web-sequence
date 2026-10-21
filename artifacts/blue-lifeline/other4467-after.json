@@ -1,0 +1,56 @@
+[
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 118,
+    "headerTop": 78,
+    "lineBottom": 982,
+    "lineTop": 118,
+    "name": "Client"
+  },
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 118,
+    "headerTop": 78,
+    "lineBottom": 982,
+    "lineTop": 118,
+    "name": "SGW"
+  },
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 118,
+    "headerTop": 78,
+    "lineBottom": 982,
+    "lineTop": 118,
+    "name": "svc"
+  },
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 226,
+    "headerTop": 186,
+    "lineBottom": 982,
+    "lineTop": 226,
+    "name": "X"
+  },
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 118,
+    "headerTop": 78,
+    "lineBottom": 982,
+    "lineTop": 118,
+    "name": "rep"
+  },
+  {
+    "clip": "none",
+    "fill": "rgba(146, 192, 240, 0.3)",
+    "headerBottom": 118,
+    "headerTop": 78,
+    "lineBottom": 982,
+    "lineTop": 118,
+    "name": "MF"
+  }
+]

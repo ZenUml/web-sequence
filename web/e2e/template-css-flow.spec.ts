@@ -154,3 +154,51 @@ test('Blue nested activations remain centered on their lifelines', async ({ page
     });
   })).toEqual([0, 0, 0, 0]);
 });
+
+test('Blue translucent headers do not overlay a painted lifeline', async ({ page }) => {
+  await openLibrary(page);
+  await page.getByTestId('home-template-blue').click();
+  const preview = page.locator('iframe[title="ZenUML preview"]');
+  await expect.poll(async () => preview.evaluate((iframe) => {
+    const doc = (iframe as HTMLIFrameElement).contentDocument;
+    if (!doc?.querySelector('.participant[data-participant-id="X"]')) return null;
+    return ['Client', 'X'].map(name => {
+      const line = doc.querySelector(`.lifeline#${name} > .line`);
+      const header = doc.querySelector(`.participant[data-participant-id="${name}"]`);
+      if (!line || !header) return null;
+      const l = line.getBoundingClientRect(), h = header.getBoundingClientRect();
+      const parent = line.parentElement!.getBoundingClientRect();
+      return {
+        headerGap: l.top - h.bottom,
+        bottomGap: parent.bottom - l.bottom,
+        fill: getComputedStyle(header).backgroundColor,
+      };
+    });
+  })).toEqual([
+    { headerGap: 0, bottomGap: 0, fill: 'rgba(146, 192, 240, 0.3)' },
+    { headerGap: 0, bottomGap: 0, fill: 'rgba(146, 192, 240, 0.3)' },
+  ]);
+});
+
+test('Blue header height variable keeps ordinary and created line starts in step', async ({ page }) => {
+  await openLibrary(page);
+  await page.getByTestId('home-template-blue').click();
+  const preview = page.locator('iframe[title="ZenUML preview"]');
+  await expect.poll(async () => preview.evaluate(iframe =>
+    Boolean((iframe as HTMLIFrameElement).contentDocument?.querySelector('.participant[data-participant-id="X"]')),
+  )).toBe(true);
+  const measured = await preview.evaluate(iframe => {
+    const doc = (iframe as HTMLIFrameElement).contentDocument!;
+    (doc.querySelector('.sequence-diagram') as HTMLElement).style.setProperty('--blue-participant-height', '3rem');
+    return ['Client', 'X'].map(name => {
+      const line = doc.querySelector(`.lifeline#${name} > .line`)!;
+      const header = doc.querySelector(`.participant[data-participant-id="${name}"]`)!;
+      const l = line.getBoundingClientRect(), h = header.getBoundingClientRect();
+      return { headerHeight: h.height, headerGap: l.top - h.bottom, bottomGap: line.parentElement!.getBoundingClientRect().bottom - l.bottom };
+    });
+  });
+  expect(measured).toEqual([
+    { headerHeight: 48, headerGap: 0, bottomGap: 0 },
+    { headerHeight: 48, headerGap: 0, bottomGap: 0 },
+  ]);
+});
