@@ -195,6 +195,12 @@
         try {
           var renderMode = (msg.options && msg.options.renderMode) || 'html';
           var theme = (msg.options && msg.options.theme) || 'theme-default';
+          // The srcdoc paints the iframe page dark while core loads. Retire that
+          // initial page background before a later light render.
+          if (theme === 'theme-default') {
+            var firstPaintStyle = document.getElementById('zenuml-first-paint');
+            if (firstPaintStyle) firstPaintStyle.remove();
+          }
           // Native HTML and SVG skins paint the diagram itself. Match the iframe
           // page outside their bounds to the native dark canvas color.
           var themeStyle = document.getElementById('zenuml-theme-base');

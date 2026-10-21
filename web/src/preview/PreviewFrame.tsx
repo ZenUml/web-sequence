@@ -112,7 +112,8 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // `ready` (and on subsequent css changes) rather than baked into the document.
   // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
   // no chrome flash on first paint.
-  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
+  const initialTheme = useRef(theme);
+  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode, theme: initialTheme.current }), [embedMode]);
 
   const renderOptions = (): RenderOptions => ({
     enableMultiTheme: false,

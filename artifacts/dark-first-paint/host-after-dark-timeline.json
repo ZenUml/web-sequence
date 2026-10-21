@@ -1,0 +1,111 @@
+{
+  "states": [
+    {
+      "t": 429,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": null,
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1823,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": null
+    },
+    {
+      "t": 1829,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1832,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgb(31, 31, 31)",
+      "canvas": null
+    },
+    {
+      "t": 4307,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgb(31, 31, 31)",
+      "canvas": "rgb(255, 255, 255)"
+    },
+    {
+      "t": 4311,
+      "appearance": "dark",
+      "html": "rgb(48, 57, 68)",
+      "body": "rgb(48, 57, 68)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgb(31, 31, 31)",
+      "canvas": "rgb(31, 31, 31)"
+    }
+  ],
+  "paint": [
+    {
+      "name": "first-paint",
+      "t": 952
+    },
+    {
+      "name": "first-contentful-paint",
+      "t": 1844
+    }
+  ],
+  "origin": 1792555104110.4,
+  "screenshots": [
+    {
+      "file": "host-after-dark-00.jpg",
+      "traceTime": 201156579041
+    },
+    {
+      "file": "host-after-dark-01.jpg",
+      "traceTime": 201157524124
+    },
+    {
+      "file": "host-after-dark-02.jpg",
+      "traceTime": 201158415722
+    },
+    {
+      "file": "host-after-dark-03.jpg",
+      "traceTime": 201158417965
+    },
+    {
+      "file": "host-after-dark-04.jpg",
+      "traceTime": 201158426752
+    },
+    {
+      "file": "host-after-dark-05.jpg",
+      "traceTime": 201160898314
+    },
+    {
+      "file": "host-after-dark-06.jpg",
+      "traceTime": 201160900617
+    },
+    {
+      "file": "host-after-dark-07.jpg",
+      "traceTime": 201160929547
+    },
+    {
+      "file": "host-after-dark-08.jpg",
+      "traceTime": 201160938802
+    },
+    {
+      "file": "host-after-dark-09.jpg",
+      "traceTime": 201160941786
+    }
+  ]
+}

@@ -37,7 +37,7 @@ body {
   font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background: var(--ink-950);
+  background: var(--editor-bg);
   color: var(--ondark-strong);
 }
 
