@@ -18,6 +18,7 @@ const mixpanel = Mixpanel.init('78617e65fdba543d752fb7f6483d55f4');
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
+const { log } = require('./lib/log');
 const pubKey = functions.config().paddle?.pub_key;
 const https = require('https');
 
@@ -39,16 +40,15 @@ exports.supported_product_ids = functions.https.onRequest(async (req, res) => {
 });
 
 exports.authenticate = functions.https.onRequest(async (req, res) => {
-  console.log('request:', req);
   const auth = req.get('Authorization');
   const decoded = await verifyIdToken(auth);
-  console.log('decoded token:', decoded);
+  log('authenticate.ok', { uid: decoded.uid });
   res.send(decoded.uid);
 });
 
 exports.sync_diagram = functions.https.onRequest(async (req, res) => {
   const decoded = await verifyIdToken(req.body.token);
-  console.log('decoded token:', decoded);
+  log('sync_diagram.verified', { uid: decoded.uid });
   const user = {
     name: decoded.name,
     id: decoded.user_id,
@@ -93,7 +93,7 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
     description: req.body.description,
     imageBase64: req.body.imageBase64,
   });
-  console.log('request - options: ', options, 'data: ', data);
+  log('sync_diagram.request', { hostname, path: options.path, firebase_diagram_id: req.body.id });
 
   const request = https.request(options, (response) => {
     console.log(
@@ -194,19 +194,11 @@ exports.create_share = functions.https.onRequest(async (req, res) => {
 
 exports.get_shared_item = functions.https.onRequest(async (req, res) => {
   try {
-    console.log('=== DEBUG: get_shared_item ===');
-    console.log('Full request URL:', req.url);
-    console.log('Query object:', req.query);
-    console.log('All query keys:', Object.keys(req.query));
-
     const itemId = req.query.id;
     const shareToken = req.query.token || req.query['share-token'];
 
-    console.log('Parsed params:', { itemId, shareToken });
-    console.log('ItemId type:', typeof itemId, 'ShareToken type:', typeof shareToken);
-
     if (!itemId || !shareToken) {
-      console.log('Missing required params - itemId exists:', !!itemId, 'shareToken exists:', !!shareToken);
+      log('get_shared_item.bad_request', { hasItemId: !!itemId, hasShareToken: !!shareToken });
       return res.status(400).json({ error: 'Item ID and share token are required' });
     }
 
@@ -215,29 +207,17 @@ exports.get_shared_item = functions.https.onRequest(async (req, res) => {
     const doc = await itemRef.get();
 
     if (!doc.exists) {
-      console.log('DEBUG: Item not found in Firestore');
+      log('get_shared_item.not_found', { itemId });
       return res.status(404).json({ error: 'Item not found' });
     }
 
     const itemData = doc.data();
-    console.log('DEBUG: Item data loaded:', {
-      id: itemData.id,
-      title: itemData.title,
-      isShared: itemData.isShared,
-      hasShareToken: !!itemData.shareToken,
-      shareTokenMatch: itemData.shareToken === shareToken,
-      createdBy: itemData.createdBy,
-      actualToken: itemData.shareToken,
-      requestedToken: shareToken
-    });
-
     // Verify item is shared and token matches
     if (!itemData.isShared || itemData.shareToken !== shareToken) {
-      console.log('DEBUG: Token validation failed');
+      log('get_shared_item.denied', { itemId, isShared: !!itemData.isShared });
       return res.status(403).json({ error: 'Invalid share token or item not shared' });
     }
 
-    console.log('DEBUG: Token validation passed, returning item');
     // Return item data with read-only flag
     res.json({
       ...itemData,
