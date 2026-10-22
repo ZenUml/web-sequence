@@ -4,11 +4,9 @@
 // Diagnostic for every error node. Does NOT instantiate @zenuml/core or any
 // renderer — that was the reference implementation's bundle-bloat bug.
 //
-// Integration note: this linter is inert unless the editor state carries the
-// LEZER language (LRLanguage.define({ parser })), not the legacy StreamLanguage.
-// syntaxTree() over a StreamLanguage returns a trivial top node with no grammar
-// error nodes. The switch from zenumlStream → lezerLanguage in modes.ts is the
-// controller's integration step; once that lands, zenumlLinter() starts emitting.
+// Integration note: this linter reads grammar error nodes from the Lezer syntax
+// tree, so the editor state must carry the Lezer LRLanguage. modes.ts installs it
+// via zenumlSupport().
 
 import { linter, type Diagnostic } from '@codemirror/lint'
 import { syntaxTree } from '@codemirror/language'
