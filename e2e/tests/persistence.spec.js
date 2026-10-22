@@ -15,6 +15,7 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
+import { isThirdPartyError } from './helpers/console';
 
 // Default starter DSL, from web/src/state/editorStore.ts DEFAULT_STARTER.
 const STARTER_DSL_FRAGMENT = 'Alice -> Bob: Hello';
@@ -22,28 +23,6 @@ const STARTER_DSL_FRAGMENT = 'Alice -> Bob: Hello';
 // Helpers shared with dsl-spot-check.spec.js style — copy the exact approach:
 // click .cm-content to focus, select-all, Delete, then pressSequentially.
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
-
-// Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
-// analytics/CDN scripts that throw uncaught errors we don't own; treat those as
-// noise so this spec stays usable against the live staging E2E gate.
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js',
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
 
 /**
  * Navigate to the EDITOR with a clean localStorage slate.

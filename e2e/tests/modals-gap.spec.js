@@ -21,28 +21,7 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
-
-// Deployed sites (staging/prod via PW_BASE_URL) load third-party analytics/CDN
-// scripts that throw uncaught errors we don't own; treat those as noise. Copied
-// verbatim from smoke.spec.js so this spec stays usable on the staging gate.
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js',
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
+import { isThirdPartyError } from './helpers/console';
 
 test.beforeEach(async ({ page }) => {
   // Fail on genuine uncaught app errors; ignore known third-party noise.
