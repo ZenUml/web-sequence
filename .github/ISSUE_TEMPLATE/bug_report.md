@@ -1,3 +1,8 @@
+---
+name: Bug report or suggestion
+about: Report a problem or suggest an improvement
+---
+
 ## Meta info
 
 - Is this a bug or suggestion?:
