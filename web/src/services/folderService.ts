@@ -1,5 +1,4 @@
 import {
-  doc,
   getDoc,
   setDoc,
   updateDoc,
@@ -8,10 +7,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Folder } from '../domain/types';
-
-function userRef(uid: string) {
-  return doc(db, `users/${uid}`);
-}
+import { userRef } from './userService';
 function genFolderId(): string {
   const rnd =
     typeof crypto !== 'undefined' && crypto.randomUUID

@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('firebase/firestore', () => mocks);
 vi.mock('./firebase', () => ({ db: {} }));
 
-import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds, _ensuredUids } from './userService';
+import { ensureUser, setItemForUser, unsetItemForUser, getUserItemIds, membershipPatch, userRef, _ensuredUids } from './userService';
 
 beforeEach(() => { vi.clearAllMocks(); _ensuredUids.clear(); });
 
@@ -27,9 +27,18 @@ describe('userService', () => {
     expect(u).toEqual({ items: { i1: true } });
     expect(mocks.setDoc).not.toHaveBeenCalled();
   });
-  it('setItemForUser sets items.<id> = true', async () => {
+  // #854: membership must not depend on the user doc existing. updateDoc throws on a
+  // missing doc, so setItemForUser create-or-merges instead (same as the import batch).
+  it('setItemForUser create-or-merges items.<id> = true (works when users/{uid} is missing)', async () => {
     await setItemForUser('u1', 'i9');
-    expect(mocks.updateDoc).toHaveBeenCalledWith(expect.objectContaining({ path: 'users/u1' }), { 'items.i9': true });
+    expect(mocks.setDoc).toHaveBeenCalledWith(expect.objectContaining({ path: 'users/u1' }), { items: { i9: true } }, { merge: true });
+    expect(mocks.updateDoc).not.toHaveBeenCalled();
+  });
+  it('membershipPatch is the nested items map used by batch writers', () => {
+    expect(membershipPatch('i9')).toEqual({ items: { i9: true } });
+  });
+  it('userRef points at users/{uid}', () => {
+    expect(userRef('u1')).toEqual(expect.objectContaining({ path: 'users/u1' }));
   });
   it('unsetItemForUser deletes items.<id>', async () => {
     await unsetItemForUser('u1', 'i9');

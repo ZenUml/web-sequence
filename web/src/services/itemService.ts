@@ -5,6 +5,7 @@ import * as localItems from './localItems';
 import { migrateToPages } from '../domain/item';
 import type { Item } from '../domain/types';
 import { IdentityChangedError, type SaveItemsGuard } from './identityGuard';
+import { membershipPatch, userRef } from './userService';
 
 export interface AuthContext { uid: string | null; online: boolean }
 export type AuthContextGetter = () => AuthContext;
@@ -150,11 +151,6 @@ export function makeItemService(getAuth: AuthContextGetter) {
       // wipe a live public share (and any cloud-only field absent from the export).
       // merge:true makes the strip mean "don't re-assert" rather than "delete", matching
       // setItem's contract and the comment's stated safety rationale (adversarial review).
-      // set(merge:true), NOT plain set: a re-import of one's own export (same ids)
-      // must not REPLACE the cloud doc. Plain set + the sharing-field strip above would
-      // wipe a live public share (and any cloud-only field absent from the export).
-      // merge:true makes the strip mean "don't re-assert" rather than "delete", matching
-      // setItem's contract and the comment's stated safety rationale (adversarial review).
       batch.set(doc(db, `items/${id}`), data, { merge: true });
       // Use set(merge:true), NOT update(): Firestore's batch update() requires the
       // target doc to already exist and aborts the WHOLE batch if it doesn't.
@@ -162,7 +158,7 @@ export function makeItemService(getAuth: AuthContextGetter) {
       // a freshly-signed-in user importing immediately can race ahead of that write and
       // silently lose the entire import. set(merge:true) creates-or-merges the user doc
       // so the import is robust regardless of ordering (adversarial review).
-      batch.set(doc(db, `users/${uid}`), { items: { [id]: true } }, { merge: true });
+      batch.set(userRef(uid), membershipPatch(id), { merge: true });
     }
     // Last check before the single atomic commit. A commit already sent cannot be
     // recalled if auth changes while it is in flight.
