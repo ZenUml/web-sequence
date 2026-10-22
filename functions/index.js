@@ -19,6 +19,7 @@ const mixpanel = Mixpanel.init('78617e65fdba543d752fb7f6483d55f4');
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
 const { log } = require('./lib/log');
+const { HttpError, requireUser, handler } = require('./lib/http');
 const pubKey = functions.config().paddle?.pub_key;
 const https = require('https');
 
@@ -39,15 +40,14 @@ exports.supported_product_ids = functions.https.onRequest(async (req, res) => {
   res.status(200).send(JSON.stringify(supportedProductIds));
 });
 
-exports.authenticate = functions.https.onRequest(async (req, res) => {
-  const auth = req.get('Authorization');
-  const decoded = await verifyIdToken(auth);
+exports.authenticate = functions.https.onRequest(handler(async (req, res) => {
+  const decoded = await requireUser(req, { verify: verifyIdToken });
   log('authenticate.ok', { uid: decoded.uid });
   res.send(decoded.uid);
-});
+}));
 
-exports.sync_diagram = functions.https.onRequest(async (req, res) => {
-  const decoded = await verifyIdToken(req.body.token);
+exports.sync_diagram = functions.https.onRequest(handler(async (req, res) => {
+  const decoded = await requireUser(req, { verify: verifyIdToken });
   log('sync_diagram.verified', { uid: decoded.uid });
   const user = {
     name: decoded.name,
@@ -95,102 +95,85 @@ exports.sync_diagram = functions.https.onRequest(async (req, res) => {
   });
   log('sync_diagram.request', { hostname, path: options.path, firebase_diagram_id: req.body.id });
 
-  const request = https.request(options, (response) => {
-    console.log(
-      `response - code: ${response.statusCode}, headers: `,
-      response.headers,
-    );
-
-    let responseData = '';
-    response.on('data', (chunk) => {
-      responseData += chunk;
+  const responseData = await new Promise((resolve, reject) => {
+    const request = https.request(options, (response) => {
+      log('sync_diagram.response', { statusCode: response.statusCode });
+      let body = '';
+      response.on('data', (chunk) => {
+        body += chunk;
+      });
+      response.on('end', () => resolve(body));
     });
-
-    response.on('end', () => {
-      res.send(replaceBaseUrlInShareLink(responseData));
+    request.on('error', (error) => {
+      console.error('sync_diagram upstream request failed:', error.message);
+      reject(new HttpError(502, 'Diagram sync service unavailable'));
     });
+    request.write(data);
+    request.end();
   });
 
-  request.on('error', (error) => {
-    console.error('request failed: ', error);
-    res.send(error);
-  });
+  res.send(replaceBaseUrlInShareLink(responseData));
+}, { fallbackMessage: 'Failed to sync diagram' }));
 
-  request.write(data);
-  request.end();
-});
+exports.create_share = functions.https.onRequest(handler(async (req, res) => {
+  // requireUser also accepts the emulator-only 'local-dev-token' bypass.
+  const decoded = await requireUser(req, { verify: verifyIdToken });
+  const itemId = req.body.id;
 
-exports.create_share = functions.https.onRequest(async (req, res) => {
-  try {
-    // Skip auth verification for local development if needed
-    let decoded;
-    if (process.env.FUNCTIONS_EMULATOR === 'true' && req.body.token === 'local-dev-token') {
-      // Mock user for local testing
-      decoded = { uid: 'local-test-user' };
-    } else {
-      decoded = await verifyIdToken(req.body.token);
-    }
-    const itemId = req.body.id;
-
-    if (!itemId) {
-      return res.status(400).json({ error: 'Item ID is required' });
-    }
-
-    // Get the item from Firestore
-    const itemRef = db.collection('items').doc(itemId);
-    const doc = await itemRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-
-    const itemData = doc.data();
-
-    // Verify user owns this item
-    if (itemData.createdBy !== decoded.uid) {
-      return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    // Generate or reuse share token
-    const crypto = require('crypto');
-    const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
-
-    // Update item with sharing info
-    await itemRef.update({
-      isShared: true,
-      shareToken: shareToken,
-      sharedAt: FieldValue.serverTimestamp()
-    });
-
-    // Generate content hash for cache busting
-    const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
-
-    // Return in the same format as the old API
-    // Use origin from frontend request, with fallback to environment-specific defaults
-    let baseUrl = req.body.origin;
-    if (!baseUrl) {
-      if (process.env.FUNCTIONS_EMULATOR === 'true') {
-        // Local development fallback
-        baseUrl = 'http://localhost:3000';
-      } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
-        // Staging environment fallback
-        baseUrl = 'https://staging.zenuml.com';
-      } else {
-        // Production environment fallback
-        baseUrl = 'https://app.zenuml.com';
-      }
-    }
-
-    res.json({
-      page_share: `${baseUrl}?id=${itemId}&share-token=${shareToken}`,
-      md5: contentHash
-    });
-
-  } catch (error) {
-    console.error('Error creating share:', error);
-    res.status(500).json({ error: 'Failed to create share' });
+  if (!itemId) {
+    return res.status(400).json({ error: 'Item ID is required' });
   }
-});
+
+  // Get the item from Firestore
+  const itemRef = db.collection('items').doc(itemId);
+  const doc = await itemRef.get();
+
+  if (!doc.exists) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+
+  const itemData = doc.data();
+
+  // Verify user owns this item
+  if (itemData.createdBy !== decoded.uid) {
+    return res.status(403).json({ error: 'Unauthorized access' });
+  }
+
+  // Generate or reuse share token
+  const crypto = require('crypto');
+  const shareToken = itemData.shareToken || crypto.randomBytes(16).toString('hex');
+
+  // Update item with sharing info
+  await itemRef.update({
+    isShared: true,
+    shareToken: shareToken,
+    sharedAt: FieldValue.serverTimestamp()
+  });
+
+  // Generate content hash for cache busting
+  const contentHash = crypto.createHash('md5').update(itemData.js || '').digest('hex');
+
+  // Return in the same format as the old API
+  // Use origin from frontend request, with fallback to environment-specific defaults
+  let baseUrl = req.body.origin;
+  if (!baseUrl) {
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+      // Local development fallback
+      baseUrl = 'http://localhost:3000';
+    } else if (process.env.GCLOUD_PROJECT === 'staging-zenuml-27954') {
+      // Staging environment fallback
+      baseUrl = 'https://staging.zenuml.com';
+    } else {
+      // Production environment fallback
+      baseUrl = 'https://app.zenuml.com';
+    }
+  }
+
+  res.json({
+    page_share: `${baseUrl}?id=${itemId}&share-token=${shareToken}`,
+    md5: contentHash
+  });
+}, { fallbackMessage: 'Failed to create share' }));
 
 exports.get_shared_item = functions.https.onRequest(async (req, res) => {
   try {
