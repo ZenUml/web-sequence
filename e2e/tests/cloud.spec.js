@@ -237,7 +237,7 @@ test('EXP-1 — PNG and SVG analytics fire only after successful browser downloa
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// §5 Folders  (FLD-1, FLD-3, FLD-4, FLD-5)  — FLD-2 stays fixme (see cloud.fixme.spec.js)
+// §5 Folders  (FLD-1, FLD-3, FLD-4, FLD-5)  — FLD-2 is covered by FDR-5/7/9 in diagrams-folders-cloud.spec.js
 // ════════════════════════════════════════════════════════════════════════════
 
 test('FLD-1 — create folder "Work" appears with count 0', async ({ page }) => {

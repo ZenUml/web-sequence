@@ -3,9 +3,10 @@
 **STATUS (2026-06-18): DONE.** The `AUTH` / `CLOUD` / `PADDLE` cases from
 `e2e/E2E_GAP_TEST_PLAN.md` are now LIVE, emulator-backed tests in
 [`e2e/tests/cloud.spec.js`](tests/cloud.spec.js), run via the `cloud` Playwright
-project. 34 of the 35 cases are real passing tests; the one residual case (FLD-2)
-stays `test.fixme` in [`e2e/tests/cloud.fixme.spec.js`](tests/cloud.fixme.spec.js)
-because it is blocked by a MISSING UI affordance, not by infrastructure.
+project. 34 of the 35 cases are real passing tests. The last residual case (FLD-2,
+move a diagram into a folder) is covered by FDR-5 / FDR-7 / FDR-9 in
+[`e2e/tests/diagrams-folders-cloud.spec.js`](tests/diagrams-folders-cloud.spec.js)
+now that the hub has a Move to folder affordance (#830).
 
 ```bash
 # Run the whole emulator-backed cloud suite (boots emulators + the wired dev server):
@@ -161,7 +162,7 @@ The spec's single sign-in seam is `signInViaEmulator(page, { uid?, email? })` in
 
 ## 4. The in-page sign-in hook the spec calls
 
-`cloud.fixme.spec.js` calls `window.__e2eSignIn({ uid, email })` (and
+The cloud specs call `window.__e2eSignIn({ uid, email })` (and
 `window.__e2eForceAuthError`). Expose these **dev-only** hooks so the spec can
 authenticate deterministically without driving an OAuth popup. Add to
 `web/src/services/firebase.ts` behind the same `VITE_USE_EMULATOR` flag:
