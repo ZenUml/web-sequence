@@ -137,6 +137,9 @@ export function AppRoot() {
   const [cloudConfirmed, setCloudConfirmed] = useState(false);
   const saveGeneration = useRef(0);
   const saveAttempt = useRef<object | null>(null);
+  // True while save() re-runs under a fresh id after a foreign-owner denial, so a
+  // second denial surfaces the error instead of forking again.
+  const forkRetrying = useRef(false);
   useEffect(() => {
     const invalidate = () => {
       saveGeneration.current += 1;
@@ -570,6 +573,7 @@ export function AppRoot() {
     const current = () => saveAttempt.current === attempt && contextCurrent();
     const guard = {expectedUid:uid, isCurrent:current};
     const itemToSave: Item = {...it, updatedOn:Date.now()};
+    let forkOnForeignOwner = false;
     useEditorStore.getState().setSaving(true);
     setSaveFeedback({error:false, queued:false});
     track('saveBtnClick', {category:'ui', label:!uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new'});
@@ -629,15 +633,47 @@ export function AppRoot() {
         } catch { /* the document remains successfully saved */ }
       }
       return outcome?.status !== 'queued';
-    } catch {
-      if (current()) setSaveFeedback({error:true, queued:false});
-      return false;
+    } catch (err) {
+      const code = (err as { code?: string } | null)?.code;
+      if (current()) {
+        track('saveFailed', {category:'error', label:code ?? 'unknown'});
+        // Firestore only denies an update to a doc another account created, so this id
+        // is taken (a local copy that outlived a sign-in switch). Retry once under a
+        // fresh id the user owns, after finally releases the in-flight guard.
+        if (code === 'permission-denied' && uid && online && !forkRetrying.current) forkOnForeignOwner = true;
+        else setSaveFeedback({error:true, queued:false});
+      }
     } finally {
       if (saveAttempt.current === attempt) {
         saveAttempt.current = null;
         useEditorStore.getState().setSaving(false);
       }
     }
+    return forkOnForeignOwner ? saveUnderNewId() : false;
+  }
+
+  async function saveUnderNewId(): Promise<boolean> {
+    const cur = useEditorStore.getState().currentItem;
+    if (!cur) return false;
+    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID() : String(Date.now());
+    const moved: Item = { ...cur, id: newId, updatedOn: Date.now() };
+    delete moved.createdBy;
+    delete moved.isShared;
+    delete moved.shareToken;
+    delete moved.sharedAt;
+    useEditorStore.setState({ currentItem: moved, dirty: true, unsavedCount: 1 });
+    void navigate({ to: '/', search: (prev) => ({
+      id: newId,
+      view: undefined,
+      'share-token': undefined,
+      embed: prev.embed,
+      code: prev.code,
+      title: prev.title,
+      stickyOffset: prev.stickyOffset,
+    }) });
+    forkRetrying.current = true;
+    try { return await save(); } finally { forkRetrying.current = false; }
   }
 
   // M04 §8: custom-CSS is Plus-only. Returns true if the attempted CSS change is

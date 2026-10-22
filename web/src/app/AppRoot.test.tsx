@@ -617,6 +617,47 @@ describe('AppRoot — M04 save-seam plan limit', () => {
     });
   }
 
+  // The id is already taken by a document another account created (a local copy that
+  // outlived a sign-in switch). Firestore denies the update; the user's edits must be
+  // saved under a fresh id they own instead of failing on every retry.
+  it('permission-denied on a foreign-owned id saves the edits under a new id and opens it', async () => {
+    await bootSignedIn();
+    const originalId = useEditorStore.getState().currentItem!.id;
+    itemSvc.setItem.mockReset()
+      .mockRejectedValueOnce(Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' }))
+      .mockResolvedValue({ status: 'cloud' });
+    await clickSave();
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledTimes(2));
+    const [firstId] = itemSvc.setItem.mock.calls[0];
+    const [secondId, secondItem] = itemSvc.setItem.mock.calls[1] as [string, { id: string; title: string }];
+    expect(firstId).toBe(originalId);
+    expect(secondId).not.toBe(originalId);
+    expect(secondItem.id).toBe(secondId);
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).toBe(secondId));
+    await waitFor(() => expect(new URLSearchParams(window.location.search).get('id')).toBe(secondId));
+    await waitFor(() => expect(useEditorStore.getState().dirty).toBe(false));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('permission-denied again on the new id stops after one retry and shows the save error', async () => {
+    await bootSignedIn();
+    itemSvc.setItem.mockReset().mockRejectedValue(Object.assign(new Error('denied'), { code: 'permission-denied' }));
+    await clickSave();
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t save');
+    expect(itemSvc.setItem).toHaveBeenCalledTimes(2);
+  });
+
+  it('a non-permission save failure does not fork the diagram', async () => {
+    await bootSignedIn();
+    const originalId = useEditorStore.getState().currentItem!.id;
+    itemSvc.setItem.mockReset().mockRejectedValue(Object.assign(new Error('offline'), { code: 'unavailable' }));
+    await clickSave();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t save');
+    expect(itemSvc.setItem).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().currentItem?.id).toBe(originalId);
+  });
+
   it('(a) free user at 4 owned saving a NEW item → cloud SKIPPED (skipCloud), no membership write, notice opens', async () => {
     userSvc.getUserItemIds.mockResolvedValue(['a', 'b', 'c', 'd']); // 4 owned, over free cap 3
     await bootSignedIn();
