@@ -17,7 +17,7 @@ const db = admin.firestore();
 const mixpanel = Mixpanel.init('78617e65fdba543d752fb7f6483d55f4');
 
 const webhook = require('./webhook');
-const alertParser = require('./alert_parser');
+const { processAlert, firestoreDeps } = require('./lib/paddle');
 const { log } = require('./lib/log');
 const { HttpError, requireUser, handler } = require('./lib/http');
 const pubKey = functions.config().paddle?.pub_key;
@@ -243,52 +243,21 @@ exports.track = functions.https.onRequest(async (req, res) => {
   res.status(200).send('Event tracked successfully');
 });
 
-exports.webhook = functions.https.onRequest(async (req, res) => {
-  if (req.body && req.body.p_signature) {
-    const valid = webhook.validate(req.body, pubKey);
-    if (valid) {
-      if (alertParser.supports(req)) {
-        const subscription = alertParser.parse(req);
-        if (!checkSupportedProductIds(subscription.subscription_plan_id)) {
-          res.send(
-            `subscription_plan_id:${subscription.subscription_plan_id} not supported`,
-          );
-          return;
-        }
-        const userId = getUserIdFromPassthrough(subscription.passthrough);
-        const user = await db.collection('users').doc(userId).get();
-        if (user.exists) {
-          await db
-            .collection('user_subscriptions')
-            .doc('user-' + userId)
-            .set(subscription);
-          res.send('Accepted');
-        } else {
-          res.send('Invalid userId: ' + userId);
-        }
-      } else {
-        console.warn(`unsupported alert ${req.body.alert_name}`);
-        res.send(`unsupported alert ${req.body.alert_name}`);
-      }
-    } else {
-      res.send('Invalid signature');
-    }
-  } else {
-    res.send('Invaid request');
+exports.webhook = functions.https.onRequest(handler(async (req, res) => {
+  const { status, message } = await processAlert(req.body, {
+    verify: (body) => webhook.validate(body, pubKey),
+    supportedPlan: checkSupportedProductIds,
+    ...firestoreDeps(db),
+  });
+  // Every outcome except a stored event is logged: a dropped
+  // subscription_created is a paying customer without access.
+  if (message !== 'Accepted') {
+    log('paddle webhook not applied', {
+      status,
+      message,
+      alert_name: req.body?.alert_name,
+      subscription_id: req.body?.subscription_id,
+    });
   }
-});
-
-function getUserIdFromPassthrough(passthrough) {
-  return isJSONString(passthrough)
-    ? JSON.parse(passthrough).userId
-    : passthrough;
-}
-
-function isJSONString(str) {
-  try {
-    JSON.parse(str);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+  res.status(status).send(message);
+}));
