@@ -52,6 +52,9 @@ jobs:
       # path) that the dev-server suite can't see, BEFORE anything ships to
       # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
       - name: Install Playwright (chromium)
+        # Normal runs take <1 min, slow ones ~13 min; a stuck browser/apt download
+        # otherwise hangs until the 6h job limit (#888).
+        timeout-minutes: 20
         run: pnpm exec playwright install --with-deps chromium
       - name: Verify production build and application E2E
         env:
@@ -110,6 +113,7 @@ jobs:
   # created from a build already proven green on staging.
   staging-gate:
     name: E2E gate (staging)
+    timeout-minutes: 60
     needs: build
     if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
@@ -132,7 +136,10 @@ jobs:
       - name: Verify staging commit before E2E
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        # Chromium only: the gate runs --project=chromium. Bounded so a stuck
+        # download fails fast instead of holding the shared staging site (#888).
+        timeout-minutes: 20
+        run: pnpm exec playwright install --with-deps chromium
       # Chromium is the configured release-gating browser for web-sequence.
       - name: Run full E2E suite against staging
         env:
