@@ -23,28 +23,7 @@
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
-
-// Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
-// analytics/CDN scripts that throw uncaught errors we don't own; treat those as
-// noise (copied verbatim from smoke.spec.js).
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js',
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
+import { isThirdPartyError } from './helpers/console';
 
 const HOME_VIEW = '[data-testid="home-view"]';
 const EDITOR_CONTENT = '[data-testid="dsl-editor"] .cm-content';
