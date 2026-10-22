@@ -1898,7 +1898,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // ABSENCE in embed is a genuine revert→fail signal (there is no `app-header` /
 // bare `editor` id that would pass vacuously). The Sidebar icon rail this contract
 // previously leaned on (`sidebar-editor`/`sidebar-library`) was deliberately removed
-// app-wide by f023f89 ("feat(hub): no-rail layout…") — Sidebar.tsx is unreferenced —
+// app-wide by f023f89 ("feat(hub): no-rail layout…") and Sidebar.tsx is deleted (#858),
 // so `sidebar-*` ids no longer exist in ANY mode and cannot ground the contrast.
 // The URL is driven via history.replaceState (NOT location.search =, which triggers
 // jsdom navigation), and the top-level afterEach restores it to '/'.
