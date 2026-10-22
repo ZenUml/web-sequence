@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { analyzeImport, type InvalidImportReason } from '../../services/importDiagrams';
 import type { Item } from '../../domain/types';
 import { IdentityChangedError, type SaveItemsGuard } from '../../services/identityGuard';
-import { useExportFeedbackStore } from './exportFeedbackStore';
+import { captureReturnFocus, transferSlot } from './transferSlot';
 import {
   LIBRARY_CANCELLED,
   activeLibraryIdentity,
@@ -114,6 +114,12 @@ export const useImportFeedbackStore = create<ImportFeedbackState>((set, get) => 
 
 const store = useImportFeedbackStore;
 
+transferSlot.register('import', {
+  busy: () => store.getState().busy(),
+  release: () => store.getState().dismiss(),
+  identityChanged: () => store.getState().identityChanged(),
+});
+
 // Identifies the newest file attempt. A read completion from an older attempt (one
 // that identityChanged cancelled, or that a newer choice replaced) publishes nothing.
 let fileAttempt = 0;
@@ -141,15 +147,9 @@ export async function readImportFile(file: File, onImport: ImportFileHandler): P
     fileAttempt += 1;
     store.setState({ phase: 'cancelled', writesMayHaveStarted: false, prepared: null, text: null });
   };
-  const active = document.activeElement;
-  // A file chosen from the feedback panel's own picker keeps the original trigger
-  // (the panel's buttons unmount when the new attempt starts).
-  const fromPanel = active instanceof HTMLElement && active.closest('[data-import-feedback]') != null;
-  const returnFocus = fromPanel
-    ? store.getState().returnFocus
-    : active instanceof HTMLElement && active !== document.body ? active : null;
+  const returnFocus = captureReturnFocus('[data-import-feedback]', store.getState().returnFocus);
   store.setState({ ...initial, phase: 'reading', fileName: file.name, returnFocus });
-  useExportFeedbackStore.getState().clearResult();
+  transferSlot.claim('import');
   let text: string;
   try {
     text = await file.text();
@@ -263,7 +263,7 @@ export async function runImport(text: string, deps: RunImportDeps): Promise<void
       return;
     }
     store.setState({ ...initial, ...carried, phase: 'saving', text });
-    useExportFeedbackStore.getState().clearResult();
+    transferSlot.claim('import');
     const existing = await resolveExistingIds(deps, token);
     // Checked before any write: the library answer and the save must belong to the
     // identity that started the attempt.
