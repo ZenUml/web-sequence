@@ -115,8 +115,8 @@ export default defineConfig({
     ? [
         {
           name: 'cloud',
-          // Emulator-backed cases: the live cloud.spec.js + the residual fixme file.
-          testMatch: /cloud(\.fixme)?\.spec\.js/,
+          // Emulator-backed cases: every *cloud.spec.js file.
+          testMatch: /cloud\.spec\.js/,
           // Cold page setup is heavier here than the default 30s: a fresh context's
           // first '/' load compiles the @zenuml/core asset shim + the full app, and
           // emulator round-trips (sign-in custom token, Firestore reads) add latency.
@@ -130,7 +130,7 @@ export default defineConfig({
           name: 'chromium',
           // The default signed-out suite must NEVER pick up the emulator-backed cloud
           // specs (they require VITE_USE_EMULATOR + the emulator services, absent here).
-          testIgnore: /cloud(\.fixme)?\.spec\.js/,
+          testIgnore: /cloud\.spec\.js/,
           use: { ...devices['Desktop Chrome'] },
         },
       ],
