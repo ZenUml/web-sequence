@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCss, computeJs } from './transpilers';
+import { computeCss } from './transpilers';
 
 describe('computeCss', () => {
   it('passes plain CSS through unchanged', async () => {
@@ -29,11 +29,5 @@ describe('computeCss', () => {
     // code frame with ANSI escapes, which rendered as "[34m … [0m" noise.
     const r = await computeCss('.a {\n  color: ;\n}', 'scss', undefined);
     expect(r.errors![0].message).toBe('Expected expression.');
-  });
-});
-
-describe('computeJs', () => {
-  it('passes plain JS/DSL through (no transpile for js mode)', async () => {
-    expect(await computeJs('A.b', 'js')).toEqual({ code: 'A.b' });
   });
 });

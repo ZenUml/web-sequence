@@ -1,4 +1,4 @@
-import type { CssMode, JsMode } from '../domain/types';
+import type { CssMode } from '../domain/types';
 
 export interface TranspileResult {
   code: string;
@@ -53,28 +53,6 @@ export async function computeCss(code: string, mode: CssMode, settings: unknown)
       try { parsed = JSON.parse(s.acssConfig); } catch { parsed = {}; }
       const config = instance.getConfig(found, parsed);
       return { code: instance.getCss(config) };
-    }
-    default:
-      return { code };
-  }
-}
-
-// JS/DSL: 'js' passes through (ZenUML DSL is sent as-is). ES6/TS/Coffee transpile.
-export async function computeJs(code: string, mode: JsMode): Promise<TranspileResult> {
-  switch (mode) {
-    case 'js':
-      return { code };
-    case 'es6': {
-      const Babel = await import('@babel/standalone');
-      return { code: Babel.transform(code, { presets: ['env'] }).code ?? '' };
-    }
-    case 'typescript': {
-      const ts = (await import('typescript')).default;
-      return { code: ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.ES2015 } }).outputText };
-    }
-    case 'coffeescript': {
-      const coffee = (await import('coffeescript')).default;
-      return { code: coffee.compile(code) };
     }
     default:
       return { code };
