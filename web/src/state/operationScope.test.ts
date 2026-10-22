@@ -93,6 +93,15 @@ describe('useOperationScope', () => {
     expect(result.current.isCurrent(t)).toBe(false);
   });
 
+  it('invalidate() makes every outstanding token stale; later tokens are current', () => {
+    signIn('A');
+    const { result } = renderHook(() => useOperationScope());
+    const t = result.current.begin();
+    result.current.invalidate();
+    expect(result.current.isCurrent(t)).toBe(false);
+    expect(result.current.isCurrent(result.current.begin())).toBe(true);
+  });
+
   it('guard(token) adapts to SaveItemsGuard', () => {
     signIn('A');
     const { result } = renderHook(() => useOperationScope());
@@ -112,5 +121,6 @@ describe('useOperationScope', () => {
     expect(result.current.begin).toBe(first.begin);
     expect(result.current.isCurrent).toBe(first.isCurrent);
     expect(result.current.guard).toBe(first.guard);
+    expect(result.current.invalidate).toBe(first.invalidate);
   });
 });
