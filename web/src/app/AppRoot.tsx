@@ -739,6 +739,15 @@ export function AppRoot() {
     if (url) window.open(url, '_blank', 'noopener');
   }
 
+  // A new document lives only in memory until saved, and loadItem() resets `dirty`.
+  // Mark it unsaved and save now, so closing the tab before the first edit cannot
+  // lose it. If another save is mid-flight, save() declines and the 15s auto-save
+  // tick picks the still-dirty item up.
+  function persistNewDiagram() {
+    useEditorStore.setState({ dirty: true, unsavedCount: 1 });
+    void save();
+  }
+
   // M04: Create-New → load the chosen template as a fresh owned item.
   function handleCreateNew(partial: Partial<Item>) {
     const base = useEditorStore.getState().currentItem;
@@ -756,6 +765,7 @@ export function AppRoot() {
       ...partial,
     } as Item));
     setActivePanel('editor');
+    persistNewDiagram();
   }
 
   // Create a diagram from a template payload AND open it in the editor (navigate to
@@ -806,6 +816,7 @@ export function AppRoot() {
       isReadOnly: false,
     } as Item));
     setActivePanel('editor');
+    persistNewDiagram();
     // The blank diagram is not the shared or ?code=-seeded one: drop those params
     // so a reload does not look the new id up as a share or re-seed the old code.
     void navigate({ to: '/', search: (prev) => ({

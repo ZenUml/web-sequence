@@ -399,6 +399,29 @@ describe('AppRoot', () => {
     await waitFor(() => expect(new URLSearchParams(window.location.search).get('id')).toBe(fresh.id));
   });
 
+  // A brand-new document exists only in memory until it is saved. Creating it must
+  // persist it right away (no edit, no 15s wait), or closing the tab loses it.
+  it('header New saves the new blank diagram immediately, without an edit', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const before = useEditorStore.getState().currentItem!;
+    itemSvc.setItem.mockClear();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(before.id));
+    const fresh = useEditorStore.getState().currentItem!;
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(fresh.id, expect.objectContaining({ id: fresh.id }), expect.anything()));
+    await waitFor(() => expect(useEditorStore.getState().dirty).toBe(false));
+  });
+
+  it('creating a diagram from a hub template saves it immediately, without an edit', async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await userEvent.click(await screen.findByTestId('home-template-blue'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).not.toBe(''));
+    const created = useEditorStore.getState().currentItem!;
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(created.id, expect.objectContaining({ id: created.id }), expect.anything()));
+  });
+
   // The new diagram is not the shared/seeded one: New must drop ?share-token=,
   // ?code= and ?title=, or a reload would look the new id up as a share or
   // re-seed the old code.
