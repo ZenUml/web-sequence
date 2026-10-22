@@ -5,7 +5,6 @@ import {
   foldInside,
   foldNodeProp,
   indentNodeProp,
-  type StreamParser,
 } from '@codemirror/language'
 import { styleTags, tags as t } from '@lezer/highlight'
 import { parser } from './grammar/zenuml-parser.js'
@@ -157,29 +156,4 @@ export const zenumlLanguage = LRLanguage.define({
 // decides what CSS to emit.
 export function zenumlSupport(): LanguageSupport {
   return new LanguageSupport(zenumlLanguage)
-}
-
-// ── Legacy export ─────────────────────────────────────────────────────────────
-// Kept so that modes.ts (which imports `zenumlStream`) compiles until the
-// controller integrates `zenumlSupport()` into the languageExtension() call.
-// TODO (controller): replace `StreamLanguage.define(zenumlStream)` in modes.ts
-// with `zenumlSupport()` and drop this export.
-const KEYWORDS = /^(if|else|while|for|par|opt|alt|loop|return|new|try|catch|finally|group)\b/
-
-export const zenumlStream: StreamParser<unknown> = {
-  token(stream) {
-    if (stream.match(/^\s+/)) return null
-    if (stream.match(/^\/\/.*/)) return 'comment'
-    if (stream.match(KEYWORDS)) return 'keyword'
-    if (stream.match(/^"(?:[^"\\]|\\.)*"/)) return 'string'
-    if (stream.match(/^->|^-->|^=|^\.|^:/)) return 'operator'
-    if (stream.match(/^[A-Za-z_][\w]*(?=\s*\()/)) return 'function'
-    if (stream.match(/^[A-Za-z_][\w]*/)) return 'variableName'
-    stream.next()
-    return null
-  },
-  tokenTable: {
-    function: t.function(t.variableName),
-    variableName: t.variableName,
-  },
 }

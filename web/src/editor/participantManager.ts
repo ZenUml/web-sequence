@@ -5,10 +5,8 @@
 // calling parser.parse() independently (that was the reference implementation's
 // double-parse bug).
 //
-// Integration note: this field returns an empty set unless the editor state
-// carries a real Lezer LRLanguage (LRLanguage.define({ parser })). The switch
-// from the legacy StreamLanguage to the Lezer language in modes.ts is the
-// controller's integration step; once that lands, participants are populated.
+// Integration note: this field reads the Lezer syntax tree, so the editor state
+// must carry the Lezer LRLanguage. modes.ts installs it via zenumlSupport().
 // Downstream autocomplete imports getParticipants() to populate From/To lists.
 
 import { StateField } from '@codemirror/state'
