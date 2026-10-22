@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BrandLogo, PlusIcon, TextInput, Tooltip } from '../../ui';
+import { MoonIcon, SidebarIcon, SunIcon } from '../../ui/icons';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu } from '../auth/ProfileMenu';
 import { ConfirmDialog } from '../modals/ConfirmDialog';
@@ -66,17 +67,6 @@ export interface AppHeaderProps {
   onToggleAppearance?(): void;
 }
 
-function SidebarIcon() {
-  // Rectangle with a left split; no arrow (the state is carried by aria-pressed).
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}
-      strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="2.5" />
-      <path d="M9 4v16" />
-    </svg>
-  );
-}
-
 function ForkIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
@@ -94,25 +84,6 @@ function PlayIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
       strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true">
       <path d="M7 4.5v15l12-7.5z" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
-      strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
-      strokeLinecap="round" className="h-5 w-5" aria-hidden="true">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
     </svg>
   );
 }
@@ -240,7 +211,7 @@ export function AppHeader({
                 onClick={onToggleEditor}
                 className="editor-icon-button editor-sidebar-toggle"
               >
-                <SidebarIcon />
+                <SidebarIcon className="h-5 w-5" />
               </button>
             </Tooltip>
           )}
@@ -363,7 +334,7 @@ export function AppHeader({
                 onClick={onToggleAppearance}
                 className="editor-icon-button editor-appearance-toggle"
               >
-                {darkAppearance ? <SunIcon /> : <MoonIcon />}
+                {darkAppearance ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
               </button>
             </Tooltip>
           )}

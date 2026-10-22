@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { BrandLogo, Tooltip, cn } from '../../ui';
+import { MoonIcon, SidebarIcon, SunIcon } from '../../ui/icons';
 import { LoginModal } from '../auth/LoginModal';
 import { ProfileMenu, type ProfileMenuProps } from '../auth/ProfileMenu';
 import type { AppUser, Appearance } from '../../domain/types';
@@ -39,35 +40,6 @@ export interface ShareVisitorStatusProps {
   onToggleEditor?(): void;
   // Footer of the source column (the Editor puts Report a bug here).
   sourceFooter?: ReactNode;
-}
-
-function SidebarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}
-      strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="2.5" />
-      <path d="M9 4v16" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
-      strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
-      strokeLinecap="round" className="h-5 w-5" aria-hidden="true">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
-    </svg>
-  );
 }
 
 // 36px frame, 26px ring (Figma "Loading indicator"). A quarter arc rotates over a
@@ -151,7 +123,7 @@ export function ShareVisitorStatus({
                 onClick={onToggleEditor}
                 className="editor-icon-button editor-sidebar-toggle"
               >
-                <SidebarIcon />
+                <SidebarIcon className="h-5 w-5" />
               </button>
             </Tooltip>
           )}
@@ -186,7 +158,7 @@ export function ShareVisitorStatus({
               onClick={onToggleAppearance}
               className="editor-icon-button editor-appearance-toggle"
             >
-              {dark ? <SunIcon /> : <MoonIcon />}
+              {dark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
             </button>
           </Tooltip>
           <div className="editor-global-account">
