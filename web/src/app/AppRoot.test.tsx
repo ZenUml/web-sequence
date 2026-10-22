@@ -276,7 +276,7 @@ describe('AppRoot', () => {
     await screen.findByTestId('editor-region');
     await expandCss();
     expect(container.querySelector('[data-testid="css-mode-select"]')).toBeTruthy();
-    // The diagram DSL is rendered by @zenuml/core; computeJs is never called, so the
+    // The diagram DSL is rendered by @zenuml/core with no JS transpile step, so the
     // JS pre-processor Select was dead UI and has been removed.
     expect(container.querySelector('[data-testid="js-mode-select"]')).toBeNull();
   });
