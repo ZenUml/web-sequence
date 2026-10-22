@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Item, HtmlMode, CssMode, JsMode } from '../domain/types';
 import { applyPageEdit, switchPage, addPage, deletePage, migrateToPages } from '../domain/item';
+import { randomId } from '../domain/id';
 
 // Default content for a brand-new item, sourced from the M01 AppRoot STARTER.
 // Task 12 will make AppRoot import this instead of its local constant.
@@ -20,9 +21,7 @@ export const DEFAULT_STARTER = {
 
 // Collision-resistant item id, consistent with item.ts's genId() approach.
 export function genItemId(): string {
-  const uuid = globalThis.crypto?.randomUUID?.();
-  if (uuid) return `item-${uuid}`;
-  return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return randomId('item');
 }
 
 interface EditorState {

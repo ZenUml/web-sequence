@@ -73,6 +73,7 @@ import { LimitReachedNotice } from '../components/subscription/LimitReachedNotic
 import { LoginModal } from '../components/auth/LoginModal';
 import { HomeView } from '../components/home/HomeView';
 import { ReportBugButton } from '../components/feedback/ReportBugButton';
+import { randomId } from '../domain/id';
 
 const CSS_MODES: { value: CssMode; label: string }[] = [
   { value: 'css', label: 'CSS' },
@@ -519,8 +520,7 @@ export function AppRoot() {
   useEffect(() => {
     if (!embedByValue || embedSeeded.current) return;
     embedSeeded.current = true;
-    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-      ? crypto.randomUUID() : `embed-${Date.now()}`;
+    const id = randomId();
     // Backward compat (adversarial review finding 3): legacy embed links carry a
     // JSON-encoded item in ?code=, not raw DSL. parseEmbedCode accepts both shapes.
     const payload = parseEmbedCode(runtime.embedCode ?? '', runtime.embedTitle ?? null);
@@ -655,8 +655,7 @@ export function AppRoot() {
   async function saveUnderNewId(): Promise<boolean> {
     const cur = useEditorStore.getState().currentItem;
     if (!cur) return false;
-    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID() : String(Date.now());
+    const newId = randomId();
     const moved: Item = { ...cur, id: newId, updatedOn: Date.now() };
     delete moved.createdBy;
     delete moved.isShared;
@@ -787,8 +786,7 @@ export function AppRoot() {
   // M04: Create-New → load the chosen template as a fresh owned item.
   function handleCreateNew(partial: Partial<Item>) {
     const base = useEditorStore.getState().currentItem;
-    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-      ? crypto.randomUUID() : String(Date.now());
+    const id = randomId();
     useEditorStore.getState().loadItem(migrateToPages({
       ...(base ?? {}),
       id,
@@ -841,8 +839,7 @@ export function AppRoot() {
   // Create a blank diagram and open it in the editor (?id=). Shared by the hub's
   // New diagram and the editor toolbar's New, so both create the same document.
   function handleNewDiagram() {
-    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID() : String(Date.now());
+    const newId = randomId();
     useEditorStore.getState().loadItem(migrateToPages({
       id: newId,
       title: 'Untitled',

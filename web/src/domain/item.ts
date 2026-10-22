@@ -1,5 +1,6 @@
 import type { Item, Page } from './types';
 import { upgradeLegacyTemplateCss } from './templates';
+import { randomId } from './id';
 
 // Collision-resistant page id. MUST NOT derive from a session-local counter:
 // page ids are persisted and restored across reloads (REQ-PG-2), so a
@@ -7,9 +8,7 @@ import { upgradeLegacyTemplateCss } from './templates';
 // on a saved item, producing two pages with the same id (applyPageEdit/
 // deletePage operate on ALL matches → silent diagram corruption).
 function genId(prefix = 'p'): string {
-  const uuid = globalThis.crypto?.randomUUID?.();
-  if (uuid) return `${prefix}-${uuid}`;
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return randomId(prefix);
 }
 
 export function migrateToPages(item: Item): Item {
