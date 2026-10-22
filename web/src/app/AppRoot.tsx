@@ -56,8 +56,8 @@ import { usePaddle, type CheckoutPlanType } from '../hooks/usePaddle';
 import { isImportOverFileLimit, isOverFileLimit, limitFor } from '../domain/planLimit';
 import { isPlus } from '../domain/plan';
 import { detectFromEnv, parseEmbedCode } from './runtimeMode';
-import { CANONICAL_APP_ORIGIN } from '../config/shareOrigin';
-import { EmbedHeader } from '../components/embed/EmbedHeader';
+import { EmbedView } from '../components/embed/EmbedView';
+import { buildEmbedOpenUrl } from '../components/embed/buildEmbedOpenUrl';
 import { semverCompare } from '../domain/semver';
 import { config as appConfig } from '../config/firebaseConfig';
 import type { Settings, PlanType } from '../domain/types';
@@ -985,80 +985,26 @@ export function AppRoot() {
   const stickyOffset = search.stickyOffset ?? 0;
 
   // ─── M05 (RM-2 / REQ-EMB-1): embed branch ────────────────────────────────────
-  // A minimal, read-mostly view: NO main header, NO sidebar, NO modals, shortcuts off
-  // (gated above). Only the embed header + the preview render. The "Open in ZenUML"
-  // link reproduces the diagram in the full editor at the canonical app origin:
-  //  - by-value embed (?code/?title)  → ${origin}/?code=<dsl>&title=<title>
-  //  - shared embed   (?id/?share-token) → ${origin}/?id=<id>&share-token=<token>
   // Placed BEFORE the `if (!item)` guard but AFTER all hooks ran, so hook order is
   // stable (every useEffect/useShare/etc. is above this point).
   if (isEmbed) {
-    const openUrl = (() => {
-      const q = new URLSearchParams();
-      if (embedByValue) {
-        q.set('code', runtime.embedCode ?? '');
-        if (runtime.embedTitle) q.set('title', runtime.embedTitle);
-      } else if (runtime.itemId && runtime.shareToken) {
-        q.set('id', runtime.itemId);
-        q.set('share-token', runtime.shareToken);
-      } else if (runtime.itemId) {
-        q.set('id', runtime.itemId);
-      }
-      const query = q.toString();
-      return query ? `${CANONICAL_APP_ORIGIN}/?${query}` : `${CANONICAL_APP_ORIGIN}/`;
-    })();
-
     return (
-      <div data-testid="embed-root" className="flex flex-col h-full w-full surface-paper">
-        <EmbedHeader title={item?.title ?? runtime.embedTitle ?? undefined} openUrl={openUrl} />
-        {/* Render the diagram on paper inside a hairline + shadow card so the embed
-            reads as an intentional framed surface, not an unstyled white box on cream.
-            PreviewFrame posts a 'contentSize' message after each render (embed-only)
-            and sets an explicit pixel width + height on the iframe, so the card
-            (width/height:auto, i.e. shrink-to-fit) hugs the diagram on both axes.
-            The wrapper's items-center/justify-center centers the card in both axes.
-            max-w/max-h cap + overflow-auto ensure a large diagram scrolls rather than
-            bleeding beyond the viewport. */}
-        <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-          {item ? (
-            <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-lg border border-paper-line shadow-pop overflow-auto" style={{ backgroundColor: 'var(--editor-canvas)' }}>
-              <PreviewFrame
-                ref={previewRef}
-                code={item.js}
-                css={item.cssMode === 'css' ? item.css : transpiledCss}
-                stickyOffset={stickyOffset}
-                autoPreview={settings.autoPreview}
-                theme={previewTheme}
-              />
-            </div>
-          ) : (
-            // REQ-EMB: a bad ?code/?id leaves item null. Surface an on-paper empty
-            // state (serif display face + onlight tokens, matching the modal empty
-            // states) instead of returning null and stranding the user on blank cream.
-            <div
-              data-testid="embed-empty"
-              className="mx-auto max-w-md rounded-lg border border-paper-line bg-paper-50 shadow-pop px-8 py-10 text-center"
-            >
-              <h2 className="font-serif text-[22px] leading-tight text-onlight-strong">
-                Diagram unavailable
-              </h2>
-              <p className="mt-2 text-[13px] text-onlight-muted">
-                This embedded diagram could not be loaded. The link may be broken or the
-                diagram is no longer shared.
-              </p>
-              <a
-                data-testid="embed-empty-link"
-                href={openUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex items-center justify-center h-8 px-3 rounded text-[13px] font-medium bg-accent-press text-white hover:bg-accent ring-draft shadow-inset"
-              >
-                Open ZenUML
-              </a>
-            </div>
-          )}
-        </div>
-      </div>
+      <EmbedView
+        item={item}
+        openUrl={buildEmbedOpenUrl({
+          embedByValue,
+          embedCode: runtime.embedCode,
+          embedTitle: runtime.embedTitle,
+          itemId: runtime.itemId,
+          shareToken: runtime.shareToken,
+        })}
+        previewRef={previewRef}
+        css={item ? (item.cssMode === 'css' ? item.css : transpiledCss) : ''}
+        stickyOffset={stickyOffset}
+        autoPreview={settings.autoPreview}
+        theme={previewTheme}
+        fallbackTitle={runtime.embedTitle}
+      />
     );
   }
   // ─────────────────────────────────────────────────────────────────────────────
