@@ -1,3 +1,4 @@
+import { parseLocationSearch } from './urlParams';
 export interface RuntimeMode {
   isEmbed: boolean;
   isShared: boolean;
@@ -16,18 +17,19 @@ export interface RuntimeInput {
 }
 
 export function detectRuntimeMode(input: RuntimeInput): RuntimeMode {
-  const p = new URLSearchParams(input.search);
-  const itemId = p.get('id') ?? p.get('itemId');
-  const shareToken = p.get('share-token') ?? p.get('token');
+  // Same schema as the router's validateSearch (#901).
+  const p = parseLocationSearch(input.search);
+  const itemId = p.id ?? null;
+  const shareToken = p['share-token'] ?? null;
   return {
-    isEmbed: p.has('embed'),
+    isEmbed: p.embed === true,
     isShared: !!(itemId && shareToken),
     isExtension: input.isExtension,
     isDesktop: input.isDesktop,
     itemId,
     shareToken,
-    embedCode: p.get('code'),
-    embedTitle: p.get('title'),
+    embedCode: p.code ?? null,
+    embedTitle: p.title ?? null,
   };
 }
 
