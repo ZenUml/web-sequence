@@ -10,7 +10,7 @@ import { defineConfig, devices } from '@playwright/test';
 // + serving here guarantees the suite tests the code in THIS tree. Override the
 // target with PW_BASE_URL to point at an already-running server (skips webServer).
 //
-// Vitest (yarn test) owns *.test.ts under src/; this config owns *.spec.ts under
+// Vitest (pnpm test) owns *.test.ts under src/; this config owns *.spec.ts under
 // e2e/. vite.config.ts excludes e2e/** from vitest so the two never collide.
 const PORT = 4399;
 
@@ -32,7 +32,7 @@ export default defineConfig({
   webServer: process.env.PW_BASE_URL
     ? undefined
     : {
-        command: `yarn build && npx vite preview --port ${PORT} --strictPort`,
+        command: `pnpm build && npx vite preview --port ${PORT} --strictPort`,
         url: `http://localhost:${PORT}`,
         reuseExistingServer: false,
         timeout: 120_000,
