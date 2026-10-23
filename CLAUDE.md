@@ -94,13 +94,13 @@ Unit test files follow the pattern `*.test.js` and are located either in `/src/t
 2. **Preact aliases**: React imports are aliased to Preact in the build config
 3. **No TypeScript**: This is a JavaScript project with JSX
 4. **Firebase emulators**: Use for local development - see `/docs/firebase-emulator-testing.md`
-5. **Pre-commit hooks**: Automatically run Prettier and ESLint
+5. **Lint**: no git pre-commit hook is installed; the root `lint-staged` config runs Prettier only. Lint the app with `pnpm -C web lint` (flat config `web/eslint.config.js`)
 6. **Chrome extension**: Built to `/extension/` directory during release
 7. **Storybook**: Available for component development — `yarn storybook` (port 6006), `yarn build-storybook` for a static build
 
 ## Code Style
 
-- ESLint configuration extends `eslint-config-synacor`
+- `web/`: ESLint flat config (`@eslint/js`, `typescript-eslint`, `react-hooks`). The root `.eslintrc.json` (`eslint-config-synacor`) is for the legacy Preact app only
 - Prettier formatting on commit via lint-staged
 - Follow existing patterns for component structure and service layer
 
