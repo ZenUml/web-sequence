@@ -25,7 +25,7 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { ensureSyntaxTree, foldable } from '@codemirror/language'
 import { highlightTree, classHighlighter } from '@lezer/highlight'
-import { zenumlLanguage, zenumlSupport, zenumlStream } from './zenumlLanguage'
+import { zenumlLanguage, zenumlSupport } from './zenumlLanguage'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -382,54 +382,6 @@ describe('Transient half-typed states keep completed-token classes and never thr
     expectTag('A->B: ', 'B', 'tok-className')
     expectTag('A->B: ', '->', 'tok-operator')
     expectTag('A->B: ', ':', 'tok-punctuation')
-  })
-})
-
-// ── Legacy stream export (backwards-compat until modes.ts migration) ──────────
-
-describe('zenumlStream (legacy export — kept until modes.ts migration)', () => {
-  class FakeStream {
-    pos = 0
-    constructor(public string: string) {}
-    match(pattern: RegExp): boolean {
-      const m = pattern.exec(this.string.slice(this.pos))
-      if (m && m.index === 0) {
-        this.pos += m[0].length
-        return true
-      }
-      return false
-    }
-    next(): string {
-      return this.string[this.pos++]
-    }
-    eol(): boolean {
-      return this.pos >= this.string.length
-    }
-  }
-
-  function firstToken(src: string): string | null {
-    const s = new FakeStream(src) as unknown as Parameters<typeof zenumlStream.token>[0]
-    return zenumlStream.token(s, {} as never) ?? null
-  }
-
-  it('marks keywords', () => {
-    expect(firstToken('if (x) {')).toBe('keyword')
-    expect(firstToken('while (x)')).toBe('keyword')
-    expect(firstToken('return x')).toBe('keyword')
-    expect(firstToken('new A()')).toBe('keyword')
-  })
-
-  it('marks comments', () => {
-    expect(firstToken('// note here')).toBe('comment')
-  })
-
-  it('marks strings', () => {
-    expect(firstToken('"hello"')).toBe('string')
-  })
-
-  it('marks identifiers as variableName and call targets as function', () => {
-    expect(firstToken('Alice')).toBe('variableName')
-    expect(firstToken('method(')).toBe('function')
   })
 })
 

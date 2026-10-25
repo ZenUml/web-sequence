@@ -34,7 +34,7 @@ describe('themes', () => {
   });
 
   // The ink theme must actually COLOR syntax — not just exist as an id. These
-  // are the lezer base tags the ZenUML DSL StreamLanguage resolves to
+  // are the lezer base tags the ZenUML DSL language (zenumlSupport) resolves to
   // (keyword/string/comment), so a live style here means the DSL renders
   // colored, not wall-to-wall neutral. A theme with no `styles` would return
   // null and fail these.
