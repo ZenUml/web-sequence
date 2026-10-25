@@ -88,7 +88,7 @@ not the pure logic.
 | ID | Behavior | Method | Dep | Pri |
 |----|----------|--------|-----|-----|
 | FLD-1 | Create folder; it appears in the folder list with 0 count | Create folder "Work"; assert listed, count 0 | AUTH/CLOUD | P1 |
-| FLD-2 | Move a diagram into a folder; folder count increments; "Unfiled" decrements | Drag/menu-move item; assert counts | AUTH/CLOUD | P1 |
+| FLD-2 | Move a diagram into a folder; folder count increments; "Unfiled" decrements | Drag/menu-move item; assert counts (live: FDR-5/7/9 in `diagrams-folders-cloud.spec.js`) | AUTH/CLOUD | P1 |
 | FLD-3 | Rename folder | Rename; assert new label | AUTH/CLOUD | P2 |
 | FLD-4 | Delete folder; its items return to Unfiled | Delete; assert items unfiled | AUTH/CLOUD | P2 |
 | FLD-5 | "All" vs "Unfiled" filters the grid | Click each; assert filtered set | AUTH/CLOUD | P1 |
