@@ -133,6 +133,37 @@ describe('useFolders — uid-change race (advisor fix #9)', () => {
   });
 });
 
+describe('useFolders — identity generation (#867)', () => {
+  it('drops a create that started before an A → B → A switch: no stale append, no stale reload', async () => {
+    // The hook's return value hides state owned by another uid, so a plain sign-out
+    // test cannot see a stale write. A → B → A brings the owner back: only the
+    // generation check stops the old create from appending its folder and reloading.
+    useAuthStore.setState({ user: { uid: 'u1', email: 'a@b.c' }, authReady: true });
+    mockGetFolders.mockResolvedValue(FOLDERS);
+    let releaseCreate!: () => void;
+    mockCreateFolder.mockImplementation(
+      () => new Promise<Folder>((resolve) => {
+        releaseCreate = () => resolve({ id: 'stale', name: 'X', createdOn: 2, updatedOn: 2 });
+      }),
+    );
+
+    const { result } = renderHook(() => useFolders());
+    await waitFor(() => expect(result.current.folders).toHaveLength(2));
+
+    let createPromise!: Promise<void>;
+    act(() => { createPromise = result.current.createFolder('X'); });
+    act(() => { useAuthStore.setState({ user: { uid: 'u2', email: 'b@b.c' } }); });
+    act(() => { useAuthStore.setState({ user: { uid: 'u1', email: 'a@b.c' } }); });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const readsBefore = mockGetFolders.mock.calls.length;
+
+    await act(async () => { releaseCreate(); await createPromise; });
+
+    expect(result.current.folders.map((f) => f.id)).toEqual(['folder-1', 'folder-2']);
+    expect(mockGetFolders.mock.calls.length).toBe(readsBefore);
+  });
+});
+
 describe('useFolders — signed out', () => {
   beforeEach(() => {
     useAuthStore.setState({ user: null, authReady: true });
