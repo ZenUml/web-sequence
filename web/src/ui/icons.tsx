@@ -1,6 +1,10 @@
-// Diagrams page icons. Drawn on the 28×28 hit-target grid used by the Figma frame
-// (36:7530) so the glyph bounds match the design: fork ≈10.4×14.4 at (8.8, 6.8),
-// trash 14×14 at (7, 7). All glyphs share a 1.3px round stroke.
+// Shared icons. One definition per glyph: import from here instead of drawing a
+// local copy. Icons are aria-hidden; `className` (where taken) only sizes or
+// positions the glyph, the stroke stays in the icon.
+//
+// The Diagrams page icons are drawn on the 28×28 hit-target grid used by the Figma
+// frame (36:7530) so the glyph bounds match the design: fork ≈10.4×14.4 at
+// (8.8, 6.8), trash 14×14 at (7, 7). They share a 1.3px round stroke.
 
 const stroke = {
   stroke: 'currentColor',
@@ -92,17 +96,17 @@ export function PlusIcon() {
   );
 }
 
-export function MoonIcon() {
+export function MoonIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" width="20" height="20" className={className} aria-hidden="true" focusable="false">
       <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" {...stroke} strokeWidth={1.7} />
     </svg>
   );
 }
 
-export function SunIcon() {
+export function SunIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" width="20" height="20" className={className} aria-hidden="true" focusable="false">
       <g {...stroke} strokeWidth={1.7}>
         <circle cx="12" cy="12" r="4" />
         <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
@@ -130,6 +134,29 @@ export function ExportIcon() {
         <path d="M8 9.6v-7M5.2 5.3 8 2.5l2.8 2.8" />
         <path d="M3 10.5v3h10v-3" />
       </g>
+    </svg>
+  );
+}
+
+// Sidebar toggle: rectangle with a left split; no arrow (the state is carried by
+// aria-pressed on the button).
+export function SidebarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth={1.6}
+      strokeLinejoin="round" className={className} aria-hidden="true" focusable="false">
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M9 4v16" />
+    </svg>
+  );
+}
+
+// Circled exclamation for failed import/export feedback (22 grid).
+export function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 22 22" width="22" height="22" fill="none" className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M11 6.6v5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="11" cy="15.2" r="0.95" fill="currentColor" />
     </svg>
   );
 }
