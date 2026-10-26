@@ -57,6 +57,7 @@ const LocalStorageKeys = {
   LOGIN_AND_SAVE_MESSAGE_SEEN: 'loginAndsaveMessageSeen',
   ASKED_TO_IMPORT_CREATIONS: 'askedToImportCreations',
 };
+
 const UNSAVED_WARNING_COUNT = 15;
 const version = '3.6.1';
 
@@ -1658,6 +1659,7 @@ BookLibService.Borrow(id) {
               onUpdateImage={this.onUpdateImage.bind(this)}
               currentItem={this.state.currentItem}
               onLogin={this.loginBtnClickHandler.bind(this)}
+
               externalLibCount={this.state.externalLibCount}
               openBtnHandler={this.openBtnClickHandler.bind(this)}
               newBtnHandler={this.newBtnClickHandler.bind(this)}
