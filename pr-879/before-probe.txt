@@ -1,0 +1,7 @@
+create_share, no token | HTTP 500 | {"error":"Failed to create share"}
+create_share, invalid token | HTTP 500 | {"error":"Failed to create share"}
+authenticate, no token | HTTP 500 | {"code":"ECONNRESET"}
+authenticate, invalid Bearer | HTTP 500 | {"code":"ECONNRESET"}
+sync_diagram, no token | HTTP 500 | {"code":"ECONNRESET"}
+sync_diagram, invalid token | HTTP 500 | {"code":"ECONNRESET"}
+get_shared_item, missing item | HTTP 404 | {"error":"Item not found"}

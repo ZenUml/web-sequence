@@ -1,0 +1,7 @@
+create_share, no token | HTTP 401 | {"error":"Missing ID token"}
+create_share, invalid token | HTTP 401 | {"error":"Invalid or expired ID token"}
+authenticate, no token | HTTP 401 | {"error":"Missing ID token"}
+authenticate, invalid Bearer | HTTP 401 | {"error":"Invalid or expired ID token"}
+sync_diagram, no token | HTTP 401 | {"error":"Missing ID token"}
+sync_diagram, invalid token | HTTP 401 | {"error":"Invalid or expired ID token"}
+get_shared_item, missing item | HTTP 404 | {"error":"Item not found"}
