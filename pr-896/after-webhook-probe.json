@@ -1,0 +1,47 @@
+[
+ {
+  "case": "no body",
+  "status": 400,
+  "body": "Invalid request"
+ },
+ {
+  "case": "body without p_signature",
+  "status": 400,
+  "body": "Invalid request"
+ },
+ {
+  "case": "bad signature",
+  "status": 401,
+  "body": "Invalid signature"
+ },
+ {
+  "case": "signed, unsupported plan",
+  "status": 200,
+  "body": "subscription_plan_id:other-plan not supported"
+ },
+ {
+  "case": "signed, passthrough has no userId",
+  "status": 200,
+  "body": "Unusable passthrough"
+ },
+ {
+  "case": "signed, unknown user",
+  "status": 503,
+  "body": "Unknown userId: ghost-user"
+ },
+ {
+  "case": "signed, known user, created (active) @10:00",
+  "status": 200,
+  "body": "Accepted"
+ },
+ {
+  "case": "signed, OLDER cancel of other sub @09:00",
+  "status": 200,
+  "body": "Ignored stale event"
+ },
+ {
+  "case": "stored subscription after the stale cancel",
+  "status": "-",
+  "body": "{\"status\":\"active\",\"subscription_id\":\"s-new\",\"event_time\":\"2026-10-22 10:00:00\"}"
+ }
+]
