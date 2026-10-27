@@ -1,0 +1,23 @@
+>  === DEBUG: get_shared_item ===
+>  Full request URL: /?id=item-07114e06-5769-4dec-b111-d7fdb4c14a6c&share-token=<32-hex share token, masked for publishing>
+>  Query object: {
+>    id: 'item-07114e06-5769-4dec-b111-d7fdb4c14a6c',
+>    'share-token': '<32-hex share token, masked for publishing>'
+>  }
+>  All query keys: [ 'id', 'share-token' ]
+>  Parsed params: {
+>    itemId: 'item-07114e06-5769-4dec-b111-d7fdb4c14a6c',
+>    shareToken: '<32-hex share token, masked for publishing>'
+>  }
+>  ItemId type: string ShareToken type: string
+>  DEBUG: Item data loaded: {
+>    id: 'item-07114e06-5769-4dec-b111-d7fdb4c14a6c',
+>    title: 'Untitled',
+>    isShared: false,
+>    hasShareToken: false,
+>    shareTokenMatch: false,
+>    createdBy: 'e2e-e2e-test-local',
+>    actualToken: undefined,
+>    requestedToken: '<32-hex share token, masked for publishing>'
+>  }
+>  DEBUG: Token validation failed

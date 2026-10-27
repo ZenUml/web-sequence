@@ -1,0 +1,20 @@
+{
+  "before": {
+    "JWT-like string (eyJ\u2026)": 0,
+    "\"Authorization\" header": 0,
+    "\"share-token\" / shareToken value": 12,
+    "imageBase64": 0,
+    "e2e@test.local email": 0,
+    "\"email\" field": 0,
+    "log lines": 723
+  },
+  "after": {
+    "JWT-like string (eyJ\u2026)": 0,
+    "\"Authorization\" header": 0,
+    "\"share-token\" / shareToken value": 0,
+    "imageBase64": 0,
+    "e2e@test.local email": 0,
+    "\"email\" field": 0,
+    "log lines": 647
+  }
+}

@@ -1,0 +1,4 @@
+>  get_shared_item.denied {
+>    itemId: 'item-c643290c-ad70-42a6-adb3-79926179da82',
+>    isShared: false
+>  }
