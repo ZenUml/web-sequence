@@ -1,0 +1,120 @@
+{
+  "loginLowestContrast": [
+    {
+      "text": "Save and sync your diagrams across devic",
+      "ratio": 5.56,
+      "size": "13px"
+    },
+    {
+      "text": "Continue with Google",
+      "ratio": 11.62,
+      "size": "13px"
+    },
+    {
+      "text": "Continue with GitHub",
+      "ratio": 11.62,
+      "size": "13px"
+    },
+    {
+      "text": "Continue with Facebook",
+      "ratio": 11.62,
+      "size": "13px"
+    }
+  ],
+  "loginSmallButtonHeights": [
+    {
+      "t": "Close",
+      "h": 32,
+      "w": 32
+    },
+    {
+      "t": "Continue with Google",
+      "h": 36,
+      "w": 390
+    },
+    {
+      "t": "Continue with GitHub",
+      "h": 36,
+      "w": 390
+    },
+    {
+      "t": "Continue with Facebook",
+      "h": 36,
+      "w": 390
+    },
+    {
+      "t": "Continue with Twitter",
+      "h": 36,
+      "w": 390
+    }
+  ],
+  "helpModalOpenedByQuestionMark": false,
+  "editorIconButtonSizes": [
+    {
+      "id": "header-menu",
+      "h": 36,
+      "w": 62
+    },
+    {
+      "id": "header-go-home",
+      "h": 34,
+      "w": 34
+    },
+    {
+      "id": "Your diagrams",
+      "h": 20,
+      "w": 87
+    },
+    {
+      "id": "header-title",
+      "h": 32,
+      "w": 173
+    },
+    {
+      "id": "filemenu-trigger",
+      "h": 24,
+      "w": 24
+    },
+    {
+      "id": "header-savestate",
+      "h": 19,
+      "w": 78
+    },
+    {
+      "id": "share-button",
+      "h": 36,
+      "w": 85
+    },
+    {
+      "id": "header-present",
+      "h": 36,
+      "w": 95
+    },
+    {
+      "id": "header-account-divider",
+      "h": 24,
+      "w": 1
+    },
+    {
+      "id": "header-pricing-link",
+      "h": 36,
+      "w": 67
+    },
+    {
+      "id": "header-login",
+      "h": 36,
+      "w": 68
+    }
+  ],
+  "presentSvgSize": {
+    "diagram": [
+      285,
+      144
+    ],
+    "frame": [
+      874,
+      688
+    ],
+    "widthFractionOfFrame": 0.33
+  }
+}
