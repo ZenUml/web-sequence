@@ -1,0 +1,12 @@
+{
+  "checkoutCalls": 1,
+  "planType": "plus-monthly",
+  "passthroughHasUserId": true,
+  "checkoutKeys": [
+    "email",
+    "passthrough",
+    "product",
+    "successCallback"
+  ],
+  "paidPlanRowVisible": true
+}
