@@ -1,0 +1,8 @@
+== before (db3b1766)
+status before running emulator:
+status after running the Firebase emulator once:
+ D functions/firebase-debug.log
+?? functions/firestore-debug.log
+== after (90af3f3c)
+status before running emulator:
+status after running the Firebase emulator once:
