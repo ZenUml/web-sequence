@@ -1,0 +1,8 @@
+{
+  "exportFilename": "zenuml-diagrams.json",
+  "exportedItems": 1,
+  "exportFeedbackVisible": true,
+  "malformedImportText": "This file can’t be imported broken.json Choose a ZenUML JSON export file. This file isn’t valid JSON. Use a .json file saved with Export all. Cancel Choose anot",
+  "importedTitleVisible": true,
+  "importFeedbackAfterOk": "Import complete ok.json 1 diagram added. Done"
+}
