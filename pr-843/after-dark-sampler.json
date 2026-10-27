@@ -1,0 +1,26 @@
+{
+ "note": "Distinct computed-style states sampled each animation frame during a throttled saved-dark reload (150 ms latency, 500 kB/s, cache off); every state the sampler recorded, copied from the run output.",
+ "states": [
+  {
+   "t": 439,
+   "htmlAppearance": "dark",
+   "html": "rgb(48, 57, 68)",
+   "frameBody": null,
+   "canvas": null
+  },
+  {
+   "t": 1781,
+   "htmlAppearance": "dark",
+   "html": "rgb(48, 57, 68)",
+   "frameBody": "rgba(0, 0, 0, 0)",
+   "canvas": null
+  },
+  {
+   "t": 4029,
+   "htmlAppearance": "dark",
+   "html": "rgb(48, 57, 68)",
+   "frameBody": "rgba(0, 0, 0, 0)",
+   "canvas": "rgb(255, 255, 255)"
+  }
+ ]
+}
