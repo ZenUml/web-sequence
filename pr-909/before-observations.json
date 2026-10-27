@@ -1,0 +1,60 @@
+[
+  {
+    "name": "bare",
+    "url": "/",
+    "surface": "editor",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/"
+  },
+  {
+    "name": "hub",
+    "url": "/?view=diagrams",
+    "surface": "hub",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?view=diagrams"
+  },
+  {
+    "name": "embed code",
+    "url": "/?embed&code=A.method()&title=Demo",
+    "surface": "embed",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?embed=true&code=A.method%28%29&title=Demo",
+    "openLink": "https://app.zenuml.com/?code=A.method%28%29&title=Demo"
+  },
+  {
+    "name": "editor code",
+    "url": "/?code=A.method()&title=Hi",
+    "surface": "editor",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?code=A.method()&title=Hi"
+  },
+  {
+    "name": "numeric id",
+    "url": "/?id=1729000000000",
+    "surface": "other",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?id=1729000000000"
+  },
+  {
+    "name": "alias itemId+token",
+    "url": "/?itemId=probe-item&token=probe-token",
+    "surface": "editor",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?itemId=probe-item&token=probe-token"
+  },
+  {
+    "name": "id+share-token",
+    "url": "/?id=probe-item&share-token=probe-token",
+    "surface": "other",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?id=probe-item&share-token=probe-token"
+  },
+  {
+    "name": "embed + quoted id",
+    "url": "/?embed&id=%22123%22&code=A.m()",
+    "surface": "embed",
+    "shareErrorShown": false,
+    "urlAfterBoot": "/?embed=true&id=%22123%22&code=A.m%28%29",
+    "openLink": "https://app.zenuml.com/?code=A.m%28%29"
+  }
+]
