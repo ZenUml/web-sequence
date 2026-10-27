@@ -1,0 +1,31 @@
+{
+  "pageIds": [
+    "p-<uuid>",
+    "p-<uuid>",
+    "p-<uuid>"
+  ],
+  "pageIdsUnique": true,
+  "savedItems": [
+    {
+      "key": "item-<uuid>",
+      "pages": [
+        "p-<uuid>",
+        "p-<uuid>",
+        "p-<uuid>"
+      ]
+    },
+    {
+      "key": "<uuid>",
+      "pages": [
+        "p-<uuid>"
+      ]
+    },
+    {
+      "key": "code",
+      "pages": [
+        "p-<uuid>"
+      ]
+    }
+  ],
+  "homeCount": "2"
+}
