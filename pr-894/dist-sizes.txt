@@ -1,0 +1,4 @@
+✓ built in 2.09s
+before dist: 11420 KB total, js: 10958138 bytes, babel/coffee chunks: 1
+✓ built in 1.52s
+after dist: 11420 KB total, js: 10958138 bytes, babel/coffee chunks: 1
