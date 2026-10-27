@@ -1,0 +1,8 @@
+{
+  "context": "extension",
+  "headerLoginButtonPresent": true,
+  "providerButtonsInModal": [
+    "google"
+  ],
+  "pageErrors": []
+}

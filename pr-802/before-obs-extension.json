@@ -1,0 +1,10 @@
+{
+  "context": "extension",
+  "headerLoginButtonPresent": true,
+  "providerButtonsInModal": [
+    "github",
+    "google",
+    "facebook"
+  ],
+  "pageErrors": []
+}

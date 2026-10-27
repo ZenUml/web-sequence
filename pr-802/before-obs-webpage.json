@@ -1,0 +1,10 @@
+{
+  "context": "web page",
+  "headerLoginButtonPresent": true,
+  "providerButtonsInModal": [
+    "github",
+    "google",
+    "facebook"
+  ],
+  "pageErrors": []
+}
