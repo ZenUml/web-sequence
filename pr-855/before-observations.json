@@ -1,0 +1,8 @@
+{
+  "createVisible": true,
+  "createDisabled": true,
+  "createText": "Creating…",
+  "ariaBusy": "true",
+  "alerts": [],
+  "timedOutTextVisible": false
+}

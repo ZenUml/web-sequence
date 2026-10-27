@@ -1,0 +1,10 @@
+{
+  "createVisible": true,
+  "createDisabled": false,
+  "createText": "Try again",
+  "ariaBusy": "false",
+  "alerts": [
+    "Couldn’t create a link. Check your connection and try again."
+  ],
+  "timedOutTextVisible": false
+}
