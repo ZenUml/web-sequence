@@ -1,0 +1,22 @@
+
+> web-sequence-web@0.0.0 lint /private/tmp/claude-501/pr-855/before/web
+> eslint src --ext .ts,.tsx
+
+
+Oops! Something went wrong! :(
+
+ESLint: 10.4.1
+
+ESLint couldn't find an eslint.config.(js|mjs|cjs) file.
+
+From ESLint v9.0.0, the default configuration file is now eslint.config.js.
+If you are using a .eslintrc.* file, please follow the migration guide
+to update your configuration file to the new format:
+
+https://eslint.org/docs/latest/use/configure/migration-guide
+
+If you still have problems after following the migration guide, please stop by
+https://eslint.org/chat/help to chat with the team.
+
+ ELIFECYCLE  Command failed with exit code 2.
+exit=2

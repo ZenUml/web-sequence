@@ -1,0 +1,116 @@
+
+> web-sequence-web@0.0.0 lint /private/tmp/claude-501/pr-855/after/web
+> eslint src
+
+
+/private/tmp/claude-501/pr-855/after/web/src/components/library/useLibraryReader.ts
+  176:5  warning  React Hook useCallback has a missing dependency: 'ready'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/private/tmp/claude-501/pr-855/after/web/src/components/modals/AtomicCssSettingsModal.test.tsx
+  29:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/domain/templates.rendering.test.ts
+   9:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/editor/lsp/lspClient.ts
+   52:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/editor/lsp/zenumlLspExtensions.ts
+  118:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  144:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/hooks/useAuth.test.tsx
+  7:91  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/preview/PreviewFrame.test.tsx
+  207:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  208:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/preview/PreviewFrame.tsx
+  258:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+/private/tmp/claude-501/pr-855/after/web/src/preview/previewBootstrap.runtime.js
+  311:9  warning  Unused eslint-disable directive (no problems were reported from 'no-eval')
+
+/private/tmp/claude-501/pr-855/after/web/src/preview/previewBootstrap.test.ts
+   32:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  210:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  259:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/preview/transpilers.ts
+  23:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  33:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:72  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/services/analytics.ts
+  41:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  70:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/private/tmp/claude-501/pr-855/after/web/src/services/firebase.ts
+  122:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/services/itemService.test.ts
+   47:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  196:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  212:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  226:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  257:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  261:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:89  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/services/itemService.ts
+   29:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  123:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  146:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/private/tmp/claude-501/pr-855/after/web/src/services/storage.ts
+  21:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 75 problems (0 errors, 75 warnings)
+  0 errors and 4 warnings potentially fixable with the `--fix` option.
+
+exit=0
