@@ -1,0 +1,8 @@
+== before (db3b1766)
+THIRD_PARTY_ERROR_SOURCES definitions in e2e/tests: 18
+isThirdPartyError imports from helpers/console: 0
+Playwright chromium full suite: {'expected': 77, 'unexpected': 0, 'flaky': 0, 'skipped': 31}
+== after (db09b4e5)
+THIRD_PARTY_ERROR_SOURCES definitions in e2e/tests: 1
+isThirdPartyError imports from helpers/console: 18
+Playwright chromium full suite: {'expected': 77, 'unexpected': 0, 'flaky': 0, 'skipped': 31}
