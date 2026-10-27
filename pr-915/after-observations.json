@@ -1,0 +1,44 @@
+{
+  "afterArrow": {
+    "typed": "Alice->Bob: hi\nBob->",
+    "options": [
+      "Aliceparticipant",
+      "Bobparticipant"
+    ]
+  },
+  "statementStart": {
+    "typed": "Alice->Bob: hi\nif",
+    "options": [
+      "ifConditional (alt) block",
+      "@RedshiftParticipant annotation"
+    ]
+  },
+  "insideString": {
+    "typed": "Alice->Bob: \"he",
+    "options": []
+  },
+  "inComment": {
+    "typed": "// note he",
+    "options": []
+  },
+  "afterDot": {
+    "typed": "Alice->Bob: hi\nBob.",
+    "options": []
+  },
+  "cjkParen": {
+    "typed": "foo（x）",
+    "result": "foo(x)"
+  },
+  "cjkBrace": {
+    "typed": "if (a) ｛",
+    "result": "if (a) {}"
+  },
+  "cjkInString": {
+    "typed": "\"测试（x）\"",
+    "result": "\"测试（x）\""
+  },
+  "cjkQuote": {
+    "typed": "A->B: “hi”",
+    "result": "A->B: “hi”"
+  }
+}
