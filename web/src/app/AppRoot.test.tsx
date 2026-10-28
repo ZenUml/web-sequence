@@ -1249,16 +1249,16 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await screen.findByTestId('header-title');
     await userEvent.click(screen.getByTestId('renderer-download'));
     await userEvent.click(await screen.findByTestId('test-export-png'));
-    await waitFor(() => expect(lastEnvelope('downloadPng')).toEqual(expect.objectContaining({ category: 'ui' })));
-    expect(lastEnvelope('downloadPng')).not.toHaveProperty('diagramCode');
+    await waitFor(() => expect(lastEnvelope('diagram_downloaded')).toEqual(expect.objectContaining({ category: 'ui', format: 'png' })));
+    expect(lastEnvelope('diagram_downloaded')).not.toHaveProperty('diagramCode');
 
     await userEvent.click(screen.getByTestId('renderer-download'));
     await userEvent.click(await screen.findByTestId('test-export-svg'));
-    await waitFor(() => expect(lastEnvelope('downloadSvg')).toEqual(expect.objectContaining({ category: 'ui' })));
-    expect(lastEnvelope('downloadSvg')).not.toHaveProperty('diagramCode');
+    await waitFor(() => expect(lastEnvelope('diagram_downloaded')).toEqual(expect.objectContaining({ category: 'ui', format: 'svg' })));
+    expect(lastEnvelope('diagram_downloaded')).not.toHaveProperty('diagramCode');
   });
 
-  it("'Free Limit' (over-cap save) uses legacy category '3 diagrams limit' + label 'Save'", async () => {
+  it("'free_limit_reached' (over-cap save) uses legacy category '3 diagrams limit' + label 'Save'", async () => {
     userSvc.getUserItemIds.mockResolvedValue(['a', 'b', 'c', 'd']); // over free cap
     render(<AppRoot />);
     await screen.findByTestId('header-title');
@@ -1270,7 +1270,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       await userEvent.keyboard('{Meta>}s{/Meta}');
     });
     await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
-    const env = lastEnvelope('Free Limit');
+    const env = lastEnvelope('free_limit_reached');
     expect(env).toBeDefined();
     // Legacy app.jsx:496-500 — the exact envelope the save-path funnel filters on.
     expect(env!.category).toBe('3 diagrams limit');
@@ -1279,7 +1279,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     expect(env!.category).not.toBe('storage');
   });
 
-  it("custom-CSS gate emits NO 'Free Limit' event (no legacy analog)", async () => {
+  it("custom-CSS gate emits NO 'free_limit_reached' event (no legacy analog)", async () => {
     // Signed-out user editing CSS → login modal opens, but NO analytics event:
     // legacy has no event on the custom-CSS gate, so inventing 'Free Limit' here
     // pollutes the storage-cap segment. Reverting the fix re-adds the call → fails.
@@ -1291,10 +1291,10 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       await userEvent.click(cmContent);
       await userEvent.keyboard('x');
     });
-    expect(lastEnvelope('Free Limit')).toBeUndefined();
+    expect(lastEnvelope('free_limit_reached')).toBeUndefined();
   });
 
-  it("'shareLink' uses legacy category 'ui'", async () => {
+  it("'share_link_created' uses legacy category 'ui'", async () => {
     const { useEditorStore: store } = await import('../state/editorStore');
     render(<AppRoot />);
     await screen.findByTestId('header-title');
@@ -1314,26 +1314,26 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await act(async () => { await userEvent.click(shareBtn); });
     const createBtn = await screen.findByTestId('share-create');
     await act(async () => { await userEvent.click(createBtn); });
-    const env = lastEnvelope('shareLink');
+    const env = lastEnvelope('share_link_created');
     expect(env).toBeDefined();
     expect(env!.category).toBe('ui'); // legacy app.jsx:1041 trackEvent('ui','shareLink')
     expect(env!.category).not.toBe('share');
   });
 
-  it("'exportItems' uses legacy category 'fn'", async () => {
+  it("'items_exported' uses legacy category 'fn'", async () => {
     // Hub (PRs #800/#801): export-all moved from the retired LibraryPanel to the
     // Home view header row (HomeView.tsx) — route to '/?view=diagrams' to land there.
     window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     const exportBtn = await screen.findByTestId('lib-export-all');
     await act(async () => { await userEvent.click(exportBtn); });
-    const env = lastEnvelope('exportItems');
+    const env = lastEnvelope('items_exported');
     expect(env).toBeDefined();
     expect(env!.category).toBe('fn'); // legacy app.jsx:1211 trackEvent('fn','exportItems')
     expect(env!.category).not.toBe('library');
   });
 
-  it("'itemsImported' uses legacy category 'fn' + count label", async () => {
+  it("'items_imported' uses legacy category 'fn' + count label", async () => {
     // parseImportJson is module-mocked to throw; override it to succeed for this case
     // so handleImport reaches the itemsImported track call.
     const { parseImportJson } = await import('../services/exportImport');
@@ -1350,7 +1350,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
     const env = await waitFor(() => {
-      const e = lastEnvelope('itemsImported');
+      const e = lastEnvelope('items_imported');
       expect(e).toBeDefined();
       return e!;
     });
@@ -1363,7 +1363,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
   // count (parsed minus already-existing ids), NOT the full parsed count. With one of
   // two parsed ids already in the list, legacy app.jsx:1280 sends mergedItemCount=1.
   // The bug sent String(parsed.length)=2. Reverting to parsed.length → label '2' → fails.
-  it("'itemsImported' label is the newly-added count, not the total parsed count", async () => {
+  it("'items_imported' label is the newly-added count, not the total parsed count", async () => {
     const { parseImportJson } = await import('../services/exportImport');
     // Seed the items list with an item whose id overlaps one of the parsed ids.
     (itemSvc.subscribeAllItems as unknown as {
@@ -1392,7 +1392,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
     const env = await waitFor(() => {
-      const e = lastEnvelope('itemsImported');
+      const e = lastEnvelope('items_imported');
       expect(e).toBeDefined();
       return e!;
     });
@@ -1403,7 +1403,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
   // mergedItemCount > 0 (app.jsx:1294). An import where every parsed id already exists
   // adds nothing new → NO itemsImported event. The bug fired unconditionally. Reverting
   // to an unconditional track makes an event appear here → fails.
-  it("'itemsImported' is NOT fired when the import adds no new items", async () => {
+  it("'items_imported' is NOT fired when the import adds no new items", async () => {
     const { parseImportJson } = await import('../services/exportImport');
     (itemSvc.subscribeAllItems as unknown as {
       mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
@@ -1429,7 +1429,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await act(async () => { await userEvent.upload(input, file); });
     // saveItems still runs (the write happens), but no new items → no analytics event.
     await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
-    expect(lastEnvelope('itemsImported')).toBeUndefined();
+    expect(lastEnvelope('items_imported')).toBeUndefined();
   });
 
   // DISCRIMINATING (review: cold-load misclassification): an import that runs before
@@ -1462,7 +1462,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
     expect(panel).toHaveTextContent('1 diagram updated.');
     expect(panel).not.toHaveTextContent('added');
-    expect(lastEnvelope('itemsImported')).toBeUndefined();
+    expect(lastEnvelope('items_imported')).toBeUndefined();
   });
 
   it('Export all during cold load waits for the library and reports the real total', async () => {
@@ -1492,7 +1492,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'started'));
     expect(panel).toHaveTextContent('zenuml-diagrams.json');
     expect(panel).toHaveTextContent('2 diagrams included.');
-    expect(lastEnvelope('exportItems')).toBeDefined();
+    expect(lastEnvelope('items_exported')).toBeDefined();
   });
 
   // DISCRIMINATING (review: identity cancellation). An import started under account A
@@ -1526,7 +1526,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'cancelled'));
     expect(itemSvc.saveItems).not.toHaveBeenCalled();
     expect(panel).toHaveTextContent('No diagrams were imported.');
-    expect(lastEnvelope('itemsImported')).toBeUndefined();
+    expect(lastEnvelope('items_imported')).toBeUndefined();
   });
 
   it('import saves with the bound identity guard of the account that started it', async () => {
@@ -1602,7 +1602,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
     expect(panel).toHaveTextContent('1 diagram imported.');
     expect(panel).not.toHaveTextContent(/added|updated/);
-    expect(lastEnvelope('itemsImported')).toBeUndefined();
+    expect(lastEnvelope('items_imported')).toBeUndefined();
   });
 
   it('subscription failure: Export all fails with Try again and downloads nothing; a successful retry downloads the real total', async () => {
@@ -1659,7 +1659,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const panel = await screen.findByTestId('import-feedback');
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
     expect(panel).toHaveTextContent('1 diagram added. 1 diagram updated.');
-    await waitFor(() => expect(lastEnvelope('itemsImported')?.label).toBe('1'));
+    await waitFor(() => expect(lastEnvelope('items_imported')?.label).toBe('1'));
   });
 
   // IE-F3: a dangling index key (no stored record) is not an existing diagram.
@@ -1676,7 +1676,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const panel = await screen.findByTestId('import-feedback');
     await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
     expect(panel).toHaveTextContent('1 diagram added. 1 diagram updated.');
-    await waitFor(() => expect(lastEnvelope('itemsImported')?.label).toBe('1'));
+    await waitFor(() => expect(lastEnvelope('items_imported')?.label).toBe('1'));
   });
 
   // IE-C1: ownership is captured when the file is chosen, before File.text() resolves.
@@ -1712,7 +1712,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
       await waitFor(() => expect(panel).toHaveAttribute('data-state', 'cancelled'));
       expect(panel).toHaveTextContent('No diagrams were imported.');
       expect(itemSvc.saveItems).not.toHaveBeenCalled();
-      expect(lastEnvelope('itemsImported')).toBeUndefined();
+      expect(lastEnvelope('items_imported')).toBeUndefined();
     } finally {
       File.prototype.text = originalText;
     }
@@ -1720,7 +1720,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 
   // DISCRIMINATING: the label counts UNIQUE new ids. A file listing the same new id
   // twice adds one diagram; the pre-feedback handler counted parsed entries ('2').
-  it("'itemsImported' label counts unique new ids, not duplicate entries", async () => {
+  it("'items_imported' label counts unique new ids, not duplicate entries", async () => {
     const { parseImportJson } = await import('../services/exportImport');
     vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup' } as never, { id: 'dup' } as never]);
     window.history.replaceState({}, '', '/?view=diagrams');
@@ -1730,7 +1730,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
     await act(async () => { await userEvent.upload(input, file); });
     const env = await waitFor(() => {
-      const e = lastEnvelope('itemsImported');
+      const e = lastEnvelope('items_imported');
       expect(e).toBeDefined();
       return e!;
     });
@@ -1770,7 +1770,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     const panel = await screen.findByTestId('import-feedback');
     expect(panel).toHaveAttribute('data-state', 'saveFailed');
     expect(panel).not.toHaveTextContent('FirebaseError');
-    expect(lastEnvelope('itemsImported')).toBeUndefined();
+    expect(lastEnvelope('items_imported')).toBeUndefined();
   });
 
   it("fires 'landed_in_editor' with bootKind on a bare '/' editor landing", async () => {
@@ -1787,7 +1787,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     expect(env.category).toBe('navigation');
   });
 
-  it("'loggedIn' uses legacy category 'fn' + provider label", async () => {
+  it("'user_logged_in' uses legacy category 'fn' + provider label", async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
     // Open the login menu/affordance and click a provider. The header exposes login
@@ -1796,13 +1796,13 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await act(async () => { await userEvent.click(loginBtn); });
     const googleBtn = await screen.findByTestId('login-google');
     await act(async () => { await userEvent.click(googleBtn); });
-    const env = lastEnvelope('loggedIn');
+    const env = lastEnvelope('user_logged_in');
     expect(env).toBeDefined();
     expect(env!.category).toBe('fn'); // legacy auth.js:26 trackEvent('fn','loggedIn',provider)
     expect(env!.category).not.toBe('auth');
   });
 
-  it("'updatePref-*' uses legacy category 'ui' + value label", async () => {
+  it("'preference_updated' carries pref + legacy category 'ui' + value label", async () => {
     const { useUiStore } = await import('../state/uiStore');
     render(<AppRoot />);
     await screen.findByTestId('header-title');
@@ -1810,17 +1810,17 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     // Wait for the Settings dialog (portal) to be present before interacting.
     await screen.findByTestId('settings-modal');
     // Toggle the lineWrap boolean switch (role=switch button) — a reliable control
-    // that fires handleSettingChange → track('updatePref-lineWrap', ...). (We use the
+    // that fires handleSettingChange → track('preference_updated', {pref:'lineWrap', ...}). (We use the
     // switch rather than a Radix Select to avoid the Select-in-Dialog jsdom flake;
     // handleSettingChange is the SAME code path for every setting, so the envelope it
     // emits is identical regardless of which control triggers it.)
     await act(async () => { await userEvent.click(screen.getByTestId('setting-lineWrap')); });
     const env = trackMock.mock.calls
       .map((c) => c[0] as Record<string, unknown>)
-      .filter((p) => p && typeof p.event === 'string' && (p.event as string).startsWith('updatePref-'))
+      .filter((p) => p && p.event === 'preference_updated')
       .at(-1);
     expect(env).toBeDefined();
-    expect(env!.event).toBe('updatePref-lineWrap');
+    expect(env!.pref).toBe('lineWrap');
     expect(env!.category).toBe('ui'); // legacy app.jsx:989 trackEvent('ui','updatePref-'+name,value)
     expect(env!.category).not.toBe('settings');
     // Legacy passes the new VALUE as the label (prefs[settingName]); lineWrap

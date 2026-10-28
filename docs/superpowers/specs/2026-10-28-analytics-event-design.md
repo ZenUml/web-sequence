@@ -1,6 +1,7 @@
 # web/ analytics event design (modelled on conf-app)
 
-Status: DRAFT for review. D1 implemented in `functions/track_payload.js`; the rest is not built.
+Status: DRAFT for review. D1 and D4 (the rename map, section 9) are implemented in `functions/track_payload.js`; the rest is not built.
+Section 9 is the shipped naming and wins where sections 5–6 differ (hard cutover, no dual-fire).
 Reference: `conf-app/docs/analytics/events-catalog.md`, `conf-app/src/utils/window.ts`.
 
 ## 1. Why
@@ -28,9 +29,10 @@ health, no session length, no plan or version dimension.
 
 ```
  UI handler --track(name, {category,label})--> useAnalytics --> analytics.emit
-                                                     |-> POST /track (functions/index.js, FROZEN)
-                                                     |      distinct_id = userId  (null when signed out)
-                                                     |      displayProductName = 'FireWeb'
+                                                     |-> POST /track (functions/index.js -> track_payload.js)
+                                                     |      event renamed (section 9)
+                                                     |      distinct_id = userId ?? anonId (omitted when neither)
+                                                     |      product_type = 'web-sequence'
                                                      |-> window.dataLayer / window.mixpanel  (never loaded: stub)
 ```
 
@@ -61,7 +63,7 @@ Auto-added inside `emit` (one place, `web/src/services/analytics.ts`):
 | `env` | `prod` / `staging` / `local` |
 | `app_version`, `app_commit` | build-time env |
 | `viewport` | `mobile` / `tablet` / `desktop` |
-| `product` | constant `web_sequence` (matches the shared-project convention in project 3373228) |
+| `product_type` | constant `web-sequence`, set server-side in `/track` (the conf-app convention in project 3373228) |
 | `is_internal` | `true` for the owner's traffic (localStorage flag or `?internal=1`), so queries can exclude it |
 
 ## 5. Event catalog
@@ -137,6 +139,29 @@ Create `web/docs/analytics-events-catalog.md` from section 5 once approved; ever
 
 ## 8. Decisions needed
 
-- D1 sink — DECIDED 2026-10-29: `/track` stays the only sink and now writes to project 3373228 "Diagramly.Ai", the project conf-app and Passetta share. `functions/track_payload.js` stamps `product = web_sequence` and `firebase_project` (staging vs prod) as reserved keys a caller cannot override. Data sent before this date stays in the old project. Filter every web-sequence query with `product = web_sequence`.
+- D1 sink — DECIDED 2026-10-29: `/track` stays the only sink and now writes to project 3373228 "Diagramly.Ai", the project conf-app and Passetta share. `functions/track_payload.js` stamps `product_type = web-sequence` and `firebase_project` (staging vs prod) as reserved keys a caller cannot override (an earlier draft used `product = web_sequence`; conf-app uses `product_type`, so that key was replaced before deploy). Data sent before the deploy stays in the old project. Filter every web-sequence query with `product_type = web-sequence`.
 - D2 `is_internal`: localStorage flag set by `?internal=1`, or a hard-coded uid allowlist.
 - D3 whether `diagram_render_succeeded` ships in the first PR or waits for the preview RPC refactor.
+- D4 names — DECIDED 2026-10-29: hard cutover, no dual-send. Section 9.
+
+## 9. Shipped rename map (2026-10-29)
+
+`/track` renames on the server, because installed Chrome extensions keep sending old names; new web builds send the new names directly.
+
+| Old name | New name | Extra property |
+|---|---|---|
+| `pageView` | `app_opened` | |
+| `loggedIn` / `loggedOut` | `user_logged_in` / `user_logged_out` | |
+| `shareLink` | `share_link_created` | |
+| `saveBtnClick` / `saveFailed` | `diagram_save_clicked` / `diagram_save_failed` | |
+| `itemsImported` / `exportItems` | `items_imported` / `items_exported` | |
+| `downloadPng` / `downloadSvg` | `diagram_downloaded` | `format`: `png` / `svg` |
+| `updatePref-<key>` | `preference_updated` | `pref`: `<key>` |
+| `pledgeModalSeen` | `pledge_modal_shown` | |
+| `Free Limit` | `free_limit_reached` | |
+| any other camelCase or spaced name | snake_case of it | |
+
+snake_case names (`hub_opened`, `first_edit`, `landed_in_editor`, `bug_report_*`) pass through unchanged.
+
+Properties: `category` becomes `feature_area`, `label` becomes `event_label`, `displayProductName` and `product` are dropped, `anonId` arrives as `anon_id`. The web client sends `anonId` (a localStorage UUID, `web/src/services/anonId.ts`) and `app_version` on every POST.
+
