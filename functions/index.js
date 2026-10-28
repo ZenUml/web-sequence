@@ -13,8 +13,8 @@ if (process.env.FUNCTIONS_EMULATOR === 'true') {
 }
 const db = admin.firestore();
 
-//Mixpanel project: Confluence Analytics(new)
-const mixpanel = Mixpanel.init('78617e65fdba543d752fb7f6483d55f4');
+const { MIXPANEL_TOKEN, buildTrackPayload } = require('./track_payload');
+const mixpanel = Mixpanel.init(MIXPANEL_TOKEN);
 
 const webhook = require('./webhook');
 const alertParser = require('./alert_parser');
@@ -257,24 +257,14 @@ exports.track = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  // Extract event name and userId, pass through all other properties
-  const { event, userId, ...eventProperties } = req.body;
-  
-  console.log('Track request received:', {
-    event,
-    userId,
-    eventProperties
-  });
-  
-  const mixpanelData = {
-    distinct_id: userId,
-    displayProductName: 'FireWeb',
-    ...eventProperties, // Pass through all additional properties from frontend
-  };
-  
-  console.log('Sending to Mixpanel:', { event, properties: mixpanelData });
-  
-  mixpanel.track(event, mixpanelData);
+  const { event, properties } = buildTrackPayload(
+    req.body,
+    process.env.GCLOUD_PROJECT,
+  );
+
+  console.log('Sending to Mixpanel:', { event, properties });
+
+  mixpanel.track(event, properties);
 
   // Send a success response to prevent 502 Bad Gateway error
   res.status(200).send('Event tracked successfully');
