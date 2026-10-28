@@ -161,3 +161,40 @@ test('no uid and no anonId (old extension, signed out): distinct_id is omitted, 
     assert.equal('distinct_id' in properties, false, `userId=${String(userId)}`);
   }
 });
+
+test('inherited Object members are not treated as legacy names', () => {
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    const { event, properties } = mapEventName(name);
+    assert.equal(typeof event, 'string', name);
+    assert.deepEqual(properties, {}, name);
+  }
+  assert.equal(mapEventName('toString').event, 'to_string');
+});
+
+test('null category / label are dropped, not sent as null feature_area / event_label', () => {
+  const { properties } = buildTrackPayload(
+    { event: 'app_opened', userId: 'u1', category: null, label: null },
+    'p',
+  );
+  assert.equal('feature_area' in properties, false);
+  assert.equal('event_label' in properties, false);
+});
+
+test('callers cannot set Mixpanel reserved identity or ingest keys', () => {
+  const { properties } = buildTrackPayload(
+    {
+      event: 'x',
+      userId: 'u1',
+      $user_id: 'spoof',
+      $device_id: 'spoof',
+      $insert_id: 'spoof',
+      time: 0,
+      ip: '1.2.3.4',
+      token: 'other-project',
+    },
+    'p',
+  );
+  for (const key of ['$user_id', '$device_id', '$insert_id', 'time', 'ip', 'token']) {
+    assert.equal(key in properties, false, key);
+  }
+});

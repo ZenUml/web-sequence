@@ -4,6 +4,11 @@
 // window, blocked site data) the id lives for this page session only.
 export const ANON_ID_KEY = 'zenuml_anon_id';
 
+// Accept what this module writes (a UUID) and similar opaque tokens; anything
+// else (a stringified null, whitespace, junk) is replaced, because /track would
+// discard it and the browser would never get a distinct_id.
+const VALID_ID = /^[A-Za-z0-9-]{8,64}$/;
+
 let cached: string | null = null;
 
 function randomUuid(): string {
@@ -21,7 +26,7 @@ export function getAnonId(): string {
   if (cached) return cached;
   try {
     const stored = window.localStorage.getItem(ANON_ID_KEY);
-    if (stored) {
+    if (stored && VALID_ID.test(stored) && stored !== 'undefined') {
       cached = stored;
       return stored;
     }

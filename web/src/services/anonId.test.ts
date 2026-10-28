@@ -50,3 +50,15 @@ describe('getAnonId', () => {
     expect(getAnonId()).toBe(id);
   });
 });
+
+describe('getAnonId stored-value validation', () => {
+  it.each(['null', 'undefined', '   ', 'x'.repeat(200), 'has space'])(
+    'replaces an invalid stored value %j with a fresh UUID',
+    (bad) => {
+      window.localStorage.setItem(ANON_ID_KEY, bad);
+      const id = getAnonId();
+      expect(id).toMatch(UUID);
+      expect(window.localStorage.getItem(ANON_ID_KEY)).toBe(id);
+    },
+  );
+});

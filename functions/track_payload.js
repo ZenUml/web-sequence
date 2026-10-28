@@ -37,10 +37,10 @@ function toSnakeCase(name) {
 // Map an incoming event name to its target name plus any properties the old
 // name encoded (download format, preference key).
 function mapEventName(name) {
-  if (LEGACY_EVENT_NAMES[name]) {
+  if (Object.hasOwn(LEGACY_EVENT_NAMES, name)) {
     return { event: LEGACY_EVENT_NAMES[name], properties: {} };
   }
-  if (DOWNLOAD_FORMATS[name]) {
+  if (Object.hasOwn(DOWNLOAD_FORMATS, name)) {
     return { event: 'diagram_downloaded', properties: { format: DOWNLOAD_FORMATS[name] } };
   }
   if (typeof name === 'string' && name.startsWith(UPDATE_PREF_PREFIX)) {
@@ -75,15 +75,22 @@ function buildTrackPayload(body, firebaseProject) {
     distinct_id: _ignoredDistinctId,
     displayProductName: _legacyDisplayProductName,
     product: _legacyProduct,
+    // Mixpanel reserved identity / ingest keys: only this function sets them.
+    $user_id: _ignoredUserId,
+    $device_id: _ignoredDeviceId,
+    $insert_id: _ignoredInsertId,
+    time: _ignoredTime,
+    ip: _ignoredIp,
+    token: _ignoredToken,
     ...eventProperties
   } = body;
   const { event, properties: nameProperties } = mapEventName(incomingEvent);
 
   const properties = { ...eventProperties, ...nameProperties };
-  if (category !== undefined && properties.feature_area === undefined) {
+  if (category != null && properties.feature_area === undefined) {
     properties.feature_area = category;
   }
-  if (label !== undefined && properties.event_label === undefined) {
+  if (label != null && properties.event_label === undefined) {
     properties.event_label = label;
   }
 

@@ -356,6 +356,11 @@ test('ANL-4: /track bodies carry a stable anonId and app_opened replaces pageVie
   await expect
     .poll(() => analytics.of('app_opened').length, { timeout: 10_000 })
     .toBeGreaterThan(0);
+  // Wait for a second, different event so the anonId loop below checks more
+  // than the mount event.
+  await expect
+    .poll(() => analytics.of('landed_in_editor').length, { timeout: 10_000 })
+    .toBeGreaterThan(0);
   expect(analytics.of('pageView')).toHaveLength(0);
 
   const anonId = analytics.of('app_opened')[0].anonId;
