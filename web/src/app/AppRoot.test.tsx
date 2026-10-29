@@ -399,9 +399,11 @@ describe('AppRoot', () => {
     await waitFor(() => expect(new URLSearchParams(window.location.search).get('id')).toBe(fresh.id));
   });
 
-  // A brand-new document exists only in memory until it is saved. Creating it must
-  // persist it right away (no edit, no 15s wait), or closing the tab loses it.
-  it('header New saves the new blank diagram immediately, without an edit', async () => {
+  // #943: a blank diagram from New has nothing to lose, so it is NOT persisted on
+  // creation (that wrote an empty `Untitled` to Firestore / localStorage per click).
+  // The first content still persists right away (no 15s wait), keeping the intent of
+  // the earlier "save new diagrams immediately" change for diagrams that have content.
+  it('header New does not persist the blank diagram; the first content persists it immediately', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
     const before = useEditorStore.getState().currentItem!;
@@ -409,8 +411,27 @@ describe('AppRoot', () => {
     await userEvent.click(screen.getByTestId('header-new'));
     await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(before.id));
     const fresh = useEditorStore.getState().currentItem!;
-    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(fresh.id, expect.objectContaining({ id: fresh.id }), expect.anything()));
-    await waitFor(() => expect(useEditorStore.getState().dirty).toBe(false));
+    expect(fresh.js).toBe('');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(itemSvc.setItem).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().dirty).toBe(false);
+    const cm = screen.getByTestId('dsl-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cm);
+      await userEvent.keyboard('A');
+    });
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).toBe('A'));
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(fresh.id, expect.objectContaining({ id: fresh.id, js: 'A' }), expect.anything()));
+  });
+
+  it('header New twice in a row persists nothing', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    itemSvc.setItem.mockClear();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(screen.getByTestId('header-new'));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(itemSvc.setItem).not.toHaveBeenCalled();
   });
 
   it('creating a diagram from a hub template saves it immediately, without an edit', async () => {
