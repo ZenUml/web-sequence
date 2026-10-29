@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { emit } from '../services/analytics';
+import { getAnonId } from '../services/anonId';
 import { useAuthStore } from '../state/authStore';
 import { detectFromEnv } from '../app/runtimeMode';
 
@@ -17,7 +18,7 @@ export interface UseAnalyticsResult {
 /**
  * Binds analytics.emit to the current context: userId from authStore (null when
  * signed-out), debug from window.DEBUG / wmdebug cookie, isExtension from
- * runtimeMode. Fires a single `pageView` on mount.
+ * runtimeMode, anonId from localStorage. Fires a single `app_opened` on mount.
  */
 export function useAnalytics(): UseAnalyticsResult {
   const userId = useAuthStore((s) => s.user?.uid ?? null);
@@ -26,6 +27,7 @@ export function useAnalytics(): UseAnalyticsResult {
     (event: string, props: Record<string, unknown> = {}) => {
       emit(event, props, {
         userId,
+        anonId: getAnonId(),
         debug: isDebug(),
         isExtension: detectFromEnv().isExtension,
       });
@@ -45,14 +47,14 @@ export function useAnalytics(): UseAnalyticsResult {
   useEffect(() => {
     if (firedPageView.current) return;
     firedPageView.current = true;
-    // Preserve the legacy pageView property envelope (REQ-ANL-1: emit the existing
-    // events under the same conditions). Legacy trackPageView (src/analytics.js:24-34)
-    // POSTed {event:'pageView', category:'navigation', label:pageName} to /track, and
-    // its sole call site `trackPageView()` (app.jsx:695) passes no arg → pageName
-    // defaults to null. Dropping category='navigation' would silently break any
-    // Mixpanel report that filters pageView by that category. label is null to match
-    // legacy exactly — we do NOT invent a page-name value legacy never sent.
-    trackRef.current('pageView', { category: 'navigation', label: null });
+    // app_opened replaces the legacy pageView (the /track function renames old
+    // extensions' pageView to app_opened too). Keep its property envelope.
+    // Legacy trackPageView (src/analytics.js:24-34) POSTed {event:'pageView',
+    // category:'navigation', label:pageName} to /track, and its sole call site
+    // `trackPageView()` (app.jsx:695) passes no arg → pageName defaults to null.
+    // category='navigation' arrives in Mixpanel as feature_area. label is null to
+    // match legacy exactly — we do NOT invent a page-name value legacy never sent.
+    trackRef.current('app_opened', { category: 'navigation', label: null });
   }, []);
 
   return { track };

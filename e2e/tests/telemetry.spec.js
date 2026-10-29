@@ -339,3 +339,41 @@ test('ANL-3: first_edit fires once per mount on the first DSL edit only', async 
   await page.waitForTimeout(750);
   expect(analytics.of('first_edit').length).toBe(1);
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ANL-4: every /track POST carries the anonymous id, and the mount event is
+// app_opened (the legacy pageView name is gone from new builds).
+//
+// /track uses anonId as Mixpanel distinct_id when the visitor is signed out, so
+// it must be present on every event and stable across a reload (localStorage).
+// ──────────────────────────────────────────────────────────────────────────────
+test('ANL-4: /track bodies carry a stable anonId and app_opened replaces pageView', async ({
+  page,
+}) => {
+  const analytics = await interceptAnalytics(page);
+
+  await openEditor(page);
+  await expect
+    .poll(() => analytics.of('app_opened').length, { timeout: 10_000 })
+    .toBeGreaterThan(0);
+  // Wait for a second, different event so the anonId loop below checks more
+  // than the mount event.
+  await expect
+    .poll(() => analytics.of('landed_in_editor').length, { timeout: 10_000 })
+    .toBeGreaterThan(0);
+  expect(analytics.of('pageView')).toHaveLength(0);
+
+  const anonId = analytics.of('app_opened')[0].anonId;
+  expect(anonId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(analytics.of('app_opened')[0].app_version).toEqual(expect.any(String));
+  for (const body of analytics.events) {
+    expect(body.anonId, `event ${body.event}`).toBe(anonId);
+  }
+
+  analytics.events.length = 0;
+  await page.reload();
+  await expect
+    .poll(() => analytics.of('app_opened').length, { timeout: 10_000 })
+    .toBe(1);
+  expect(analytics.of('app_opened')[0].anonId).toBe(anonId);
+});

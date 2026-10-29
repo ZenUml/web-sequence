@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const cf = vi.hoisted(() => ({ trackEvent: vi.fn(async () => {}) }));
 vi.mock('./cloudFunctions', () => cf);
 import { emit, loadClientAnalytics } from './analytics';
+import { APP_VERSION } from '../config/constants';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -16,18 +17,18 @@ afterEach(() => {
 
 describe('analytics.emit', () => {
   it('posts to /track via cloud trackEvent with the userId + props (non-debug)', () => {
-    emit('saveBtnClick', { category: 'ui', label: 'saved' }, { userId: 'u1', debug: false, isExtension: false });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+    emit('diagram_save_clicked', { category: 'ui', label: 'saved' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: false });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'ui', label: 'saved' });
   });
 
-  it('carries userId:null for anonymous', () => {
-    emit('pageView', {}, { userId: null, debug: false, isExtension: false });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'pageView', userId: null });
+  it('carries userId:null plus the anonymous id for a signed-out user', () => {
+    emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'app_opened', userId: null, anonId: 'anon-1', app_version: APP_VERSION });
   });
 
   it('routes to console and does NOT POST in debug mode', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    emit('x', { a: 1 }, { userId: 'u1', debug: true, isExtension: false });
+    emit('x', { a: 1 }, { userId: 'u1', anonId: 'anon-1', debug: true, isExtension: false });
     expect(cf.trackEvent).not.toHaveBeenCalled();
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
@@ -40,15 +41,15 @@ describe('analytics.emit', () => {
     window.dataLayer = [];
     const track = vi.fn();
     window.mixpanel = { track };
-    emit('shareLink', { category: 'ui' }, { userId: 'u1', debug: false, isExtension: false });
-    expect(window.dataLayer).toEqual([{ event: 'shareLink', category: 'ui' }]);
-    expect(track).toHaveBeenCalledWith('shareLink', { category: 'ui' });
+    emit('share_link_created', { category: 'ui' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: false });
+    expect(window.dataLayer).toEqual([{ event: 'share_link_created', category: 'ui' }]);
+    expect(track).toHaveBeenCalledWith('share_link_created', { category: 'ui' });
   });
 
   it('does NOT push to dataLayer in debug mode', () => {
     window.dataLayer = [];
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    emit('x', { a: 1 }, { userId: 'u1', debug: true, isExtension: false });
+    emit('x', { a: 1 }, { userId: 'u1', anonId: 'anon-1', debug: true, isExtension: false });
     expect(window.dataLayer).toEqual([]);
     spy.mockRestore();
   });
@@ -57,15 +58,15 @@ describe('analytics.emit', () => {
     window.dataLayer = [];
     const track = vi.fn();
     window.mixpanel = { track };
-    emit('saveBtnClick', { category: 'ui' }, { userId: 'u1', debug: false, isExtension: true });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'saveBtnClick', userId: 'u1', category: 'ui' });
+    emit('diagram_save_clicked', { category: 'ui' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: true });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'ui' });
     expect(window.dataLayer).toEqual([]);
     expect(track).not.toHaveBeenCalled();
   });
 
   it('does not throw when CDN globals are absent (non-debug)', () => {
     expect(() =>
-      emit('pageView', {}, { userId: null, debug: false, isExtension: false }),
+      emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false }),
     ).not.toThrow();
     expect(cf.trackEvent).toHaveBeenCalledTimes(1);
   });
@@ -81,10 +82,10 @@ describe('analytics.emit', () => {
     window.mixpanel = { track: vi.fn(() => { throw new Error('CDN script blew up'); }) };
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>
-      emit('shareLink', { category: 'share' }, { userId: 'u1', debug: false, isExtension: false }),
+      emit('share_link_created', { category: 'share' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: false }),
     ).not.toThrow();
     // Server path already fired (non-blocking POST happens before the CDN push).
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'shareLink', userId: 'u1', category: 'share' });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'share_link_created', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'share' });
     spy.mockRestore();
   });
 });
@@ -93,5 +94,17 @@ describe('analytics.loadClientAnalytics', () => {
   it('is a no-op that does not throw (web + extension)', () => {
     expect(() => loadClientAnalytics({ isExtension: false })).not.toThrow();
     expect(() => loadClientAnalytics({ isExtension: true })).not.toThrow();
+  });
+
+  it('sends anonId and app_version on /track only, not into the CDN payloads', () => {
+    window.dataLayer = [];
+    const track = vi.fn();
+    window.mixpanel = { track };
+    emit('share_link_created', { category: 'ui' }, { userId: null, anonId: 'anon-9', debug: false, isExtension: false });
+    expect(cf.trackEvent).toHaveBeenCalledWith({
+      event: 'share_link_created', userId: null, anonId: 'anon-9', app_version: APP_VERSION, category: 'ui',
+    });
+    expect(window.dataLayer).toEqual([{ event: 'share_link_created', category: 'ui' }]);
+    expect(track).toHaveBeenCalledWith('share_link_created', { category: 'ui' });
   });
 });

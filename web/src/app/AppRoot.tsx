@@ -242,7 +242,7 @@ export function AppRoot() {
 
   // M04: plan-limit notice + pricing billing-period state.
   const [limitNoticeOpen, setLimitNoticeOpen] = useState(false);
-  // Which item id has already triggered the over-cap notice + 'Free Limit' analytics.
+  // Which item id has already triggered the over-cap notice + free_limit_reached analytics.
   // With auto-save ON, save() runs every 15s; without this guard the over-limit branch
   // (which intentionally never markSaved()s, so dirty stays true) would re-pop the
   // dismissed LimitReachedNotice and re-fire the analytics envelope on every tick.
@@ -576,7 +576,7 @@ export function AppRoot() {
     let forkOnForeignOwner = false;
     useEditorStore.getState().setSaving(true);
     setSaveFeedback({error:false, queued:false});
-    track('saveBtnClick', {category:'ui', label:!uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new'});
+    track('diagram_save_clicked', {category:'ui', label:!uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new'});
     try {
       // Preserve the legacy fail-open cap check, sampled before membership insertion.
       let overLimit = false;
@@ -599,7 +599,7 @@ export function AppRoot() {
         if (limitNotifiedRef.current !== itemToSave.id) {
           limitNotifiedRef.current = itemToSave.id;
           setLimitNoticeOpen(true);
-          track('Free Limit', {category:'3 diagrams limit', label:'Save'});
+          track('free_limit_reached', {category:'3 diagrams limit', label:'Save'});
         }
         return false; // locally retained, deliberately not cloud-synced or clean
       }
@@ -636,7 +636,7 @@ export function AppRoot() {
     } catch (err) {
       const code = (err as { code?: string } | null)?.code;
       if (current()) {
-        track('saveFailed', {category:'error', label:code ?? 'unknown'});
+        track('diagram_save_failed', {category:'error', label:code ?? 'unknown'});
         // Firestore only denies an update to a doc another account created, so this id
         // is taken (a local copy that outlived a sign-in switch). Retry once under a
         // fresh id the user owns, after finally releases the in-flight guard.
@@ -696,10 +696,10 @@ export function AppRoot() {
     if (!currentUser) {
       setLoginModalOpen(true); // anonymous → open sign-in (plan §8)
       // NOTE (adversarial review, REQ-ANL-1): no analytics emitted here. Legacy has
-      // NO 'Free Limit' (or any) event on the custom-CSS gate — that envelope is
-      // reserved for the '3 diagrams limit' storage cap. Emitting a custom-css
-      // 'Free Limit' invented a payload with no legacy analog, polluting the
-      // existing limit-reached segment. A dedicated custom-css gate event would be a
+      // NO free_limit_reached (legacy 'Free Limit') or other event on the custom-CSS
+      // gate — that event is reserved for the '3 diagrams limit' storage cap.
+      // Emitting it here would invent a payload with no legacy analog and pollute
+      // the limit-reached segment. A dedicated custom-css gate event would be a
       // NEW analytics requirement (out of M04 scope) — deferred, not faked here.
       return true;
     }
@@ -711,7 +711,7 @@ export function AppRoot() {
     }
     if (isPlus(subscription)) return false;
     openModal('pricing');
-    // See note above: no legacy 'Free Limit' analog for the custom-CSS gate.
+    // See note above: no free_limit_reached for the custom-CSS gate.
     return true;
   }
 
@@ -740,10 +740,11 @@ export function AppRoot() {
     void syncStore.set(key, value);
     const uid = useAuthStore.getState().user?.uid;
     if (uid) void setUserSetting(uid, key, value).catch(() => {});
-    // REQ-ANL-1: legacy category is 'ui' (app.jsx:989 trackEvent('ui',
-    // 'updatePref-'+settingName, value)); the value is the label. Match the
-    // envelope so updatePref-* reports keep matching after cutover (adversarial review).
-    track('updatePref-' + key, { category: 'ui', label: String(value) });
+    // REQ-ANL-1: legacy sent 'updatePref-'+settingName with category 'ui' and the
+    // value as the label (app.jsx:989). It is now one preference_updated event with
+    // the setting in `pref`; /track maps old extensions' updatePref-* the same way.
+    // Saved reports filter preference_updated by `pref`.
+    track('preference_updated', { category: 'ui', label: String(value), pref: key });
   }
 
   // M04: Paddle checkout from the pricing modal. Non-logged-in upgrade → sign-in
@@ -936,7 +937,7 @@ export function AppRoot() {
       identity: library.identity,
       getItems: library.getLibraryItems,
       download: (name, json) => downloadText(name, json, 'application/json'),
-      onStart: () => track('exportItems', { category: 'fn' }),
+      onStart: () => track('items_exported', { category: 'fn' }),
     });
   }
 
@@ -952,7 +953,7 @@ export function AppRoot() {
       identity: library.identity,
       token: context?.token,
       saveItems: (records, guard) => itemService.saveItems(records, guard),
-      onItemsAdded: (count) => track('itemsImported', { category: 'fn', label: String(count) }),
+      onItemsAdded: (count) => track('items_imported', { category: 'fn', label: String(count) }),
     });
   }
 
@@ -1118,7 +1119,7 @@ export function AppRoot() {
         <LoginModal
           open={loginModalOpen}
           onOpenChange={handleLoginOpenChange}
-          onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); }}
+          onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
           lastProvider={lastProvider}
           error={loginError}
           pendingProvider={pendingProvider}
@@ -1140,7 +1141,7 @@ export function AppRoot() {
           onBrowseTemplates={() => openModal('createNew')}
           onCreateFromTemplate={handleCreateAndOpen}
           onOpenSignIn={() => setLoginModalOpen(true)}
-          onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+          onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
           onCreateFolder={createFolder}
           onRenameFolder={renameFolder}
           onDeleteFolder={deleteFolder}
@@ -1187,13 +1188,13 @@ export function AppRoot() {
         onToggleAppearance={() => handleSettingChange('appearance', settings.appearance === 'dark' ? 'light' : 'dark')}
         onGoHome={goHome}
         user={user}
-        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+        onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
         // No billing items here: PricingModal is only mounted with the editor/hub.
         profile={{ subscribed, planType, paymentEnabled: false }}
         login={{
           open: loginModalOpen,
           onOpenChange: handleLoginOpenChange,
-          onLogin: (provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); },
+          onLogin: (provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); },
           lastProvider,
           error: loginError,
           pendingProvider,
@@ -1323,7 +1324,7 @@ export function AppRoot() {
           // back to localStorage); the split matters only in the extension.
           void localStore.set(LS_KEYS.pledgeModalSeen, true);
           void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
-          track('pledgeModalSeen', { category: 'ui', label: APP_VERSION });
+          track('pledge_modal_shown', { category: 'ui', label: APP_VERSION });
           closeModal();
         }}
       />
@@ -1371,8 +1372,8 @@ export function AppRoot() {
         onTitleChange={setTitle}
         onNew={handleNewDiagram}
         onFork={() => handleForkItem(item)}
-        onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); }}
-        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+        onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
+        onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
         loginError={loginError}
         pendingProvider={pendingProvider}
         loginOpen={loginModalOpen}
@@ -1402,7 +1403,7 @@ export function AppRoot() {
             stopping={share.stopping}
             failure={share.failure}
             copyFailed={share.copyFailed}
-            onShare={() => { track('shareLink', { category: 'ui' }); void share.share(); }}
+            onShare={() => { track('share_link_created', { category: 'ui' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}
           />
@@ -1608,7 +1609,7 @@ export function AppRoot() {
         onOpenChange={(open) => { if (!open) setExportRequest(null); }}
         snapshot={exportRequest?.snapshot ?? null}
         title={exportRequest?.title ?? 'diagram'}
-        onExported={(format) => track(format === 'png' ? 'downloadPng' : 'downloadSvg', { category: 'ui' })}
+        onExported={(format) => track('diagram_downloaded', { category: 'ui', format })}
       />
     </div>
   );

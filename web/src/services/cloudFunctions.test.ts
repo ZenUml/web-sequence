@@ -156,8 +156,8 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('Event tracked successfully');
     }));
-    await trackEvent({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
-    expect(received).toEqual({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+    await trackEvent({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
+    expect(received).toEqual({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
   });
   it('carries userId:null for anonymous events', async () => {
     let received: Record<string, unknown> | null = null;
@@ -165,7 +165,7 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('ok');
     }));
-    await trackEvent({ event: 'pageView', userId: null });
+    await trackEvent({ event: 'app_opened', userId: null });
     expect(received!.userId).toBeNull();
   });
   it('never throws on a network/non-ok error (non-blocking)', async () => {
