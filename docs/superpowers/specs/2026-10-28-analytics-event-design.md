@@ -1,6 +1,6 @@
 # web/ analytics event design (modelled on conf-app)
 
-Status: DRAFT for review. D1 and D4 (the rename map, section 9) are implemented in `functions/track_payload.js`; the rest is not built.
+Status: DRAFT for review. D1 and D4 (the rename map, section 9) are implemented in `functions/track_payload.js`. Section 10 (first activity events) is implemented in the web client; the rest is not built.
 Section 9 is the shipped naming and wins where sections 5–6 differ (hard cutover, no dual-fire).
 Reference: `conf-app/docs/analytics/events-catalog.md`, `conf-app/src/utils/window.ts`.
 
@@ -164,4 +164,21 @@ Create `web/docs/analytics-events-catalog.md` from section 5 once approved; ever
 snake_case names (`hub_opened`, `first_edit`, `landed_in_editor`, `bug_report_*`) pass through unchanged.
 
 Properties: `category` becomes `feature_area`, `label` becomes `event_label`, `displayProductName` and `product` are dropped, `anonId` arrives as `anon_id`. The web client sends `anonId` (a localStorage UUID, `web/src/services/anonId.ts`) and `app_version` on every POST.
+
+## 10. Shipped activity events (2026-10-29)
+
+The first slice of section 5.2, chosen because it measures activity directly: a completed save and the length of an editor visit.
+
+| Event | Trigger | Properties |
+|---|---|---|
+| `diagram_save_succeeded` | a save completes (after the store marks it saved) | `feature_area: editor`, `destination`: `cloud` / `queued` / `local` |
+| `editor_session_ended` | end of one editor visit: back to the hub in-app, or `pagehide`; not sent from the hub or an embed | `feature_area: editor`, `close_source`: `hub` / `unload`, `editor_open_duration_ms` (from when the editor showed), `edit_count` (DSL edits), `had_unsaved_changes` |
+
+Every `/track` body now also carries `is_authenticated` (uid present) and `runtime` (`web` / `extension`), added in `emit`.
+
+`/track` is sent with `fetch(..., { keepalive: true })` so the `pagehide` POST finishes after the page unloads. A reload of the editor also ends a session; that is intended.
+
+Not yet built from section 5: `diagram_create_started`, `diagram_opened`, `diagram_flow_id`, render health (5.3), export outcomes (5.4), login and billing outcomes (5.5), `surface`, `plan`, `viewport`, `is_internal`.
+
+Weekly activity query (project 3373228): filter `product_type = web-sequence`; count unique users of `diagram_save_succeeded`, and sum `editor_open_duration_ms` of `editor_session_ended` per user.
 

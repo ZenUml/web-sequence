@@ -541,6 +541,43 @@ export function AppRoot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedByValue]);
 
+  // editor_session_ended: one event per editor visit. A visit starts when the
+  // editor surface shows (boot, or arriving from the hub) and ends when the user
+  // goes back to the hub (close_source 'hub') or the page is hidden for good
+  // (pagehide, close_source 'unload'). It carries how long the editor was open and
+  // how many DSL edits it saw. Not sent from the hub or an embed. /track uses
+  // keepalive, so the unload POST survives the page going away.
+  const onEditorSurface = !isHomeMode && !isEmbed;
+  const editorSession = useRef<{ openedAt: number; edits: number } | null>(null);
+  const latestTrack = useRef(track);
+  latestTrack.current = track;
+  const endEditorSession = useRef((closeSource: 'hub' | 'unload') => {
+    const session = editorSession.current;
+    if (!session) return;
+    editorSession.current = null;
+    const state = useEditorStore.getState();
+    if (!state.currentItem) return;
+    latestTrack.current('editor_session_ended', {
+      feature_area: 'editor',
+      close_source: closeSource,
+      editor_open_duration_ms: Date.now() - session.openedAt,
+      edit_count: session.edits,
+      had_unsaved_changes: state.dirty,
+    });
+  });
+  useEffect(() => {
+    if (onEditorSurface) {
+      editorSession.current = { openedAt: Date.now(), edits: 0 };
+    } else {
+      endEditorSession.current('hub');
+    }
+  }, [onEditorSurface]);
+  useEffect(() => {
+    const onPageHide = () => endEditorSession.current('unload');
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, []);
+
   // Lifecycle: save last code on tab hide / window unload (REQ-PST)
   useEffect(() => {
     function persist() {
@@ -618,6 +655,7 @@ export function AppRoot() {
       limitNotifiedRef.current = null;
       setSaveFeedback({error:false, queued:outcome?.status === 'queued'});
       setCloudConfirmed(outcome?.status === 'cloud');
+      track('diagram_save_succeeded', {feature_area:'editor', destination:outcome?.status ?? 'local'});
       // The saved snapshot owns this completion. Edits made while it waited stay dirty.
       if (useEditorStore.getState().currentItem === it) useEditorStore.getState().markSaved();
       if (!uid) {
@@ -897,6 +935,7 @@ export function AppRoot() {
   const firstEditFired = useRef(false);
   function handleDslChange(next: string) {
     if (useEditorStore.getState().currentItem?.isReadOnly) return;
+    if (editorSession.current) editorSession.current.edits += 1;
     if (!firstEditFired.current) {
       firstEditFired.current = true;
       track('first_edit', { category: 'fn' });

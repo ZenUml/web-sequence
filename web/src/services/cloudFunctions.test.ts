@@ -168,6 +168,12 @@ describe('trackEvent', () => {
     await trackEvent({ event: 'app_opened', userId: null });
     expect(received!.userId).toBeNull();
   });
+  it('sends with keepalive so an event fired on pagehide survives the unload', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+    await trackEvent({ event: 'editor_session_ended', userId: null });
+    expect(spy).toHaveBeenCalledWith('/track', expect.objectContaining({ keepalive: true }));
+    spy.mockRestore();
+  });
   it('never throws on a network/non-ok error (non-blocking)', async () => {
     server.use(http.post(`${window.location.origin}/track`, () => HttpResponse.error()));
     await expect(trackEvent({ event: 'x', userId: null })).resolves.toBeUndefined();

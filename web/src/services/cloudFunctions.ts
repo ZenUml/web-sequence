@@ -72,7 +72,8 @@ export async function getSharedItem(id: string, shareToken: string): Promise<Ite
 }
 
 // POST /track — non-blocking analytics (§5.5). Swallows all errors: a failed
-// analytics call must never break the user action that triggered it.
+// analytics call must never break the user action that triggered it. keepalive
+// lets an event sent from pagehide (editor_session_ended) finish after unload.
 export async function trackEvent(
   payload: Record<string, unknown> & { event: string; userId: string | null },
 ): Promise<void> {
@@ -81,6 +82,7 @@ export async function trackEvent(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      keepalive: true,
     });
   } catch {
     /* non-blocking */
