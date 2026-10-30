@@ -139,7 +139,7 @@ Create `web/docs/analytics-events-catalog.md` from section 5 once approved; ever
 
 ## 8. Decisions needed
 
-- D1 sink — DECIDED 2026-10-29: `/track` stays the only sink and now writes to project 3373228 "Diagramly.Ai", the project conf-app and Passetta share. `functions/track_payload.js` stamps `product_type = web-sequence` and `firebase_project` (staging vs prod) as reserved keys a caller cannot override (an earlier draft used `product = web_sequence`; conf-app uses `product_type`, so that key was replaced before deploy). Data sent before the deploy stays in the old project. Filter every web-sequence query with `product_type = web-sequence`.
+- D1 sink — DECIDED 2026-10-29: `/track` stays the only sink and now writes to project 3373228 "Diagramly.Ai", the project conf-app and Passetta share. `functions/track_payload.js` stamps `product_type = web-sequence` and `firebase_project` (staging vs prod) as reserved keys a caller cannot override (an earlier draft used `product = web_sequence`; conf-app uses `product_type`, so that key was replaced before deploy). Data sent before the deploy stays in the old project. Filter every web-sequence query with `product_type = web-sequence`, and add `firebase_project = web-sequence-local` for real users: staging (`staging-zenuml-27954`) writes to the same project, and its CI end-to-end runs produce most of the volume (on 2026-10-30: 187 of 188 `diagram_save_succeeded`, 370 of 378 `editor_session_ended`).
 - D2 `is_internal`: localStorage flag set by `?internal=1`, or a hard-coded uid allowlist.
 - D3 whether `diagram_render_succeeded` ships in the first PR or waits for the preview RPC refactor.
 - D4 names — DECIDED 2026-10-29: hard cutover, no dual-send. Section 9.
@@ -180,5 +180,5 @@ Every `/track` body now also carries `is_authenticated` (uid present) and `runti
 
 Not yet built from section 5: `diagram_create_started`, `diagram_opened`, `diagram_flow_id`, render health (5.3), export outcomes (5.4), login and billing outcomes (5.5), `surface`, `plan`, `viewport`, `is_internal`.
 
-Weekly activity query (project 3373228): filter `product_type = web-sequence`; count unique users of `diagram_save_succeeded`, and sum `editor_open_duration_ms` of `editor_session_ended` per user.
+Weekly activity query (project 3373228): filter `product_type = web-sequence` and `firebase_project = web-sequence-local` (production; staging writes to the same project); count unique users of `diagram_save_succeeded`, and sum `editor_open_duration_ms` of `editor_session_ended` per user.
 
