@@ -621,7 +621,9 @@ export function AppRoot() {
     };
   }, [itemService]);
 
-  async function save(): Promise<boolean> {
+  // `silent`: the save is not a user-visible "I saved" moment (the first-content
+  // persist of a New diagram, #951), so it must not open the one-time notice.
+  async function save(opts: { silent?: boolean } = {}): Promise<boolean> {
     const it = useEditorStore.getState().currentItem;
     if (!it || it.isReadOnly || saveAttempt.current) return false;
     const attempt = {};
@@ -685,7 +687,9 @@ export function AppRoot() {
       // #941: a diagram with no content has nothing worth the sign-in nudge; New saves
       // an empty item right away, so without this gate the one-time notice would be
       // spent on a blank page (and its focus trap would steal the editor focus).
-      if (!uid && itemToSave.js.trim() !== '') {
+      // #951: the first-content persist is silent, or the modal opens on the first
+      // keystroke and steals focus; the next ordinary save (Ctrl+S / auto-save) shows it.
+      if (!uid && !opts.silent && itemToSave.js.trim() !== '') {
         // Informational notice preferences are separate from document persistence.
         // If acknowledgement storage fails, defer the notice to a later successful save.
         try {
@@ -883,7 +887,7 @@ export function AppRoot() {
   // tick picks the still-dirty item up.
   function persistNewDiagram() {
     useEditorStore.setState({ dirty: true, unsavedCount: 1 });
-    void save();
+    void save({ silent: true });
   }
 
   // #943: a blank diagram from New is NOT persisted on creation — that wrote an empty
