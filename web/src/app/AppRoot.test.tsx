@@ -2778,3 +2778,115 @@ describe('AppRoot save recovery and ownership', () => {
     expect(useEditorStore.getState().saving).toBe(false);
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Activity events (docs/superpowers/specs/2026-10-28-analytics-event-design.md §5.2):
+// a completed save and the end of an editor visit, so weekly activity can be read
+// from saves and engaged time, not only from clicks.
+// ───────────────────────────────────────────────────────────────────────────
+describe('AppRoot — activity events', () => {
+  const signedInUser = { uid: 'u1', email: 'u1@test.com', displayName: 'U', photoURL: null };
+
+  function envelopes(event: string): Record<string, unknown>[] {
+    return trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p && p.event === event);
+  }
+
+  async function typeInDsl(text: string) {
+    const cm = screen.getByTestId('dsl-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cm);
+      await userEvent.keyboard(text);
+    });
+  }
+
+  it("fires 'diagram_save_succeeded' with destination 'local' for a signed-out save", async () => {
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    await act(async () => {
+      await userEvent.keyboard('{Meta>}s{/Meta}');
+    });
+    await waitFor(() => expect(envelopes('diagram_save_succeeded')).toHaveLength(1));
+    expect(envelopes('diagram_save_succeeded')[0]).toEqual(
+      expect.objectContaining({ feature_area: 'editor', destination: 'local' }),
+    );
+  });
+
+  it("fires 'diagram_save_succeeded' with destination 'cloud' when the cloud write lands", async () => {
+    itemSvc.setItem.mockResolvedValue({ status: 'cloud' });
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    await act(async () => {
+      useAuthStore.setState({ user: signedInUser, authReady: true, online: true });
+    });
+    await act(async () => {
+      await userEvent.keyboard('{Meta>}s{/Meta}');
+    });
+    await waitFor(() => expect(envelopes('diagram_save_succeeded')).toHaveLength(1));
+    expect(envelopes('diagram_save_succeeded')[0]).toEqual(
+      expect.objectContaining({ destination: 'cloud', userId: 'u1' }),
+    );
+  });
+
+  it("does not fire 'diagram_save_succeeded' when the save fails", async () => {
+    itemSvc.setItem.mockRejectedValue(Object.assign(new Error('boom'), { code: 'unavailable' }));
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    await act(async () => {
+      await userEvent.keyboard('{Meta>}s{/Meta}');
+    });
+    await waitFor(() => expect(envelopes('diagram_save_failed')).toHaveLength(1));
+    expect(envelopes('diagram_save_succeeded')).toHaveLength(0);
+  });
+
+  it("fires one 'editor_session_ended' on pagehide with edit count and open duration", async () => {
+    window.history.replaceState({}, '', '/?id=t-boot');
+    render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    await typeInDsl('xy');
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).toContain('xy'));
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    const ended = envelopes('editor_session_ended');
+    expect(ended).toHaveLength(1);
+    expect(ended[0]).toEqual(expect.objectContaining({
+      feature_area: 'editor',
+      edit_count: 2,
+      had_unsaved_changes: true,
+      close_source: 'unload',
+    }));
+    expect(typeof ended[0].editor_open_duration_ms).toBe('number');
+  });
+
+  it("ends the editor session with close_source 'hub' when the user goes back to the hub", async () => {
+    window.history.replaceState({}, '', '/?id=t-boot');
+    const { rerender } = render(<AppRoot />);
+    await screen.findByTestId('editor-region');
+    await typeInDsl('x');
+    await act(async () => { await userEvent.click(screen.getByTestId('header-go-home')); });
+    // The test router applies the URL but does not re-render; do what the real router does.
+    await act(async () => { rerender(<AppRoot />); });
+    await screen.findByTestId('home-view');
+    await waitFor(() => expect(envelopes('editor_session_ended')).toHaveLength(1));
+    expect(envelopes('editor_session_ended')[0]).toEqual(
+      expect.objectContaining({ close_source: 'hub', edit_count: 1 }),
+    );
+    // The page then unloads from the hub: no second event.
+    act(() => { window.dispatchEvent(new Event('pagehide')); });
+    expect(envelopes('editor_session_ended')).toHaveLength(1);
+  });
+
+  it("does not fire 'editor_session_ended' from the hub", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await waitFor(() => expect(envelopes('hub_opened')).toHaveLength(1));
+    act(() => { window.dispatchEvent(new Event('pagehide')); });
+    expect(envelopes('editor_session_ended')).toHaveLength(0);
+  });
+});
