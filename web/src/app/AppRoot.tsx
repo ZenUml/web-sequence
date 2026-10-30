@@ -717,6 +717,42 @@ export function AppRoot() {
     return forkOnForeignOwner ? saveUnderNewId() : false;
   }
 
+  // #952: header New saves first. Resolves true when it is safe to create the new
+  // diagram: the edit reached storage, or it is retained locally while a cloud sync
+  // is queued. Resolves false only when the save really failed (error, read-only,
+  // over the free limit), which makes the header ask before discarding.
+  //
+  // Ordering matters: handleNewDiagram() swaps currentItem synchronously and save()
+  // aborts before itemService.setItem whenever currentItem.id changed mid-flight, so
+  // New must never run while a save is pending, or the edit is silently lost.
+  async function saveBeforeNew(): Promise<boolean> {
+    const startId = useEditorStore.getState().currentItem?.id;
+    if (!startId) return true;
+    // A save already in flight (the 15 s auto-save tick, or Cmd+S) would make save()
+    // return false at once without writing. Wait for it to settle instead of treating
+    // that as a failure. saveAttempt and `saving` are set and cleared together; the
+    // `saving` check also keeps a stale attempt from spinning this loop.
+    while (saveAttempt.current && useEditorStore.getState().saving) {
+      await new Promise<void>((resolve) => {
+        const off = useEditorStore.subscribe((s) => {
+          if (!s.saving) { off(); resolve(); }
+        });
+        if (!useEditorStore.getState().saving) { off(); resolve(); }
+      });
+    }
+    const after = useEditorStore.getState();
+    if (after.currentItem?.id !== startId) return false;
+    // The awaited attempt already stored everything (it marks the item clean).
+    if (!after.dirty) return true;
+    const saved = await save();
+    if (saved) return true;
+    // save() returns false for a queued (offline, signed-in) save as well, but it
+    // calls markSaved() first because the item is retained locally. Failures keep
+    // the item dirty: errors, read-only items, and over-limit (which re-marks it).
+    const now = useEditorStore.getState();
+    return now.currentItem?.id === startId && !now.dirty;
+  }
+
   async function saveUnderNewId(): Promise<boolean> {
     const cur = useEditorStore.getState().currentItem;
     if (!cur) return false;
@@ -1457,6 +1493,7 @@ export function AppRoot() {
         readOnly={!!item.isReadOnly}
         onTitleChange={setTitle}
         onNew={handleNewDiagram}
+        onSaveBeforeNew={saveBeforeNew}
         onFork={() => handleForkItem(item)}
         onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
         onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
