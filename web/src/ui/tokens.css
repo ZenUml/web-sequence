@@ -1,0 +1,531 @@
+/*
+  Shared primitive tokens. Hex values live only in the custom properties below.
+  Component rules consume var(--ui-*).
+
+  Theme contract
+  - Action colors and sizes sit on :root. They are the same in both themes.
+  - Surface colors sit on .ui-surface-light / .ui-surface-dark and on
+    [data-ui-surface="light"|"dark"]. They are not applied to :root, so this
+    file does not repaint the diagram or the editor shell.
+  - A portal is not a descendant of the control that opened it. Menu, Select,
+    Popover, and Tooltip set the surface class and data-ui-surface on the
+    portaled node. Pass the same surface the trigger uses; the portal does not
+    inherit it.
+  - Rules live in @layer components. In a dev bundle this file can still be
+    injected unlayered after the utility sheet, so height, width, padding, gap,
+    and radius that callers override live in :where(). Paint and type stay on
+    normal classes so they beat the button/input reset (transparent fill,
+    100% font, inherited line-height). Editor rules in globals.css are
+    unlayered and still win.
+
+  Review hook: data-ui-state="hover|pressed|focus" paints the same colors as
+  :hover, :active, and :focus-visible so a gallery can show the states at rest.
+*/
+
+:root {
+  --ui-brand: #2E94D4;
+  --ui-action-primary: #217BB3;
+  --ui-action-on-primary: #FFFFFF;
+  --ui-action-primary-hover: #1C6D9F;
+  --ui-action-primary-pressed: #175D89;
+
+  --ui-space-4: 4px;
+  --ui-space-8: 8px;
+  --ui-space-12: 12px;
+  --ui-space-16: 16px;
+  --ui-space-24: 24px;
+  --ui-control-compact: 32px;
+  --ui-control-default: 36px;
+  --ui-control-navigation: 40px;
+  --ui-icon-default: 16px;
+  --ui-icon-action: 18px;
+  --ui-radius-control: 6px;
+  --ui-radius-menu: 8px;
+  --ui-radius-card: 10px;
+  --ui-radius-dialog: 12px;
+  --ui-stroke-border: 1px;
+  --ui-stroke-focus: 2px;
+  --ui-type-caption: 12px;
+  --ui-type-control: 14px;
+  --ui-type-body: 16px;
+  --ui-line-control: 20px;
+  /* Pre-existing toolbar hit target. Not a Figma size. Callers who need
+     smaller chrome pass a height utility, which wins over this layer. */
+  --ui-icon-button-compact: 24px;
+}
+
+.ui-surface-light,
+[data-ui-surface='light'] {
+  --ui-page: #EFF6FB;
+  --ui-surface: #FFFFFF;
+  --ui-pocket: #F7FAFD;
+  --ui-border: #E3E8ED;
+  --ui-text: #1C2024;
+  --ui-text-secondary: #60646C;
+  --ui-button-secondary: #FFFFFF;
+  --ui-button-text: #1C2024;
+  --ui-button-border: #D5DCE5;
+  --ui-selected: #E5F1FA;
+  --ui-control: #FFFFFF;
+  --ui-focus-ring: #176593;
+  --ui-secondary-hover: #EAF2F8;
+  --ui-secondary-pressed: #DCE8F1;
+  --ui-disabled-surface: #E8EDF2;
+  --ui-disabled-text: #7A8794;
+  --ui-disabled-border: #DCE3EA;
+  --ui-danger: #E0524A;
+  --ui-danger-strong: #B23A33;
+  --ui-danger-highlight-text: #B23A33;
+  color-scheme: light;
+}
+
+.ui-surface-dark,
+[data-ui-surface='dark'] {
+  --ui-page: #303944;
+  --ui-surface: #343F4B;
+  --ui-pocket: #424F5E;
+  --ui-border: #516071;
+  --ui-text: #EEF2F6;
+  --ui-text-secondary: #B8C3CF;
+  --ui-button-secondary: #3B424E;
+  --ui-button-text: #EDF0F5;
+  --ui-button-border: #444B57;
+  --ui-selected: #304F69;
+  --ui-control: #2D3743;
+  --ui-focus-ring: #9ACDFA;
+  --ui-secondary-hover: #485465;
+  --ui-secondary-pressed: #526175;
+  --ui-disabled-surface: #39424D;
+  --ui-disabled-text: #8794A3;
+  --ui-disabled-border: #46515F;
+  --ui-danger: #E0524A;
+  --ui-danger-strong: #E0524A;
+  --ui-danger-highlight-text: #E8EEF7;
+  color-scheme: dark;
+}
+
+/* Same-file directive so Tailwind accepts @layer components in this stylesheet. */
+@tailwind components;
+
+@layer components {
+  .ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: var(--ui-stroke-border) solid transparent;
+    padding: 0 var(--ui-space-16);
+    background: transparent;
+    color: var(--ui-text);
+    font-size: var(--ui-type-control);
+    font-weight: 500;
+    line-height: var(--ui-line-control);
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  /* Zero specificity so h-7, h-12, gap-*, and rounded-* still win when this
+     file is injected unlayered. Padding stays on the class: the button reset
+     sets padding:0 at element specificity, which beats :where(). */
+  :where(.ui-button) {
+    height: var(--ui-control-default);
+    gap: var(--ui-space-8);
+    border-radius: var(--ui-radius-control);
+  }
+
+  .ui-button--sm {
+    padding: 0 var(--ui-space-8);
+  }
+
+  :where(.ui-button--sm) {
+    height: var(--ui-control-compact);
+    gap: var(--ui-space-4);
+  }
+
+  .ui-button svg {
+    width: var(--ui-icon-action);
+    height: var(--ui-icon-action);
+    flex: none;
+  }
+
+  .ui-button:focus-visible, .ui-button[data-ui-state='focus'] {
+    outline: var(--ui-stroke-focus) solid var(--ui-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .ui-button--primary {
+    border-color: transparent;
+    background: var(--ui-action-primary);
+    color: var(--ui-action-on-primary);
+  }
+
+  .ui-button--primary:hover, .ui-button--primary[data-ui-state='hover'] {
+    background: var(--ui-action-primary-hover);
+  }
+
+  .ui-button--primary:active, .ui-button--primary[data-ui-state='pressed'] {
+    background: var(--ui-action-primary-pressed);
+  }
+
+  .ui-button--subtle {
+    border-color: var(--ui-button-border);
+    background: var(--ui-button-secondary);
+    color: var(--ui-button-text);
+  }
+
+  .ui-button--subtle:hover, .ui-button--subtle[data-ui-state='hover'] {
+    background: var(--ui-secondary-hover);
+  }
+
+  .ui-button--subtle:active, .ui-button--subtle[data-ui-state='pressed'] {
+    background: var(--ui-secondary-pressed);
+  }
+
+  .ui-button--ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--ui-text-secondary);
+  }
+
+  .ui-button--ghost:hover, .ui-button--ghost[data-ui-state='hover'] {
+    background: var(--ui-secondary-hover);
+    color: var(--ui-text);
+  }
+
+  .ui-button--ghost:active, .ui-button--ghost[data-ui-state='pressed'] {
+    background: var(--ui-secondary-pressed);
+    color: var(--ui-text);
+  }
+
+  .ui-button:disabled, .ui-button[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  /* Primary, subtle, and ghost use the gray disabled fill. Danger does not:
+     an unlayered rule fades it to 40% and leaves the red utilities in place. */
+  .ui-button--primary:disabled,
+  .ui-button--primary[aria-disabled='true'],
+  .ui-button--subtle:disabled,
+  .ui-button--subtle[aria-disabled='true'],
+  .ui-button--ghost:disabled,
+  .ui-button--ghost[aria-disabled='true'] {
+    border-color: var(--ui-disabled-border);
+    background-color: var(--ui-disabled-surface);
+    color: var(--ui-disabled-text);
+  }
+
+  .ui-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text-secondary);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  :where(.ui-icon-button) {
+    width: var(--ui-control-compact);
+    height: var(--ui-control-compact);
+    border-radius: var(--ui-radius-control);
+  }
+
+  :where(.ui-icon-button--sm) {
+    width: var(--ui-icon-button-compact);
+    height: var(--ui-icon-button-compact);
+  }
+
+  .ui-icon-button:hover, .ui-icon-button[data-ui-state='hover'] {
+    background: var(--ui-secondary-hover);
+    color: var(--ui-text);
+  }
+
+  .ui-icon-button:active, .ui-icon-button[data-ui-state='pressed'] {
+    background: var(--ui-secondary-pressed);
+    color: var(--ui-text);
+  }
+
+  .ui-icon-button:focus-visible, .ui-icon-button[data-ui-state='focus'] {
+    outline: var(--ui-stroke-focus) solid var(--ui-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .ui-icon-button:disabled {
+    background: transparent;
+    color: var(--ui-disabled-text);
+    cursor: not-allowed;
+  }
+
+  .ui-field {
+    box-sizing: border-box;
+    border: var(--ui-stroke-border) solid var(--ui-border);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-control);
+    color: var(--ui-text);
+    font-size: var(--ui-type-control);
+    line-height: var(--ui-line-control);
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
+
+  .ui-field::placeholder {
+    color: var(--ui-text-secondary);
+  }
+
+  .ui-field:focus, .ui-field[data-ui-state='focus'] {
+    border-color: var(--ui-focus-ring);
+    outline: var(--ui-stroke-focus) solid var(--ui-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .ui-field:disabled {
+    border-color: var(--ui-disabled-border);
+    background: var(--ui-disabled-surface);
+    color: var(--ui-disabled-text);
+    cursor: not-allowed;
+  }
+
+  .ui-field--control {
+    padding: 0 var(--ui-space-8);
+  }
+
+  :where(.ui-field--control) {
+    height: var(--ui-control-default);
+  }
+
+  .ui-textarea {
+    display: block;
+    width: 100%;
+    min-height: 96px;
+    padding: var(--ui-space-8) var(--ui-space-12);
+    resize: vertical;
+  }
+
+  .ui-search {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ui-search-icon {
+    position: absolute;
+    left: var(--ui-space-8);
+    width: var(--ui-icon-default);
+    height: var(--ui-icon-default);
+    color: var(--ui-text-secondary);
+    pointer-events: none;
+  }
+
+  .ui-search-input {
+    width: 100%;
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .ui-search-input::-webkit-search-cancel-button,
+  .ui-search-input::-webkit-search-decoration {
+    appearance: none;
+  }
+
+  .ui-search-clear {
+    position: absolute;
+    right: var(--ui-space-4);
+  }
+
+  .ui-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-8);
+    min-width: 8rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ui-select-trigger[data-placeholder] {
+    color: var(--ui-text-secondary);
+  }
+
+  .ui-select-icon {
+    width: var(--ui-icon-default);
+    height: var(--ui-icon-default);
+    flex: none;
+    color: var(--ui-text-secondary);
+  }
+
+  .ui-select-check {
+    width: var(--ui-icon-default);
+    height: var(--ui-icon-default);
+    color: var(--ui-action-primary);
+  }
+
+  .ui-menu, .ui-popover, .ui-select-content {
+    z-index: 50;
+    box-sizing: border-box;
+    border: var(--ui-stroke-border) solid var(--ui-border);
+    border-radius: var(--ui-radius-menu);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+  }
+
+  .ui-menu, .ui-select-content {
+    min-width: 180px;
+    padding: var(--ui-space-4);
+  }
+
+  .ui-select-content {
+    min-width: max(180px, var(--radix-select-trigger-width));
+  }
+
+  .ui-popover {
+    padding: var(--ui-space-12);
+  }
+
+  .ui-menu-item, .ui-select-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-radius: var(--ui-radius-control);
+    outline: none;
+    font-size: var(--ui-type-control);
+    line-height: var(--ui-line-control);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .ui-menu-item {
+    padding: 6px 10px;
+  }
+
+  .ui-select-item {
+    padding: 6px 10px 6px 28px;
+  }
+
+  .ui-menu-item[data-highlighted], .ui-select-item[data-highlighted] {
+    background: var(--ui-selected);
+    color: var(--ui-text);
+  }
+
+  .ui-menu-item[data-disabled], .ui-select-item[data-disabled] {
+    color: var(--ui-disabled-text);
+    pointer-events: none;
+  }
+
+  .ui-select-indicator {
+    position: absolute;
+    left: var(--ui-space-8);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ui-menu-label {
+    padding: var(--ui-space-4) 10px;
+    color: var(--ui-text-secondary);
+    font-size: var(--ui-type-caption);
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ui-menu-separator {
+    height: 1px;
+    margin: var(--ui-space-4) 0;
+    background: var(--ui-border);
+  }
+
+  .ui-tooltip {
+    z-index: 50;
+    box-sizing: border-box;
+    max-width: 220px;
+    padding: var(--ui-space-4) var(--ui-space-8);
+    border: var(--ui-stroke-border) solid var(--ui-border);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-size: var(--ui-type-caption);
+    line-height: 16px;
+    user-select: none;
+  }
+
+  .ui-tooltip-arrow {
+    fill: var(--ui-surface);
+  }
+
+  .ui-switch {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    padding: 0;
+    border: var(--ui-stroke-border) solid var(--ui-border);
+    border-radius: 999px;
+    background: var(--ui-pocket);
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .ui-switch[data-state='checked'] {
+    border-color: var(--ui-action-primary);
+    background: var(--ui-action-primary);
+  }
+
+  .ui-switch:focus-visible, .ui-switch[data-ui-state='focus'] {
+    outline: var(--ui-stroke-focus) solid var(--ui-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .ui-switch:disabled {
+    border-color: var(--ui-disabled-border);
+    background: var(--ui-disabled-surface);
+    cursor: not-allowed;
+  }
+
+  .ui-switch:disabled[data-state='checked'] {
+    border-color: var(--ui-disabled-border);
+    background: var(--ui-disabled-surface);
+  }
+
+  .ui-switch-thumb {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: var(--ui-stroke-border) solid var(--ui-button-border);
+    border-radius: 999px;
+    background: var(--ui-action-on-primary);
+    transform: translateX(2px);
+    transition: transform 150ms ease;
+  }
+
+  .ui-switch-thumb[data-state='checked'] {
+    transform: translateX(20px);
+  }
+}
+
+/* Unlayered so these beat a later Tailwind utility. Light danger text cannot
+   stay on the pale on-dark highlight color. Disabled danger keeps its red and
+   drops to the previous 40% opacity instead of the gray disabled fill. */
+.ui-surface-light .ui-menu-item[data-tone='danger'],
+[data-ui-surface='light'] .ui-menu-item[data-tone='danger'] {
+  color: var(--ui-danger-strong);
+}
+
+.ui-menu-item[data-tone='danger'][data-highlighted] {
+  color: var(--ui-danger-highlight-text);
+}
+
+.ui-menu-item[data-tone='danger'][data-disabled] {
+  color: var(--ui-disabled-text);
+  background-color: transparent;
+}
+
+.ui-button--danger:disabled,
+.ui-button--danger[aria-disabled='true'] {
+  opacity: 0.4;
+}

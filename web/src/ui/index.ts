@@ -1,6 +1,8 @@
-// Design-system primitives ("Drafting Table"). Future milestone UI imports from
-// here — do not hand-roll buttons/dialogs/styles. See
-// docs/superpowers/specs/2026-06-07-design-system.md.
+// Design-system primitives. Future milestone UI imports from here — do not
+// hand-roll buttons/dialogs/styles. Palette and control sizes live in
+// ./tokens.css. Portaled Menu, Select, Popover, and Tooltip set their own
+// surface on the portaled node; an ancestor surface does not cross a portal.
+import './tokens.css';
 export { cn } from './cn';
 export { Button, buttonClassName, type ButtonProps } from './Button';
 export { BrandLogo } from './BrandLogo';
