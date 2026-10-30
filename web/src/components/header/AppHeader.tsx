@@ -185,6 +185,10 @@ export function AppHeader({
   // Escape (captured at focus time) so a mid-edit prop change can't desync the revert.
   const [draft, setDraft] = useState(title);
   const editingTitle = useRef(false);
+  // #944: select the whole name when the field gains focus, so typing replaces it.
+  // A mouse click focuses first and then, on mouseup, would collapse that selection
+  // to the click position; the first mouseup after focus is suppressed to keep it.
+  const keepSelectionOnMouseUp = useRef(false);
   const committedTitleRef = useRef(title);
   committedTitleRef.current = title;
   // When not actively editing, keep the field in sync with the committed prop. During
@@ -274,8 +278,16 @@ export function AppHeader({
               // size attribute is the fallback, e.g. Safari).
               size={Math.max(4, Math.min(28, draft.length + 1))}
               className="editor-title-input"
-              onFocus={() => {
+              onFocus={(e) => {
                 editingTitle.current = true;
+                e.currentTarget.select();
+                keepSelectionOnMouseUp.current = true;
+              }}
+              onMouseUp={(e) => {
+                if (keepSelectionOnMouseUp.current) {
+                  keepSelectionOnMouseUp.current = false;
+                  e.preventDefault();
+                }
               }}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleTitleKeyDown}

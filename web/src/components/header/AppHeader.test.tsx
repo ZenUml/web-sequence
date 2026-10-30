@@ -233,6 +233,20 @@ describe('AppHeader', () => {
     expect(onTitleChange).not.toHaveBeenCalled();
   });
 
+  // #944: clicking the title must select the whole name so that typing replaces it.
+  // Before: the caret landed where the user clicked (mid-word) with nothing selected,
+  // so "Order flow" typed into "Untitled" produced "UntiOrder flowtled".
+  it('clicking header-title selects the whole name so typing replaces it (#944)', async () => {
+    const onTitleChange = vi.fn();
+    render(<AppHeader {...baseProps} onTitleChange={onTitleChange} />);
+    const input = screen.getByTestId('header-title') as HTMLInputElement;
+    await userEvent.click(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe('My Diagram'.length);
+    await userEvent.keyboard('Order flow{Enter}');
+    expect(onTitleChange).toHaveBeenCalledWith('Order flow');
+  });
+
   // ---- Save-state indicator (replaces the Save button) ----
 
   it('shows "Saved" when clean and signed in with a confirmed cloud save', () => {
