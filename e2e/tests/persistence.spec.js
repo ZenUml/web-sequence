@@ -237,13 +237,21 @@ test('header-new: clicking New opens a blank diagram', async ({
   // New is the primary toolbar button (the logo app menu is gone).
   await page.locator('[data-testid="header-new"]').click();
 
-  // #8: with unsaved edits, New first asks to confirm discarding them. Confirm the
-  // discard so New proceeds (a clean diagram would skip this dialog entirely).
-  await page.locator('[data-testid="confirm-ok"]').click();
-
+  // #952: with unsaved edits, New saves them first and then proceeds. The discard
+  // confirm (#8) is only for a save that failed, so it must not appear here.
   // After New, the editor holds a blank Untitled diagram (same as the hub's New
   // diagram), not our custom content.
   await expect(page.locator('[data-testid="header-title"]')).toHaveValue('Untitled');
   await expect.poll(async () => (await editorLocator(page).innerText()).trim(), { timeout: 10_000 }).toBe('');
   await expect(editorLocator(page)).not.toContainText('CustomActor');
+  await expect(page.locator('[data-testid="confirm-ok"]')).toHaveCount(0);
+
+  // The edited diagram reached this device's storage before New replaced it.
+  const storedJs = await page.evaluate(() => {
+    const index = JSON.parse(localStorage.getItem('items') || '{}');
+    return Object.keys(index).map((id) => {
+      try { return JSON.parse(localStorage.getItem(id) || 'null')?.js ?? null; } catch { return null; }
+    });
+  });
+  expect(storedJs).toContain(CUSTOM_DSL);
 });
