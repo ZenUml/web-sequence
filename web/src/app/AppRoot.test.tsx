@@ -443,6 +443,16 @@ describe('AppRoot', () => {
     await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(created.id, expect.objectContaining({ id: created.id }), expect.anything()));
   });
 
+  it('the template first-save is silent: no "Saved on this device" notice, seen-flag unset (#951)', async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await userEvent.click(await screen.findByTestId('home-template-blue'));
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryAllByText('Saved on this device')).toHaveLength(0);
+    expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
+  });
+
   // The new diagram is not the shared/seeded one: New must drop ?share-token=,
   // ?code= and ?title=, or a reload would look the new id up as a share or
   // re-seed the old code.

@@ -187,6 +187,28 @@ describe('AppRoot — signed-out "Saved on this device" notice needs content (#9
     expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
   });
 
+  it('the first-content persist of a New diagram is silent; the next ordinary save opens the notice (#951)', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('dsl-editor');
+    fireEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(captured.dsl?.onChange).toBeTypeOf('function'));
+    itemSvc.setItem.mockClear();
+    (captured.dsl.onChange as (v: string) => void)('A');
+    // The first keystroke persists the new diagram (#943) ...
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledTimes(1));
+    // ... and give the post-save notice logic a turn to (wrongly) run.
+    await new Promise((r) => setTimeout(r, 50));
+    // ... without the modal that would steal focus mid-typing.
+    expect(screen.queryAllByText('Saved on this device')).toHaveLength(0);
+    expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
+    // Keep typing, then an explicit Ctrl+S is the quiet moment for the one-time notice.
+    (captured.dsl.onChange as (v: string) => void)('A->B: hi');
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.js).toBe('A->B: hi'));
+    saveShortcut();
+    expect((await screen.findAllByText('Saved on this device')).length).toBeGreaterThan(0);
+    expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).not.toBeNull();
+  });
+
   it('opens the notice once the diagram has content and is saved', async () => {
     render(<AppRoot />);
     await screen.findByTestId('dsl-editor');
