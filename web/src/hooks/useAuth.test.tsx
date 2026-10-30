@@ -36,12 +36,15 @@ describe('useAuth', () => {
     expect(fb.login).toHaveBeenCalledWith('google');
     expect(window.localStorage.getItem('lastAuthProvider')).toContain('google');
   });
-  it('login surfaces account-exists-with-different-credential', async () => {
+  it('login surfaces account-exists-with-different-credential inline, without a blocking alert', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     fb.login.mockRejectedValueOnce({ code: 'auth/account-exists-with-different-credential' });
     const { result } = renderHook(() => useAuth());
     await act(async () => { await result.current.login('github'); });
-    expect(alertSpy).toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(result.current.loginError).toMatch(/different sign-in method/i);
+    expect(result.current.loginError).toMatch(/Google/);
+    alertSpy.mockRestore();
   });
   it('login swallows and logs non-account-exists errors (FIX 7)', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -99,5 +102,133 @@ describe('useAuth', () => {
     act(() => { useSettingsStore.getState().mergeLocalBase({ fontSize: 13 }); });
     // Cloud value survives because useAuth recorded fontSize in cloudKeys via mergeCloud.
     expect(useSettingsStore.getState().settings.fontSize).toBe(18);
+  });
+});
+
+// ── Account-flows: pending state, single submission, stale attempts (2026-10-20).
+describe('useAuth — pending, races and stale attempts', () => {
+  function deferred() {
+    let resolve!: () => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<void>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  }
+
+  it.each(['google', 'github'] as const)('exposes pendingProvider=%s while the provider window is open', async (provider) => {
+    const d = deferred();
+    fb.login.mockReturnValueOnce(d.promise);
+    const { result } = renderHook(() => useAuth());
+    let done!: Promise<void>;
+    act(() => { done = result.current.login(provider); });
+    expect(result.current.pendingProvider).toBe(provider);
+    await act(async () => { d.resolve(); await done; });
+    expect(result.current.pendingProvider).toBeNull();
+  });
+
+  it('a second login in the same tick is ignored (one provider window), for both orders', async () => {
+    for (const [a, b] of [['google', 'github'], ['github', 'google']] as const) {
+      fb.login.mockClear();
+      const d = deferred();
+      fb.login.mockReturnValueOnce(d.promise);
+      const { result, unmount } = renderHook(() => useAuth());
+      let first!: Promise<void>;
+      let second!: Promise<void>;
+      act(() => {
+        first = result.current.login(a);
+        second = result.current.login(b);
+      });
+      expect(fb.login).toHaveBeenCalledTimes(1);
+      expect(fb.login).toHaveBeenCalledWith(a);
+      expect(result.current.pendingProvider).toBe(a);
+      await act(async () => { d.resolve(); await Promise.all([first, second]); });
+      unmount();
+    }
+  });
+
+  it('cancelLogin clears pending; a stale failure afterwards does not leak into the reopened modal', async () => {
+    const d = deferred();
+    fb.login.mockReturnValueOnce(d.promise);
+    const { result } = renderHook(() => useAuth());
+    let done!: Promise<void>;
+    act(() => { done = result.current.login('google'); });
+    act(() => { result.current.cancelLogin(); });
+    expect(result.current.pendingProvider).toBeNull();
+    await act(async () => { d.reject({ code: 'auth/popup-closed-by-user' }); await done; });
+    expect(result.current.loginError).toBeNull();
+    expect(result.current.pendingProvider).toBeNull();
+  });
+
+  it('after cancel a new attempt starts; the old attempt settling does not clear the new pending state', async () => {
+    const old = deferred();
+    const next = deferred();
+    fb.login.mockReturnValueOnce(old.promise).mockReturnValueOnce(next.promise);
+    const { result } = renderHook(() => useAuth());
+    let oldDone!: Promise<void>;
+    let nextDone!: Promise<void>;
+    act(() => { oldDone = result.current.login('google'); });
+    act(() => { result.current.cancelLogin(); });
+    act(() => { nextDone = result.current.login('github'); });
+    expect(fb.login).toHaveBeenCalledTimes(2);
+    await act(async () => { old.reject({ code: 'auth/cancelled-popup-request' }); await oldDone; });
+    expect(result.current.pendingProvider).toBe('github');
+    expect(result.current.loginError).toBeNull();
+    await act(async () => { next.resolve(); await nextDone; });
+    expect(result.current.pendingProvider).toBeNull();
+  });
+
+  it('popup closed by the user: inline actionable error, provider not recorded as last used', async () => {
+    fb.login.mockRejectedValueOnce({ code: 'auth/popup-closed-by-user' });
+    const { result } = renderHook(() => useAuth());
+    await act(async () => { await result.current.login('google'); });
+    expect(result.current.loginError).toMatch(/window was closed/i);
+    expect(result.current.loginError).toMatch(/use GitHub/);
+    expect(result.current.pendingProvider).toBeNull();
+    expect(window.localStorage.getItem('lastAuthProvider')).toBeNull();
+  });
+
+  it('generic failure names the other provider', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    fb.login.mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(() => useAuth());
+    await act(async () => { await result.current.login('github'); });
+    expect(result.current.loginError).toBe("Couldn't sign in. Try again or use Google.");
+  });
+
+  it('a new attempt clears the previous error', async () => {
+    fb.login.mockRejectedValueOnce({ code: 'auth/popup-closed-by-user' });
+    const { result } = renderHook(() => useAuth());
+    await act(async () => { await result.current.login('google'); });
+    expect(result.current.loginError).not.toBeNull();
+    const d = deferred();
+    fb.login.mockReturnValueOnce(d.promise);
+    let done!: Promise<void>;
+    act(() => { done = result.current.login('google'); });
+    expect(result.current.loginError).toBeNull();
+    await act(async () => { d.resolve(); await done; });
+  });
+
+  it('lastProvider: reads the stored id, ignores unsupported old values, updates after success', async () => {
+    window.localStorage.setItem('lastAuthProvider', JSON.stringify('facebook'));
+    const { result } = renderHook(() => useAuth());
+    await act(async () => {});
+    expect(result.current.lastProvider).toBeNull();
+    await act(async () => { await result.current.login('github'); });
+    expect(result.current.lastProvider).toBe('github');
+
+    window.localStorage.setItem('lastAuthProvider', JSON.stringify('google'));
+    const second = renderHook(() => useAuth());
+    await act(async () => {});
+    expect(second.result.current.lastProvider).toBe('google');
+  });
+
+  it('unmount while the provider window is open: settles without rejection', async () => {
+    const d = deferred();
+    fb.login.mockReturnValueOnce(d.promise);
+    const { result, unmount } = renderHook(() => useAuth());
+    let done!: Promise<void>;
+    act(() => { done = result.current.login('google'); });
+    unmount();
+    d.reject(new Error('late'));
+    await expect(done).resolves.toBeUndefined();
   });
 });
