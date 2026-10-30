@@ -39,7 +39,8 @@ export type BootResult =
  *  1. shareToken + idParam  → getSharedItem (read-only); error → 'share-error'
  *     (NOT 'new' — a dead share link must surface ShareErrorNotice, never silently
  *      fall back to a blank diagram. An ?id= miss in branch 2 still → 'new'.)
- *  2. idParam only          → getItem;       error → 'new'
+ *  2. idParam only          → getItem;       error → last-code draft with this id
+ *                              (preserveLastCode only) → 'lastcode', else → 'new'
  *  3. preserveLastCode      → getLastCode(); non-empty .js → 'lastcode', else → 'new'
  *  4. else                  → 'new'
  */
@@ -91,6 +92,17 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
       const item = await getItem(idParam);
       return { kind: 'item', item };
     } catch {
+      // A never-saved diagram (e.g. a blank one from New) exists only in the local
+      // last-code slot. If that draft IS this ?id=, restore it — even when blank —
+      // instead of swapping in the sample under a different id.
+      if (preserveLastCode) {
+        try {
+          const draft = await getLastCode();
+          if (draft && draft.id === idParam) return { kind: 'lastcode', item: draft };
+        } catch {
+          // fall through
+        }
+      }
       return { kind: 'new' };
     }
   }

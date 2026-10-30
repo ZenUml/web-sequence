@@ -128,32 +128,22 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
 
-/** Start a NEW blank diagram in the editor (header menu → New).
+/** Start a NEW blank diagram in the editor (toolbar New).
  *
- * Determinism guards (LIB-4 flake fix): a prior signed-out Save can leave the
+ * Determinism guard (LIB-4 flake fix): a prior signed-out Save can leave the
  * "Saved on this device" notice (a Radix Dialog with a fixed inset-0 overlay) on
- * screen; its overlay intercepts the header-menu click and the whole open/click
- * dance times out (~30s). So (1) first ensure that notice is fully dismissed and
- * its overlay hidden, then (2) after opening the header menu, WAIT for the Radix
- * dropdown's "New" item to actually be visible before clicking it — clicking
- * header-new blindly races the dropdown's open animation. */
+ * screen; its overlay intercepts the New click. So first ensure that notice is
+ * fully dismissed and its overlay hidden. */
 async function newInEditor(page) {
-  // (1) Make sure no leftover "Saved on this device" notice overlay can swallow
-  // the menu click; wait for its cancel button (and thus the overlay) to be gone.
   await dismissSaveNoticeIfPresent(page);
   const saveNoticeCancel = page.locator('[data-testid="confirm-cancel"]');
   await expect(saveNoticeCancel).toBeHidden();
 
-  // (2) Open the header menu and gate on the "New" item being visible before click.
-  await page.locator('[data-testid="header-menu"]').click();
-  const newItem = page.locator('[data-testid="header-new"]');
-  await expect(newItem).toBeVisible();
-  await newItem.click();
+  await page.locator('[data-testid="header-new"]').click();
   await expect(editorLocator(page)).toBeVisible();
 }
 

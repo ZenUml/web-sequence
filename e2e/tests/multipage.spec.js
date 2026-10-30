@@ -234,10 +234,9 @@ test('PG-4: renaming a page marks the item dirty so Save persists the new title'
     UNIQUE_TITLE,
   );
 
-  // Trigger Save (header menu → Save). Because the rename marked the item dirty,
+  // Trigger Save (⌘S). Because the rename marked the item dirty,
   // Save writes the current item — including the renamed page — to localStorage.
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   // First signed-out Save pops the one-time "Saved on this device" notice; dismiss it.
   const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
   if (await noticeCancel.isVisible().catch(() => false)) {

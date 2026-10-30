@@ -119,13 +119,12 @@ test('reload persistence: typed DSL is restored when the editor URL reloads', as
   // Confirm the text landed in the editor before triggering the reload.
   await expect(editorLocator(page)).toContainText(UNIQUE_PARTICIPANT);
 
-  // Save the diagram (signed-out). Save lives inside the header-menu dropdown; the
+  // Save the diagram (signed-out). Manual save is ⌘S; the
   // FIRST signed-out save opens the one-time "Saved on this device" notice (fresh
   // slate → loginAndSaveMessageSeen is false, so it shows with certainty) — dismiss
   // it. This guards the Save path; the reload restore itself rides on the last-code
   // slot below (bare '/' boot reads 'code', not an item id).
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
   await expect(noticeCancel).toBeVisible();
   await noticeCancel.click();
@@ -217,9 +216,9 @@ test('multi-page: each page stores its own DSL independently', async ({
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Test 3: "New" resets to the default starter DSL
+// Test 3: toolbar "New" opens a blank diagram
 // ──────────────────────────────────────────────────────────────────────────────
-test('header-new: clicking New resets editor to the default starter DSL', async ({
+test('header-new: clicking New opens a blank diagram', async ({
   page,
 }) => {
   page.on('pageerror', (err) => {
@@ -229,24 +228,22 @@ test('header-new: clicking New resets editor to the default starter DSL', async 
 
   await gotoFresh(page);
 
-  // Type content that is distinctly NOT the starter so New has something to replace.
+  // Type content that is distinctly NOT blank so New has something to replace.
   const CUSTOM_DSL =
     'CustomActor\nOtherActor\nCustomActor->OtherActor: CustomMessage';
   await typeDsl(page, CUSTOM_DSL);
   await expect(editorLocator(page)).toContainText('CustomActor');
 
-  // Open the app menu then click "New" (New lives inside the header-menu dropdown).
-  await page.locator('[data-testid="header-menu"]').click();
+  // New is the primary toolbar button (the logo app menu is gone).
   await page.locator('[data-testid="header-new"]').click();
 
   // #8: with unsaved edits, New first asks to confirm discarding them. Confirm the
   // discard so New proceeds (a clean diagram would skip this dialog entirely).
   await page.locator('[data-testid="confirm-ok"]').click();
 
-  // After New, the editor should show the default starter DSL, not our custom content.
-  // DEFAULT_STARTER.js = 'Alice -> Bob: Hello\nBob -> Alice: Hi back' (editorStore.ts)
-  await expect(editorLocator(page)).toContainText(STARTER_DSL_FRAGMENT, {
-    timeout: 10_000,
-  });
+  // After New, the editor holds a blank Untitled diagram (same as the hub's New
+  // diagram), not our custom content.
+  await expect(page.locator('[data-testid="header-title"]')).toHaveValue('Untitled');
+  await expect.poll(async () => (await editorLocator(page).innerText()).trim(), { timeout: 10_000 }).toBe('');
   await expect(editorLocator(page)).not.toContainText('CustomActor');
 });

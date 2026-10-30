@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS, type Settings } from '../domain/types';
+import { readStoredAppearance } from '../app/appearance';
 
 const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 
@@ -37,7 +38,9 @@ function applyKeys(base: Settings, partial: Partial<Settings>, skip?: Set<keyof 
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
-  settings: DEFAULT_SETTINGS,
+  // Appearance starts from the same stored value main.tsx applied before first
+  // paint, so AppRoot's appearance effect does not flash light for dark users.
+  settings: { ...DEFAULT_SETTINGS, appearance: readStoredAppearance() },
   cloudKeys: new Set<keyof Settings>(),
   userKeys: new Set<keyof Settings>(),
   merge: (partial) => set((s) => {

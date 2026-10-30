@@ -2,6 +2,8 @@ import {
   LRLanguage,
   LanguageSupport,
   delimitedIndent,
+  foldInside,
+  foldNodeProp,
   indentNodeProp,
   type StreamParser,
 } from '@codemirror/language'
@@ -127,9 +129,16 @@ const zenumlIndentation = indentNodeProp.add({
   GroupBraceBlock: delimitedIndent({ closing: '}' }),
 })
 
+// Folding: the fold gutter folds the inside of the same two brace blocks, leaving
+// the opening line and the closing `}` visible.
+const zenumlFolding = foldNodeProp.add({
+  StatementBraceBlock: foldInside,
+  GroupBraceBlock: foldInside,
+})
+
 export const zenumlLanguage = LRLanguage.define({
   name: 'zenuml',
-  parser: parser.configure({ props: [zenumlHighlighting, zenumlIndentation] }),
+  parser: parser.configure({ props: [zenumlHighlighting, zenumlIndentation, zenumlFolding] }),
   languageData: {
     commentTokens: { line: '//' },
     // CodeMirror's closeBrackets extension (enabled by basicSetup) reads this

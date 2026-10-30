@@ -281,29 +281,127 @@ describe('AppRoot', () => {
     expect(useUiStore.getState().fullscreen).toBe(true);
   });
 
-  it('mounts document controls in the preview slot and hides that slot in fullscreen', async () => {
-    const { container, getByTestId } = render(<AppRoot />);
-    const slot = await screen.findByTestId('editor-document-chrome-slot');
-    await waitFor(() => expect(slot.querySelector('[data-testid="editor-document-chrome"]')).toBeTruthy());
-    expect(slot.querySelector('[data-testid="header-title"]')).toBeTruthy();
+  it('renders document controls in the app header, not inside the preview card', async () => {
+    const { container } = render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const header = container.querySelector('header')!;
+    expect(header.querySelector('[data-testid="header-title"]')).toBeTruthy();
+    expect(header.querySelector('[data-testid="header-fork"]')).toBeTruthy();
+    expect(header.querySelector('[data-testid="header-present"]')).toBeTruthy();
+    expect(screen.queryByTestId('editor-document-chrome-slot')).toBeNull();
     expect(container.querySelectorAll('[data-testid="header-title"]')).toHaveLength(1);
+    // Present lives only in the header (no duplicate renderer Present).
+    expect(screen.queryByTestId('renderer-present')).toBeNull();
+  });
 
-    await userEvent.click(getByTestId('header-present'));
-    expect(slot).toHaveClass('editor-document-chrome-slot--hidden');
-    expect(slot).toHaveAttribute('aria-hidden', 'true');
+  it('appearance toggle applies immediately and persists via the settings path', async () => {
+    const syncSet = vi.spyOn(syncStore, 'set');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await userEvent.click(screen.getByTestId('header-appearance'));
+    await waitFor(() => expect(document.documentElement.dataset.appearance).toBe('dark'));
+    expect(syncSet).toHaveBeenCalledWith('appearance', 'dark');
+    await userEvent.click(screen.getByTestId('header-appearance'));
+    await waitFor(() => expect(document.documentElement.dataset.appearance).toBe('light'));
+    expect(syncSet).toHaveBeenCalledWith('appearance', 'light');
+    syncSet.mockRestore();
+  });
+
+  it('sidebar toggle hides and restores the code pane', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const region = screen.getByTestId('editor-region');
+    expect(region).not.toHaveAttribute('hidden');
+    await userEvent.click(screen.getByTestId('header-toggle-editor'));
+    expect(screen.getByTestId('editor-region')).toHaveAttribute('hidden');
+    expect(screen.getByTestId('header-toggle-editor')).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(screen.getByTestId('header-toggle-editor'));
+    expect(screen.getByTestId('editor-region')).not.toHaveAttribute('hidden');
+  });
+
+  it('renders Report a bug inline in the code column, beside Custom CSS', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const bug = screen.getByTestId('report-bug-fab');
+    expect(screen.getByTestId('editor-region')).toContainElement(bug);
+    expect(bug.closest('.editor-css-panel-strip')).toBeTruthy();
   });
 
   it('renders the AppHeader with title input + save-state indicator', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
-    // Save retired into the app menu; the passive save-state indicator + the app
-    // menu trigger are the header's new persistent affordances.
+    // The passive save-state indicator + the New toolbar button are the header's
+    // persistent affordances; the logo no longer opens an app menu.
     expect(screen.getByTestId('header-savestate')).toBeInTheDocument();
-    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
+    expect(screen.getByTestId('header-new')).toBeInTheDocument();
+    expect(screen.queryByTestId('header-menu')).toBeNull();
   });
 
-  // The Save button is gone; ⌘S is the advertised manual-save accelerator (app menu
-  // shows the ⌘S hint). It must actually save, not fall through to the browser.
+  // Toolbar New opens a BLANK diagram (same as the hub's New diagram): a new id in
+  // the URL, empty DSL, and the previous document left untouched.
+  it('header New opens a blank Untitled diagram with its own id in the URL', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const before = useEditorStore.getState().currentItem!;
+    expect(before.js).not.toBe('');
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(before.id));
+    const fresh = useEditorStore.getState().currentItem!;
+    expect(fresh.js).toBe('');
+    expect(fresh.css).toBe('');
+    expect(fresh.title).toBe('Untitled');
+    expect(fresh.isReadOnly).toBeFalsy();
+    await waitFor(() => expect(new URLSearchParams(window.location.search).get('id')).toBe(fresh.id));
+  });
+
+  // The new diagram is not the shared/seeded one: New must drop ?share-token=,
+  // ?code= and ?title=, or a reload would look the new id up as a share or
+  // re-seed the old code.
+  it('header New drops share-token / code / title from the URL', async () => {
+    window.history.replaceState({}, '', '/?code=A.b()&title=Seeded');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await userEvent.click(screen.getByTestId('header-new'));
+    const confirm = screen.queryByTestId('confirm-ok');
+    if (confirm) await userEvent.click(confirm);
+    await waitFor(() => expect(new URLSearchParams(window.location.search).get('id')).toBe(useEditorStore.getState().currentItem?.id));
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('code')).toBeNull();
+    expect(params.get('title')).toBeNull();
+    expect(params.get('share-token')).toBeNull();
+  });
+
+  // A metadata-only edit (rename) is dirty with unsavedCount 0. New must still ask
+  // before discarding it, like the save indicator reports "Unsaved".
+  it('header New asks before discarding a dirty rename; Keep editing keeps the document', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    act(() => { useEditorStore.getState().setTitle('Renamed'); });
+    const before = useEditorStore.getState().currentItem!;
+    expect(useEditorStore.getState().unsavedCount).toBe(0);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(await screen.findByTestId('confirm-cancel'));
+    expect(useEditorStore.getState().currentItem?.id).toBe(before.id);
+    expect(useEditorStore.getState().currentItem?.title).toBe('Renamed');
+  });
+
+  // Help moved from the logo menu to the code-column footer, between Custom CSS
+  // and Report a bug, and opens the existing Help dialog.
+  it('footer Help sits between Custom CSS and Report a bug and opens Help', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const help = screen.getByTestId('footer-help');
+    const footer = help.closest('.editor-css-panel-strip')!;
+    expect(footer).toBeTruthy();
+    const order = Array.from(footer.querySelectorAll('button')).map((b) => b.getAttribute('data-testid'));
+    expect(order).toEqual(['css-panel-strip', 'footer-help', 'report-bug-fab']);
+    expect(help).toHaveAccessibleName('Help');
+    await userEvent.click(help);
+    expect(await screen.findByTestId('help-modal')).toBeInTheDocument();
+  });
+
+  // ⌘S is the manual-save accelerator (auto-save covers the rest). It must
+  // actually save, not fall through to the browser.
   it('Cmd/Ctrl+S triggers a save', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
@@ -444,11 +542,9 @@ describe('AppRoot — M04 save-seam plan limit', () => {
   }
 
   async function clickSave() {
-    // Save retired from a top-level button into the app menu (logo ▾). Manual save
-    // now: open the app menu, click its Save item.
+    // Manual save is the ⌘S accelerator (the logo app menu and its Save item are gone).
     await act(async () => {
-      await userEvent.click(screen.getByTestId('header-menu'));
-      await userEvent.click(await screen.findByTestId('header-save'));
+      await userEvent.keyboard('{Meta>}s{/Meta}');
     });
   }
 
@@ -614,6 +710,59 @@ describe('AppRoot — M04 custom-CSS Plus gate', () => {
     expect(store.getState().currentItem?.css).toBe(before);
     expect(useUiStore.getState().loginModalOpen).toBe(true);
     expect(useUiStore.getState().activeModal).not.toBe('pricing');
+  });
+
+  // While the plan is still loading the CSS gate used to fail OPEN, so a free user who
+  // edited CSS (or picked SCSS) in the first moment after sign-in got the Plus-only
+  // change applied and saved. It must wait instead: no change, and no pricing modal
+  // (a Plus user mid-load must not be shown pricing either).
+  it('subscription still LOADING → CSS edit is held back, no modal (mode change: cloud CSS-5)', async () => {
+    subSvc.retrieveSubscription.mockReturnValue(new Promise(() => {}) as Promise<null>);
+    const { useEditorStore: store } = await import('../state/editorStore');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    const before = store.getState().currentItem?.css ?? '';
+    const beforeMode = store.getState().currentItem?.cssMode;
+    await expandCss();
+    const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cmContent);
+      await userEvent.keyboard('q');
+    });
+    expect(store.getState().currentItem?.css).toBe(before);
+    expect(cmContent.textContent).toBe(before);
+    expect(useUiStore.getState().activeModal).not.toBe('pricing');
+    expect(useUiStore.getState().loginModalOpen).toBe(false);
+    expect(store.getState().currentItem?.cssMode).toBe(beforeMode);
+  });
+
+  it('held-back CSS edit → plan resolves FREE → pricing opens then; CSS still unchanged', async () => {
+    let resolveSub: (s: null) => void = () => {};
+    subSvc.retrieveSubscription.mockReturnValue(new Promise<null>((r) => { resolveSub = r; }));
+    const { useEditorStore: store } = await import('../state/editorStore');
+    const { useUiStore } = await import('../state/uiStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
+    const before = store.getState().currentItem?.css ?? '';
+    await expandCss();
+    const cmContent = screen.getByTestId('css-editor').querySelector('.cm-content') as HTMLElement;
+    await act(async () => {
+      await userEvent.click(cmContent);
+      await userEvent.keyboard('q');
+    });
+    expect(useUiStore.getState().activeModal).not.toBe('pricing');
+    await act(async () => { resolveSub(null); });
+    await waitFor(() => expect(useUiStore.getState().activeModal).toBe('pricing'));
+    expect(store.getState().currentItem?.css).toBe(before);
   });
 
   // DISCRIMINATING: a Plus user edits CSS freely (no gate). retrieveSubscription
@@ -925,8 +1074,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     });
     await waitFor(() => expect(subSvc.retrieveSubscription).toHaveBeenCalledWith('u1'));
     await act(async () => {
-      await userEvent.click(screen.getByTestId('header-menu'));
-      await userEvent.click(await screen.findByTestId('header-save'));
+      await userEvent.keyboard('{Meta>}s{/Meta}');
     });
     await waitFor(() => expect(screen.queryByTestId('limit-notice')).toBeInTheDocument());
     const env = lastEnvelope('Free Limit');
@@ -1211,7 +1359,7 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
 // M05 — embed mode (RM-2 / REQ-EMB-1).
 //
 // DISCRIMINATING-TESTID CONTRACT (verified against the code): AppHeader exposes
-// `header-title`/`header-menu`/`header-savestate` and Layout exposes `editor-region`
+// `header-title`/`header-new`/`header-savestate` and Layout exposes `editor-region`
 // — these are PRESENT in normal editor mode (the CONTROL test pins them), so their
 // ABSENCE in embed is a genuine revert→fail signal (there is no `app-header` /
 // bare `editor` id that would pass vacuously). The Sidebar icon rail this contract
@@ -1228,7 +1376,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     window.history.replaceState({}, '', '/?id=t-boot');
     render(<AppRoot />);
     expect(await screen.findByTestId('header-title')).toBeInTheDocument();
-    expect(screen.getByTestId('header-menu')).toBeInTheDocument();
+    expect(screen.getByTestId('header-new')).toBeInTheDocument();
     // f023f89 ("feat(hub): no-rail layout…") removed the Sidebar icon rail app-wide,
     // so the old `sidebar-*` presence check could only fail. The normal-vs-embed
     // chrome contrast is re-grounded on `editor-region` (Layout.tsx): the split-pane
@@ -1246,7 +1394,7 @@ describe('AppRoot — embed mode (RM-2 / REQ-EMB-1)', () => {
     expect(await screen.findByTestId('embed-header')).toBeInTheDocument();
     // DISCRIMINATING absence (these ids EXIST in normal mode per the control above):
     expect(screen.queryByTestId('header-title')).toBeNull();
-    expect(screen.queryByTestId('header-menu')).toBeNull();
+    expect(screen.queryByTestId('header-new')).toBeNull();
     // f023f89 removed the Sidebar rail app-wide, making the old `sidebar-*` absence
     // check vacuously true; `editor-region` (pinned present by the control) is the
     // current chrome element the embed branch genuinely suppresses.

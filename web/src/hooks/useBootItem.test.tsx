@@ -89,6 +89,43 @@ describe('resolveBootItem (pure resolver)', () => {
     expect(result.kind).toBe('new');
   });
 
+  // New lifecycle: a never-saved blank diagram (New) lives only in the last-code
+  // slot. Reloading its ?id= must restore THAT draft — blank title/DSL/CSS and the
+  // same id — instead of replacing it with the default sample under a new id.
+  it('restores the unsaved last-code draft when the ?id= miss matches its id, even if blank', async () => {
+    const draft = makeItem({ id: 'blank-1', title: 'Untitled', js: '', css: '' });
+    const deps = makeBaseDeps({
+      idParam: 'blank-1',
+      preserveLastCode: true,
+      getItem: vi.fn(async () => { throw new Error('Item not found'); }),
+      getLastCode: vi.fn(async () => draft),
+    });
+    const result = await resolveBootItem(deps);
+    expect(result).toEqual({ kind: 'lastcode', item: draft });
+  });
+
+  it('still falls through to new on an ?id= miss when the last-code draft has another id', async () => {
+    const deps = makeBaseDeps({
+      idParam: 'blank-1',
+      preserveLastCode: true,
+      getItem: vi.fn(async () => { throw new Error('Item not found'); }),
+      getLastCode: vi.fn(async () => makeItem({ id: 'other', js: '' })),
+    });
+    expect((await resolveBootItem(deps)).kind).toBe('new');
+  });
+
+  it('does not read the last-code draft on an ?id= miss when preserveLastCode is off', async () => {
+    const getLastCode = vi.fn(async () => makeItem({ id: 'blank-1', js: '' }));
+    const deps = makeBaseDeps({
+      idParam: 'blank-1',
+      preserveLastCode: false,
+      getItem: vi.fn(async () => { throw new Error('Item not found'); }),
+      getLastCode,
+    });
+    expect((await resolveBootItem(deps)).kind).toBe('new');
+    expect(getLastCode).not.toHaveBeenCalled();
+  });
+
   // Branch 3: preserveLastCode + getLastCode returns item with non-empty js
   it('returns lastcode when preserveLastCode is true and last code has js content', async () => {
     const savedItem = makeItem({ id: 'code', title: 'Saved', js: 'A.message' });

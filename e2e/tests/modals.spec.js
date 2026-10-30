@@ -31,17 +31,14 @@ async function gotoFresh(page) {
   await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // Hub (PRs #800/#801): '/' renders the HomeView library; all the modal triggers
-  // these tests drive live in the EDITOR's header menu — click through the hub's
-  // New CTA to reach it.
+  // Hub (PRs #800/#801): click through the hub's New CTA to reach the editor,
+  // where these modal triggers live.
   await openEditor(page);
 }
 
-/** Open an item in the header overflow menu by its trigger testid. */
-async function openViaHeaderMenu(page, triggerTestId) {
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator(`[data-testid="${triggerTestId}"]`).click();
-}
+// The logo app menu is gone. Settings has no other trigger until the Code
+// appearance control lands, so the Settings case is skipped with this reason.
+const SETTINGS_TRIGGER_PENDING = 'Settings has no trigger in this checkout: the logo menu entry was removed and the Code appearance control (separate task) has not landed yet';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => { if (!isThirdPartyError(err)) throw err; });
@@ -51,8 +48,8 @@ test.beforeEach(async ({ page }) => {
 // Test 1: Settings modal opens, a Select setting changes, Escape closes it.
 // ──────────────────────────────────────────────────────────────────────────────
 test('Settings modal: change font size and close on Escape', async ({ page }) => {
+  test.skip(true, SETTINGS_TRIGGER_PENDING);
   await gotoFresh(page);
-  await openViaHeaderMenu(page, 'header-settings');
 
   const modal = page.locator('[data-testid="settings-modal"]');
   await expect(modal).toBeVisible();
@@ -73,7 +70,9 @@ test('Settings modal: change font size and close on Escape', async ({ page }) =>
 // ──────────────────────────────────────────────────────────────────────────────
 test('Create-New modal: selecting a template loads its DSL into the editor', async ({ page }) => {
   await gotoFresh(page);
-  await openViaHeaderMenu(page, 'header-create-new');
+  // Templates are picked from the Diagrams hub (the editor's New is blank-only).
+  await page.goto('/?view=diagrams');
+  await page.locator('[data-testid="home-empty-templates"]').click();
 
   const modal = page.locator('[data-testid="create-new-modal"]');
   await expect(modal).toBeVisible();
@@ -90,43 +89,28 @@ test('Create-New modal: selecting a template loads its DSL into the editor', asy
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Test 3: Cheat-Sheet + Keyboard-Shortcuts + Help modals render their content.
+// Test 3: Keyboard-Shortcuts + Help modals render their content.
 // ──────────────────────────────────────────────────────────────────────────────
-test('Help modal opens from the header menu and shows the version', async ({ page }) => {
+test('Help modal opens from the code-column footer and shows the version', async ({ page }) => {
   await gotoFresh(page);
-  await openViaHeaderMenu(page, 'header-help');
+  await page.locator('[data-testid="footer-help"]').click();
   await expect(page.locator('[data-testid="help-modal"]')).toBeVisible();
   await expect(page.locator('[data-testid="help-version"]')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-testid="help-modal"]')).toBeHidden();
 });
 
-test('Cheat-Sheet modal opens from the header menu and shows DSL examples', async ({ page }) => {
-  await gotoFresh(page);
-  await openViaHeaderMenu(page, 'header-cheatsheet');
-  const modal = page.locator('[data-testid="cheatsheet-modal"]');
-  await expect(modal).toBeVisible();
-  // The cheat sheet shows the async-message DSL example.
-  await expect(modal).toContainText('->');
-  await page.keyboard.press('Escape');
-  await expect(modal).toBeHidden();
-});
-
-test('Keyboard-Shortcuts modal opens via the header menu AND via Ctrl/Cmd+Shift+?', async ({ page }) => {
+test('Keyboard-Shortcuts modal opens via Ctrl/Cmd+Shift+?', async ({ page }) => {
   await gotoFresh(page);
 
-  // Via the header overflow menu.
-  await openViaHeaderMenu(page, 'header-shortcuts');
+  // REQ-KB-1: the keybinding opens it ('?' is Shift+'/'); the menu entry is gone.
   const modal = page.locator('[data-testid="shortcuts-modal"]');
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${mod}+Shift+?`);
   await expect(modal).toBeVisible();
   await expect(modal).toContainText('Ctrl');
   await page.keyboard.press('Escape');
   await expect(modal).toBeHidden();
-
-  // REQ-KB-1: the keybinding itself opens it. '?' is Shift+'/'.
-  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
-  await page.keyboard.press(`${mod}+Shift+?`);
-  await expect(modal).toBeVisible();
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -134,7 +118,9 @@ test('Keyboard-Shortcuts modal opens via the header menu AND via Ctrl/Cmd+Shift+
 // ──────────────────────────────────────────────────────────────────────────────
 test('Pricing modal: open and toggle monthly/yearly', async ({ page }) => {
   await gotoFresh(page);
-  await openViaHeaderMenu(page, 'header-pricing');
+  // Signed out: Pricing is the small link inside the Sign in dialog.
+  await page.locator('[data-testid="header-login"]').click();
+  await page.locator('[data-testid="login-pricing"]').click();
 
   const modal = page.locator('[data-testid="pricing-modal"]');
   await expect(modal).toBeVisible();

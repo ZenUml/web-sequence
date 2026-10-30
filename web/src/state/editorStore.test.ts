@@ -55,7 +55,7 @@ describe('editorStore', () => {
     expect(it.pages.length).toBe(1);
     expect(useEditorStore.getState().unsavedCount).toBe(0);
     expect(it.js).toBe(DEFAULT_STARTER.js);
-    expect(it.mainSizes).toEqual([26.7, 73.3]);
+    expect(it.mainSizes).toEqual([26.8056, 73.1944]);
   });
   it('renamePage updates the page title, marks dirty, and does not increment unsavedCount', () => {
     useEditorStore.getState().loadItem(sample());

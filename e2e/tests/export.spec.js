@@ -121,8 +121,7 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
 

@@ -1,4 +1,5 @@
 import type { Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { createTheme } from '@uiw/codemirror-themes';
 import { tags as t } from '@lezer/highlight';
 import { monokai } from '@uiw/codemirror-theme-monokai';
@@ -14,56 +15,64 @@ export interface ThemeDef {
 
 // "Ink" / drafting theme — the default editor surface for the rewrite.
 //
-// The editor shell is the warm paper/teal D direction. The stored id remains
-// `ink` for backwards compatibility with existing settings; an explicit user
-// choice of another theme still resolves to that theme unchanged. Keeping the
-// id stable means returning users do not get a dead or silently-migrated setting.
+// The stored id remains `ink` for backwards compatibility with existing settings;
+// an explicit user choice of another theme still resolves to that theme unchanged.
 //
-// Hex literals (not Tailwind token names) are required by `createTheme`, and
-// editor *mechanics* are explicitly out of the design system's "no raw hex"
-// scope. These values match the light teal editor chrome.
-// The foregrounds below are tuned for the D surface (#EDF4EF): a deep teal ink
-// for identifiers, a readable teal accent for keywords/calls, and a softened
-// line-number colour that stays legible without competing with the source.
-const ink = createTheme({
+// Ink is the app's own theme, so its palette is read from the `--code-*` CSS
+// variables defined in globals.css. Those variables follow the global light/dark
+// appearance (<html data-appearance>), keeping the code area on the same
+// continuous base surface as the editor shell in both appearances. The other
+// themes keep their fixed palettes.
+const inkSyntax = createTheme({
   theme: 'light',
   settings: {
-    background: '#EDF4EF',
-    foreground: '#2B514A',
-    caret: '#12816F',
-    selection: 'rgba(18,129,111,0.16)',
-    selectionMatch: 'rgba(18,129,111,0.10)',
-    lineHighlight: 'rgba(18,129,111,0.06)',
-    gutterBackground: '#EDF4EF',
-    gutterForeground: '#5C6E61',
+    background: 'var(--code-bg)',
+    foreground: 'var(--code-fg)',
+    caret: 'var(--code-caret)',
+    selection: 'var(--code-selection)',
+    selectionMatch: 'var(--code-selection-match)',
+    lineHighlight: 'var(--code-line-highlight)',
+    gutterBackground: 'var(--code-gutter-bg)',
+    gutterForeground: 'var(--code-muted)',
     gutterBorder: 'transparent',
   },
   styles: [
-    { tag: t.comment, color: '#5C6E61', fontStyle: 'italic' },
-    { tag: t.lineComment, color: '#5C6E61', fontStyle: 'italic' },
-    { tag: t.keyword, color: '#0E7768' },
-    { tag: t.controlKeyword, color: '#0E7768' },
-    { tag: t.moduleKeyword, color: '#0E7768' },
-    { tag: [t.string, t.special(t.string)], color: '#2E806D' },
-    { tag: t.number, color: '#2B514A' },
-    { tag: [t.bool, t.null], color: '#0E7768' },
-    // Teal for call-like names. The ZenUML DSL LRLanguage maps
-    // `MethodName/Identifier → t.function(t.variableName)` (zenumlLanguage.ts), so
-    // DSL method calls now reach this teal style — the old StreamLanguage emitted a
-    // bare "function" modifier string that resolved to nothing. These styles also
-    // apply in the CSS editor (@codemirror/lang-css), which emits real function tags.
-    { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#12816F' },
-    { tag: t.variableName, color: '#2B514A' },
-    { tag: t.propertyName, color: '#2B514A' },
-    { tag: t.typeName, color: '#2B514A' },
-    { tag: t.className, color: '#2B514A' },
-    { tag: t.operator, color: '#5C6E61' },
-    { tag: [t.punctuation, t.separator, t.bracket], color: '#5C6E61' },
-    // ZenUML annotations use the same teal accent as keywords.
-    { tag: t.meta, color: '#0E7768' },
-    { tag: t.invalid, color: '#B23A33' },
+    { tag: t.comment, color: 'var(--code-muted)', fontStyle: 'italic' },
+    { tag: t.lineComment, color: 'var(--code-muted)', fontStyle: 'italic' },
+    { tag: t.keyword, color: 'var(--code-keyword)' },
+    { tag: t.controlKeyword, color: 'var(--code-keyword)' },
+    { tag: t.moduleKeyword, color: 'var(--code-keyword)' },
+    { tag: [t.string, t.special(t.string)], color: 'var(--code-string)' },
+    { tag: t.number, color: 'var(--code-fg)' },
+    { tag: [t.bool, t.null], color: 'var(--code-keyword)' },
+    // Call-like names. The ZenUML DSL LRLanguage maps
+    // `MethodName/Identifier → t.function(t.variableName)` (zenumlLanguage.ts).
+    // These styles also apply in the CSS editor (@codemirror/lang-css).
+    { tag: [t.function(t.variableName), t.function(t.propertyName)], color: 'var(--code-function)' },
+    { tag: t.variableName, color: 'var(--code-fg)' },
+    { tag: t.propertyName, color: 'var(--code-fg)' },
+    { tag: t.typeName, color: 'var(--code-fg)' },
+    { tag: t.className, color: 'var(--code-fg)' },
+    { tag: t.operator, color: 'var(--code-muted)' },
+    { tag: [t.punctuation, t.separator, t.bracket], color: 'var(--code-muted)' },
+    // ZenUML annotations use the same accent as keywords.
+    { tag: t.meta, color: 'var(--code-keyword)' },
+    { tag: t.invalid, color: 'var(--code-invalid)' },
   ],
 });
+
+// Ink declares itself `light`, so CodeMirror's base tooltip stays #f5f5f5 while the
+// text follows --code-fg; in dark appearance lint/autocomplete tooltips became
+// light-on-light. Tooltips take the appearance-aware surface tokens instead.
+const inkTooltips = EditorView.theme({
+  '.cm-tooltip': {
+    backgroundColor: 'var(--editor-surface)',
+    color: 'var(--code-fg)',
+    border: '1px solid var(--editor-border)',
+  },
+});
+
+const ink: Extension = [inkSyntax, inkTooltips];
 
 export const THEMES: ThemeDef[] = [
   { id: 'ink', label: 'Ink', extension: ink },

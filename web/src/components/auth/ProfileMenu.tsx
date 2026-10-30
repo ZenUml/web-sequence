@@ -13,6 +13,11 @@ export interface ProfileMenuProps {
   paymentEnabled?: boolean;
   onUpgrade?(): void;
   onManagePlan?(): void;
+  // Opens the informational plans dialog (not checkout). Payment-gated like the
+  // billing items.
+  onOpenPricing?(): void;
+  // Extra class for the menu surface (the editor passes its themed menu class).
+  menuClassName?: string;
 }
 
 function Avatar({ user }: { user: AppUser }) {
@@ -41,6 +46,8 @@ export function ProfileMenu({
   paymentEnabled = false,
   onUpgrade,
   onManagePlan,
+  onOpenPricing,
+  menuClassName,
 }: ProfileMenuProps) {
   // REQ-AC-3: displayName fallback to "Anonymous Creator" when absent.
   const displayName = user.displayName ?? 'Anonymous Creator';
@@ -58,7 +65,7 @@ export function ProfileMenu({
           {subscribed && <ProBadge planType={planType} />}
         </button>
       </MenuTrigger>
-      <MenuContent>
+      <MenuContent className={menuClassName}>
         <MenuLabel>
           <span className="block text-ondark-strong">{displayName}</span>
           {user.email && (
@@ -68,6 +75,11 @@ export function ProfileMenu({
           )}
         </MenuLabel>
         <MenuSeparator />
+        {paymentEnabled && (
+          <MenuItem data-testid="profile-pricing" onSelect={() => onOpenPricing?.()}>
+            Pricing
+          </MenuItem>
+        )}
         {paymentEnabled && subscribed && (
           <MenuItem data-testid="profile-plan" onSelect={() => onManagePlan?.()}>
             My Plan ({planType})

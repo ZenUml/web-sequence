@@ -132,6 +132,35 @@ describe('ProfileMenu', () => {
     await screen.findByTestId('profile-logout');
     expect(screen.queryByTestId('profile-upgrade')).not.toBeInTheDocument();
     expect(screen.queryByTestId('profile-plan')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('profile-pricing')).not.toBeInTheDocument();
+  });
+
+  // Pricing (informational plans) moved here from the retired logo menu. It sits
+  // above the plan action and only opens the plans dialog — never checkout.
+  it('shows Pricing above the plan action and fires onOpenPricing (not onUpgrade)', async () => {
+    const onOpenPricing = vi.fn();
+    const onUpgrade = vi.fn();
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed={false} paymentEnabled onUpgrade={onUpgrade} onOpenPricing={onOpenPricing} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    const pricing = await screen.findByTestId('profile-pricing');
+    expect(pricing).toHaveTextContent('Pricing');
+    const ids = Array.from(document.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute('data-testid'));
+    expect(ids).toEqual(['profile-pricing', 'profile-upgrade', 'profile-logout']);
+    fireEvent.click(pricing);
+    expect(onOpenPricing).toHaveBeenCalledTimes(1);
+    expect(onUpgrade).not.toHaveBeenCalled();
+  });
+
+  it('keeps Pricing for a subscribed user alongside My Plan', async () => {
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed planType="plus-monthly" paymentEnabled onOpenPricing={vi.fn()} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    await screen.findByTestId('profile-pricing');
+    const ids = Array.from(document.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute('data-testid'));
+    expect(ids).toEqual(['profile-pricing', 'profile-plan', 'profile-logout']);
   });
 
   it('falls back to "Anonymous Creator" when displayName is absent', async () => {

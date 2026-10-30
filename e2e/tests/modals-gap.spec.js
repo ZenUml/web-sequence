@@ -55,11 +55,6 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-/** Open an item in the header app-menu by its trigger testid. */
-async function openViaHeaderMenu(page, triggerTestId) {
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator(`[data-testid="${triggerTestId}"]`).click();
-}
 
 /** Reach the editor with a clean localStorage slate AND one-time modals suppressed. */
 async function gotoEditorSuppressed(page) {
@@ -121,32 +116,31 @@ test('MOD-1: onboarding modal shows on first run and is gone after dismiss + rel
 // MOD-3: only one modal open at a time. Opening a second modal while one is open
 // replaces it (activeModal is a single value in uiStore) — the first closes.
 //
-// We open the SECOND modal via the global Ctrl/Cmd+Shift+? shortcut rather than
-// the header menu: the first modal's Radix overlay (fixed inset-0) intercepts
-// pointer events on the header trigger, but the shortcut is a window keydown
-// listener (AppRoot) that fires regardless of the overlay — and routes through the
-// same openModal('shortcuts') the menu would, so it exercises the same invariant.
+// We open the SECOND modal via the global Ctrl/Cmd+Shift+? shortcut: the first
+// modal's Radix overlay (fixed inset-0) intercepts pointer events on the page, but
+// the shortcut is a window keydown listener (AppRoot) that fires regardless of the
+// overlay and routes through the same single-valued openModal().
 // ──────────────────────────────────────────────────────────────────────────────
 test('MOD-3: opening a second modal closes the first (single-modal invariant)', async ({
   page,
 }) => {
   await gotoEditorSuppressed(page);
 
-  // Open Settings via the header menu.
-  await openViaHeaderMenu(page, 'header-settings');
-  const settings = page.locator('[data-testid="settings-modal"]');
-  await expect(settings).toBeVisible();
+  // Open Help via the code-column footer.
+  await page.locator('[data-testid="footer-help"]').click();
+  const help = page.locator('[data-testid="help-modal"]');
+  await expect(help).toBeVisible();
 
-  // Open the Keyboard-Shortcuts modal via the global accelerator while Settings is
-  // open. activeModal is single-valued, so this must REPLACE Settings.
+  // Open the Keyboard-Shortcuts modal via the global accelerator while Help is
+  // open. activeModal is single-valued, so this must REPLACE Help.
   const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
   await page.keyboard.press(`${mod}+Shift+?`);
 
   const shortcuts = page.locator('[data-testid="shortcuts-modal"]');
   await expect(shortcuts).toBeVisible();
 
-  // The invariant: Settings is gone, exactly one modal (Shortcuts) is open.
-  await expect(settings).toHaveCount(0);
+  // The invariant: Help is gone, exactly one modal (Shortcuts) is open.
+  await expect(help).toHaveCount(0);
   await expect(shortcuts).toBeVisible();
 });
 
@@ -158,7 +152,7 @@ test('MOD-4: Help modal links carry correct hrefs + target=_blank + rel=noopener
   page,
 }) => {
   await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-help');
+  await page.locator('[data-testid="footer-help"]').click();
 
   const modal = page.locator('[data-testid="help-modal"]');
   await expect(modal).toBeVisible();
@@ -180,45 +174,6 @@ test('MOD-4: Help modal links carry correct hrefs + target=_blank + rel=noopener
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MOD-5: cheat-sheet lists the documented example rows. Assert the feature labels
-// AND their example DSL (the rows are SOURCED in CheatSheetModal.tsx, not invented).
-// ──────────────────────────────────────────────────────────────────────────────
-test('MOD-5: cheat-sheet lists the documented DSL example rows', async ({
-  page,
-}) => {
-  await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-cheatsheet');
-
-  const modal = page.locator('[data-testid="cheatsheet-modal"]');
-  await expect(modal).toBeVisible();
-
-  // Feature labels every documented row carries (CheatSheetModal.tsx ROWS).
-  for (const feature of [
-    'Participant',
-    'Message',
-    'Async message',
-    'Nested message',
-    'Self-message',
-    'Return',
-    'Instance creation',
-    'Alt (conditional)',
-    'Loop',
-    'Comment',
-  ]) {
-    await expect(modal.getByText(feature, { exact: true })).toBeVisible();
-  }
-
-  // And the example DSL for a few rows, proving the EXAMPLE column rendered too.
-  await expect(modal).toContainText('Alice->Bob: How are you?'); // async message
-  await expect(modal).toContainText('a = new A()'); // instance creation
-  await expect(modal).toContainText('while (condition)'); // loop
-  await expect(modal).toContainText('// This is a comment'); // comment
-
-  // Count the rendered rows — one <tr> per documented feature (10).
-  await expect(modal.locator('tbody tr')).toHaveCount(10);
-});
-
-// ──────────────────────────────────────────────────────────────────────────────
 // MOD-6: shortcuts modal lists the Global + Editor groups, with representative
 // bindings under each (KeyboardShortcutsModal.tsx GLOBAL / EDITOR sections).
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,7 +181,8 @@ test('MOD-6: shortcuts modal lists the Global and Editor groups with bindings', 
   page,
 }) => {
   await gotoEditorSuppressed(page);
-  await openViaHeaderMenu(page, 'header-shortcuts');
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${mod}+Shift+?`);
 
   const modal = page.locator('[data-testid="shortcuts-modal"]');
   await expect(modal).toBeVisible();

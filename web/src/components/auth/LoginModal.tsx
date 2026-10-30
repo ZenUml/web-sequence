@@ -62,9 +62,12 @@ export interface LoginModalProps {
   // OAuth error surfaced as a design-system notice (roadmap §9 carry-forward —
   // replaces the M02 console/window.alert stopgap, incl. account-exists).
   error?: string | null;
+  // Optional small "See pricing" link under the providers, so signed-out users can
+  // still find the public plans. Rendered only when wired (payment-gated by caller).
+  onOpenPricing?(): void;
 }
 
-export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }: LoginModalProps) {
+export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error, onOpenPricing }: LoginModalProps) {
   // lastProvider is persisted as the raw provider id (lowercase) but may arrive
   // display-cased from other call sites — normalize both sides before matching.
   const last = lastProvider?.toLowerCase() ?? null;
@@ -148,6 +151,18 @@ export function LoginModal({ open, onOpenChange, onLogin, lastProvider, error }:
           <div className="flex flex-col gap-2">
             {rest.map((p) => providerButton(p, false))}
           </div>
+        )}
+        {onOpenPricing && (
+          <p className="mt-4 text-center text-[12px] text-ondark-muted">
+            <button
+              type="button"
+              data-testid="login-pricing"
+              onClick={() => onOpenPricing()}
+              className="rounded underline underline-offset-2 ring-draft hover:text-ondark-strong"
+            >
+              Pricing
+            </button>
+          </p>
         )}
       </DialogContent>
     </Dialog>

@@ -146,4 +146,17 @@ describe('LoginModal', () => {
     render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} />);
     expect(screen.queryByTestId('login-error')).not.toBeInTheDocument();
   });
+
+  // Anonymous Pricing discovery: a small link in the sign-in dialog, rendered only
+  // when the caller wires onOpenPricing (payment-gated by the header).
+  it('renders the Pricing link only when onOpenPricing is provided', async () => {
+    const onOpenPricing = vi.fn();
+    const { rerender } = render(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} />);
+    expect(screen.queryByTestId('login-pricing')).not.toBeInTheDocument();
+    rerender(<LoginModal open onOpenChange={() => {}} onLogin={() => {}} onOpenPricing={onOpenPricing} />);
+    const link = screen.getByTestId('login-pricing');
+    expect(link).toHaveTextContent('Pricing');
+    await userEvent.click(link);
+    expect(onOpenPricing).toHaveBeenCalledTimes(1);
+  });
 });

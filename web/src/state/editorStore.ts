@@ -6,9 +6,10 @@ import { applyPageEdit, switchPage, addPage, deletePage, migrateToPages } from '
 // Task 12 will make AppRoot import this instead of its local constant.
 export const DEFAULT_STARTER = {
   title: 'Untitled',
-  // Match the editor Hi-Fi baseline: the preview card starts at roughly 27% of
-  // a 1440px desktop viewport while keeping the DSL pane usable.
-  mainSizes: [26.7, 73.3],
+  // Figma 32:4370 at a 1440px viewport: split.js sizes the pane as
+  // `pct% - 6px` (half the 12px split gutter), so 26.8056% gives a 380px pane:
+  // 16px padding + 352px code area + 12px, and the preview card at x392.
+  mainSizes: [26.8056, 73.1944],
   js: 'Alice -> Bob: Hello\nBob -> Alice: Hi back',
   css: '',
   html: '',

@@ -4,6 +4,7 @@
 export { cn } from './cn';
 export { Button, buttonClassName, type ButtonProps } from './Button';
 export { BrandLogo } from './BrandLogo';
+export { PlusIcon } from './PlusIcon';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { Dialog, DialogTrigger, DialogClose, DialogContent } from './Dialog';
 export { TextInput, type TextInputProps } from './TextInput';

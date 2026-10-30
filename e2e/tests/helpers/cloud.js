@@ -70,8 +70,7 @@ export async function typeDsl(page, dsl) {
   await editor.pressSequentially(dsl);
 }
 
-/** Open the app menu and click Save; the menu lives behind header-menu. */
-export async function saveViaMenu(page) {
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+/** Manual save via ⌘S (the logo app menu and its Save item are gone). */
+export async function saveViaShortcut(page) {
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
 }
