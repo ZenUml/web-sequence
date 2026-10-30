@@ -48,8 +48,17 @@ export function emit(
   }
 
   // Server path: POST /track via the non-blocking cloud-function wrapper. The
-  // body always carries anonId and app_version; caller props follow.
-  void cloudTrackEvent({ event, userId, anonId, app_version: APP_VERSION, ...props });
+  // body always carries anonId, app_version, is_authenticated and runtime; caller
+  // props follow.
+  void cloudTrackEvent({
+    event,
+    userId,
+    anonId,
+    app_version: APP_VERSION,
+    is_authenticated: userId != null,
+    runtime: isExtension ? 'extension' : 'web',
+    ...props,
+  });
 
   // Client CDN path: push to GTM/Mixpanel when their snippets are present. Skipped
   // under the extension, where the CDN scripts are never injected.

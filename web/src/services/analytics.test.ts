@@ -18,12 +18,19 @@ afterEach(() => {
 describe('analytics.emit', () => {
   it('posts to /track via cloud trackEvent with the userId + props (non-debug)', () => {
     emit('diagram_save_clicked', { category: 'ui', label: 'saved' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: false });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'ui', label: 'saved' });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, is_authenticated: true, runtime: 'web', category: 'ui', label: 'saved' });
+  });
+
+  it('adds is_authenticated and runtime to every /track body', () => {
+    emit('app_opened', {}, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: true });
+    expect(cf.trackEvent).toHaveBeenLastCalledWith(expect.objectContaining({ is_authenticated: true, runtime: 'extension' }));
+    emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false });
+    expect(cf.trackEvent).toHaveBeenLastCalledWith(expect.objectContaining({ is_authenticated: false, runtime: 'web' }));
   });
 
   it('carries userId:null plus the anonymous id for a signed-out user', () => {
     emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'app_opened', userId: null, anonId: 'anon-1', app_version: APP_VERSION });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'app_opened', userId: null, anonId: 'anon-1', app_version: APP_VERSION, is_authenticated: false, runtime: 'web' });
   });
 
   it('routes to console and does NOT POST in debug mode', () => {
@@ -59,7 +66,7 @@ describe('analytics.emit', () => {
     const track = vi.fn();
     window.mixpanel = { track };
     emit('diagram_save_clicked', { category: 'ui' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: true });
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'ui' });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'diagram_save_clicked', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, is_authenticated: true, runtime: 'extension', category: 'ui' });
     expect(window.dataLayer).toEqual([]);
     expect(track).not.toHaveBeenCalled();
   });
@@ -85,7 +92,7 @@ describe('analytics.emit', () => {
       emit('share_link_created', { category: 'share' }, { userId: 'u1', anonId: 'anon-1', debug: false, isExtension: false }),
     ).not.toThrow();
     // Server path already fired (non-blocking POST happens before the CDN push).
-    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'share_link_created', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, category: 'share' });
+    expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'share_link_created', userId: 'u1', anonId: 'anon-1', app_version: APP_VERSION, is_authenticated: true, runtime: 'web', category: 'share' });
     spy.mockRestore();
   });
 });
@@ -102,7 +109,7 @@ describe('analytics.loadClientAnalytics', () => {
     window.mixpanel = { track };
     emit('share_link_created', { category: 'ui' }, { userId: null, anonId: 'anon-9', debug: false, isExtension: false });
     expect(cf.trackEvent).toHaveBeenCalledWith({
-      event: 'share_link_created', userId: null, anonId: 'anon-9', app_version: APP_VERSION, category: 'ui',
+      event: 'share_link_created', userId: null, anonId: 'anon-9', app_version: APP_VERSION, is_authenticated: false, runtime: 'web', category: 'ui',
     });
     expect(window.dataLayer).toEqual([{ event: 'share_link_created', category: 'ui' }]);
     expect(track).toHaveBeenCalledWith('share_link_created', { category: 'ui' });
