@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
-import { PreviewFrame, type PreviewHandle } from '../preview/PreviewFrame';
+import { PreviewFrame, type PreviewHandle, type PreviewExportSnapshot } from '../preview/PreviewFrame';
 import { Console, type ConsoleEntry } from '../preview/Console';
 import { filterStarterNoise } from '../preview/consoleFilter';
 import { useEditorStore } from '../state/editorStore';
@@ -16,6 +16,7 @@ import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue }
 import { Layout } from '../components/Layout';
 import { PageTabs } from '../components/pages/PageTabs';
 import { RendererHeader } from '../components/preview/RendererHeader';
+import { ExportDialog } from '../components/preview/ExportDialog';
 import { CssPanel } from '../components/editor/CssPanel';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
@@ -131,6 +132,12 @@ export function AppRoot() {
   saveRef.current = save;
 
   const previewRef = useRef<PreviewHandle>(null);
+  const [exportRequest, setExportRequest] = useState<{ snapshot: PreviewExportSnapshot | null; title: string } | null>(null);
+  function openExport() {
+    const snapshot = previewRef.current?.getExportSnapshot();
+    const current = useEditorStore.getState().currentItem;
+    if (current) setExportRequest({ snapshot: snapshot ?? null, title: current.title || 'diagram' });
+  }
   const consoleOpen = useUiStore((s) => s.consoleOpen);
   const toggleConsole = useUiStore((s) => s.toggleConsole);
   const fullscreen = useUiStore((s) => s.fullscreen);
@@ -1347,6 +1354,7 @@ export function AppRoot() {
               ) : (
                 <RendererHeader
                   onPresent={toggleFullscreen}
+                  onDownload={openExport}
                   // #824: surface a manual Refresh ONLY when auto-preview is off, so the
                   // default UI (auto-preview on) is unchanged. Forces a one-shot render.
                   onRefresh={settings.autoPreview ? undefined : () => previewRef.current?.render()}
@@ -1402,6 +1410,12 @@ export function AppRoot() {
           }
         />
       </div>
+      <ExportDialog
+        open={exportRequest !== null}
+        onOpenChange={(open) => { if (!open) setExportRequest(null); }}
+        snapshot={exportRequest?.snapshot ?? null}
+        title={exportRequest?.title ?? 'diagram'}
+      />
       <ReportBugButton
         dsl={item?.js ?? ''}
         appVersion={APP_VERSION}

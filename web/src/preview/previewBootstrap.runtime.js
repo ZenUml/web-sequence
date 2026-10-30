@@ -16,6 +16,8 @@
 // (no type=module / no defer) so it sees the window.zenuml global and runs in order.
 (function () {
   var app = null;
+  var currentRenderMode = 'html';
+  var currentSvgResult = null;
   function post(msg) { parent.postMessage(msg, '*'); }
 
   // ---- Diagram natural-size measurement ----------------------------------------
@@ -91,6 +93,56 @@
     if (svgMount) svgMount.style.display = 'none';
   }
 
+  function visibleSvgResult() {
+    if (!currentSvgResult || !currentSvgResult.svg) return null;
+    var svgMount = document.getElementById('svg-mount');
+    var visibleSvg = svgMount && svgMount.querySelector('svg');
+    if (!visibleSvg) return currentSvgResult;
+    var clone = visibleSvg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(currentSvgResult.width));
+    clone.setAttribute('height', String(currentSvgResult.height));
+    clone.style.removeProperty('width');
+    clone.style.removeProperty('max-width');
+    clone.style.removeProperty('height');
+    clone.style.removeProperty('display');
+    if (!clone.getAttribute('style')) clone.removeAttribute('style');
+    var customStyle = document.getElementById('zenumlstyle');
+    if (customStyle && customStyle.textContent) {
+      var embeddedStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      embeddedStyle.textContent = customStyle.textContent;
+      clone.insertBefore(embeddedStyle, clone.firstChild);
+    }
+    return { svg: new XMLSerializer().serializeToString(clone), width: currentSvgResult.width, height: currentSvgResult.height };
+  }
+
+  function svgToPngDataUrl(result) {
+    return new Promise(function (resolve, reject) {
+      if (!result || !result.svg) { resolve(null); return; }
+      var width = Math.max(1, Number(result.width) || 1);
+      var height = Math.max(1, Number(result.height) || 1);
+      var preferredScale = Math.max(1, Math.min(2, Number(window.devicePixelRatio) || 1));
+      var scale = Math.min(preferredScale, Math.sqrt(16000000 / (width * height)));
+      scale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+      var url = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml;charset=utf-8' }));
+      var image = new Image();
+      image.onload = function () {
+        try {
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(width * scale));
+          canvas.height = Math.max(1, Math.round(height * scale));
+          var context = canvas.getContext('2d');
+          if (!context) throw new Error('Canvas is unavailable');
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (err) { reject(err); }
+        finally { URL.revokeObjectURL(url); }
+      };
+      image.onerror = function () { URL.revokeObjectURL(url); reject(new Error('SVG could not be rasterised')); };
+      image.src = url;
+    });
+  }
+
   ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
     var orig = console[level];
     console[level] = function () {
@@ -128,6 +180,9 @@
           if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
             // Native vector SVG (mobile). Pure render — no React commit, no
             // onContentChange (the editor pane stays the source of truth on mobile).
+            // Clear any HTML-only skin correction left by a prior dark HTML render.
+            var previousThemeStyle = document.getElementById('zenuml-theme-base');
+            if (previousThemeStyle) previousThemeStyle.textContent = '';
             // renderToSvg is synchronous and measures text with canvas, so the
             // core's bundled font must be loaded first (app.render does this
             // itself). Loads once, never rejects; absent before @zenuml/core 4.4.
@@ -136,14 +191,31 @@
             }
             var result = window.zenuml.renderToSvg(msg.code, { theme: 'theme-default' });
             showSvgMount(result && result.svg);
+            currentSvgResult = result || null;
+            currentRenderMode = 'svg';
           } else {
             // HTML diagram (desktop / default). Unhide the React mount in case we are
             // switching back from SVG mode, then render as before.
             showHtmlMount();
+            currentSvgResult = null;
+            currentRenderMode = 'html';
+            var theme = (msg.options && msg.options.theme) || 'theme-default';
+            // core 4.7.2's clean-dark skin leaves participant names blue on blue.
+            // This small base correction colors the iframe around the diagram.
+            // User CSS remains in #zenumlstyle and can override it.
+            var themeStyle = document.getElementById('zenuml-theme-base');
+            if (!themeStyle) {
+              themeStyle = document.createElement('style');
+              themeStyle.id = 'zenuml-theme-base';
+              document.head.insertBefore(themeStyle, document.getElementById('zenumlstyle'));
+            }
+            themeStyle.textContent = theme === 'theme-clean-dark'
+              ? 'html,body{background:#111628}.theme-clean-dark .participant-name{color:#e8ecff}'
+              : '';
             await app.render(msg.code, {
               enableMultiTheme: false,
               enableParticipantStyleEditing: !!(msg.options && msg.options.enableParticipantStyleEditing),
-              theme: 'theme-default',
+              theme: theme,
               onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
               stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
             });
@@ -169,10 +241,24 @@
     } else if (msg.type === 'getPng') {
       (async function () {
         try {
-          var dataUrl = app ? await app.getPng() : null;
+          var dataUrl = currentRenderMode === 'svg'
+            ? await svgToPngDataUrl(visibleSvgResult())
+            : (app ? await app.getPng() : null);
           post({ type: 'png', id: msg.id, dataUrl: dataUrl });
         } catch (err) {
           post({ type: 'png', id: msg.id, dataUrl: null });
+        }
+      })();
+    } else if (msg.type === 'getSvg') {
+      (async function () {
+        try {
+          var visibleResult = currentRenderMode === 'svg' ? visibleSvgResult() : null;
+          var svg = currentRenderMode === 'svg'
+            ? (visibleResult && visibleResult.svg)
+            : (app ? await app.getSvg() : null);
+          post({ type: 'svg', id: msg.id, svg: svg });
+        } catch (err) {
+          post({ type: 'svg', id: msg.id, svg: null });
         }
       })();
     } else if (msg.type === 'evalConsole') {

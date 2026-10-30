@@ -1,0 +1,13 @@
+title Order checkout
+@Actor Customer
+@Boundary Store
+@Lambda Checkout
+@S3 Bucket
+Customer->Store: Place order
+Store->Checkout: Validate basket
+loop(each item) {
+  Checkout->Bucket: Save object
+  Bucket-->Checkout: Stored
+}
+Checkout-->Store: Confirmation
+Store-->Customer: Done

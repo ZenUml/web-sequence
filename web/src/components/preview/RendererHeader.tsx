@@ -20,6 +20,8 @@ export interface RendererHeaderProps {
   pageTabs: ReactNode;
   /** Wired: toggles Present (fullscreen) mode. */
   onPresent(): void;
+  /** Open the rendered diagram download preview. */
+  onDownload?(): void;
   /** Optional fit-to-screen handler. Fit button only renders when provided. */
   onFit?(): void;
   /**
@@ -36,6 +38,7 @@ export interface RendererHeaderProps {
 export function RendererHeader({
   pageTabs,
   onPresent,
+  onDownload,
   onFit,
   onRefresh,
   zoomLabel = '100%',
@@ -47,6 +50,15 @@ export function RendererHeader({
 
       {/* .pv-tools — right controls cluster */}
       <div className="ml-auto flex items-center gap-1">
+        {onDownload && (
+          <Tooltip label="Download diagram">
+            <IconButton size="md" surface="dark" aria-label="Download diagram" data-testid="renderer-download" onClick={onDownload}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12m-5-5 5 5 5-5M5 20h14" />
+              </svg>
+            </IconButton>
+          </Tooltip>
+        )}
         {/* .zz — zoom percentage (presentational) */}
         <span className="font-mono text-[11px] text-ondark-muted px-1.5 select-none">
           {zoomLabel}
