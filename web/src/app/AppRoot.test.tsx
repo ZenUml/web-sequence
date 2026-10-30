@@ -1471,3 +1471,342 @@ describe('AppRoot — pricing upgrade → Paddle checkout', () => {
     ));
   });
 });
+
+// ─── Shared-link visitor loading / retryable failure (Figma 36:8669…36:8870) ───
+describe('AppRoot — shared-link visitor status', () => {
+  function deferred<T>() {
+    let resolve!: (v: T) => void;
+    const promise = new Promise<T>((res) => { resolve = res; });
+    return { promise, resolve };
+  }
+  const sharedItem = () => ({
+    id: 'shared-1', title: 'Checkout flow', js: 'Alice->Bob: pay', css: '', html: '',
+    htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+    pages: [{ id: 'p1', title: 'Main', js: 'Alice->Bob: pay', css: '' }], currentPageId: 'p1',
+    isReadOnly: true,
+  });
+  async function mockedGetSharedItem() {
+    const { getSharedItem } = await import('../services/cloudFunctions');
+    return vi.mocked(getSharedItem);
+  }
+  const authReady = () => act(async () => {
+    useAuthStore.setState({ user: null, authReady: true, online: true });
+  });
+
+  it('shows the loading view (not a blank screen) while the shared read is pending', async () => {
+    // (Pre-auth loading is covered in useBootItem.test; this harness's auth mock
+    // reports ready on mount.)
+    const getSharedItem = await mockedGetSharedItem();
+    getSharedItem.mockImplementationOnce(() => new Promise(() => {}));
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    const view = await screen.findByTestId('share-visitor-status');
+    expect(view).toHaveAttribute('data-status', 'loading');
+    expect(screen.getByTestId('share-status-title')).toHaveTextContent('Loading diagram…');
+  });
+
+  it('loading → success: no invented document while pending, then the original read-only diagram', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const pending = deferred<never>();
+    getSharedItem.mockImplementationOnce(() => pending.promise);
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await authReady();
+
+    expect(screen.getByTestId('share-visitor-status')).toHaveAttribute('data-status', 'loading');
+    expect(screen.getByRole('status')).toHaveTextContent('Loading diagram…');
+    expect(screen.queryByTestId('dsl-editor')).toBeNull();
+    expect(screen.queryByTestId('header-fork')).toBeNull();
+    expect(screen.queryByTestId('header-present')).toBeNull();
+    expect(screen.queryByTestId('header-title')).toBeNull();
+    expect(useEditorStore.getState().currentItem).toBeNull();
+
+    await act(async () => { pending.resolve(sharedItem() as never); });
+
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    expect(screen.getByTestId('header-savestate')).toHaveAttribute('data-state', 'readonly');
+    expect(screen.queryByTestId('share-visitor-status')).toBeNull();
+    expect(useEditorStore.getState().currentItem?.isReadOnly).toBe(true);
+    expect(getSharedItem).toHaveBeenCalledWith('shared-1', 'tok');
+  });
+
+  it('transient failure → Try again → fresh request with the same id/token → read-only diagram', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const { SharedItemError } = await import('../services/sharedItemError');
+    getSharedItem.mockClear();
+    getSharedItem
+      .mockRejectedValueOnce(new SharedItemError('Failed to get shared item', 500))
+      .mockResolvedValueOnce(sharedItem() as never);
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await authReady();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Couldn’t load this diagram');
+    expect(screen.getByTestId('share-status-title')).toHaveTextContent('Shared link');
+    expect(screen.queryByTestId('share-error')).toBeNull(); // not the dead-link notice
+    expect(useEditorStore.getState().currentItem).toBeNull(); // no blank editable diagram
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    expect(screen.getByTestId('header-savestate')).toHaveAttribute('data-state', 'readonly');
+    expect(getSharedItem).toHaveBeenCalledTimes(2);
+    expect(getSharedItem).toHaveBeenNthCalledWith(2, 'shared-1', 'tok');
+  });
+
+  it('an untyped failure offers retry, never claims the link is invalid', async () => {
+    // The file-level mock rejects with a plain Error (no backend provenance).
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await authReady();
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(screen.queryByTestId('share-error')).toBeNull();
+  });
+
+  it('an explicit 404/403 keeps the existing unavailable-link notice (no retry view)', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const { SharedItemError } = await import('../services/sharedItemError');
+    getSharedItem.mockRejectedValueOnce(new SharedItemError('Invalid share token or item not shared', 403));
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=revoked');
+    render(<AppRoot />);
+    await authReady();
+    expect(await screen.findByTestId('share-error')).toBeInTheDocument();
+    expect(screen.queryByTestId('share-visitor-status')).toBeNull();
+    expect(useEditorStore.getState().currentItem).toBeNull();
+  });
+
+  it('revoked between attempts: retry that gets 403 fails closed to the unavailable notice', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const { SharedItemError } = await import('../services/sharedItemError');
+    getSharedItem
+      .mockRejectedValueOnce(new SharedItemError('Failed', 503))
+      .mockRejectedValueOnce(new SharedItemError('Invalid share token or item not shared', 403));
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await authReady();
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByTestId('share-error')).toBeInTheDocument();
+    expect(useEditorStore.getState().currentItem).toBeNull();
+    expect(screen.queryByTestId('dsl-editor')).toBeNull();
+  });
+
+  it('the status view follows the global appearance (toggle writes <html data-appearance>)', async () => {
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await screen.findByTestId('share-visitor-status');
+    const before = document.documentElement.dataset.appearance;
+    await userEvent.click(screen.getByTestId('header-appearance'));
+    const after = document.documentElement.dataset.appearance;
+    expect(after).not.toBe(before);
+    expect(after === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance')
+      .toBe(screen.getByTestId('header-appearance').getAttribute('aria-label'));
+    // Restore so later tests start from the same appearance.
+    await userEvent.click(screen.getByTestId('header-appearance'));
+  });
+
+  it('ordinary ?id= boot never shows the visitor status view', async () => {
+    render(<AppRoot />); // default '/?id=t-boot'
+    await authReady();
+    await screen.findByTestId('header-title');
+    expect(screen.queryByTestId('share-visitor-status')).toBeNull();
+  });
+});
+
+// ─── Browser Back onto a shared URL (route re-entry regression) ───────────────
+describe('AppRoot — shared URL re-entry via browser Back', () => {
+  afterEach(async () => {
+    // mockReset below drops the file-level default; restore it for later suites.
+    const { getSharedItem } = await import('../services/cloudFunctions');
+    vi.mocked(getSharedItem).mockReset();
+    vi.mocked(getSharedItem).mockImplementation(async () => { throw new Error('not found'); });
+  });
+  const sharedItem = (title = 'Checkout flow') => ({
+    id: 'shared-1', title, js: 'Alice->Bob: pay', css: '', html: '',
+    htmlMode: 'html', cssMode: 'css', jsMode: 'js',
+    pages: [{ id: 'p1', title: 'Main', js: 'Alice->Bob: pay', css: '' }], currentPageId: 'p1',
+    isReadOnly: true,
+  });
+  const ownerItem = {
+    id: 'own-x', title: 'My private diagram', js: 'Me->Me: secret', css: '', html: '',
+    htmlMode: 'html', cssMode: 'css', jsMode: 'js', pages: [], currentPageId: '', isReadOnly: false,
+  };
+  async function mockedGetSharedItem() {
+    const { getSharedItem } = await import('../services/cloudFunctions');
+    const m = vi.mocked(getSharedItem);
+    m.mockReset();
+    return m;
+  }
+  // The router mock reads window.location on render; Back = replaceState + re-render.
+  async function goBackTo(url: string, rerender: (ui: React.ReactElement) => void) {
+    await act(async () => {
+      window.history.replaceState({}, '', url);
+      rerender(<AppRoot />);
+    });
+  }
+
+  async function openShareThenOwnItem(getSharedItem: Awaited<ReturnType<typeof mockedGetSharedItem>>) {
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    const view = render(<AppRoot />);
+    await act(async () => { useAuthStore.setState({ user: null, authReady: true, online: true }); });
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    // Diagrams breadcrumb → hub, then open an own/library diagram (handleOpenItem shape).
+    await userEvent.click(screen.getByTestId('header-go-home'));
+    await act(async () => { view.rerender(<AppRoot />); }); // router re-render on navigate
+    await act(async () => {
+      useEditorStore.getState().loadItem(ownerItem as never);
+      window.history.replaceState({}, '', '/?id=own-x');
+      view.rerender(<AppRoot />);
+    });
+    expect(await screen.findByTestId('header-title')).toHaveValue('My private diagram');
+    expect(getSharedItem).toHaveBeenCalledTimes(1);
+    return view;
+  }
+
+  it('Back to the shared URL reloads the same id/token: status view first (no owner doc), then the shared diagram', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    let release!: (v: unknown) => void;
+    getSharedItem
+      .mockResolvedValueOnce(sharedItem() as never)
+      .mockImplementationOnce(() => new Promise((r) => { release = r; }) as never);
+    const view = await openShareThenOwnItem(getSharedItem);
+
+    await goBackTo('/?id=shared-1&share-token=tok', view.rerender);
+    expect(screen.getByTestId('share-visitor-status')).toHaveAttribute('data-status', 'loading');
+    expect(screen.queryByDisplayValue('My private diagram')).toBeNull();
+    expect(screen.queryByText(/My private diagram/)).toBeNull();
+    expect(getSharedItem).toHaveBeenCalledTimes(2);
+    expect(getSharedItem).toHaveBeenNthCalledWith(2, 'shared-1', 'tok');
+
+    await act(async () => { release(sharedItem('Checkout flow v2')); });
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow v2');
+    expect(screen.getByTestId('header-savestate')).toHaveAttribute('data-state', 'readonly');
+  });
+
+  it('Back to a link revoked meanwhile shows the unavailable notice and never the owner document', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const { SharedItemError } = await import('../services/sharedItemError');
+    getSharedItem
+      .mockResolvedValueOnce(sharedItem() as never)
+      .mockRejectedValueOnce(new SharedItemError('Invalid share token or item not shared', 403));
+    const view = await openShareThenOwnItem(getSharedItem);
+
+    await goBackTo('/?id=shared-1&share-token=tok', view.rerender);
+    expect(await screen.findByTestId('share-error')).toBeInTheDocument();
+    expect(screen.queryByTestId('dsl-editor')).toBeNull();
+    expect(screen.queryByDisplayValue('My private diagram')).toBeNull();
+  });
+
+  it('Back while the network is down offers Try again (same id/token), not the invalid-link notice', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    const { SharedItemError } = await import('../services/sharedItemError');
+    getSharedItem
+      .mockResolvedValueOnce(sharedItem() as never)
+      .mockRejectedValueOnce(new SharedItemError('Failed to load shared item', null))
+      .mockResolvedValueOnce(sharedItem() as never);
+    const view = await openShareThenOwnItem(getSharedItem);
+
+    await goBackTo('/?id=shared-1&share-token=tok', view.rerender);
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    expect(getSharedItem).toHaveBeenNthCalledWith(3, 'shared-1', 'tok');
+    expect(screen.queryByTestId('share-error')).toBeNull();
+  });
+
+  it('pending share → Diagrams → Back is not blank: it reads again and shows the diagram', async () => {
+    const getSharedItem = await mockedGetSharedItem();
+    getSharedItem
+      .mockImplementationOnce(() => new Promise(() => {}) as never) // abandoned first read
+      .mockResolvedValueOnce(sharedItem() as never);
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    const view = render(<AppRoot />);
+    await act(async () => { useAuthStore.setState({ user: null, authReady: true, online: true }); });
+    await userEvent.click(await screen.findByTestId('header-go-home'));
+    // The real router re-renders on navigate(); the mock only rewrites the URL.
+    await act(async () => { view.rerender(<AppRoot />); });
+    expect(window.location.search).toContain('view=diagrams');
+    expect(screen.queryByTestId('share-visitor-status')).toBeNull(); // hub, not the status view
+    await goBackTo('/?id=shared-1&share-token=tok', view.rerender);
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    expect(getSharedItem).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ─── Share panel journey through AppRoot (owner, signed in) ────────────────────
+describe('AppRoot — share panel journey', () => {
+  const signedInUser = { uid: 'u1', email: 'u1@test.com', displayName: 'U', photoURL: null };
+
+  async function openPanel() {
+    const { useEditorStore: store } = await import('../state/editorStore');
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    const current = store.getState().currentItem!;
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => { cb([current]); return () => {}; });
+    await act(async () => {
+      useAuthStore.setState({ user: signedInUser, authReady: true, online: true });
+    });
+    const shareBtn = await screen.findByTestId('share-button');
+    await waitFor(() => expect(shareBtn).not.toBeDisabled());
+    await act(async () => { await userEvent.click(shareBtn); });
+    return screen.findByTestId('share-panel');
+  }
+
+  afterEach(async () => {
+    const { createShare } = await import('../services/cloudFunctions');
+    vi.mocked(createShare).mockReset();
+    vi.mocked(createShare).mockImplementation(async () => ({ url: 'http://x?id=1&v=abc', md5: 'abc' }));
+    itemSvc.stopSharing.mockReset();
+    itemSvc.stopSharing.mockImplementation(async () => {});
+  });
+
+  it('create failure → Try again → link; copy failure → manual guidance; stop failure keeps link; stop → create', async () => {
+    const { createShare } = await import('../services/cloudFunctions');
+    vi.mocked(createShare)
+      .mockRejectedValueOnce(new Error('Failed to create share link'))
+      .mockResolvedValueOnce({ url: 'https://app.zenuml.com/?id=1&share-token=t&v=abc', md5: 'abc' });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn(async () => { throw new Error('NotAllowedError'); }) },
+      configurable: true,
+    });
+    itemSvc.stopSharing
+      .mockRejectedValueOnce(new Error('stop failed'))
+      .mockResolvedValueOnce(undefined);
+
+    const panel = await openPanel();
+    expect(panel).toHaveTextContent('Anyone with the link can view this diagram.');
+    await act(async () => { await userEvent.click(screen.getByTestId('share-create')); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t create a link.');
+    expect(screen.queryByTestId('share-url')).toBeNull(); // nothing claimed before confirmation
+
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /try again/i })); });
+    expect(await screen.findByTestId('share-url')).toHaveValue('https://app.zenuml.com/?id=1&share-token=t&v=abc');
+
+    await act(async () => { await userEvent.click(screen.getByTestId('share-copy')); });
+    expect(await screen.findByTestId('share-copy-error')).toHaveTextContent('Couldn’t copy.');
+    expect(screen.getByTestId('share-copy')).not.toHaveTextContent('Copied');
+
+    await act(async () => { await userEvent.click(screen.getByTestId('share-stop')); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t stop sharing. Your link is still active.');
+    expect(screen.getByTestId('share-url')).toBeInTheDocument();
+
+    await act(async () => { await userEvent.click(screen.getByTestId('share-stop')); });
+    expect(await screen.findByTestId('share-create')).toHaveTextContent('Create share link');
+    expect(screen.queryByTestId('share-url')).toBeNull();
+    expect(itemSvc.stopSharing).toHaveBeenCalledTimes(2);
+  });
+
+  it('a visitor (read-only shared copy) cannot open the share panel; the original title stays in the header', async () => {
+    const { getSharedItem } = await import('../services/cloudFunctions');
+    vi.mocked(getSharedItem).mockResolvedValueOnce({
+      id: 'shared-1', title: 'Checkout flow', js: 'A->B: x', css: '', html: '',
+      htmlMode: 'html', cssMode: 'css', jsMode: 'js', pages: [], currentPageId: '', isReadOnly: true,
+    } as never);
+    window.history.replaceState({}, '', '/?id=shared-1&share-token=tok');
+    render(<AppRoot />);
+    await act(async () => { useAuthStore.setState({ user: null, authReady: true, online: true }); });
+    expect(await screen.findByTestId('header-title')).toHaveValue('Checkout flow');
+    expect(screen.getByTestId('share-button')).toBeDisabled();
+  });
+});

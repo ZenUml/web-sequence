@@ -1,0 +1,507 @@
+[
+  {
+    "name": "desktop1440-light create: state",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light create: sentence",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light create: panel follows theme",
+    "ok": true,
+    "detail": "rgb(255, 255, 255)"
+  },
+  {
+    "name": "desktop1440-light create: panel inside viewport",
+    "ok": true,
+    "detail": "{\"x\":1108,\"y\":54,\"width\":320,\"height\":128}"
+  },
+  {
+    "name": "desktop1440-light creating: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light creating: busy + disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light creating: no link yet",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light create failed: guidance",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light create failed: Try again",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light created: url after confirmation",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light created: focus moved to Copy",
+    "ok": true,
+    "detail": "share-copy"
+  },
+  {
+    "name": "desktop1440-light copied: clipboard holds the link",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "desktop1440-light copied: button confirms",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light stopping: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light stopping: Stop busy/disabled, link kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light stop failed: link still active",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light stopped: back to create, link gone",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light copy failed: link selected for manual copy",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "desktop1440-light copy failed: no false Copied",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark create: state",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark create: sentence",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark create: panel follows theme",
+    "ok": true,
+    "detail": "rgb(52, 63, 75)"
+  },
+  {
+    "name": "desktop1440-dark create: panel inside viewport",
+    "ok": true,
+    "detail": "{\"x\":1108,\"y\":54,\"width\":320,\"height\":128}"
+  },
+  {
+    "name": "desktop1440-dark creating: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark creating: busy + disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark creating: no link yet",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark create failed: guidance",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark create failed: Try again",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark created: url after confirmation",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark created: focus moved to Copy",
+    "ok": true,
+    "detail": "share-copy"
+  },
+  {
+    "name": "desktop1440-dark copied: clipboard holds the link",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "desktop1440-dark copied: button confirms",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark stopping: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark stopping: Stop busy/disabled, link kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark stop failed: link still active",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark stopped: back to create, link gone",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark copy failed: link selected for manual copy",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "desktop1440-dark copy failed: no false Copied",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light create: state",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light create: sentence",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light create: panel follows theme",
+    "ok": true,
+    "detail": "rgb(255, 255, 255)"
+  },
+  {
+    "name": "narrow390-light create: panel inside viewport",
+    "ok": true,
+    "detail": "{\"x\":58,\"y\":78,\"width\":320,\"height\":128}"
+  },
+  {
+    "name": "narrow390-light creating: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light creating: busy + disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light creating: no link yet",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light create failed: guidance",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light create failed: Try again",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light created: url after confirmation",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light created: focus moved to Copy",
+    "ok": true,
+    "detail": "share-copy"
+  },
+  {
+    "name": "narrow390-light copied: clipboard holds the link",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "narrow390-light copied: button confirms",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light stopping: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light stopping: Stop busy/disabled, link kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light stop failed: link still active",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light stopped: back to create, link gone",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light copy failed: link selected for manual copy",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "narrow390-light copy failed: no false Copied",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark create: state",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark create: sentence",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark create: panel follows theme",
+    "ok": true,
+    "detail": "rgb(52, 63, 75)"
+  },
+  {
+    "name": "narrow390-dark create: panel inside viewport",
+    "ok": true,
+    "detail": "{\"x\":58,\"y\":78,\"width\":320,\"height\":128}"
+  },
+  {
+    "name": "narrow390-dark creating: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark creating: busy + disabled",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark creating: no link yet",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark create failed: guidance",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark create failed: Try again",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark created: url after confirmation",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark created: focus moved to Copy",
+    "ok": true,
+    "detail": "share-copy"
+  },
+  {
+    "name": "narrow390-dark copied: clipboard holds the link",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "narrow390-dark copied: button confirms",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark stopping: single request",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark stopping: Stop busy/disabled, link kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark stop failed: link still active",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark stopped: back to create, link gone",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark copy failed: link selected for manual copy",
+    "ok": true,
+    "detail": "http://localhost:4432/?id=demo&share-token=fixture-token"
+  },
+  {
+    "name": "narrow390-dark copy failed: no false Copied",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light back: loading view (not blank) while re-reading",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light back: same id/token re-read",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light back: original title + read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light back: exactly 2 reads",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "desktop1440-dark back: loading view (not blank) while re-reading",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark back: same id/token re-read",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark back: original title + read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark back: exactly 2 reads",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "narrow390-light back: loading view (not blank) while re-reading",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light back: same id/token re-read",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light back: original title + read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light back: exactly 2 reads",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "narrow390-dark back: loading view (not blank) while re-reading",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark back: same id/token re-read",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark back: original title + read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark back: exactly 2 reads",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "pending→hub→back: fresh response shown, stale dropped",
+    "ok": true,
+    "detail": "Fresh title"
+  },
+  {
+    "name": "pending→hub→back: 2 reads",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "back offline: retry view, not invalid-link notice",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "back offline: Try again re-reads same id/token",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "back revoked after retry: unavailable notice, no editor",
+    "ok": true,
+    "detail": ""
+  }
+]

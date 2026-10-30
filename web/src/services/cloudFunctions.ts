@@ -2,6 +2,7 @@ import type { Item } from '../domain/types';
 import { getIdToken } from './firebase';
 import { shareOrigin } from '../config/shareOrigin';
 import { detectFromEnv } from '../app/runtimeMode';
+import { SharedItemError } from './sharedItemError';
 
 // Hosting-rewritten endpoints are same-origin paths (dev: Vite proxy → emulator;
 // prod: Firebase Hosting rewrites). See contract spec §5.
@@ -48,14 +49,26 @@ export async function createShare(
 }
 
 // GET /get-shared-item?id=&share-token= → Item (isReadOnly:true). Public read.
+// Every failure rejects with SharedItemError carrying the HTTP status (null for a
+// network/parse failure) so the visitor UI can tell an explicit dead link from a
+// temporary failure. The message stays the server's `error` string (diagnostic only).
 export async function getSharedItem(id: string, shareToken: string): Promise<Item> {
-  const res = await fetch(`/get-shared-item?id=${encodeURIComponent(id)}&share-token=${encodeURIComponent(shareToken)}`);
+  let res: Response;
+  try {
+    res = await fetch(`/get-shared-item?id=${encodeURIComponent(id)}&share-token=${encodeURIComponent(shareToken)}`);
+  } catch (cause) {
+    throw new SharedItemError('Failed to load shared item', null, { cause });
+  }
   if (!res.ok) {
     let msg = 'Failed to load shared item';
     try { msg = (await res.json()).error || msg; } catch { /* ignore */ }
-    throw new Error(msg);
+    throw new SharedItemError(msg, res.status);
   }
-  return (await res.json()) as Item;
+  try {
+    return (await res.json()) as Item;
+  } catch (cause) {
+    throw new SharedItemError('Failed to load shared item', null, { cause });
+  }
 }
 
 // POST /track — non-blocking analytics (§5.5). Swallows all errors: a failed

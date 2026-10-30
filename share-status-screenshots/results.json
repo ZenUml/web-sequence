@@ -1,0 +1,407 @@
+[
+  {
+    "name": "desktop1440-light loading: <html data-appearance> = light",
+    "ok": true,
+    "detail": "light"
+  },
+  {
+    "name": "desktop1440-light loading: header title \"Loading diagram…\"",
+    "ok": true,
+    "detail": "Loading diagram…"
+  },
+  {
+    "name": "desktop1440-light loading: no Fork/Present/editable title/editor",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light loading: role=status announces",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light loading: panel surface rgb(255, 255, 255)",
+    "ok": true,
+    "detail": "rgb(255, 255, 255)"
+  },
+  {
+    "name": "desktop1440-light loading: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light loading: no external requests leaked",
+    "ok": true,
+    "detail": "aborted: fonts.googleapis.com, cdn.paddle.com"
+  },
+  {
+    "name": "desktop1440-light failure: alert text",
+    "ok": true,
+    "detail": "Couldn’t load this diagramCheck your connection and try again."
+  },
+  {
+    "name": "desktop1440-light failure: header title \"Shared link\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light failure: not the dead-link dialog",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light failure: no token/id/status leak",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light failure: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light retry: fresh request #2 issued",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light retry: same id/token",
+    "ok": true,
+    "detail": "fixture-item/fixture-token"
+  },
+  {
+    "name": "desktop1440-light retry: focus moved to status panel",
+    "ok": true,
+    "detail": "share-status-panel"
+  },
+  {
+    "name": "desktop1440-light retry: no duplicate request while loading",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "desktop1440-light success: original title",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light success: title read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-light success: save state Read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark loading: <html data-appearance> = dark",
+    "ok": true,
+    "detail": "dark"
+  },
+  {
+    "name": "desktop1440-dark loading: header title \"Loading diagram…\"",
+    "ok": true,
+    "detail": "Loading diagram…"
+  },
+  {
+    "name": "desktop1440-dark loading: no Fork/Present/editable title/editor",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark loading: role=status announces",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark loading: panel surface rgb(52, 63, 75)",
+    "ok": true,
+    "detail": "rgb(52, 63, 75)"
+  },
+  {
+    "name": "desktop1440-dark loading: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark loading: no external requests leaked",
+    "ok": true,
+    "detail": "aborted: fonts.googleapis.com, cdn.paddle.com"
+  },
+  {
+    "name": "desktop1440-dark failure: alert text",
+    "ok": true,
+    "detail": "Couldn’t load this diagramCheck your connection and try again."
+  },
+  {
+    "name": "desktop1440-dark failure: header title \"Shared link\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark failure: not the dead-link dialog",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark failure: no token/id/status leak",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark failure: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark retry: fresh request #2 issued",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark retry: same id/token",
+    "ok": true,
+    "detail": "fixture-item/fixture-token"
+  },
+  {
+    "name": "desktop1440-dark retry: focus moved to status panel",
+    "ok": true,
+    "detail": "share-status-panel"
+  },
+  {
+    "name": "desktop1440-dark retry: no duplicate request while loading",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "desktop1440-dark success: original title",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark success: title read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "desktop1440-dark success: save state Read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light loading: <html data-appearance> = light",
+    "ok": true,
+    "detail": "light"
+  },
+  {
+    "name": "narrow390-light loading: header title \"Loading diagram…\"",
+    "ok": true,
+    "detail": "Loading diagram…"
+  },
+  {
+    "name": "narrow390-light loading: no Fork/Present/editable title/editor",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light loading: role=status announces",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light loading: panel surface rgb(255, 255, 255)",
+    "ok": true,
+    "detail": "rgb(255, 255, 255)"
+  },
+  {
+    "name": "narrow390-light loading: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light loading: no external requests leaked",
+    "ok": true,
+    "detail": "aborted: fonts.googleapis.com, cdn.paddle.com"
+  },
+  {
+    "name": "narrow390-light failure: alert text",
+    "ok": true,
+    "detail": "Couldn’t load this diagramCheck your connection and try again."
+  },
+  {
+    "name": "narrow390-light failure: header title \"Shared link\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light failure: not the dead-link dialog",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light failure: no token/id/status leak",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light failure: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light retry: fresh request #2 issued",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light retry: same id/token",
+    "ok": true,
+    "detail": "fixture-item/fixture-token"
+  },
+  {
+    "name": "narrow390-light retry: focus moved to status panel",
+    "ok": true,
+    "detail": "share-status-panel"
+  },
+  {
+    "name": "narrow390-light retry: no duplicate request while loading",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "narrow390-light success: original title",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light success: title read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-light success: save state Read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark loading: <html data-appearance> = dark",
+    "ok": true,
+    "detail": "dark"
+  },
+  {
+    "name": "narrow390-dark loading: header title \"Loading diagram…\"",
+    "ok": true,
+    "detail": "Loading diagram…"
+  },
+  {
+    "name": "narrow390-dark loading: no Fork/Present/editable title/editor",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark loading: role=status announces",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark loading: panel surface rgb(52, 63, 75)",
+    "ok": true,
+    "detail": "rgb(52, 63, 75)"
+  },
+  {
+    "name": "narrow390-dark loading: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark loading: no external requests leaked",
+    "ok": true,
+    "detail": "aborted: fonts.googleapis.com, cdn.paddle.com"
+  },
+  {
+    "name": "narrow390-dark failure: alert text",
+    "ok": true,
+    "detail": "Couldn’t load this diagramCheck your connection and try again."
+  },
+  {
+    "name": "narrow390-dark failure: header title \"Shared link\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark failure: not the dead-link dialog",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark failure: no token/id/status leak",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark failure: no horizontal overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark retry: fresh request #2 issued",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark retry: same id/token",
+    "ok": true,
+    "detail": "fixture-item/fixture-token"
+  },
+  {
+    "name": "narrow390-dark retry: focus moved to status panel",
+    "ok": true,
+    "detail": "share-status-panel"
+  },
+  {
+    "name": "narrow390-dark retry: no duplicate request while loading",
+    "ok": true,
+    "detail": "2"
+  },
+  {
+    "name": "narrow390-dark success: original title",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark success: title read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "narrow390-dark success: save state Read-only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "revoked403-after-retry: unavailable notice shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "revoked403-after-retry: no editor/source rendered",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "initial404: unavailable notice shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "initial404: no editor/source rendered",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "navigate-away: hub stays, shared item not opened",
+    "ok": true,
+    "detail": "http://localhost:4398/?view=diagrams"
+  }
+]

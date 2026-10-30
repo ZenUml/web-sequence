@@ -82,3 +82,18 @@ describe('ShareButton', () => {
     expect(await screen.findByTestId('share-create')).toBeInTheDocument();
   });
 });
+
+describe('ShareButton — panel state forwarding', () => {
+  it('forwards the optional panel states (stopping / failure / copyFailed) to the open panel', async () => {
+    render(<ShareButton {...base} url="https://app.zenuml.com/?id=a&share-token=t" stopping />);
+    await userEvent.click(screen.getByTestId('share-button'));
+    expect(await screen.findByTestId('share-panel')).toHaveAttribute('data-state', 'stopping');
+    expect(screen.getByTestId('share-stop')).toBeDisabled();
+  });
+
+  it('still renders with only the original props (combined-checkout compatibility)', async () => {
+    render(<ShareButton {...base} />);
+    await userEvent.click(screen.getByTestId('share-button'));
+    expect(await screen.findByTestId('share-create')).toHaveTextContent('Create share link');
+  });
+});

@@ -41,6 +41,7 @@ import { migrateToPages } from '../domain/item';
 // LibraryPanel removed — Library is now the Home page (isHomeMode), not a side panel.
 import { ShareButton } from '../components/share/ShareButton';
 import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
+import { ShareVisitorStatus } from '../components/share/ShareVisitorStatus';
 import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
 import { downloadText } from '../services/download';
 // M04 — subscription / settings / modals / analytics
@@ -436,7 +437,7 @@ export function AppRoot() {
 
   // Boot: resolve the item to load (replaces the old STARTER seeding effect).
   // authReady gates resolution so a ?id= URL works for signed-in users (FIX 1 — boot race).
-  const { shareError, clearShareError } = useBootItem({
+  const { shareError, clearShareError, shareStatus, retryShare } = useBootItem({
     idParam,
     shareToken,
     // Finding 1: full-app boot honours ?code= so the embed's "Open in ZenUML"
@@ -1073,10 +1074,52 @@ export function AppRoot() {
     );
   }
 
+  // Shared-link visitor: a pending read or a temporary failure gets a real status
+  // view (loading / Try again) instead of a blank screen. Explicitly unavailable
+  // links fall through to ShareErrorNotice below. Both apply even when the store
+  // still holds another item (browser Back from an owned diagram), so no other
+  // document is ever shown under a share URL.
+  if (shareStatus === 'loading' || shareStatus === 'retryable-error') {
+    return (
+      <ShareVisitorStatus
+        status={shareStatus}
+        onRetry={retryShare}
+        appearance={settings.appearance}
+        onToggleAppearance={() => handleSettingChange('appearance', settings.appearance === 'dark' ? 'light' : 'dark')}
+        onGoHome={goHome}
+        user={user}
+        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+        // No billing items here: PricingModal is only mounted with the editor/hub.
+        profile={{ subscribed, planType, paymentEnabled: false }}
+        login={{
+          open: loginModalOpen,
+          onOpenChange: setLoginModalOpen,
+          onLogin: (provider) => { track('loggedIn', { category: 'fn', label: provider }); login(provider); },
+          lastProvider,
+          error: loginError,
+        }}
+        editorCollapsed={editorCollapsed && !isMobile}
+        onToggleEditor={isMobile ? undefined : toggleEditorCollapsed}
+        sourceFooter={
+          <ReportBugButton
+            placement="inline"
+            dsl=""
+            appVersion={APP_VERSION}
+            view="shared-link"
+            signedIn={!!user}
+            onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'shared-link' })}
+            onSubmitted={({ includedDsl }) =>
+              track('bug_report_submitted', { category: 'feedback', label: 'shared-link', included_dsl: includedDsl })
+            }
+          />
+        }
+      />
+    );
+  }
   // REQ-SHR-4: a dead boot share-link seeds NO item (currentItem stays null), so
   // surface the error here at the guard instead of silently returning null. Start
   // fresh clears the flag and seeds a blank diagram.
-  if (!item) {
+  if (!item || shareError) {
     return shareError ? (
       <ShareErrorNotice
         open
@@ -1264,6 +1307,9 @@ export function AppRoot() {
             sharing={share.sharing}
             error={share.error}
             copied={share.copied}
+            stopping={share.stopping}
+            failure={share.failure}
+            copyFailed={share.copyFailed}
             onShare={() => { track('shareLink', { category: 'ui' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}

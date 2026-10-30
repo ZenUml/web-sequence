@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Share panel harness (fixture backend)</title></head>
+<body style="margin:0"><div id="app" style="height:100vh"></div>
+<script type="module">
+import RefreshRuntime from "/@react-refresh";
+RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+</script>
+<script type="module" src="/@fs/tmp/share-status-cfg/harness/main.tsx"></script></body></html>

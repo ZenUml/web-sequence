@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, render, screen, fireEvent } from '@testing-library/react';
+import { Popover, PopoverTrigger } from '../ui';
+import { SharePopover } from '../components/share/SharePopover';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { useShare } from './useShare';
@@ -479,5 +481,403 @@ describe('useShare', () => {
     );
     await act(async () => { await result.current.share(); });
     expect(captured!.origin).toBe('https://app.zenuml.com');
+  });
+});
+
+// ─── Share panel states (Figma F18/F19/F26 · F29/F30/F31) ─────────────────────
+describe('useShare panel states', () => {
+  function deferred<T>() {
+    let resolve!: (v: T) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  }
+  function setClipboard(writeText: (t: string) => Promise<void>) {
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  }
+
+  it('create: no url until the backend confirms; a second share() while creating is ignored', async () => {
+    const pending = deferred<{ url: string; md5: string }>();
+    const createShare = vi.fn(() => pending.promise);
+    const { result } = renderHook(() => useShare(makeOpts({ createShare })));
+    let first!: Promise<void>;
+    act(() => { first = result.current.share(); });
+    act(() => { void result.current.share(); });
+    await act(async () => { await Promise.resolve(); });
+    expect(result.current.sharing).toBe(true);
+    expect(result.current.url).toBeNull();
+    expect(createShare).toHaveBeenCalledTimes(1);
+    await act(async () => { pending.resolve({ url: 'http://x?id=1&share-token=t', md5: 'm' }); await first; });
+    expect(result.current.url).toBe('http://x?id=1&share-token=t');
+    expect(result.current.sharing).toBe(false);
+    expect(result.current.failure).toBeNull();
+  });
+
+  it('create failure → failure="create" with no url; retry clears it and succeeds', async () => {
+    const createShare = vi.fn()
+      .mockRejectedValueOnce(new Error('Failed to create share link'))
+      .mockResolvedValueOnce({ url: 'http://x?id=1&share-token=t', md5: 'm' });
+    const { result } = renderHook(() => useShare(makeOpts({ createShare })));
+    await act(async () => { await result.current.share(); });
+    expect(result.current.failure).toBe('create');
+    expect(result.current.url).toBeNull();
+    await act(async () => { await result.current.share(); });
+    expect(result.current.failure).toBeNull();
+    expect(result.current.url).toBe('http://x?id=1&share-token=t');
+  });
+
+  it('stop: stopping while pending keeps the link; duplicate stop ignored; url clears only after success', async () => {
+    const pending = deferred<void>();
+    const stopSharing = vi.fn(() => pending.promise);
+    const { result } = renderHook(() => useShare(makeOpts({ stopSharing })));
+    await act(async () => { await result.current.share(); });
+    let first!: Promise<void>;
+    act(() => { first = result.current.stop(); });
+    act(() => { void result.current.stop(); });
+    expect(result.current.stopping).toBe(true);
+    expect(result.current.url).not.toBeNull(); // link still active until confirmed
+    expect(stopSharing).toHaveBeenCalledTimes(1);
+    await act(async () => { pending.resolve(); await first; });
+    expect(result.current.stopping).toBe(false);
+    expect(result.current.url).toBeNull();
+  });
+
+  it('stop failure → failure="stop", link kept, stopping cleared', async () => {
+    const stopSharing = vi.fn(async () => { throw new Error('stop failed'); });
+    const { result } = renderHook(() => useShare(makeOpts({ stopSharing })));
+    await act(async () => { await result.current.share(); });
+    await act(async () => { await result.current.stop(); });
+    expect(result.current.failure).toBe('stop');
+    expect(result.current.stopping).toBe(false);
+    expect(result.current.url).not.toBeNull();
+  });
+
+  it('copy failure (clipboard rejects) → copyFailed, never copied, never throws', async () => {
+    setClipboard(vi.fn(async () => { throw new Error('NotAllowedError'); }));
+    const { result } = renderHook(() => useShare(makeOpts()));
+    await act(async () => { await result.current.share(); });
+    await act(async () => { await expect(result.current.copy()).resolves.toBeUndefined(); });
+    expect(result.current.copyFailed).toBe(true);
+    expect(result.current.copied).toBe(false);
+  });
+
+  it('copy failure when the Clipboard API is unavailable → copyFailed', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    const { result } = renderHook(() => useShare(makeOpts()));
+    await act(async () => { await result.current.share(); });
+    await act(async () => { await result.current.copy(); });
+    expect(result.current.copyFailed).toBe(true);
+    expect(result.current.copied).toBe(false);
+  });
+
+  it('a later successful copy clears copyFailed and confirms', async () => {
+    const writeText = vi.fn()
+      .mockRejectedValueOnce(new Error('denied'))
+      .mockResolvedValueOnce(undefined);
+    setClipboard(writeText);
+    const { result } = renderHook(() => useShare(makeOpts()));
+    await act(async () => { await result.current.share(); });
+    await act(async () => { await result.current.copy(); });
+    await act(async () => { await result.current.copy(); });
+    expect(result.current.copyFailed).toBe(false);
+    expect(result.current.copied).toBe(true);
+  });
+
+  it('switching items resets failure / stopping / copyFailed', async () => {
+    setClipboard(vi.fn(async () => { throw new Error('denied'); }));
+    let itemId = 'item-1';
+    const stopSharing = vi.fn(async () => { throw new Error('stop failed'); });
+    const { result, rerender } = renderHook(() => useShare(makeOpts({ itemId, stopSharing })));
+    await act(async () => { await result.current.share(); });
+    await act(async () => { await result.current.copy(); });
+    await act(async () => { await result.current.stop(); });
+    expect(result.current.failure).toBe('stop');
+    itemId = 'item-2';
+    rerender();
+    expect(result.current.failure).toBeNull();
+    expect(result.current.copyFailed).toBe(false);
+    expect(result.current.stopping).toBe(false);
+  });
+});
+
+// ─── Operations across diagram switches (visible panel state) ─────────────────
+// Drives the real hook through the real SharePopover, switching the active diagram
+// the way AppRoot does (store currentItem + itemId prop). Every backend/clipboard
+// promise is deferred so completions can land after a switch, a return, or unmount.
+describe('useShare operations across diagram switches', () => {
+  beforeAll(() => {
+    if (!Element.prototype.hasPointerCapture) Element.prototype.hasPointerCapture = () => false;
+    if (!Element.prototype.setPointerCapture) Element.prototype.setPointerCapture = () => {};
+    if (!Element.prototype.releasePointerCapture) Element.prototype.releasePointerCapture = () => {};
+    if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
+  });
+  function deferred<T>() {
+    let resolve!: (v: T) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  }
+  function setClipboard(writeText: (t: string) => Promise<void>) {
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  }
+  const shared = (id: string) => sharedItem({ id, title: id, shareToken: `tok-${id}` });
+  const plain = (id: string) => sharedItem({ id, title: id, isShared: false, shareToken: undefined });
+  const linkFor = (id: string) => `${window.location.origin}?id=${id}&share-token=tok-${id}`;
+
+  function Panel({ itemId, createShare, stopSharing }: {
+    itemId: string;
+    createShare: (id: string) => Promise<{ url: string; md5: string }>;
+    stopSharing: (id: string) => Promise<void>;
+  }) {
+    const s = useShare({
+      itemId,
+      getItemId: () => useEditorStore.getState().currentItem?.id ?? null,
+      createShare,
+      stopSharing,
+    });
+    return (
+      <Popover defaultOpen>
+        <PopoverTrigger>open</PopoverTrigger>
+        <SharePopover
+          url={s.url} sharing={s.sharing} error={s.error} copied={s.copied}
+          stopping={s.stopping} failure={s.failure} copyFailed={s.copyFailed}
+          onShare={() => void s.share()} onStop={() => void s.stop()} onCopy={() => void s.copy()}
+        />
+      </Popover>
+    );
+  }
+
+  function mount(first: Item, backend: Partial<{
+    createShare: (id: string) => Promise<{ url: string; md5: string }>;
+    stopSharing: (id: string) => Promise<void>;
+  }> = {}) {
+    const createShare = vi.fn(backend.createShare ?? (async (id: string) => ({ url: `created:${id}`, md5: 'm' })));
+    const stopSharing = vi.fn(backend.stopSharing ?? (async () => {}));
+    useEditorStore.getState().loadItem(first);
+    const view = render(<Panel itemId={first.id} createShare={createShare} stopSharing={stopSharing} />);
+    const open = (item: Item) => {
+      act(() => { useEditorStore.getState().loadItem(item); });
+      view.rerender(<Panel itemId={item.id} createShare={createShare} stopSharing={stopSharing} />);
+    };
+    return { view, open, createShare, stopSharing };
+  }
+  const panel = () => screen.getByTestId('share-panel');
+  const click = (testId: string) => act(() => { fireEvent.click(screen.getByTestId(testId)); });
+  const flush = () => act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+  // ── copy ownership ──
+  it('A copy resolves after switching to shared B → B never shows Copied', async () => {
+    const write = deferred<void>();
+    setClipboard(vi.fn(() => write.promise));
+    const { open } = mount(shared('A'));
+    click('share-copy');
+    open(shared('B'));
+    await act(async () => { write.resolve(); await write.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.getByTestId('share-copy')).toHaveTextContent('Copy share link');
+    expect(screen.queryByText('Link copied to clipboard.')).toBeNull();
+  });
+
+  it('A copy rejects after switching to shared B → B shows no copy error and B\'s link is not focused/selected', async () => {
+    const write = deferred<void>();
+    setClipboard(vi.fn(() => write.promise));
+    const { open } = mount(shared('A'));
+    click('share-copy');
+    open(shared('B'));
+    (screen.getByTestId('share-copy') as HTMLElement).focus();
+    await act(async () => { write.reject(new Error('NotAllowedError')); await write.promise.catch(() => {}); });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.queryByTestId('share-copy-error')).toBeNull();
+    expect(document.activeElement).not.toBe(screen.getByTestId('share-url'));
+  });
+
+  it('a confirmed A copy does not carry Copied over to B', async () => {
+    setClipboard(vi.fn(async () => {}));
+    const { open } = mount(shared('A'));
+    click('share-copy');
+    await flush();
+    expect(panel().dataset.state).toBe('copied');
+    open(shared('B'));
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.getByTestId('share-copy')).toHaveTextContent('Copy share link');
+  });
+
+  it('A copy pending → B → back to A → completion is inert (resolve and reject)', async () => {
+    const first = deferred<void>();
+    const second = deferred<void>();
+    setClipboard(vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise));
+    const { open } = mount(shared('A'));
+    click('share-copy');
+    open(shared('B'));
+    open(shared('A'));
+    await act(async () => { first.resolve(); await first.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    // A second copy on the returned A, then a stale-style rejection of that one only
+    // after another round trip: still inert.
+    click('share-copy');
+    open(shared('B'));
+    open(shared('A'));
+    await act(async () => { second.reject(new Error('denied')); await second.promise.catch(() => {}); });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.queryByTestId('share-copy-error')).toBeNull();
+  });
+
+  it('a copy for the current link still confirms and the manual fallback still selects the current link', async () => {
+    const ok = deferred<void>();
+    const denied = deferred<void>();
+    setClipboard(vi.fn().mockReturnValueOnce(ok.promise).mockReturnValueOnce(denied.promise));
+    mount(shared('A'));
+    click('share-copy');
+    await act(async () => { ok.resolve(); await ok.promise; });
+    expect(panel().dataset.state).toBe('copied');
+    click('share-copy');
+    await act(async () => { denied.reject(new Error('denied')); await denied.promise.catch(() => {}); });
+    await flush();
+    expect(panel().dataset.state).toBe('copy-failed');
+    expect(document.activeElement).toBe(screen.getByTestId('share-url'));
+  });
+
+  it('a copy completing after A → B switch leaves no Copied revert timer scheduled', async () => {
+    const write = deferred<void>();
+    setClipboard(vi.fn(() => write.promise));
+    const { open } = mount(shared('A'));
+    click('share-copy');
+    open(shared('B'));
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    await act(async () => { write.resolve(); await write.promise; });
+    await flush();
+    expect(timers.mock.calls.filter((c) => c[1] === 1500)).toHaveLength(0); // 1500 = COPIED_RESET_MS
+    timers.mockRestore();
+  });
+
+  it('unmount during a pending copy invalidates its completion (no Copied timer left behind)', async () => {
+    const write = deferred<void>();
+    setClipboard(vi.fn(() => write.promise));
+    const { view } = mount(shared('A'));
+    click('share-copy');
+    view.unmount();
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    await act(async () => { write.resolve(); await write.promise; });
+    await flush();
+    expect(timers.mock.calls.filter((c) => c[1] === 1500)).toHaveLength(0); // 1500 = COPIED_RESET_MS
+    timers.mockRestore();
+  });
+
+  // ── create/stop ownership ──
+  it('overlapping creates for A and B: returning to A shows A busy, no second A request, A finishing first cannot unlock B', async () => {
+    const a = deferred<{ url: string; md5: string }>();
+    const b = deferred<{ url: string; md5: string }>();
+    const { open, createShare } = mount(plain('A'), {
+      createShare: (id) => (id === 'A' ? a.promise : b.promise),
+    });
+    click('share-create');
+    await flush();
+    open(plain('B'));
+    expect(panel().dataset.state).toBe('create');
+    click('share-create');
+    await flush();
+    open(plain('A'));
+    // Truthful busy state on return, and the control is really disabled.
+    expect(panel().dataset.state).toBe('creating');
+    expect(screen.getByTestId('share-create')).toBeDisabled();
+    click('share-create');
+    await flush();
+    expect(createShare).toHaveBeenCalledTimes(2);
+    // A completes first while A is shown → A's link appears.
+    await act(async () => { a.resolve({ url: 'link-A', md5: 'm' }); await a.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.getByTestId('share-url')).toHaveValue('link-A');
+    // B is still pending: still busy, still locked.
+    open(plain('B'));
+    expect(panel().dataset.state).toBe('creating');
+    click('share-create');
+    await flush();
+    expect(createShare).toHaveBeenCalledTimes(2);
+    expect(createShare.mock.calls.map((c) => c[0])).toEqual(['A', 'B']);
+    await act(async () => { b.resolve({ url: 'link-B', md5: 'm' }); await b.promise; });
+    await flush();
+    expect(screen.getByTestId('share-url')).toHaveValue('link-B');
+    // Back on A: its confirmed link is still shown (not reset to Create).
+    open(plain('A'));
+    expect(screen.getByTestId('share-url')).toHaveValue('link-A');
+  });
+
+  it('a create for A that completes while B is shown never puts A\'s link or error on B', async () => {
+    const a = deferred<{ url: string; md5: string }>();
+    const { open } = mount(plain('A'), { createShare: () => a.promise });
+    click('share-create');
+    await flush();
+    open(plain('B'));
+    await act(async () => { a.reject(new Error('offline')); await a.promise.catch(() => {}); });
+    await flush();
+    expect(panel().dataset.state).toBe('create');
+    expect(screen.queryByTestId('share-error-text')).toBeNull();
+  });
+
+  it('overlapping stops for A and B: return to A shows stopping; A done first keeps B locked; stopped A stays stopped on return', async () => {
+    const a = deferred<void>();
+    const b = deferred<void>();
+    const { open, stopSharing } = mount(shared('A'), {
+      stopSharing: (id) => (id === 'A' ? a.promise : b.promise),
+    });
+    click('share-stop');
+    await flush();
+    open(shared('B'));
+    expect(panel().dataset.state).toBe('created');
+    click('share-stop');
+    await flush();
+    open(shared('A'));
+    expect(panel().dataset.state).toBe('stopping');
+    expect(screen.getByTestId('share-stop')).toBeDisabled();
+    expect(screen.getByTestId('share-url')).toHaveValue(linkFor('A')); // still active until confirmed
+    await act(async () => { a.resolve(); await a.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('create');
+    open(shared('B'));
+    expect(panel().dataset.state).toBe('stopping');
+    click('share-stop');
+    await flush();
+    expect(stopSharing).toHaveBeenCalledTimes(2);
+    await act(async () => { b.resolve(); await b.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('create');
+    // The store copy of A still says isShared (stop is not mirrored locally); the
+    // confirmed stop must win so A is not shown as publicly linked again.
+    open(shared('A'));
+    expect(panel().dataset.state).toBe('create');
+  });
+
+  it('a stop for A that completes while B is shown does not clear B\'s link', async () => {
+    const a = deferred<void>();
+    const { open } = mount(shared('A'), { stopSharing: () => a.promise });
+    click('share-stop');
+    await flush();
+    open(shared('B'));
+    await act(async () => { a.resolve(); await a.promise; });
+    await flush();
+    expect(panel().dataset.state).toBe('created');
+    expect(screen.getByTestId('share-url')).toHaveValue(linkFor('B'));
+  });
+
+  it('rejects a conflicting create and stop on the same diagram while one is pending', async () => {
+    const pending = deferred<void>();
+    const stopSharing = vi.fn(() => pending.promise);
+    const createShare = vi.fn(async () => ({ url: 'x', md5: 'm' }));
+    useEditorStore.getState().loadItem(shared('A'));
+    const { result } = renderHook(() => useShare({
+      itemId: 'A',
+      getItemId: () => useEditorStore.getState().currentItem?.id ?? null,
+      createShare,
+      stopSharing,
+    }));
+    act(() => { void result.current.stop(); });
+    await act(async () => { await result.current.share(); });
+    expect(createShare).not.toHaveBeenCalled();
+    await act(async () => { pending.resolve(); await pending.promise; });
   });
 });
