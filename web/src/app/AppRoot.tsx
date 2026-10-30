@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle, type PreviewExportSnapshot } from '../preview/PreviewFrame';
+import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { ACTUAL_SIZE, formatZoom, zoomIn, zoomOut, type PreviewZoom } from '../preview/previewZoom';
 import { applyAppearance, previewThemeFor } from './appearance';
 import { Console, type ConsoleEntry } from '../preview/Console';
@@ -384,6 +385,29 @@ export function AppRoot() {
 
   // State for the one-time "saved locally, sign in to sync" notice (signed-out first save)
   const [noticeOpen, setNoticeOpen] = useState(false);
+  // #941/#942: hand keyboard focus to the DSL editor after an action that leaves it
+  // elsewhere (New remounts the editor via its key; a preview-originated edit leaves
+  // focus inside the renderer iframe). A nonce lets the request ride the same render
+  // as the store change, so the effect runs after the (re)mounted editor attached.
+  const dslEditorRef = useRef<ReactCodeMirrorRef>(null);
+  const [editorFocusNonce, setEditorFocusNonce] = useState(0);
+  const requestEditorFocus = () => setEditorFocusNonce((n) => n + 1);
+  useEffect(() => {
+    if (!editorFocusNonce) return;
+    // Caret at the end of the document: a preview-originated edit appends a line, and
+    // the user's next keystrokes must continue after it, not land at offset 0.
+    const focusAtEnd = (view: NonNullable<ReactCodeMirrorRef['view']>) => {
+      view.focus();
+      view.dispatch({ selection: { anchor: view.state.doc.length } });
+    };
+    const view = dslEditorRef.current?.view;
+    if (view) { focusAtEnd(view); return; }
+    const raf = requestAnimationFrame(() => {
+      const late = dslEditorRef.current?.view;
+      if (late) focusAtEnd(late);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [editorFocusNonce]);
   // REQ-LIB-8: surface a parse/import failure instead of swallowing it (advisor fix #6).
 
 
@@ -658,7 +682,10 @@ export function AppRoot() {
       track('diagram_save_succeeded', {feature_area:'editor', destination:outcome?.status ?? 'local'});
       // The saved snapshot owns this completion. Edits made while it waited stay dirty.
       if (useEditorStore.getState().currentItem === it) useEditorStore.getState().markSaved();
-      if (!uid) {
+      // #941: a diagram with no content has nothing worth the sign-in nudge; New saves
+      // an empty item right away, so without this gate the one-time notice would be
+      // spent on a blank page (and its focus trap would steal the editor focus).
+      if (!uid && itemToSave.js.trim() !== '') {
         // Informational notice preferences are separate from document persistence.
         // If acknowledgement storage fails, defer the notice to a later successful save.
         try {
@@ -892,6 +919,7 @@ export function AppRoot() {
     } as Item));
     setActivePanel('editor');
     persistNewDiagram();
+    requestEditorFocus();
     // The blank diagram is not the shared or ?code=-seeded one: drop those params
     // so a reload does not look the new id up as a share or re-seed the old code.
     void navigate({ to: '/', search: (prev) => ({
@@ -941,6 +969,12 @@ export function AppRoot() {
       track('first_edit', { category: 'fn' });
     }
     setDsl(next);
+  }
+  // #942: an edit that originates in the preview (the add-your-first-participant
+  // placeholder) leaves focus inside the renderer iframe; bring it back to the editor.
+  function handlePreviewCodeChange(code: string) {
+    handleDslChange(code);
+    requestEditorFocus();
   }
 
   async function handleDeleteItem(id: string) {
@@ -1467,7 +1501,7 @@ export function AppRoot() {
                   are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
               <div className="editor-source-stack flex flex-1 min-h-0 flex-col">
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" readOnly={!!item.isReadOnly} onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor ref={dslEditorRef} key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" readOnly={!!item.isReadOnly} onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
               </div>
               {/* Shared code theme + font size for the DSL and CSS editors: one slot at
                   the bottom of this workspace, revealed on demand. */}
@@ -1621,7 +1655,7 @@ export function AppRoot() {
                   // Mobile editor preview: native SVG fit-to-width (see isMobile above).
                   svgMode={isMobile && !fullscreen}
                   stickyOffset={stickyOffset}
-                  onCodeChange={handleDslChange}
+                  onCodeChange={handlePreviewCodeChange}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
                   onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
                 />
