@@ -96,9 +96,9 @@ for (const target of ['X', 'VeryLongParticipantName']) {
       const doc = (iframe as HTMLIFrameElement).contentDocument;
       const creation = doc?.querySelector('.creation');
       const header = [...(doc?.querySelectorAll('.lifeline .participant') ?? [])]
-        .find(el => el.parentElement?.id === participant);
+        .find(el => el.parentElement?.getAttribute('data-lifeline-id') === participant);
       const lifeline = [...(doc?.querySelectorAll('.lifeline .line') ?? [])]
-        .find(el => el.parentElement?.id === participant);
+        .find(el => el.parentElement?.getAttribute('data-lifeline-id') === participant);
       const message = creation?.querySelector('.message');
       const arrow = message?.querySelector('svg:last-of-type');
       const occurrence = creation?.querySelector('.occurrence');
@@ -118,8 +118,8 @@ for (const target of ['X', 'VeryLongParticipantName']) {
     const measured = await preview.evaluate((iframe, participant) => {
       const doc = (iframe as HTMLIFrameElement).contentDocument!;
       const creation = doc.querySelector('.creation')!;
-      const header = [...doc.querySelectorAll('.lifeline .participant')].find(el => el.parentElement?.id === participant)!;
-      const lifeline = [...doc.querySelectorAll('.lifeline .line')].find(el => el.parentElement?.id === participant)!;
+      const header = [...doc.querySelectorAll('.lifeline .participant')].find(el => el.parentElement?.getAttribute('data-lifeline-id') === participant)!;
+      const lifeline = [...doc.querySelectorAll('.lifeline .line')].find(el => el.parentElement?.getAttribute('data-lifeline-id') === participant)!;
       const arrow = creation.querySelector('.message svg:last-of-type')!;
       const line = creation.querySelector('.message svg:first-of-type')!;
       const occurrence = creation.querySelector('.occurrence')!;
@@ -149,7 +149,7 @@ test('Blue nested activations remain centered on their lifelines', async ({ page
     const doc = (iframe as HTMLIFrameElement).contentDocument;
     if (!doc?.querySelector('.occurrence[data-belongs-to="MF"]')) return null;
     return ['SGW', 'svc', 'rep', 'MF'].map(name => {
-      const line = doc.querySelector(`.lifeline#${name} > .line`);
+      const line = doc.querySelector(`.lifeline[data-lifeline-id="${name}"] > .line`);
       const occurrence = doc.querySelector(`.occurrence[data-belongs-to="${name}"]`);
       if (!line || !occurrence) return null;
       const l = line.getBoundingClientRect(), o = occurrence.getBoundingClientRect();
@@ -166,7 +166,7 @@ test('Blue translucent headers do not overlay a painted lifeline', async ({ page
     const doc = (iframe as HTMLIFrameElement).contentDocument;
     if (!doc?.querySelector('.participant[data-participant-id="X"]')) return null;
     return ['Client', 'X'].map(name => {
-      const line = doc.querySelector(`.lifeline#${name} > .line`);
+      const line = doc.querySelector(`.lifeline[data-lifeline-id="${name}"] > .line`);
       const header = doc.querySelector(`.participant[data-participant-id="${name}"]`);
       if (!line || !header) return null;
       const l = line.getBoundingClientRect(), h = header.getBoundingClientRect();
@@ -194,7 +194,7 @@ test('Blue header height variable keeps ordinary and created line starts in step
     const doc = (iframe as HTMLIFrameElement).contentDocument!;
     (doc.querySelector('.sequence-diagram') as HTMLElement).style.setProperty('--blue-participant-height', '3rem');
     return ['Client', 'X'].map(name => {
-      const line = doc.querySelector(`.lifeline#${name} > .line`)!;
+      const line = doc.querySelector(`.lifeline[data-lifeline-id="${name}"] > .line`)!;
       const header = doc.querySelector(`.participant[data-participant-id="${name}"]`)!;
       const l = line.getBoundingClientRect(), h = header.getBoundingClientRect();
       return { headerHeight: h.height, headerGap: l.top - h.bottom, bottomGap: line.parentElement!.getBoundingClientRect().bottom - l.bottom };
