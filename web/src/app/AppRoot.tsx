@@ -20,6 +20,7 @@ import { PageTabs } from '../components/pages/PageTabs';
 import { RendererHeader } from '../components/preview/RendererHeader';
 import { ExportDialog } from '../components/preview/ExportDialog';
 import { CssPanel } from '../components/editor/CssPanel';
+import { CodeAppearanceBar } from '../components/editor/CodeAppearanceBar';
 import { AppHeader } from '../components/header/AppHeader';
 import { ConfirmDialog } from '../components/modals/ConfirmDialog';
 import { AskToImportModal } from '../components/modals/AskToImportModal';
@@ -1278,7 +1279,7 @@ export function AppRoot() {
           editorCollapsed={editorCollapsed && !isMobile}
           editor={
             (
-            <div className="editor-source-pane flex flex-col h-full">
+            <div className="editor-source-pane relative flex flex-col h-full">
               {/* Page tabs now live on the RENDERER side (preview slot), above the
                   diagram — pages are a property of the rendered document, not the DSL
                   (per design §02). The editor pane just edits whichever page is active. */}
@@ -1290,6 +1291,14 @@ export function AppRoot() {
               <div className="editor-source-stack flex flex-1 min-h-0 flex-col">
                 <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
               </div>
+              {/* Shared code theme + font size for the DSL and CSS editors: one slot at
+                  the bottom of this workspace, revealed on demand. */}
+              <CodeAppearanceBar
+                themeId={settings.editorTheme}
+                fontSize={settings.fontSize}
+                onThemeChange={(id) => handleSettingChange('editorTheme', id)}
+                onFontSizeChange={(size) => handleSettingChange('fontSize', size)}
+              />
               {/* CSS pane → collapsible strip. Re-keyed per page so the collapsed
                   default re-derives from the new page's CSS emptiness (matches the
                   DSL editor's per-page remount). The pre-processor Select + acss
