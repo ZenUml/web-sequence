@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { AppRoot } from './AppRoot';
 import { useAuthStore } from '../state/authStore';
 import { useEditorStore } from '../state/editorStore';
+import { useImportFeedbackStore } from '../components/library/importFeedbackStore';
+import { useExportFeedbackStore } from '../components/library/exportFeedbackStore';
 
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
@@ -150,6 +152,10 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
+  // Import feedback is a module-level store: never let one test's pending import
+  // swallow a later test's upload.
+  useImportFeedbackStore.getState().reset();
+  useExportFeedbackStore.getState().reset();
   // Hub view gating (PRs #800/#801): '/' with no ?id= now renders the HomeView
   // library grid, NOT the editor. Almost every test in this file asserts editor
   // internals (editor-region, dsl-editor, header-title, console…), so default every
@@ -209,7 +215,6 @@ async function expandCss() {
   const strip = screen.queryByTestId('css-panel-strip');
   if (strip) await userEvent.click(strip);
 }
-
 
 describe('AppRoot', () => {
   it('renders editor and preview regions', async () => {
@@ -402,13 +407,11 @@ describe('AppRoot', () => {
     expect(screen.getByTestId('lib-import-input')).toBeInTheDocument();
   });
 
-  it('surfaces an "Import failed" notice when the imported file is malformed (advisor fix #6)', async () => {
-    // parseImportJson is mocked to throw. Before the fix handleImport had no
-    // try/catch, so the throw became a swallowed unhandled rejection with no UI.
-    // Hub (PRs #800/#801): import moved from the retired LibraryPanel to the Home
-    // view header — AppRoot's isHomeMode branch renders the SAME "Import failed"
-    // ConfirmDialog as the editor branch (AppRoot.tsx), so the notice is asserted
-    // on the Home view, where the import control now lives.
+  it('surfaces actionable import feedback (not the raw parser error) for a malformed file', async () => {
+    // A malformed file must surface feedback instead of a swallowed rejection
+    // (advisor fix #6), and that feedback is the nonmodal import panel with the real
+    // filename and actionable copy — not a modal echoing the parser's raw message.
+    // Import lives on the Home view (PRs #800/#801), so assert it there.
     window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     await screen.findByTestId('home-view');
@@ -417,11 +420,14 @@ describe('AppRoot', () => {
     const file = new File(['not json'], 'broken.json', { type: 'application/json' });
     await userEvent.upload(input, file);
 
-    // The error notice appears, showing the parser's message (queried by the unique
-    // message text, not the shared confirm-ok testid). The title also renders as a
-    // dialog heading.
-    expect(await screen.findByText('Bad JSON at line 1')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Import failed' })).toBeInTheDocument();
+    const panel = await screen.findByTestId('import-feedback');
+    expect(panel).toHaveAttribute('data-state', 'invalid');
+    expect(screen.getByRole('heading', { name: 'This file can’t be imported' })).toBeInTheDocument();
+    expect(panel).toHaveTextContent('broken.json');
+    expect(panel).toHaveTextContent('Choose a ZenUML JSON export file.');
+    expect(screen.queryByText('Bad JSON at line 1')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Import failed' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it("fires 'first_edit' once on the first DSL change", async () => {
@@ -1122,6 +1128,347 @@ describe('AppRoot — analytics envelope parity (REQ-ANL-1, adversarial review)'
     await act(async () => { await userEvent.upload(input, file); });
     // saveItems still runs (the write happens), but no new items → no analytics event.
     await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
+    expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
+  // DISCRIMINATING (review: cold-load misclassification): an import that runs before
+  // the signed-in library snapshot has arrived must NOT classify existing ids against
+  // the still-empty list. Before the fix, handleImport read useItems().items == [] →
+  // "1 diagram added" + itemsImported label '1' for a diagram that already existed.
+  it('cold load: import before the library snapshot arrives counts existing ids as updated', async () => {
+    let deliver!: (items: unknown[]) => void;
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => { deliver = cb; return () => {}; });
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'existing-1' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
+        authReady: true, online: true,
+      });
+    });
+    await waitFor(() => expect(deliver).toBeTypeOf('function'));
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'existing.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    // The library has not loaded yet: the snapshot now arrives with the existing id.
+    await act(async () => { deliver([{ id: 'existing-1', title: 'E', updatedOn: 1, pages: [] }]); });
+    const panel = await screen.findByTestId('import-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
+    expect(panel).toHaveTextContent('1 diagram updated.');
+    expect(panel).not.toHaveTextContent('added');
+    expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
+  it('Export all during cold load waits for the library and reports the real total', async () => {
+    let deliver!: (items: unknown[]) => void;
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((_uid, cb) => { deliver = cb; return () => {}; });
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    await act(async () => {
+      useAuthStore.setState({
+        user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null },
+        authReady: true, online: true,
+      });
+    });
+    await waitFor(() => expect(deliver).toBeTypeOf('function'));
+    await act(async () => { await userEvent.click(screen.getByTestId('lib-export-all')); });
+    expect(screen.queryByText('No diagrams to export')).toBeNull();
+    await act(async () => {
+      deliver([
+        { id: 'c1', title: 'One', updatedOn: 1, pages: [] },
+        { id: 'c2', title: 'Two', updatedOn: 2, pages: [] },
+      ]);
+    });
+    const panel = await screen.findByTestId('export-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'started'));
+    expect(panel).toHaveTextContent('zenuml-diagrams.json');
+    expect(panel).toHaveTextContent('2 diagrams included.');
+    expect(lastEnvelope('exportItems')).toBeDefined();
+  });
+
+  // DISCRIMINATING (review: identity cancellation). An import started under account A
+  // while A's library is still loading must never be answered by, or saved into,
+  // account B after a switch. Before the fix the waiter woke on B's snapshot and
+  // saveItems (live auth) wrote A's file into B with "added" analytics.
+  it('account switch while an import waits for the library: no save, cancelled, no analytics', async () => {
+    itemSvc.saveItems.mockClear();
+    const deliver: Record<string, (items: unknown[]) => void> = {};
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((uid, cb) => { deliver[uid] = cb; return () => {}; });
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'from-A-file' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'A', email: 'a', displayName: 'A', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(deliver.A).toBeTypeOf('function'));
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    await act(async () => { await userEvent.upload(input, new File(['{"items":{}}'], 'a.json', { type: 'application/json' })); });
+    // Switch to B before A's library arrives; B's library then loads.
+    await act(async () => {
+      useAuthStore.setState({ user: { uid: 'B', email: 'b', displayName: 'B', photoURL: null }, authReady: true, online: true });
+    });
+    await waitFor(() => expect(deliver.B).toBeTypeOf('function'));
+    await act(async () => { deliver.B([{ id: 'b-1', title: 'B1', updatedOn: 1, pages: [] }]); });
+    const panel = await screen.findByTestId('import-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'cancelled'));
+    expect(itemSvc.saveItems).not.toHaveBeenCalled();
+    expect(panel).toHaveTextContent('No diagrams were imported.');
+    expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
+  it('import saves with the bound identity guard of the account that started it', async () => {
+    itemSvc.saveItems.mockClear();
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'n1' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    await act(async () => { await userEvent.upload(input, new File(['{"items":{}}'], 'ok.json', { type: 'application/json' })); });
+    await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
+    // Signed out: the guard binds the save to the local library (expectedUid null).
+    expect(vi.mocked(itemSvc.saveItems).mock.calls[0]).toEqual([
+      expect.any(Object),
+      { expectedUid: null, isCurrent: expect.any(Function) },
+    ]);
+  });
+
+  it('Export all started under A never downloads B\'s library after a switch', async () => {
+    const deliver: Record<string, (items: unknown[]) => void> = {};
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((uid, cb) => { deliver[uid] = cb; return () => {}; });
+    const createUrl = vi.fn(() => 'blob:test');
+    const originalCreate = URL.createObjectURL;
+    URL.createObjectURL = createUrl as never;
+    try {
+      window.history.replaceState({}, '', '/?view=diagrams');
+      render(<AppRoot />);
+      await screen.findByTestId('home-view');
+      await act(async () => {
+        useAuthStore.setState({ user: { uid: 'A', email: 'a', displayName: 'A', photoURL: null }, authReady: true, online: true });
+      });
+      await waitFor(() => expect(deliver.A).toBeTypeOf('function'));
+      await act(async () => { await userEvent.click(screen.getByTestId('lib-export-all')); });
+      await act(async () => {
+        useAuthStore.setState({ user: { uid: 'B', email: 'b', displayName: 'B', photoURL: null }, authReady: true, online: true });
+      });
+      await waitFor(() => expect(deliver.B).toBeTypeOf('function'));
+      await act(async () => { deliver.B([{ id: 'b-1', title: 'B1', updatedOn: 1, pages: [] }]); });
+      const panel = await screen.findByTestId('export-feedback');
+      await waitFor(() => expect(panel).toHaveAttribute('data-state', 'cancelled'));
+      expect(panel).toHaveTextContent('No file was downloaded.');
+      expect(createUrl).not.toHaveBeenCalled();
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+
+  // IE-F2 (read provenance): itemService.subscribeAllItems used to turn a snapshot
+  // error into cb([]), which the library read as an authoritative empty library.
+  // These drive the REAL seam: the mocked service calls the onError channel.
+  type Sub = (uid: string, cb: (items: unknown[]) => void, onError?: (e: unknown) => void) => () => void;
+  const subscribeWith = (impl: Sub) =>
+    (itemSvc.subscribeAllItems as unknown as { mockImplementation(fn: Sub): void }).mockImplementation(impl);
+  const signInU1 = () => act(async () => {
+    useAuthStore.setState({ user: { uid: 'u1', email: 'e', displayName: 'U', photoURL: null }, authReady: true, online: true });
+  });
+
+  it('subscription failure: importing a known existing id claims no exact counts and sends no added analytics', async () => {
+    itemSvc.saveItems.mockClear();
+    subscribeWith((_uid, _cb, onError) => { onError?.(new Error('permission-denied')); return () => {}; });
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'existing-1' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    await signInU1();
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    await act(async () => { await userEvent.upload(input, new File(['{"items":{}}'], 'existing.json', { type: 'application/json' })); });
+    const panel = await screen.findByTestId('import-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
+    expect(panel).toHaveTextContent('1 diagram imported.');
+    expect(panel).not.toHaveTextContent(/added|updated/);
+    expect(lastEnvelope('itemsImported')).toBeUndefined();
+  });
+
+  it('subscription failure: Export all fails with Try again and downloads nothing; a successful retry downloads the real total', async () => {
+    let calls = 0;
+    subscribeWith((_uid, cb, onError) => {
+      calls += 1;
+      if (calls === 1) onError?.(new Error('unavailable'));
+      else if (calls === 2) onError?.(new Error('still unavailable'));
+      else cb([{ id: 'c1', title: 'One', updatedOn: 1, pages: [] }, { id: 'c2', title: 'Two', updatedOn: 2, pages: [] }]);
+      return () => {};
+    });
+    const createUrl = vi.fn(() => 'blob:test');
+    const originalCreate = URL.createObjectURL;
+    URL.createObjectURL = createUrl as never;
+    try {
+      window.history.replaceState({}, '', '/?view=diagrams');
+      render(<AppRoot />);
+      await screen.findByTestId('home-view');
+      await signInU1();
+      await waitFor(() => expect(calls).toBe(1));
+      // Not "No diagrams": the library is unknown, so Export all stays enabled.
+      expect(screen.getByTestId('lib-export-all')).not.toHaveAttribute('aria-disabled', 'true');
+      await act(async () => { await userEvent.click(screen.getByTestId('lib-export-all')); });
+      const panel = await screen.findByTestId('export-feedback');
+      await waitFor(() => expect(panel).toHaveAttribute('data-state', 'failed'));
+      expect(screen.queryByText('No diagrams to export')).toBeNull();
+      expect(createUrl).not.toHaveBeenCalled();
+      await act(async () => { await userEvent.click(screen.getByRole('button', { name: 'Try again' })); });
+      await waitFor(() => expect(screen.getByTestId('export-feedback')).toHaveAttribute('data-state', 'started'));
+      expect(screen.getByTestId('export-feedback')).toHaveTextContent('2 diagrams included.');
+      expect(createUrl).toHaveBeenCalledTimes(1);
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+
+  it('subscription failure then a successful retry: import reports truthful counts', async () => {
+    let calls = 0;
+    subscribeWith((_uid, cb, onError) => {
+      calls += 1;
+      if (calls === 1) onError?.(new Error('unavailable'));
+      else cb([{ id: 'existing-1', title: 'E', updatedOn: 1, pages: [] }]);
+      return () => {};
+    });
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'existing-1' } as never, { id: 'new-1' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    await signInU1();
+    await waitFor(() => expect(calls).toBe(1));
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    await act(async () => { await userEvent.upload(input, new File(['{"items":{}}'], 'mix.json', { type: 'application/json' })); });
+    const panel = await screen.findByTestId('import-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
+    expect(panel).toHaveTextContent('1 diagram added. 1 diagram updated.');
+    await waitFor(() => expect(lastEnvelope('itemsImported')?.label).toBe('1'));
+  });
+
+  // IE-F3: a dangling index key (no stored record) is not an existing diagram.
+  it('signed out: one valid record + one dangling key imports as 1 updated + 1 added', async () => {
+    window.localStorage.setItem(LS_KEYS.items, JSON.stringify({ valid: true, dangling: true }));
+    window.localStorage.setItem('valid', JSON.stringify({ id: 'valid', title: 'V', updatedOn: 1, pages: [] }));
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'valid' } as never, { id: 'dangling' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    await act(async () => { await userEvent.upload(input, new File(['{"items":{}}'], 'two.json', { type: 'application/json' })); });
+    const panel = await screen.findByTestId('import-feedback');
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'success'));
+    expect(panel).toHaveTextContent('1 diagram added. 1 diagram updated.');
+    await waitFor(() => expect(lastEnvelope('itemsImported')?.label).toBe('1'));
+  });
+
+  // IE-C1: ownership is captured when the file is chosen, before File.text() resolves.
+  it('file chosen under A, account switches to B while the file is read: nothing saved, cancelled', async () => {
+    itemSvc.saveItems.mockClear();
+    const deliver: Record<string, (items: unknown[]) => void> = {};
+    (itemSvc.subscribeAllItems as unknown as {
+      mockImplementation(fn: (uid: string, cb: (items: unknown[]) => void) => () => void): void;
+    }).mockImplementation((uid, cb) => { deliver[uid] = cb; return () => {}; });
+    // No parseImportJson stub: a stale file never reaches parsing (if it did, the
+    // default throwing mock would show "invalid", not "cancelled").
+    let releaseText!: (t: string) => void;
+    const originalText = File.prototype.text;
+    File.prototype.text = function () { return new Promise<string>((r) => { releaseText = r; }); };
+    try {
+      window.history.replaceState({}, '', '/?view=diagrams');
+      render(<AppRoot />);
+      await screen.findByTestId('home-view');
+      await act(async () => {
+        useAuthStore.setState({ user: { uid: 'A', email: 'a', displayName: 'A', photoURL: null }, authReady: true, online: true });
+      });
+      await waitFor(() => expect(deliver.A).toBeTypeOf('function'));
+      await act(async () => { deliver.A([]); });
+      const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+      await act(async () => { await userEvent.upload(input, new File(['x'], 'a-choice.json', { type: 'application/json' })); });
+      await act(async () => {
+        useAuthStore.setState({ user: { uid: 'B', email: 'b', displayName: 'B', photoURL: null }, authReady: true, online: true });
+      });
+      await waitFor(() => expect(deliver.B).toBeTypeOf('function'));
+      await act(async () => { deliver.B([]); });
+      await act(async () => { releaseText('{"items":{}}'); });
+      const panel = await screen.findByTestId('import-feedback');
+      await waitFor(() => expect(panel).toHaveAttribute('data-state', 'cancelled'));
+      expect(panel).toHaveTextContent('No diagrams were imported.');
+      expect(itemSvc.saveItems).not.toHaveBeenCalled();
+      expect(lastEnvelope('itemsImported')).toBeUndefined();
+    } finally {
+      File.prototype.text = originalText;
+    }
+  });
+
+  // DISCRIMINATING: the label counts UNIQUE new ids. A file listing the same new id
+  // twice adds one diagram; the pre-feedback handler counted parsed entries ('2').
+  it("'itemsImported' label counts unique new ids, not duplicate entries", async () => {
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'dup' } as never, { id: 'dup' } as never]);
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'ok.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    const env = await waitFor(() => {
+      const e = lastEnvelope('itemsImported');
+      expect(e).toBeDefined();
+      return e!;
+    });
+    expect(env.label).toBe('1');
+  });
+
+  it('shows import success only after saveItems resolves, with the real filename and count', async () => {
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'n1' } as never, { id: 'n2' } as never]);
+    let release!: () => void;
+    vi.mocked(itemSvc.saveItems).mockImplementationOnce(() => new Promise<void>((r) => { release = r; }));
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'team.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    await waitFor(() => expect(itemSvc.saveItems).toHaveBeenCalled());
+    expect(screen.queryByTestId('import-feedback')).toBeNull();
+    await act(async () => { release(); });
+    const panel = await screen.findByTestId('import-feedback');
+    expect(panel).toHaveAttribute('data-state', 'success');
+    expect(panel).toHaveTextContent('team.json');
+    expect(panel).toHaveTextContent('2 diagrams added.');
+  });
+
+  it('a rejected saveItems shows save-failed feedback and no itemsImported event', async () => {
+    const { parseImportJson } = await import('../services/exportImport');
+    vi.mocked(parseImportJson).mockReturnValueOnce([{ id: 'n1' } as never]);
+    vi.mocked(itemSvc.saveItems).mockRejectedValueOnce(new Error('FirebaseError: unavailable'));
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await screen.findByTestId('home-view');
+    const input = screen.getByTestId('lib-import-input') as HTMLInputElement;
+    const file = new File(['{"items":{}}'], 'team.json', { type: 'application/json' });
+    await act(async () => { await userEvent.upload(input, file); });
+    const panel = await screen.findByTestId('import-feedback');
+    expect(panel).toHaveAttribute('data-state', 'saveFailed');
+    expect(panel).not.toHaveTextContent('FirebaseError');
     expect(lastEnvelope('itemsImported')).toBeUndefined();
   });
 

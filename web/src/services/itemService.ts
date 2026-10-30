@@ -4,9 +4,13 @@ import { localStore } from './storage';
 import * as localItems from './localItems';
 import { migrateToPages } from '../domain/item';
 import type { Item } from '../domain/types';
+import { IdentityChangedError, type SaveItemsGuard } from './identityGuard';
 
 export interface AuthContext { uid: string | null; online: boolean }
 export type AuthContextGetter = () => AuthContext;
+
+// Bound-identity guard for saveItems (see identityGuard.ts), re-exported as public API.
+export { IdentityChangedError, type SaveItemsGuard };
 
 // Factory so tests/hooks inject the auth/online context instead of reading globals
 // (NFR-3: no window.* as the integration mechanism).
@@ -76,25 +80,49 @@ export function makeItemService(getAuth: AuthContextGetter) {
     await deleteDoc(doc(db, `items/${id}`));
   }
 
-  function subscribeAllItems(uid: string, cb: (items: Item[]) => void): () => void {
+  // `onError` (optional) receives a snapshot error with its provenance. Without it the
+  // legacy behaviour stays: an error is reported as cb([]), indistinguishable from an
+  // empty library. Callers that must not treat a failed read as "no diagrams" (import
+  // classification, Export all) pass onError.
+  function subscribeAllItems(
+    uid: string,
+    cb: (items: Item[]) => void,
+    onError?: (error: unknown) => void,
+  ): () => void {
     const q = query(collection(db, 'items'), where('createdBy', '==', uid));
     return onSnapshot(q, (snap: any) => {
       const items: Item[] = [];
       snap.forEach((d: any) => items.push(d.data() as Item));
       cb(items);
-    }, () => cb([]));
+    }, (error: unknown) => (onError ? onError(error) : cb([])));
   }
 
-  async function saveItems(items: Record<string, Item>): Promise<void> {
+  async function saveItems(items: Record<string, Item>, guard?: SaveItemsGuard): Promise<void> {
+    let writesStarted = false;
+    const assertIdentity = () => {
+      if (!guard) return;
+      if (getAuth().uid !== guard.expectedUid || (guard.isCurrent && !guard.isCurrent())) {
+        throw new IdentityChangedError(writesStarted);
+      }
+    };
+    assertIdentity();
     const { uid } = getAuth();
     const entries = Object.entries(items);
     if (!uid) {
-      for (const [id, it] of entries) {
-        const c = { ...it }; delete (c as any).imageBase64;
-        await localStore.set(id, c);
-        await localItems.add(id);
+      try {
+        for (const [id, it] of entries) {
+          const c = { ...it }; delete (c as any).imageBase64;
+          assertIdentity();
+          writesStarted = true;
+          await localStore.set(id, c);
+          assertIdentity();
+          // Re-checked inside add, after its index read and before the index write.
+          await localItems.add(id, guard ? assertIdentity : undefined);
+        }
+      } finally {
+        // Refresh the signed-out list for whatever was written, even when stopped.
+        if (writesStarted) localItems.notifyChange();
       }
-      localItems.notifyChange();
       return;
     }
     const batch = writeBatch(db);
@@ -127,6 +155,9 @@ export function makeItemService(getAuth: AuthContextGetter) {
       // so the import is robust regardless of ordering (adversarial review).
       batch.set(doc(db, `users/${uid}`), { items: { [id]: true } }, { merge: true });
     }
+    // Last check before the single atomic commit. A commit already sent cannot be
+    // recalled if auth changes while it is in flight.
+    assertIdentity();
     await batch.commit();
   }
 

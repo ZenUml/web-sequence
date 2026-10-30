@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 
 // --- Mock itemService (factory) ---
 const mockSubscribeAllItems = vi.fn();
@@ -160,5 +160,63 @@ describe('useItems — signed out reactivity', () => {
     // way the list reflects the new folderId is the notifyChange() emit (adversarial review).
     await svc.moveToFolder(result.current.items[0], 'folder-x');
     await waitFor(() => expect(result.current.items[0].folderId).toBe('folder-x'));
+  });
+});
+
+// IE-F2: a failed read must keep its provenance. Only a successful snapshot (or a
+// successful local load) establishes a known library, including a known-empty one.
+describe('useItems — read provenance', () => {
+  const signIn = (uid: string) =>
+    useAuthStore.setState({ user: { uid, email: 'a@b.c', displayName: null, photoURL: null }, online: true });
+
+  it('subscription failure is an error for that owner, not a ready empty library', async () => {
+    const failure = new Error('permission-denied');
+    mockSubscribeAllItems.mockImplementation((_uid: string, _cb: unknown, onError: (e: unknown) => void) => {
+      onError(failure);
+      return () => {};
+    });
+    signIn('u1');
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.error).toBe(failure));
+    expect(result.current.owner).toBe('u1');
+    expect(result.current.items).toEqual([]);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('a successful empty snapshot is known-empty with no error', async () => {
+    mockSubscribeAllItems.mockImplementation((_uid: string, cb: (items: Item[]) => void) => { cb([]); return () => {}; });
+    signIn('u1');
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.owner).toBe('u1'));
+    expect(result.current.error).toBeNull();
+    expect(result.current.items).toEqual([]);
+  });
+
+  it('retry() re-subscribes; a later successful snapshot replaces the error', async () => {
+    let attempt = 0;
+    mockSubscribeAllItems.mockImplementation(
+      (_uid: string, cb: (items: Item[]) => void, onError: (e: unknown) => void) => {
+        attempt += 1;
+        if (attempt === 1) onError(new Error('unavailable'));
+        else cb([makeItem('a', 1)]);
+        return () => {};
+      },
+    );
+    signIn('u1');
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    const failedAttempt = result.current.attempt;
+    act(() => { result.current.retry(); });
+    await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['a']));
+    expect(result.current.error).toBeNull();
+    expect(result.current.attempt).toBeGreaterThan(failedAttempt);
+    expect(mockSubscribeAllItems).toHaveBeenCalledTimes(2);
+  });
+
+  it('signed out: owner is null after the local load', async () => {
+    const { result } = renderHook(() => useItems());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.owner).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 });

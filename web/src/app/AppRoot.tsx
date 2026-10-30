@@ -41,8 +41,12 @@ import { migrateToPages } from '../domain/item';
 // LibraryPanel removed — Library is now the Home page (isHomeMode), not a side panel.
 import { ShareButton } from '../components/share/ShareButton';
 import { ShareErrorNotice } from '../components/modals/ShareErrorNotice';
-import { exportAllItemsJson, parseImportJson, buildStandaloneHtml } from '../services/exportImport';
+import { buildStandaloneHtml } from '../services/exportImport';
 import { downloadText } from '../services/download';
+import { runImport, type ImportFileContext } from '../components/library/importFeedbackStore';
+import { runExportAll } from '../components/library/exportFeedbackStore';
+import { LibraryFeedback } from '../components/library/LibraryFeedback';
+import { useLibraryReader } from '../components/library/useLibraryReader';
 // M04 — subscription / settings / modals / analytics
 import { useSubscription } from '../hooks/useSubscription';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -211,7 +215,13 @@ export function AppRoot() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   // REQ-PST (M02 Task 16): library panel — items list from hook.
-  const { items } = useItems();
+  const itemsState = useItems();
+  const { items } = itemsState;
+  // Settled library for import classification and Export all (never the
+  // still-loading list): extant storage records when signed out, a successful
+  // snapshot when signed in. itemsState carries read provenance (owner, error,
+  // attempt, retry), so a failed read is unknown rather than an empty library.
+  const library = useLibraryReader({ ...itemsState, uid: user?.uid ?? null });
   // REQ-LIB-6: folders for the library panel (sign-in gated; [] + no-op when signed-out).
   const { folders, createFolder, renameFolder, deleteFolder } = useFolders();
 
@@ -379,8 +389,6 @@ export function AppRoot() {
 
   // State for the one-time "saved locally, sign in to sync" notice (signed-out first save)
   const [noticeOpen, setNoticeOpen] = useState(false);
-  // REQ-LIB-8: surface a parse/import failure instead of swallowing it (advisor fix #6).
-  const [importError, setImportError] = useState<string | null>(null);
 
   // ItemService — created once, injects auth/online context lazily via getState()
   const itemService = useMemo(
@@ -827,12 +835,20 @@ export function AppRoot() {
   }
 
   function handleExportAll() {
-    // REQ-ANL-1: legacy category is 'fn' (app.jsx:1211 trackEvent('fn','exportItems'))
-    // and legacy sent NO label. Match the envelope so saved Mixpanel views filtering
-    // exportItems by category='fn' keep matching after cutover (adversarial review).
-    track('exportItems', { category: 'fn' });
-    const json = exportAllItemsJson(items);
-    downloadText('zenuml-diagrams.json', json, 'application/json');
+    // runExportAll exports the whole settled library (not the filtered view) and
+    // reports preparing / download started / failed / empty to LibraryFeedback.
+    // It ignores repeat clicks while preparing and never rejects.
+    return runExportAll({
+      // Bound to the account that clicked: an account switch before the file is ready
+      // cancels the export instead of downloading the new account's library.
+      identity: library.identity,
+      getItems: library.getLibraryItems,
+      download: (fileName, json) => downloadText(fileName, json, 'application/json'),
+      // REQ-ANL-1: legacy category is 'fn' (app.jsx:1211 trackEvent('fn','exportItems'))
+      // and legacy sent NO label. Match the envelope so saved Mixpanel views filtering
+      // exportItems by category='fn' keep matching after cutover (adversarial review).
+      onStart: () => track('exportItems', { category: 'fn' }),
+    });
   }
 
   function handleExportHtml(it: Item) {
@@ -841,32 +857,26 @@ export function AppRoot() {
     downloadText(`${safe}.html`, html, 'text/html');
   }
 
-  async function handleImport(text: string) {
-    // parseImportJson throws on invalid JSON / wrong shape. Catch it so a malformed
-    // file surfaces an error instead of a silent unhandled rejection (advisor fix #6).
-    try {
-      const parsed = parseImportJson(text);
-      const map: Record<string, Item> = {};
-      for (const it of parsed) map[it.id] = it;
-      // saveItems already writes user-membership in its signed-in batch path, so no
-      // separate setItemForUser loop is needed (advisor note 7).
-      await itemService.saveItems(map);
-      // REQ-ANL-1 (adversarial review, finding 4): legacy app.jsx:1280,1300 sends
-      // mergedItemCount — the count of NEWLY added items (total minus ids that already
-      // existed) — NOT the full parsed count, and fires the event ONLY when that count
-      // is > 0. Sending String(parsed.length) unconditionally inflated any saved
-      // Mixpanel report that reads itemsImported as a new-items-added metric whenever an
-      // imported file overlapped existing items, and emitted a spurious itemsImported=N
-      // for an all-duplicate import that added nothing new. Compute the newly-added
-      // count against the current item set and gate the event on it (legacy-exact).
-      const existingIds = new Set(items.map((i) => i.id));
-      const mergedItemCount = parsed.filter((p) => !existingIds.has(p.id)).length;
-      if (mergedItemCount > 0) {
-        track('itemsImported', { category: 'fn', label: String(mergedItemCount) });
-      }
-    } catch (e: unknown) {
-      setImportError(e instanceof Error ? e.message : 'Could not import this file.');
-    }
+  async function handleImport(text: string, context?: ImportFileContext) {
+    // runImport parses, merges by id via saveItems (which also writes signed-in
+    // user-membership), and reports the outcome to ImportFeedback through its store.
+    // Invalid files and save failures become feedback, never unhandled rejections.
+    await runImport(text, {
+      // Existing ids from the settled library: an import during the initial load
+      // must not count already-existing diagrams as newly added.
+      existingIds: library.getExistingIds,
+      // Bound to the account that started the import: an account switch cancels the
+      // attempt (and a failed retry) and saveItems' guard refuses to write elsewhere.
+      identity: library.identity,
+      // Ownership captured by readImportFile before the file was read (IE-C1).
+      token: context?.token,
+      saveItems: (items, guard) => itemService.saveItems(items, guard),
+      // REQ-ANL-1: legacy app.jsx:1280,1300 sends mergedItemCount — the count of
+      // NEWLY added items, not the parsed total — and only when it is > 0. runImport
+      // calls this once, after the save resolved, with the unique new-id count.
+      onItemsAdded: (mergedItemCount) =>
+        track('itemsImported', { category: 'fn', label: String(mergedItemCount) }),
+    });
   }
 
   // REQ-SHR-1/2/5: share the CURRENT item. Read the id via getState() so a fresh
@@ -987,15 +997,7 @@ export function AppRoot() {
           cancelLabel="Not now"
           onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
         />
-        <ConfirmDialog
-          open={importError != null}
-          onOpenChange={(o) => { if (!o) setImportError(null); }}
-          title="Import failed"
-          message={importError ?? ''}
-          confirmLabel="OK"
-          cancelLabel="Dismiss"
-          onConfirm={() => setImportError(null)}
-        />
+        <LibraryFeedback onImport={handleImport} onExportAll={handleExportAll} />
         <AskToImportModal
           open={importPending}
           onOpenChange={(o) => { if (!o) void dismissImport(); }}
@@ -1066,7 +1068,7 @@ export function AppRoot() {
           onMoveItem={(it, folderId) => void handleMoveItem(it, folderId)}
           onExportHtml={handleExportHtml}
           onExportAll={handleExportAll}
-          onImport={(text) => void handleImport(text)}
+          onImport={(text, context?: ImportFileContext) => void handleImport(text, context)}
           readOnly={!user}
         />
       </div>
@@ -1118,16 +1120,6 @@ export function AppRoot() {
         confirmLabel="Sign in"
         cancelLabel="Not now"
         onConfirm={() => login((lastProvider as ProviderName | null) ?? 'google')}
-      />
-      {/* REQ-LIB-8: surface a malformed-import error (advisor fix #6). */}
-      <ConfirmDialog
-        open={importError != null}
-        onOpenChange={(o) => { if (!o) setImportError(null); }}
-        title="Import failed"
-        message={importError ?? ''}
-        confirmLabel="OK"
-        cancelLabel="Dismiss"
-        onConfirm={() => setImportError(null)}
       />
       {/* Import local diagrams after login (REQ-AC) */}
       <AskToImportModal
