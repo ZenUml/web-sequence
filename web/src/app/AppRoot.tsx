@@ -748,7 +748,10 @@ export function AppRoot() {
     if (after.currentItem?.id !== startId) return false;
     // The awaited attempt already stored everything (it marks the item clean).
     if (!after.dirty) return true;
-    const saved = await save();
+    // Silent (#951): New is a navigation step, not a "you saved" moment. The
+    // one-time notice would otherwise open on top of the fresh blank editor and
+    // take the focus New just gave it; the next ordinary save still shows it.
+    const saved = await save({ silent: true });
     if (saved) return true;
     // save() returns false for a queued (offline, signed-in) save as well, but it
     // calls markSaved() first because the item is retained locally. Failures keep

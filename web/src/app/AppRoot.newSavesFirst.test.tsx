@@ -174,6 +174,19 @@ describe('AppRoot — New saves the current diagram first (#952)', () => {
     expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument();
   });
 
+  it('the save-first of New is silent: no "Saved on this device" notice over the new diagram (#951/#952)', async () => {
+    // Signed out, first visit: the notice has never been shown. New's save-first is a
+    // navigation step, not a "you saved" moment: the notice must not open on top of
+    // the fresh blank editor (it would steal the focus #941 just gave it). The next
+    // ordinary save with content (Ctrl+S / auto-save) still shows it once.
+    const firstId = await typeDiagram();
+    fireEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(firstId));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryAllByText('Saved on this device')).toHaveLength(0);
+    expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
+  });
+
   it('does not create the new diagram until the save has settled', async () => {
     const firstId = await typeDiagram();
     const gate = deferred<Outcome>();
