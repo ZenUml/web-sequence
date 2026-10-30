@@ -88,6 +88,30 @@ async function interceptAnalytics(page) {
   };
 }
 
+/**
+ * Record /track bodies by observing requests, without intercepting them.
+ * Playwright route interception drops some requests sent while a document
+ * unloads (a keepalive POST from pagehide), so unload events are asserted this
+ * way. The local dev server answers /track with 404; the app ignores that.
+ */
+function observeAnalytics(context) {
+  const events = [];
+  context.on('request', (req) => {
+    if (!req.url().endsWith('/track') || req.method() !== 'POST') return;
+    try {
+      events.push(JSON.parse(req.postData() || '{}'));
+    } catch {
+      events.push({ _unparsed: req.postData() });
+    }
+  });
+  return {
+    events,
+    of(name) {
+      return events.filter((e) => e.event === name);
+    },
+  };
+}
+
 /** The CM6 editor content surface. */
 function editorLocator(page) {
   return page.locator('[data-testid="dsl-editor"] .cm-content');
@@ -376,4 +400,57 @@ test('ANL-4: /track bodies carry a stable anonId and app_opened replaces pageVie
     .poll(() => analytics.of('app_opened').length, { timeout: 10_000 })
     .toBe(1);
   expect(analytics.of('app_opened')[0].anonId).toBe(anonId);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ANL-5: activity events. A completed save emits diagram_save_succeeded, and
+// leaving the page emits one editor_session_ended with the DSL edit count. The
+// session event is sent from pagehide with keepalive, so a real navigation away
+// (not a synthetic event) proves the POST survives the unload.
+// ──────────────────────────────────────────────────────────────────────────────
+test('ANL-5: save emits diagram_save_succeeded and leaving emits editor_session_ended', async ({
+  page,
+  context,
+}) => {
+  // Observe, not intercept: the session event is sent while the page unloads.
+  const analytics = observeAnalytics(context);
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await openEditor(page);
+  const editor = editorLocator(page);
+  await expect(editor).toBeVisible({ timeout: 15_000 });
+  // Bare '/' is the editor too, so leaving that first page sent its own
+  // editor_session_ended (0 edits). Let its keepalive POST land, then drop it.
+  await page.waitForTimeout(500);
+  analytics.events.length = 0;
+
+  await editor.click();
+  await page.keyboard.press('End');
+  await editor.pressSequentially('ABC');
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+s' : 'Control+s');
+
+  await expect
+    .poll(() => analytics.of('diagram_save_succeeded').length, { timeout: 10_000 })
+    .toBe(1);
+  expect(analytics.of('diagram_save_succeeded')[0]).toEqual(
+    expect.objectContaining({
+      feature_area: 'editor',
+      destination: 'local',
+      is_authenticated: false,
+      runtime: 'web',
+    }),
+  );
+
+  // A full navigation away hides the editor page for good → pagehide.
+  await page.goto('/?view=diagrams');
+  await expect
+    .poll(() => analytics.of('editor_session_ended').length, { timeout: 10_000 })
+    .toBe(1);
+  const ended = analytics.of('editor_session_ended')[0];
+  expect(ended.feature_area).toBe('editor');
+  expect(ended.close_source).toBe('unload');
+  expect(ended.edit_count).toBe(3);
+  expect(ended.had_unsaved_changes).toBe(false);
+  expect(ended.editor_open_duration_ms).toBeGreaterThan(0);
 });
