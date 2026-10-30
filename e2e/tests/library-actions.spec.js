@@ -1,27 +1,26 @@
 // Library / Hub actions E2E (signed-out / local flows only).
 //
-// Covers the per-card kebab actions and grid-level affordances on the HomeView
-// hub (reached at '/?view=diagrams' under editor-as-landing, 2026-06-13):
+// Covers the per-card actions and grid-level affordances on the Diagrams page
+// (reached at '/?view=diagrams' under editor-as-landing, 2026-06-13):
 //
-//   LIB-1  kebab → Duplicate  → returning to the hub shows a second "(Forked) …" card
-//   LIB-2  kebab → Delete     → the card disappears from the grid
-//   LIB-3  kebab → Export HTML → triggers a *.html download (local-build only)
-//   LIB-4  sort Recent ↔ Title → reorders the grid
-//   LIB-5  a card shows its DSL preview + title + last-updated date
+//   LIB-1  card Fork          → the hub shows a second "(Forked) …" card
+//   LIB-2  card Delete        → confirm → the card disappears from the grid
+//   LIB-3  Export HTML        → fixme: the approved Diagrams design removed the card
+//                               entry and no other UI entry exists yet
+//   LIB-4  sort Last modified ↔ Name A–Z → reorders the grid
+//   LIB-5  a card shows its rendered diagram + title + Edited date
 //   LIB-6  hub "New" CTA       → opens a blank editor
 //   LIB-8  empty hub           → "No diagrams yet" + New / Browse-templates CTAs
 //
-// Selectors are REAL (grepped from web/src/components/home/{HomeView,DiagramCard}.tsx
-// and web/src/ui/{Menu,Select}.tsx):
-//   - Cards:        [data-testid^="home-card-"] (DiagramCard root; the only testid).
-//   - Kebab menu:   a Radix DropdownMenu — trigger is the per-card button
-//                   aria-label="Diagram options"; items carry NO testid, so we
-//                   target them by their visible text (Duplicate / Delete /
-//                   "Export as HTML"), the stable contract.
-//   - Sort:         Radix Select [data-testid="home-sort"]; options render as
-//                   role=option named "Recent"/"Title" (Recent = updated desc).
+// Selectors are REAL (grepped from web/src/components/home/{HomeView,DiagramCard,
+// DeleteDiagramDialog}.tsx):
+//   - Cards:        [data-testid^="home-card-"] (DiagramCard root).
+//   - Card actions: direct icon buttons named "Fork <title>" / "Delete <title>".
+//   - Delete:       dialog [data-testid="home-delete-dialog"], home-delete-confirm.
+//   - Sort:         two direct buttons home-sort-updated ("Last modified") and
+//                   home-sort-title ("Name A–Z").
 //   - Empty state:  [data-testid="home-empty"], home-empty-new, home-empty-templates.
-//   - New CTA:      [data-testid="home-new"] (split-button primary).
+//   - New CTA:      [data-testid="home-new"] (creates a blank diagram directly).
 //
 // Seeding mirrors library.spec.js exactly: seed items in the EDITOR (bare '/' boots
 // it; openEditor), then read the library back via a FULL navigation to
@@ -29,10 +28,8 @@
 //
 // handleForkItem (AppRoot) loads + forks (title → "(Forked) …", dirty) and switches
 // to the editor — a fork is UNOWNED until explicitly saved, so LIB-1 must Save the
-// fork in the editor before it appears as a second hub card. handleDeleteItem runs
-// itemService.removeItem immediately with NO confirm dialog for home cards (the
-// ConfirmDialogs in the tree are for folders/pages/editor); LIB-2 still handles a
-// confirm conditionally per the plan's "with confirm if any".
+// fork in the editor before it appears as a second hub card. Card Delete opens the
+// Diagrams delete confirmation; handleDeleteItem runs only after its Delete button.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
@@ -157,18 +154,6 @@ async function newInEditor(page) {
   await expect(editorLocator(page)).toBeVisible();
 }
 
-/**
- * Open a card's kebab menu and click an item by its visible text. The kebab trigger
- * is opacity-0 until group-hover but is always in the DOM; hover first so it's
- * interactable, then open via its aria-label and select the labelled MenuItem.
- */
-async function openCardMenu(card, page, itemText) {
-  await card.hover();
-  await card.getByRole('button', { name: 'Diagram options' }).click();
-  // Radix DropdownMenu items render with role=menuitem in a portal.
-  await page.getByRole('menuitem', { name: itemText, exact: true }).click();
-}
-
 // ──────────────────────────────────────────────────────────────────────────────
 // LIB-8: Empty hub shows the "No diagrams yet" empty state + both CTAs.
 // (Ordered first because it asserts on a clean slate with zero items.)
@@ -223,7 +208,7 @@ test('LIB-6: hub "New" CTA opens a blank editor', async ({ page }) => {
   await gotoHome(page);
   await expect(page.locator('[data-testid="home-grid"]')).toBeVisible();
 
-  // Click the hub's primary New button → editor opens on a blank diagram.
+  // Click the hub's primary New button → editor opens on a blank diagram (no menu).
   await page.locator('[data-testid="home-new"]').click();
   const editor = editorLocator(page);
   await expect(editor).toBeVisible({ timeout: 15_000 });
@@ -237,7 +222,7 @@ test('LIB-6: hub "New" CTA opens a blank editor', async ({ page }) => {
 // ──────────────────────────────────────────────────────────────────────────────
 // LIB-5: A card shows DSL preview + title + last-updated date.
 // ──────────────────────────────────────────────────────────────────────────────
-test('LIB-5: a card shows DSL preview + title + last-updated', async ({
+test('LIB-5: a card shows the rendered diagram + title + Edited date', async ({
   page,
 }) => {
   await gotoFresh(page);
@@ -257,32 +242,29 @@ test('LIB-5: a card shows DSL preview + title + last-updated', async ({
   // Title is shown on the card.
   await expect(card.getByText(title, { exact: true })).toBeVisible();
 
-  // DSL preview: the card renders a <pre> snippet of item.js — assert distinctive
-  // tokens from the seeded DSL appear in the card body (preview is whole-DSL,
-  // ≤240 chars; our DSL is well under that so the message line is included).
-  await expect(card).toContainText('PreviewActor');
-  await expect(card).toContainText('previewMessage');
+  // Preview: the card renders the REAL diagram with @zenuml/core in a decorative
+  // iframe (participants + message), not the DSL text.
+  const preview = card.frameLocator('iframe');
+  await expect(preview.locator('.participant').first()).toContainText('PreviewActor', { timeout: 20_000 });
+  await expect(preview.locator('.sequence-diagram')).toContainText('previewMessage');
+  await expect(card).not.toContainText('PreviewActor->PreviewTarget');
 
-  // Last-updated: DiagramCard formats updatedOn as a localized short date via
-  // new Date(updatedOn).toLocaleDateString(undefined, {month:'short', day:'numeric'}).
-  // Compute the EXPECTED string INSIDE the browser (not in Node) so it uses the same
-  // runtime locale the component does — Node and Chromium default to different
-  // locales (Node here renders "18 June", Chromium "Jun 18"), which would make a
-  // Node-side toLocaleDateString a false mismatch. This stays a real assertion: it
-  // proves the card surfaces the seeded item's updatedOn as today's localized date.
+  // Edited date: DiagramCard formats updatedOn as "20 Oct 2026" (en-GB day month
+  // year). Compute today's expected string in the browser runtime.
   const expectedDate = await page.evaluate(() =>
-    new Date().toLocaleDateString(undefined, {
-      month: 'short',
+    new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     }),
   );
   await expect(card.getByText(expectedDate, { exact: true })).toBeVisible();
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// LIB-1: kebab → Duplicate yields a second "(Forked) …" card on the hub.
+// LIB-1: card Fork yields a second "(Forked) …" card on the hub.
 // ──────────────────────────────────────────────────────────────────────────────
-test('LIB-1: card kebab Duplicate adds a second row', async ({ page }) => {
+test('LIB-1: card Fork adds a second card', async ({ page }) => {
   await gotoFresh(page);
 
   const title = 'DupSource';
@@ -296,7 +278,7 @@ test('LIB-1: card kebab Duplicate adds a second row', async ({ page }) => {
   await expect(page.locator('[data-testid="home-grid"]')).toBeVisible();
   await expect(page.locator('[data-testid^="home-card-"]')).toHaveCount(1);
 
-  // Open the card kebab → Duplicate. handleForkItem (AppRoot) forks the held item in
+  // Card Fork button. handleForkItem (AppRoot) forks the held item in
   // the editor store — title → "(Forked) <title>", a NEW id, dirty:true — and calls
   // setActivePanel('editor'). Crucially it does NOT navigate the URL, so the view is
   // still governed by ?view=diagrams (isHomeMode stays true): we remain on the hub.
@@ -307,9 +289,9 @@ test('LIB-1: card kebab Duplicate adds a second row', async ({ page }) => {
   // THIS hub grid in place — no remount, no editor visit. We assert that observable
   // outcome with a generous poll covering the autosave interval.
   const card = page.locator('[data-testid^="home-card-"]').first();
-  await openCardMenu(card, page, 'Duplicate');
+  await card.getByRole('button', { name: `Fork ${title}`, exact: true }).click();
 
-  // Still on the hub (Duplicate does not leave ?view=diagrams).
+  // Still on the hub (Fork does not leave ?view=diagrams).
   await expect(page.locator('[data-testid="home-view"]')).toBeVisible();
 
   // The fork lands as a second card once autosave persists it (≤ autosave interval).
@@ -322,9 +304,9 @@ test('LIB-1: card kebab Duplicate adds a second row', async ({ page }) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// LIB-2: kebab → Delete removes the card (confirm if prompted).
+// LIB-2: card Delete → confirmation → removes the card.
 // ──────────────────────────────────────────────────────────────────────────────
-test('LIB-2: card kebab Delete removes the row', async ({ page }) => {
+test('LIB-2: card Delete removes the card after confirmation', async ({ page }) => {
   await gotoFresh(page);
 
   // Seed TWO items so deleting one leaves a visible survivor (proves a targeted
@@ -344,20 +326,17 @@ test('LIB-2: card kebab Delete removes the row', async ({ page }) => {
   await expect(page.locator('[data-testid="home-grid"]')).toBeVisible();
   await expect(page.locator('[data-testid^="home-card-"]')).toHaveCount(2);
 
-  // Open the DeleteMe card's kebab → Delete. The home card Delete runs
-  // itemService.removeItem immediately (no ConfirmDialog wraps it), but handle a
-  // confirm conditionally per the plan in case one is added later.
+  // Delete asks for confirmation naming the selected diagram; only the dialog's
+  // Delete button removes it.
   const deleteCard = page
     .locator('[data-testid^="home-card-"]')
     .filter({ hasText: 'DeleteMe' });
   await expect(deleteCard).toHaveCount(1);
-  await openCardMenu(deleteCard, page, 'Delete');
-
-  // If a confirmation dialog appears, accept it (confirm-confirm); otherwise no-op.
-  const confirmBtn = page.locator('[data-testid="confirm-confirm"]');
-  if (await confirmBtn.isVisible().catch(() => false)) {
-    await confirmBtn.click();
-  }
+  await deleteCard.getByRole('button', { name: 'Delete DeleteMe', exact: true }).click();
+  const dialog = page.locator('[data-testid="home-delete-dialog"]');
+  await expect(dialog).toContainText('DeleteMe');
+  await dialog.locator('[data-testid="home-delete-confirm"]').click();
+  await expect(dialog).toBeHidden();
 
   // The DeleteMe card is gone; KeepMe survives; the grid shrinks to one card.
   await expect(page.getByText('DeleteMe', { exact: true })).toHaveCount(0);
@@ -366,13 +345,15 @@ test('LIB-2: card kebab Delete removes the row', async ({ page }) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// LIB-3: kebab → Export as HTML triggers a *.html download.
-// File downloads only work against a local build/dev server — self-skip on the
-// remote staging gate (same guard shape as production-build.spec.js).
+// LIB-3: Export as HTML triggers a *.html download.
+// The approved Diagrams design removed the card's Export HTML entry. The handler
+// (AppRoot handleExportHtml / buildStandaloneHtml) is preserved, but no other UI
+// entry exists yet, so this journey is fixme until one is decided.
 // ──────────────────────────────────────────────────────────────────────────────
 test('LIB-3: card kebab Export as HTML downloads a *.html file', async ({
   page,
 }) => {
+  test.fixme(true, 'No UI entry for HTML export after the approved Diagrams card redesign');
   test.skip(
     !!process.env.PW_BASE_URL,
     'file-download assertion requires the local dev/build server',
@@ -405,9 +386,9 @@ test('LIB-3: card kebab Export as HTML downloads a *.html file', async ({
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// LIB-4: sort toggle Recent ↔ Title reorders the grid.
+// LIB-4: sort Last modified ↔ Name A–Z reorders the grid.
 // ──────────────────────────────────────────────────────────────────────────────
-test('LIB-4: sort toggle Recent ↔ Title reorders the grid', async ({
+test('LIB-4: sort Last modified ↔ Name A–Z reorders the grid', async ({
   page,
 }) => {
   await gotoFresh(page);
@@ -448,20 +429,18 @@ test('LIB-4: sort toggle Recent ↔ Title reorders the grid', async ({
     return titles;
   }
 
-  // Default sort is "Recent" (updated desc) → newest save first.
+  // Default sort is "Last modified" (updated desc) → newest save first.
   expect(await cardTitlesInOrder()).toEqual(['Zeta', 'Mu', 'Alpha']);
 
-  // Toggle the sort Select to "Title" → alphabetical A–Z.
-  await page.locator('[data-testid="home-sort"]').click();
-  await page.getByRole('option', { name: 'Title', exact: true }).click();
+  // Choose "Name A–Z" → alphabetical.
+  await page.locator('[data-testid="home-sort-title"]').click();
   await expect
     .poll(async () => await cardTitlesInOrder())
     .toEqual(['Alpha', 'Mu', 'Zeta']);
 
-  // Toggle back to "Recent" → the updated-desc order returns (proves it's a real
+  // Back to "Last modified" → the updated-desc order returns (proves it's a real
   // re-sort, not a one-way change).
-  await page.locator('[data-testid="home-sort"]').click();
-  await page.getByRole('option', { name: 'Recent', exact: true }).click();
+  await page.locator('[data-testid="home-sort-updated"]').click();
   await expect
     .poll(async () => await cardTitlesInOrder())
     .toEqual(['Zeta', 'Mu', 'Alpha']);

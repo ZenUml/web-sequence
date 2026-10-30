@@ -1038,16 +1038,6 @@ export function AppRoot() {
           lastProvider={lastProvider}
           error={loginError}
         />
-        <ReportBugButton
-          dsl=""
-          appVersion={APP_VERSION}
-          view="hub"
-          signedIn={!!user}
-          onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'hub' })}
-          onSubmitted={({ includedDsl }) =>
-            track('bug_report_submitted', { category: 'feedback', label: 'hub', included_dsl: includedDsl })
-          }
-        />
         <HomeView
           items={items}
           folders={folders}
@@ -1058,15 +1048,30 @@ export function AppRoot() {
           onCreateFromTemplate={handleCreateAndOpen}
           onOpenSignIn={() => setLoginModalOpen(true)}
           onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
-          onCreateFolder={(name) => void createFolder(name)}
-          onRenameFolder={(id, name) => void renameFolder(id, name)}
-          onDeleteFolder={(id) => void deleteFolder(id)}
-          onDeleteItem={(id) => void handleDeleteItem(id)}
+          onCreateFolder={createFolder}
+          onRenameFolder={renameFolder}
+          onDeleteFolder={deleteFolder}
+          onDeleteItem={handleDeleteItem}
           onForkItem={handleForkItem}
-          onMoveItem={(it, folderId) => void handleMoveItem(it, folderId)}
+          onMoveItem={handleMoveItem}
           onExportHtml={handleExportHtml}
           onExportAll={handleExportAll}
           onImport={(text) => void handleImport(text)}
+          appearance={settings.appearance}
+          onToggleAppearance={() => handleSettingChange('appearance', settings.appearance === 'dark' ? 'light' : 'dark')}
+          reportBug={
+            <ReportBugButton
+              placement="inline"
+              dsl=""
+              appVersion={APP_VERSION}
+              view="hub"
+              signedIn={!!user}
+              onOpen={() => track('bug_report_opened', { category: 'feedback', label: 'hub' })}
+              onSubmitted={({ includedDsl }) =>
+                track('bug_report_submitted', { category: 'feedback', label: 'hub', included_dsl: includedDsl })
+              }
+            />
+          }
           readOnly={!user}
         />
       </div>
