@@ -850,6 +850,13 @@ export function AppRoot() {
     void save();
   }
 
+  // #943: a blank diagram from New is NOT persisted on creation — that wrote an empty
+  // `Untitled` to Firestore / localStorage on every click of +. It is persisted the
+  // moment it gets content (no 15 s auto-save wait, keeping the intent of
+  // "save new diagrams immediately" for diagrams that have something to lose).
+  // Holds the id of the blank diagram still awaiting its first content.
+  const blankAwaitingContent = useRef<string | null>(null);
+
   // M04: Create-New → load the chosen template as a fresh owned item.
   function handleCreateNew(partial: Partial<Item>) {
     const base = useEditorStore.getState().currentItem;
@@ -918,7 +925,7 @@ export function AppRoot() {
       isReadOnly: false,
     } as Item));
     setActivePanel('editor');
-    persistNewDiagram();
+    blankAwaitingContent.current = newId;
     requestEditorFocus();
     // The blank diagram is not the shared or ?code=-seeded one: drop those params
     // so a reload does not look the new id up as a share or re-seed the old code.
@@ -962,13 +969,19 @@ export function AppRoot() {
   // action). CSS/HTML editors use separate handlers and are NOT tracked here.
   const firstEditFired = useRef(false);
   function handleDslChange(next: string) {
-    if (useEditorStore.getState().currentItem?.isReadOnly) return;
+    const current = useEditorStore.getState().currentItem;
+    if (current?.isReadOnly) return;
     if (editorSession.current) editorSession.current.edits += 1;
     if (!firstEditFired.current) {
       firstEditFired.current = true;
       track('first_edit', { category: 'fn' });
     }
     setDsl(next);
+    // First content on a blank New: persist now (see blankAwaitingContent).
+    if (current && blankAwaitingContent.current === current.id && next.trim() !== '') {
+      blankAwaitingContent.current = null;
+      persistNewDiagram();
+    }
   }
   // #942: an edit that originates in the preview (the add-your-first-participant
   // placeholder) leaves focus inside the renderer iframe; bring it back to the editor.

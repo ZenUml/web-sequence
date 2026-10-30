@@ -175,13 +175,14 @@ describe('AppRoot — editor focus after New and after a preview-originated edit
 });
 
 describe('AppRoot — signed-out "Saved on this device" notice needs content (#941)', () => {
-  it('does not open the notice (nor mark it seen) when New saves an empty diagram', async () => {
+  it('does not open the notice (nor mark it seen) for an empty New diagram', async () => {
     render(<AppRoot />);
     await screen.findByTestId('dsl-editor');
+    itemSvc.setItem.mockClear();
     fireEvent.click(screen.getByTestId('header-new'));
-    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
-    // Give the save's post-write branch a turn to run.
+    // #943: a blank New is not persisted at all; give any stray save a turn to run.
     await new Promise((r) => setTimeout(r, 50));
+    expect(itemSvc.setItem).not.toHaveBeenCalled();
     expect(screen.queryAllByText('Saved on this device')).toHaveLength(0);
     expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
   });
@@ -190,7 +191,6 @@ describe('AppRoot — signed-out "Saved on this device" notice needs content (#9
     render(<AppRoot />);
     await screen.findByTestId('dsl-editor');
     fireEvent.click(screen.getByTestId('header-new'));
-    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
     await waitFor(() => expect(captured.dsl?.onChange).toBeTypeOf('function'));
     (captured.dsl.onChange as (v: string) => void)('A->B: hi');
     await waitFor(() => expect(useEditorStore.getState().currentItem?.js).toBe('A->B: hi'));
