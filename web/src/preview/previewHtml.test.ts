@@ -40,6 +40,20 @@ describe('getCompleteHtml', () => {
     expect(html).toContain(MOUNT_HTML);
   });
 
+  it('paints the native dark canvas before core loads, preserving the light default and user CSS rail', () => {
+    const dark = getCompleteHtml({ theme: 'theme-dark' });
+    const light = getCompleteHtml({ theme: 'theme-default' });
+    expect(dark).toMatch(/<style id="zenuml-first-paint">[^<]*background:\s*#1f1f1f/);
+    expect(dark).toContain('.zenuml .bg-skin-canvas.theme-default');
+    expect(dark).toContain('.zenuml .bg-skin-canvas.theme-default .bg-skin-frame');
+    expect(dark).not.toContain('!important');
+    expect(dark.indexOf('zenuml-first-paint')).toBeLessThan(dark.indexOf('src="/zenuml-test-url.js"'));
+    expect(light).not.toContain('#1f1f1f');
+    expect(light).toContain('<style id="zenumlstyle"></style>');
+    expect(dark.indexOf('zenuml-first-paint')).toBeLessThan(dark.indexOf('id="zenumlstyle"'));
+    expect(dark).not.toContain('theme-clean-dark');
+  });
+
   // M05 embed chrome suppression. DISCRIMINATING: the suppression <style> must be
   // present ONLY when embed=true. Dropping the embed branch (so the style is always
   // emitted) fails the "absent otherwise" cases; ignoring the flag (never emitting)

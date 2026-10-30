@@ -1,0 +1,103 @@
+{
+  "states": [
+    {
+      "t": 592,
+      "appearance": null,
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": null,
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1688,
+      "appearance": "dark",
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": null,
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1719,
+      "appearance": "dark",
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": null,
+      "canvas": null
+    },
+    {
+      "t": 1722,
+      "appearance": "dark",
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": null
+    },
+    {
+      "t": 3700,
+      "appearance": "dark",
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgba(0, 0, 0, 0)",
+      "canvas": "rgb(255, 255, 255)"
+    },
+    {
+      "t": 3726,
+      "appearance": "dark",
+      "html": "rgba(0, 0, 0, 0)",
+      "body": "rgb(11, 14, 19)",
+      "shell": "rgb(48, 57, 68)",
+      "frame": "rgb(31, 31, 31)",
+      "canvas": "rgb(31, 31, 31)"
+    }
+  ],
+  "paint": [
+    {
+      "name": "first-paint",
+      "t": 1116
+    },
+    {
+      "name": "first-contentful-paint",
+      "t": 1740
+    }
+  ],
+  "origin": 1792554699237.1,
+  "screenshots": [
+    {
+      "file": "staging-before-00.jpg",
+      "traceTime": 200751746774
+    },
+    {
+      "file": "staging-before-01.jpg",
+      "traceTime": 200752818567
+    },
+    {
+      "file": "staging-before-02.jpg",
+      "traceTime": 200753440958
+    },
+    {
+      "file": "staging-before-03.jpg",
+      "traceTime": 200753448812
+    },
+    {
+      "file": "staging-before-04.jpg",
+      "traceTime": 200755425012
+    },
+    {
+      "file": "staging-before-05.jpg",
+      "traceTime": 200755448239
+    },
+    {
+      "file": "staging-before-06.jpg",
+      "traceTime": 200755456961
+    },
+    {
+      "file": "staging-before-07.jpg",
+      "traceTime": 200755463051
+    }
+  ]
+}

@@ -85,6 +85,18 @@ describe('PreviewFrame', () => {
     expect(iframe.getAttribute('srcdoc')).toContain('id="mounting-point"');
   });
 
+  it('sets the initial dark iframe canvas and keeps srcdoc stable on a later theme switch', () => {
+    const props = { code: 'A.b', css: '', stickyOffset: 0 };
+    const { container, rerender } = render(<PreviewFrame {...props} theme="theme-dark" />);
+    const iframe = container.querySelector('iframe')!;
+    const initial = iframe.getAttribute('srcdoc');
+    expect(initial).toContain('id="zenuml-first-paint"');
+    expect(initial).toContain('background: #1f1f1f');
+    rerender(<PreviewFrame {...props} theme="theme-default" />);
+    expect(container.querySelector('iframe')).toBe(iframe);
+    expect(iframe.getAttribute('srcdoc')).toBe(initial);
+  });
+
   it('posts a render message after the iframe reports ready', () => {
     const { container } = render(<PreviewFrame code="A.b" css="" stickyOffset={7} />);
     const iframe = container.querySelector('iframe') as HTMLIFrameElement;
