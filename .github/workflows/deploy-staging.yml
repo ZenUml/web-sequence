@@ -47,6 +47,9 @@ jobs:
         # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
         working-directory: web
         run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
+      - name: Check web/ for unused dependencies
+        working-directory: web
+        run: pnpm check:deps
       # Pre-deploy guard: serve the built dist statically and verify the diagram
       # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
       # path) that the dev-server suite can't see, BEFORE anything ships to
