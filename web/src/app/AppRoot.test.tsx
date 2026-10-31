@@ -443,6 +443,16 @@ describe('AppRoot', () => {
     await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(created.id, expect.objectContaining({ id: created.id }), expect.anything()));
   });
 
+  it('the template first-save is silent: no "Saved on this device" notice, seen-flag unset (#951)', async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    await userEvent.click(await screen.findByTestId('home-template-blue'));
+    await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryAllByText('Saved on this device')).toHaveLength(0);
+    expect(window.localStorage.getItem(LS_KEYS.loginAndSaveMessageSeen)).toBeNull();
+  });
+
   // The new diagram is not the shared/seeded one: New must drop ?share-token=,
   // ?code= and ?title=, or a reload would look the new id up as a share or
   // re-seed the old code.
@@ -460,14 +470,29 @@ describe('AppRoot', () => {
     expect(params.get('share-token')).toBeNull();
   });
 
-  // A metadata-only edit (rename) is dirty with unsavedCount 0. New must still ask
-  // before discarding it, like the save indicator reports "Unsaved".
-  it('header New asks before discarding a dirty rename; Keep editing keeps the document', async () => {
+  // A metadata-only edit (rename) is dirty with unsavedCount 0. New must still treat
+  // it as unsaved, like the save indicator reports "Unsaved". #952: it saves the
+  // rename first; only a save that really fails asks before discarding.
+  it('header New saves a dirty rename first, then opens a new diagram (#952)', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
     act(() => { useEditorStore.getState().setTitle('Renamed'); });
     const before = useEditorStore.getState().currentItem!;
     expect(useEditorStore.getState().unsavedCount).toBe(0);
+    itemSvc.setItem.mockClear();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(before.id));
+    expect(itemSvc.setItem).toHaveBeenCalledWith(before.id, expect.objectContaining({ title: 'Renamed' }), expect.anything());
+    // (A first signed-out save may open "Saved on this device", which reuses confirm-ok.)
+    expect(screen.queryByRole('heading', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument();
+  });
+
+  it('header New asks before discarding a dirty rename when the save fails; Keep editing keeps the document', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    act(() => { useEditorStore.getState().setTitle('Renamed'); });
+    const before = useEditorStore.getState().currentItem!;
+    itemSvc.setItem.mockRejectedValueOnce(new Error('quota'));
     await userEvent.click(screen.getByTestId('header-new'));
     await userEvent.click(await screen.findByTestId('confirm-cancel'));
     expect(useEditorStore.getState().currentItem?.id).toBe(before.id);

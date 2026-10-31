@@ -2,7 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "lint": "eslint .",
@@ -28,5 +28,11 @@
     "eslint-plugin-promise": "^4.0.1",
     "firebase-tools": "^13.6.0"
   },
-  "private": true
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "protobufjs",
+      "re2"
+    ]
+  }
 }
