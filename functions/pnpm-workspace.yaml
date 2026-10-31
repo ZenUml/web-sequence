@@ -1,0 +1,5 @@
+# Build-script approvals for the Cloud Functions buildpack (pnpm 11), which no longer
+# reads the "pnpm" field in package.json; that field stays for pnpm 10 (CI deploy job).
+allowBuilds:
+  protobufjs: true
+  re2: true
