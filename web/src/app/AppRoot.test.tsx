@@ -470,14 +470,29 @@ describe('AppRoot', () => {
     expect(params.get('share-token')).toBeNull();
   });
 
-  // A metadata-only edit (rename) is dirty with unsavedCount 0. New must still ask
-  // before discarding it, like the save indicator reports "Unsaved".
-  it('header New asks before discarding a dirty rename; Keep editing keeps the document', async () => {
+  // A metadata-only edit (rename) is dirty with unsavedCount 0. New must still treat
+  // it as unsaved, like the save indicator reports "Unsaved". #952: it saves the
+  // rename first; only a save that really fails asks before discarding.
+  it('header New saves a dirty rename first, then opens a new diagram (#952)', async () => {
     render(<AppRoot />);
     await screen.findByTestId('header-title');
     act(() => { useEditorStore.getState().setTitle('Renamed'); });
     const before = useEditorStore.getState().currentItem!;
     expect(useEditorStore.getState().unsavedCount).toBe(0);
+    itemSvc.setItem.mockClear();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(useEditorStore.getState().currentItem?.id).not.toBe(before.id));
+    expect(itemSvc.setItem).toHaveBeenCalledWith(before.id, expect.objectContaining({ title: 'Renamed' }), expect.anything());
+    // (A first signed-out save may open "Saved on this device", which reuses confirm-ok.)
+    expect(screen.queryByRole('heading', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument();
+  });
+
+  it('header New asks before discarding a dirty rename when the save fails; Keep editing keeps the document', async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    act(() => { useEditorStore.getState().setTitle('Renamed'); });
+    const before = useEditorStore.getState().currentItem!;
+    itemSvc.setItem.mockRejectedValueOnce(new Error('quota'));
     await userEvent.click(screen.getByTestId('header-new'));
     await userEvent.click(await screen.findByTestId('confirm-cancel'));
     expect(useEditorStore.getState().currentItem?.id).toBe(before.id);

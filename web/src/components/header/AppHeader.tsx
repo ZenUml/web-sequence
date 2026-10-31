@@ -14,6 +14,11 @@ export interface AppHeaderProps {
   readOnly?: boolean;
   onTitleChange(t: string): void;
   onNew(): void;
+  // #952: called when New is pressed with unsaved edits. Resolves true when the
+  // diagram is safely stored (or retained locally), so New may proceed without
+  // asking; false when the save really failed, which opens the discard confirm.
+  // Omitted: New falls back to the discard confirm for any unsaved edit.
+  onSaveBeforeNew?(): Promise<boolean>;
   onFork(): void;
   onLogin(provider: ProviderName): void;
   onLogout(): void;
@@ -126,6 +131,7 @@ export function AppHeader({
   readOnly = false,
   onTitleChange,
   onNew,
+  onSaveBeforeNew,
   onFork,
   onLogin,
   onLogout,
@@ -162,14 +168,36 @@ export function AppHeader({
     else setLoginOpenInternal(o);
   };
 
-  // #8: guard "New" against data loss. With unsaved edits (content OR metadata such
-  // as a rename — the same `dirty` the save indicator reports), New first asks the
-  // user to confirm discarding them; only on confirm does onNew() fire. A clean
-  // diagram is already saved, so New is immediate.
+  // #8 / #952: New saves first. With unsaved edits (content OR metadata such as a
+  // rename — the same `dirty` the save indicator reports) the header awaits
+  // onSaveBeforeNew() and calls onNew() only if the diagram was stored; the pending
+  // edits are otherwise just waiting for auto-save, so there is nothing to confirm.
+  // When the save fails the discard confirm opens, and only its confirm fires onNew().
+  // A clean diagram is already saved, so New is immediate.
   const [confirmNewOpen, setConfirmNewOpen] = useState(false);
-  const handleNewClick = () => {
-    if (dirty ?? unsavedCount > 0) setConfirmNewOpen(true);
-    else onNew();
+  const newInFlight = useRef(false);
+  const handleNewClick = async () => {
+    if (!(dirty ?? unsavedCount > 0)) {
+      onNew();
+      return;
+    }
+    if (!onSaveBeforeNew) {
+      setConfirmNewOpen(true);
+      return;
+    }
+    // A second click while the save runs must not start another save or diagram.
+    if (newInFlight.current) return;
+    newInFlight.current = true;
+    let saved = false;
+    try {
+      saved = await onSaveBeforeNew();
+    } catch {
+      saved = false;
+    } finally {
+      newInFlight.current = false;
+    }
+    if (saved) onNew();
+    else setConfirmNewOpen(true);
   };
   // Pricing is informational and exists only where payments are enabled.
   const openPricing = paymentEnabled ? onOpenPricing : undefined;
@@ -444,6 +472,7 @@ export function AppHeader({
         confirmLabel="Discard & start new"
         cancelLabel="Keep editing"
         tone="danger"
+        look="light"
         onConfirm={onNew}
       />
     </>

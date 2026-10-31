@@ -95,8 +95,101 @@ describe('AppHeader', () => {
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument();
   });
 
-  // #8: guard "New" against data loss when there are unsaved edits.
-  it('New opens a discard-confirm (not onNew) when unsavedCount > 0', async () => {
+  // #8 / #952: "New" saves first. The edits are only waiting for auto-save, so the
+  // header asks the owner to save (onSaveBeforeNew) and creates the new diagram only
+  // when that save succeeded. The discard dialog is the fallback for a failed save.
+  it('dirty New saves first, then calls onNew once, with no dialog (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => true);
+    render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(onNew).toHaveBeenCalledTimes(1));
+    expect(onSaveBeforeNew).toHaveBeenCalledTimes(1);
+    // The save completed before the new diagram was created.
+    expect(onSaveBeforeNew.mock.invocationCallOrder[0]).toBeLessThan(onNew.mock.invocationCallOrder[0]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument();
+  });
+
+  it('metadata-only dirty (rename) also saves first (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => true);
+    render(<AppHeader {...baseProps} dirty unsavedCount={0} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(onNew).toHaveBeenCalledTimes(1));
+    expect(onSaveBeforeNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('New does not call onNew until the save settles (#952)', async () => {
+    const onNew = vi.fn();
+    let resolveSave!: (ok: boolean) => void;
+    const onSaveBeforeNew = vi.fn(() => new Promise<boolean>((r) => { resolveSave = r; }));
+    render(<AppHeader {...baseProps} unsavedCount={1} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    expect(onSaveBeforeNew).toHaveBeenCalledTimes(1);
+    expect(onNew).not.toHaveBeenCalled();
+    resolveSave(true);
+    await waitFor(() => expect(onNew).toHaveBeenCalledTimes(1));
+  });
+
+  it('a second New click while the save is pending does not save or create twice (#952)', async () => {
+    const onNew = vi.fn();
+    let resolveSave!: (ok: boolean) => void;
+    const onSaveBeforeNew = vi.fn(() => new Promise<boolean>((r) => { resolveSave = r; }));
+    render(<AppHeader {...baseProps} unsavedCount={1} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(screen.getByTestId('header-new'));
+    expect(onSaveBeforeNew).toHaveBeenCalledTimes(1);
+    resolveSave(true);
+    await waitFor(() => expect(onNew).toHaveBeenCalledTimes(1));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(onNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed save opens the discard-confirm and holds onNew until confirm-ok (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => false);
+    render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Discard unsaved changes?');
+    expect(onNew).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByTestId('confirm-ok'));
+    expect(onNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('a save that throws is treated as a failed save: dialog, no onNew (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => { throw new Error('boom'); });
+    render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Discard unsaved changes?');
+    expect(onNew).not.toHaveBeenCalled();
+  });
+
+  it('cancel on the failed-save dialog keeps the diagram and a later New saves again (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => false);
+    render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    await userEvent.click(await screen.findByTestId('confirm-cancel'));
+    expect(onNew).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await screen.findByRole('dialog');
+    expect(onSaveBeforeNew).toHaveBeenCalledTimes(2);
+  });
+
+  it('clean New creates immediately and never saves (#952)', async () => {
+    const onNew = vi.fn();
+    const onSaveBeforeNew = vi.fn(async () => true);
+    render(<AppHeader {...baseProps} unsavedCount={0} onNew={onNew} onSaveBeforeNew={onSaveBeforeNew} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    expect(onNew).toHaveBeenCalledTimes(1);
+    expect(onSaveBeforeNew).not.toHaveBeenCalled();
+  });
+
+  // Without a save hook (no owner able to save) the old guard stays.
+  it('New opens a discard-confirm (not onNew) when dirty and no save hook is wired', async () => {
     const onNew = vi.fn();
     render(<AppHeader {...baseProps} unsavedCount={2} onNew={onNew} />);
     await userEvent.click(screen.getByTestId('header-new'));
@@ -104,6 +197,19 @@ describe('AppHeader', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Discard unsaved changes?');
     expect(screen.getByTestId('confirm-ok')).toBeInTheDocument();
+  });
+
+  // #952: the discard dialog uses the same light account-flows look as the other
+  // dialogs of this flow, not the dark ink serif shell.
+  it('the discard dialog uses the light account-flows look (#952)', async () => {
+    render(<AppHeader {...baseProps} unsavedCount={2} onSaveBeforeNew={async () => false} />);
+    await userEvent.click(screen.getByTestId('header-new'));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog.className).toContain('af-dialog');
+    expect(dialog.className).not.toContain('bg-ink-800');
+    expect(screen.getByRole('heading', { name: 'Discard unsaved changes?' }).className).toContain('af-title');
+    expect(screen.getByTestId('confirm-ok')).toHaveTextContent('Discard & start new');
+    expect(screen.getByTestId('confirm-cancel')).toHaveTextContent('Keep editing');
   });
 
   it('New confirm fires onNew; cancel does not', async () => {
