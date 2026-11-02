@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build:
     name: Build and local E2E
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -112,7 +112,7 @@ jobs:
     name: E2E gate (staging)
     needs: build
     if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -147,7 +147,7 @@ jobs:
     name: ${{ github.event_name == 'pull_request' && 'Release validation' || 'Branch validation' }}
     needs: [build, staging-gate]
     if: ${{ always() && !cancelled() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require build and applicable staging E2E
         env:
@@ -167,7 +167,7 @@ jobs:
     name: Create draft release
     needs: staging-gate
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
