@@ -98,8 +98,12 @@ jobs:
   # Runs beside the build/deploy job, not before it: staging is a shared test
   # site, and production is only ever drafted after this job AND the staging gate pass.
   local-e2e:
-    name: Local E2E
+    name: Local E2E (shard ${{ matrix.shard }}/2)
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -124,7 +128,7 @@ jobs:
       - name: Verify production build and application E2E
         env:
           PW_PROD_BUILD: '1'
-        run: pnpm exec playwright test --project=chromium
+        run: pnpm exec playwright test --project=chromium --shard=${{ matrix.shard }}/2
 
   # Hard gate: run the full Playwright suite against the *deployed* staging site.
   # A red gate blocks the draft release, so a production release can only ever be
