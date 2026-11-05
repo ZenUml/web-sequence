@@ -154,6 +154,39 @@ test('Library never claims it is empty while saved diagrams are still loading', 
   expect(await page.evaluate(() => window.__sawEmptyLibrary)).toBe(false);
 });
 
+test('Library lists every diagram when a save is still pending during load', async ({ page }) => {
+  const uid = uniqueUid('pending-write');
+  await seedLibrary(uid, 5, { plus: true });
+  dialogRecorder(page);
+  await prepareBrowser(page);
+  await signIn(page, uid);
+
+  // A pending write makes Firestore raise a first query snapshot that holds only
+  // that document, and the app must not treat it as the complete list.
+  const holdFor = (ms) => async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    await route.continue().catch(() => {});
+  };
+  await page.route('**/google.firestore.v1.Firestore/Write/**', holdFor(6000));
+  await page.route('**/google.firestore.v1.Firestore/Listen/**', holdFor(3000));
+  await page.addInitScript(() => {
+    window.__e2eOnAuth = (user) => {
+      if (!user || window.__e2eWroteOnAuth) return;
+      window.__e2eWroteOnAuth = true;
+      window.db.getDb().then((db) =>
+        db
+          .doc(`items/${user.uid}-item-3`)
+          .set({ createdBy: user.uid, updatedOn: Date.now() }, { merge: true }),
+      );
+    };
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__e2eWroteOnAuth === true);
+  await library(page).click();
+
+  await expect(page.locator('aside').getByText(/^Seeded \d$/)).toHaveCount(5, { timeout: 20000 });
+});
+
 test('Save button persists edits, and a free user over the limit can still save an existing diagram', async ({
   page,
 }) => {
