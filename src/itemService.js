@@ -40,34 +40,9 @@ if (window.zenumlDesktop) {
           });
       }
     },
-    async getUserItemIds() {
-      if (window.user) {
-        return new Promise((resolve) => {
-          resolve(window.user.items || {});
-        });
-      }
-      var remoteDb = await window.db.getDb();
-      return remoteDb
-        .doc(`users/${window.user.uid}`)
-        .get()
-        .then((doc) => {
-          if (!doc.exists) {
-            return {};
-          }
-          return doc.data().items;
-        });
-    },
-
     async getAllItems() {
       var t = Date.now();
       var d = deferred();
-      let itemIds = await this.getUserItemIds();
-      itemIds = Object.getOwnPropertyNames(itemIds || {});
-      log('itemids', itemIds);
-
-      if (!itemIds.length) {
-        d.resolve([]);
-      }
       var remoteDb = await window.db.getDb();
       const items = [];
       remoteDb

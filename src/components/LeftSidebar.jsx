@@ -21,6 +21,7 @@ export default class LeftSidebar extends Component {
       exportBtnClickHandler,
       mergeImportedItems,
       onReloadLibrary,
+      isLibraryLoading,
     } = this.props;
 
     // Check if panels are active and open
@@ -108,6 +109,7 @@ export default class LeftSidebar extends Component {
         {isLibraryActive && (
           <LibraryPanel
             items={items}
+            isLoading={isLibraryLoading}
             onClose={onToggleLibraryPanel}
             itemClickHandler={itemClickHandler}
             itemRemoveBtnClickHandler={itemRemoveBtnClickHandler}
