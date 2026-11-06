@@ -621,7 +621,9 @@ export function AppRoot() {
     };
   }, [itemService]);
 
-  async function save(): Promise<boolean> {
+  // `silent`: the save is not a user-visible "I saved" moment (the first-content
+  // persist of a New diagram, #951), so it must not open the one-time notice.
+  async function save(opts: { silent?: boolean } = {}): Promise<boolean> {
     const it = useEditorStore.getState().currentItem;
     if (!it || it.isReadOnly || saveAttempt.current) return false;
     const attempt = {};
@@ -685,7 +687,9 @@ export function AppRoot() {
       // #941: a diagram with no content has nothing worth the sign-in nudge; New saves
       // an empty item right away, so without this gate the one-time notice would be
       // spent on a blank page (and its focus trap would steal the editor focus).
-      if (!uid && itemToSave.js.trim() !== '') {
+      // #951: the first-content persist is silent, or the modal opens on the first
+      // keystroke and steals focus; the next ordinary save (Ctrl+S / auto-save) shows it.
+      if (!uid && !opts.silent && itemToSave.js.trim() !== '') {
         // Informational notice preferences are separate from document persistence.
         // If acknowledgement storage fails, defer the notice to a later successful save.
         try {
@@ -715,6 +719,45 @@ export function AppRoot() {
       }
     }
     return forkOnForeignOwner ? saveUnderNewId() : false;
+  }
+
+  // #952: header New saves first. Resolves true when it is safe to create the new
+  // diagram: the edit reached storage, or it is retained locally while a cloud sync
+  // is queued. Resolves false only when the save really failed (error, read-only,
+  // over the free limit), which makes the header ask before discarding.
+  //
+  // Ordering matters: handleNewDiagram() swaps currentItem synchronously and save()
+  // aborts before itemService.setItem whenever currentItem.id changed mid-flight, so
+  // New must never run while a save is pending, or the edit is silently lost.
+  async function saveBeforeNew(): Promise<boolean> {
+    const startId = useEditorStore.getState().currentItem?.id;
+    if (!startId) return true;
+    // A save already in flight (the 15 s auto-save tick, or Cmd+S) would make save()
+    // return false at once without writing. Wait for it to settle instead of treating
+    // that as a failure. saveAttempt and `saving` are set and cleared together; the
+    // `saving` check also keeps a stale attempt from spinning this loop.
+    while (saveAttempt.current && useEditorStore.getState().saving) {
+      await new Promise<void>((resolve) => {
+        const off = useEditorStore.subscribe((s) => {
+          if (!s.saving) { off(); resolve(); }
+        });
+        if (!useEditorStore.getState().saving) { off(); resolve(); }
+      });
+    }
+    const after = useEditorStore.getState();
+    if (after.currentItem?.id !== startId) return false;
+    // The awaited attempt already stored everything (it marks the item clean).
+    if (!after.dirty) return true;
+    // Silent (#951): New is a navigation step, not a "you saved" moment. The
+    // one-time notice would otherwise open on top of the fresh blank editor and
+    // take the focus New just gave it; the next ordinary save still shows it.
+    const saved = await save({ silent: true });
+    if (saved) return true;
+    // save() returns false for a queued (offline, signed-in) save as well, but it
+    // calls markSaved() first because the item is retained locally. Failures keep
+    // the item dirty: errors, read-only items, and over-limit (which re-marks it).
+    const now = useEditorStore.getState();
+    return now.currentItem?.id === startId && !now.dirty;
   }
 
   async function saveUnderNewId(): Promise<boolean> {
@@ -847,7 +890,7 @@ export function AppRoot() {
   // tick picks the still-dirty item up.
   function persistNewDiagram() {
     useEditorStore.setState({ dirty: true, unsavedCount: 1 });
-    void save();
+    void save({ silent: true });
   }
 
   // #943: a blank diagram from New is NOT persisted on creation — that wrote an empty
@@ -1457,6 +1500,7 @@ export function AppRoot() {
         readOnly={!!item.isReadOnly}
         onTitleChange={setTitle}
         onNew={handleNewDiagram}
+        onSaveBeforeNew={saveBeforeNew}
         onFork={() => handleForkItem(item)}
         onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
         onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
