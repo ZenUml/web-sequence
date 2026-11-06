@@ -36,6 +36,7 @@ jobs:
           node-version: 22.x
           cache: 'pnpm'
       - run: node --test scripts/release/*.test.mjs
+      - run: node --test functions/lib/*.test.js
       - run: pnpm install --frozen-lockfile && pnpm build
       # Cutover (M05): build the React rewrite artifact that firebase.json now
       # serves (hosting.public: "web/dist"). web/ has its own lockfile, so it
