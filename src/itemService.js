@@ -40,53 +40,27 @@ if (window.zenumlDesktop) {
           });
       }
     },
-    async getUserItemIds() {
-      if (window.user) {
-        return new Promise((resolve) => {
-          resolve(window.user.items || {});
-        });
-      }
-      var remoteDb = await window.db.getDb();
-      return remoteDb
-        .doc(`users/${window.user.uid}`)
-        .get()
-        .then((doc) => {
-          if (!doc.exists) {
-            return {};
-          }
-          return doc.data().items;
-        });
-    },
-
     async getAllItems() {
       var t = Date.now();
-      var d = deferred();
-      let itemIds = await this.getUserItemIds();
-      itemIds = Object.getOwnPropertyNames(itemIds || {});
-      log('itemids', itemIds);
-
-      if (!itemIds.length) {
-        d.resolve([]);
-      }
       var remoteDb = await window.db.getDb();
-      const items = [];
-      remoteDb
+      // Use get(), not onSnapshot(): a first snapshot can hold only documents
+      // with pending local writes, and this list must be complete.
+      return remoteDb
         .collection('items')
         .where('createdBy', '==', window.user.uid)
-        .onSnapshot(
-          function (querySnapshot) {
-            querySnapshot.forEach(function (doc) {
-              items.push(doc.data());
-            });
-            log('Items fetched in ', Date.now() - t, 'ms');
-
-            d.resolve(items);
-          },
-          function () {
-            d.resolve([]);
-          },
-        );
-      return d.promise;
+        .get()
+        .then((querySnapshot) => {
+          const items = [];
+          querySnapshot.forEach((doc) => {
+            items.push(doc.data());
+          });
+          log('Items fetched in ', Date.now() - t, 'ms');
+          return items;
+        })
+        .catch((error) => {
+          console.error('Failed to fetch items:', error);
+          return [];
+        });
     },
 
     async setUser() {

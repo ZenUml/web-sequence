@@ -111,6 +111,20 @@ export function MainHeader(props) {
           {/*<iframe src="https://github.com/sponsors/ZenUml/button" title="Sponsor ZenUml" height="35" width="107" style="border: 0;" />*/}
         </button>
 
+        {!(props.currentItem && props.currentItem.isReadOnly) && (
+          <button
+            id="saveBtn"
+            className="h-10 px-4 bg-black-600 rounded-lg text-gray-100 font-normal flex items-center gap-2 hover:opacity-80 duration-200 disabled:opacity-60"
+            aria-label="Save current creation (Ctrl/⌘ + S)"
+            disabled={props.isSaving}
+            onClick={props.saveBtnHandler}
+          >
+            <span className="material-symbols-outlined text-xl">save</span>
+            <span className="hidden lg:inline">
+              {props.isSaving ? 'Saving…' : 'Save'}
+            </span>
+          </button>
+        )}
 
         {!window.user ? (
           <button

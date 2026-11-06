@@ -20,6 +20,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:cloud": "PW_CLOUD=1 playwright test --project=cloud",
+    "test:e2e:legacy": "playwright test --config playwright.legacy.config.js",
     "deploy:staging": "firebase deploy --project staging",
     "deploy:prod": "firebase deploy --project prod",
     "upload": "webstore upload --source extension.zip --extension-id kcpganeflmhffnlofpdmcjklmdpbbmef",

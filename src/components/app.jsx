@@ -83,6 +83,8 @@ export default class App extends Component {
     };
     this.state = {
       isLibraryPanelOpen: false,
+      isAuthPending: true,
+      pendingItemFetches: 0,
       isEditorPanelOpen: true,
       activeLeftPanel: 'editor',
       ...this.modalDefaultStates,
@@ -142,7 +144,11 @@ export default class App extends Component {
         await this.setState({ user });
         window.user = user;
         // Fetch items globally so library panel shows them immediately
-        await this.fetchItems(true);
+        try {
+          await this.fetchItems(true);
+        } finally {
+          await this.setState({ isAuthPending: false });
+        }
         
         // Check if we should show the import dialog for local items
         if (!window.localStorage[LocalStorageKeys.ASKED_TO_IMPORT_CREATIONS]) {
@@ -175,7 +181,7 @@ export default class App extends Component {
         this.loadUserSubscription();
       } else {
         // User is signed out.
-        await this.setState({ user: undefined });
+        await this.setState({ user: undefined, isAuthPending: false });
         delete window.user;
 
         if (this.onUserItemsResolved) {
@@ -492,7 +498,8 @@ BookLibService.Borrow(id) {
           : 'new',
     );
 
-    if (!this.checkItemsLimit()) {
+    // The limit restricts creating diagrams, not saving one that already exists.
+    if (!this.state.currentItem.id && !this.checkItemsLimit()) {
       mixpanel.track({
         event: 'Free Limit',
         category: '3 diagrams limit',
@@ -548,15 +555,24 @@ BookLibService.Borrow(id) {
     this.state.savedItems = {};
     var items = [];
     if ((window.user || window.zenumlDesktop) && !shouldFetchLocally) {
-      items = await itemService.getAllItems();
-      log('got items');
-      if (shouldSaveGlobally) {
-        const savedItems = {};
-        items.forEach((item) => {
-          savedItems[item.id] = item;
-        });
-        // Use setState to trigger re-render
-        await this.setState({ savedItems });
+      await this.setState((state) => ({
+        pendingItemFetches: state.pendingItemFetches + 1,
+      }));
+      try {
+        items = await itemService.getAllItems();
+        log('got items');
+        if (shouldSaveGlobally) {
+          const savedItems = {};
+          items.forEach((item) => {
+            savedItems[item.id] = item;
+          });
+          // Use setState to trigger re-render
+          await this.setState({ savedItems });
+        }
+      } finally {
+        await this.setState((state) => ({
+          pendingItemFetches: state.pendingItemFetches - 1,
+        }));
       }
       d.resolve(items);
       return d.promise;
@@ -813,6 +829,17 @@ BookLibService.Borrow(id) {
       .setItem(key || this.state.currentItem.id, this.state.currentItem)
       .then(onSaveComplete.bind(this));
 
+    // Keep the Library in step with what was just saved. `key` is only passed
+    // for the 'code' draft, which is not a saved diagram.
+    if (!key) {
+      await this.setState({
+        savedItems: {
+          ...this.state.savedItems,
+          [this.state.currentItem.id]: { ...this.state.currentItem },
+        },
+      });
+    }
+
     try {
       const result = await syncDiagram(this.state.currentItem);
       if (result) {
@@ -908,6 +935,7 @@ BookLibService.Borrow(id) {
 
     if (
       isUserChange &&
+      window.saveBtn &&
       this.state.unsavedEditCount % UNSAVED_WARNING_COUNT === 0 &&
       this.state.unsavedEditCount >= UNSAVED_WARNING_COUNT
     ) {
@@ -1712,6 +1740,11 @@ BookLibService.Borrow(id) {
                   }
                 }}
                 items={this.state.savedItems}
+                isLibraryLoading={
+                  this.state.isAuthPending ||
+                  this.state.isFetchingItems ||
+                  this.state.pendingItemFetches > 0
+                }
                 itemClickHandler={this.itemClickHandler.bind(this)}
                 itemRemoveBtnClickHandler={this.itemRemoveBtnClickHandler.bind(this)}
                 itemForkBtnClickHandler={this.itemForkBtnClickHandler.bind(this)}
