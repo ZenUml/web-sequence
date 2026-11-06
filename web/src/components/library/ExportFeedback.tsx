@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useExportFeedbackStore, type ExportPhase } from './exportFeedbackStore';
 import { summarize } from './ImportFeedback';
+import { AlertIcon } from '../../ui/icons';
 import './importFeedback.css';
 
 // Preparing is shown only when preparation genuinely takes time (no artificial wait,
@@ -40,16 +41,6 @@ function FileIcon() {
     <svg {...icon}>
       <path d="M6 3.25h6.5l3.75 3.75v11.75H6z" {...stroke} />
       <path d="M12.5 3.25V7h3.75M8.5 11h5M8.5 14h5" {...stroke} />
-    </svg>
-  );
-}
-
-function AlertIcon() {
-  return (
-    <svg {...icon}>
-      <circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M11 6.6v5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="11" cy="15.2" r="0.95" fill="currentColor" />
     </svg>
   );
 }
@@ -162,7 +153,7 @@ export function ExportFeedback({ onExportAll }: ExportFeedbackProps) {
   const statusClass =
     failed ? 'import-feedback__status is-error' : 'import-feedback__status';
   const statusIcon =
-    phase === 'preparing' ? <SpinnerIcon /> : phase === 'started' ? <DownloadIcon /> : phase === 'empty' ? <FileIcon /> : <AlertIcon />;
+    phase === 'preparing' ? <SpinnerIcon /> : phase === 'started' ? <DownloadIcon /> : phase === 'empty' ? <FileIcon /> : <AlertIcon className="import-feedback__icon" />;
 
   return (
     <section
