@@ -94,7 +94,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  // GitHub-hosted runners for public repos have 4 vCPUs. A remote target only
+  // drives browsers (4 workers); the local run also hosts the dev + preview servers (3).
+  workers: process.env.CI ? (isRemoteTarget ? 4 : 3) : undefined,
   reporter: 'html',
   // The cloud specs seed/probe a SHARED Firestore emulator and sign deterministic
   // uids in/out; running them in parallel would race the global auth/firestore state.
