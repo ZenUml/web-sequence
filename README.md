@@ -44,11 +44,11 @@ Follow [@ZenUml](https://twitter.com/intent/follow?screen_name=ZenUml) for updat
 ## Development
 
 ```
-$ yarn install  // instal modules
-$ yarn start    // start a local server
+$ pnpm install  // install modules
+$ pnpm start    // start a local server
 
-$ yarn build    // build a staging release
-$ yarn release  // copy resources to app / extension
+$ pnpm build    // build a staging release
+$ pnpm release  // copy resources to app / extension
 ```
 
 ## CI/CD

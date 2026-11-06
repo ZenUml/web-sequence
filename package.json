@@ -5,8 +5,8 @@
   "main": "index.html",
   "type": "module",
   "scripts": {
-    "engine": "use yarn instead of npm please",
-    "start": "if-env NODE_ENV=production && yarn serve || yarn dev",
+    "engine": "use pnpm instead of npm or yarn please",
+    "start": "if-env NODE_ENV=production && pnpm serve || pnpm dev",
     "build": "vite build",
     "build:web": "pnpm -C web build",
     "_cutover_note": "deploy:staging/deploy:prod now serve web/dist (built via build:web). The legacy gulp 'release' pipeline + 'app/' output are RETAINED for rollback — do NOT delete until the new path is confirmed live and green.",
@@ -164,7 +164,6 @@
   },
   "homepage": "http://zenuml.com",
   "volta": {
-    "node": "20.19.0",
-    "yarn": "1.22.19"
+    "node": "20.19.0"
   }
 }

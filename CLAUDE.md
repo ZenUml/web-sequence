@@ -15,7 +15,7 @@ This is **ZenUML Web Sequence**, a free sequence diagram online tool that conver
 - **Code Editor**: CodeMirror (v5.65.16)
 - **Backend**: Firebase (authentication, Firestore, cloud functions)
 - **Testing**: Jest + Enzyme (unit); Playwright (E2E)
-- **Package Manager**: Yarn (unit tests, dev, build — see volta config); pnpm (Playwright E2E — `playwright.config.js` uses `pnpm dev`)
+- **Package Manager**: pnpm for the root, `web/` and `functions/` (each has its own `pnpm-lock.yaml`; CI runs `pnpm install --frozen-lockfile`). Node is pinned through Volta
 
 ## Architecture
 
@@ -36,51 +36,51 @@ Key directories:
 ## Common Development Commands
 
 ```bash
-# Install dependencies (use yarn, not npm)
-yarn install
+# Install dependencies (use pnpm, not npm or yarn)
+pnpm install
 
 # Start development server
-yarn dev
+pnpm dev
 
 # Build for production
-yarn build
+pnpm build
 
 # Package for release (creates extension.zip)
-yarn release
+pnpm release
 
 # Run tests
-yarn test
+pnpm test
 
 # Run linting
-yarn lint
+pnpm lint
 
 # Deploy to staging
-yarn deploy:staging
+pnpm deploy:staging
 
 # Deploy to production
-yarn deploy:prod
+pnpm deploy:prod
 ```
 
 ## Testing
 
 ```bash
 # Run all unit tests (Jest + Enzyme)
-yarn test
+pnpm test
 
 # Run a specific unit test file
-yarn test src/common/ensure.test.js
+pnpm test src/common/ensure.test.js
 
 # Run Playwright E2E tests against the local dev server
-yarn test:e2e
+pnpm test:e2e
 
 # Run E2E in headed mode (useful for debugging)
-yarn test:e2e:headed
+pnpm test:e2e:headed
 
 # Run E2E against staging or production
-PW_BASE_URL=https://staging.zenuml.com yarn test:e2e
+PW_BASE_URL=https://staging.zenuml.com pnpm test:e2e
 
-# Run E2E against the production build (requires `yarn build` first)
-PW_PROD_BUILD=1 yarn test:e2e
+# Run E2E against the production build (requires `pnpm build` first)
+PW_PROD_BUILD=1 pnpm test:e2e
 
 # Manual testing guide available at
 # src/manual-test-guide.md
@@ -90,13 +90,13 @@ Unit test files follow the pattern `*.test.js` and are located either in `/src/t
 
 ## Important Development Notes
 
-1. **Package managers**: Use **Yarn** for most tasks (install, dev, test, build, lint). Use **pnpm** when running Playwright E2E — `playwright.config.js` boots the dev server via `pnpm dev`. Do not use npm.
+1. **Package manager**: Use **pnpm** everywhere. In `web/` and `functions/`, pass `--ignore-workspace` so each updates its own lockfile. Do not use npm or yarn.
 2. **Preact aliases**: React imports are aliased to Preact in the build config
 3. **No TypeScript**: This is a JavaScript project with JSX
 4. **Firebase emulators**: Use for local development - see `/docs/firebase-emulator-testing.md`
 5. **Lint**: no git pre-commit hook is installed; the root `lint-staged` config runs Prettier only. Lint the app with `pnpm -C web lint` (flat config `web/eslint.config.js`)
 6. **Chrome extension**: Built to `/extension/` directory during release
-7. **Storybook**: Available for component development — `yarn storybook` (port 6006), `yarn build-storybook` for a static build
+7. **Storybook**: Available for component development — `pnpm storybook` (port 6006), `pnpm build-storybook` for a static build
 
 ## Code Style
 
