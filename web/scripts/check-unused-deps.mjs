@@ -27,6 +27,7 @@ export const ALLOW = [
   'eslint', // lint CLI
   'postcss', // read by Vite
   'storybook', // storybook CLI
+  'typescript', // tsc CLI (typecheck)
 ];
 
 export function isReferenced(name, source) {
