@@ -213,14 +213,14 @@ test('EXP-1 — PNG and SVG analytics fire only after successful browser downloa
   });
   await page.locator('[data-testid="export-download"]').click();
   await expect(page.getByRole('alert')).toContainText('Browser download unavailable');
-  expect(tracked.filter((event) => event.event === 'downloadPng')).toHaveLength(0);
+  expect(tracked.filter((event) => event.event === 'diagram_downloaded' && event.format === 'png')).toHaveLength(0);
   await page.evaluate(() => { URL.createObjectURL = window.__restoreCreateObjectURL; });
 
   let before = tracked.length;
   const pngDownload = page.waitForEvent('download');
   await page.locator('[data-testid="export-download"]').click();
   expect(await (await pngDownload).failure()).toBeNull();
-  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'downloadPng'))
+  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'diagram_downloaded' && event.format === 'png'))
     .toEqual([expect.objectContaining({ category: 'ui' })]);
 
   await page.locator('[data-testid="renderer-download"]').click();
@@ -231,9 +231,9 @@ test('EXP-1 — PNG and SVG analytics fire only after successful browser downloa
   const svgDownload = page.waitForEvent('download');
   await page.locator('[data-testid="export-download"]').click();
   expect(await (await svgDownload).failure()).toBeNull();
-  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'downloadSvg'))
+  await expect.poll(() => tracked.slice(before).filter((event) => event.event === 'diagram_downloaded' && event.format === 'svg'))
     .toEqual([expect.objectContaining({ category: 'ui' })]);
-  expect(tracked.some((event) => event.event === 'downloadSvg' && 'diagramCode' in event)).toBe(false);
+  expect(tracked.some((event) => event.event === 'diagram_downloaded' && event.format === 'svg' && 'diagramCode' in event)).toBe(false);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
