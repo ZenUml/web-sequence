@@ -206,9 +206,35 @@ test('New from an inline ?code= import stays blank, with the same id, after relo
   expect(await page.evaluate((id) => localStorage.getItem(id), before.id)).toBeNull();
 });
 
-test('New with unsaved edits asks first; Keep editing keeps them, Discard starts blank', async ({ page }) => {
+// #952: the edits are only waiting for auto-save, so New saves them first and opens a
+// blank diagram. The discard dialog is the fallback for a save that really failed.
+test('New with unsaved edits saves them first and opens a blank diagram, no discard dialog', async ({ page }) => {
   await clearEditor(page);
   await page.keyboard.insertText('Draft->Edit: unsaved');
+  const firstId = new URL(page.url()).searchParams.get('id');
+  await page.getByTestId('header-new').click();
+  await expect.poll(async () => (await getEditorText(page)).trim()).toBe('');
+  await expect(page.getByRole('heading', { name: 'Discard unsaved changes?' })).toHaveCount(0);
+  const stored = await page.evaluate(() =>
+    Object.keys(localStorage).map((k) => localStorage.getItem(k) ?? '').filter((v) => v.includes('Draft->Edit: unsaved')));
+  expect(stored).toHaveLength(1);
+  expect(firstId === null || new URL(page.url()).searchParams.get('id') !== firstId).toBe(true);
+  await editorContent(page).click();
+  await page.keyboard.insertText('A->B: fresh');
+  await expect.poll(() => getEditorText(page)).toContain('A->B: fresh');
+});
+
+test('New when the save fails asks first; Keep editing keeps the edits, Discard starts blank', async ({ page }) => {
+  await clearEditor(page);
+  await page.keyboard.insertText('Draft->Edit: unsaved');
+  // Simulate a full disk: diagram documents (stored under their uuid-based id) cannot be written.
+  await page.evaluate(() => {
+    const real = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k: string, v: string) {
+      if (/[0-9a-f]{8}-[0-9a-f]{4}-/.test(k)) throw new DOMException('quota', 'QuotaExceededError');
+      return real.call(this, k, v);
+    };
+  });
   await page.getByTestId('header-new').click();
   await expect(page.getByRole('dialog')).toContainText('Discard unsaved changes?');
   await page.getByTestId('confirm-cancel').click();

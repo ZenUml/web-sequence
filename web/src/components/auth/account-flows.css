@@ -236,6 +236,14 @@
 .af-dialog .af-actions .af-btn--primary:active {
   background: var(--af-primary-press);
 }
+.af-dialog .af-actions .af-btn--danger {
+  border: 1px solid var(--af-danger);
+  background: var(--af-danger);
+  color: var(--af-on-primary);
+}
+.af-dialog .af-actions .af-btn--danger:hover {
+  filter: brightness(0.92);
+}
 /* Busy: keep the busy button legible; the sibling is disabled at reduced weight. */
 .af-dialog .af-actions .af-btn:disabled {
   pointer-events: none;
