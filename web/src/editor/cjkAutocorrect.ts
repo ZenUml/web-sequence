@@ -50,6 +50,7 @@ import {
 } from '@codemirror/state'
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
+import { isFreeTextSpan } from './cursorContext'
 import { isolateHistory } from '@codemirror/commands'
 import { insertBracket } from '@codemirror/autocomplete'
 
@@ -144,55 +145,6 @@ const CJK_TO_ASCII: Record<string, string> = {
 
 function hasCjkPunct(text: string): boolean {
   for (const ch of text) if (Object.prototype.hasOwnProperty.call(CJK_TO_ASCII, ch)) return true
-  return false
-}
-
-// True when `pos` sits in a free-text span where CJK punctuation is intentional content:
-// a message/title/divider LABEL (`Content`/`LineContent`), a quoted `String`, or a
-// `Comment`. Same span set the completion logic treats as free text (#813).
-//
-// D7 (TEST_TREES.md product decisions): the bare METHOD-NAME slot (`A.|`, `A.pay|`) is
-// deliberately CODE here, even though the completion side treats the post-dot slot as a
-// free-typing zone (76bddeb suppresses the popup there). The asymmetry is INTENDED:
-// completion suppression exists because any method name is valid (nothing useful to
-// offer), but the grammar's Identifier cannot hold full-width punctuation — an
-// uncorrected `。` inside a bare method name always breaks the parse. A user who truly
-// wants CJK punctuation in a method name has the quoted escape hatch `A."支付。"()`,
-// which this classifier preserves via the `String` branch. Changing either side is a
-// product decision, not a refactor.
-export function isFreeTextSpan(state: EditorState, pos: number): boolean {
-  for (
-    let n: ReturnType<typeof syntaxTree>['topNode'] | null = syntaxTree(state).resolveInner(pos, -1);
-    n;
-    n = n.parent
-  ) {
-    const nm = n.name
-    // `Label` covers an in-progress alias `as "标签` whose unclosed string error-recovers
-    // to an Identifier under Label rather than a complete `String` node (mirrors #813).
-    if (
-      nm === 'Content' ||
-      nm === 'LineContent' ||
-      nm === 'String' ||
-      nm === 'Comment' ||
-      nm === 'Label'
-    )
-      return true
-    // EMPTY free-text regions, where the Content/LineContent node does not exist yet
-    // (the user is typing the FIRST char of a label/title). Distinguish the label
-    // region from the From/To endpoints (both live under AsyncMessage) by the Colon:
-    // the cursor is in the label only once it is PAST the message's `:`.
-    if (nm === 'AsyncMessage') {
-      const colon = n.getChild('Colon')
-      if (colon && pos > colon.from) return true
-    }
-    // Title text begins after the `title` keyword.
-    if (nm === 'Title') {
-      const kw = n.getChild('TitleKeyword')
-      if (kw && pos > kw.to) return true
-    }
-    // Divider text (`== … ==`) is free text throughout.
-    if (nm === 'Divider') return true
-  }
   return false
 }
 
