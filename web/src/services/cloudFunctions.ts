@@ -27,25 +27,41 @@ import { SharedItemError } from './sharedItemError';
 // reference through useShare (UseShareOpts.createShare is typed `(id) => …`, no opts
 // threaded), so the extension override flows ENTIRELY through this lazy default. The
 // through-useShare seam test guards this end-to-end.
+//
+// #615: the request is bounded by `timeoutMs` (default 30s). An unanswered request
+// used to keep the Share spinner running forever; now it rejects and useShare shows
+// the error with Try again.
+export const CREATE_SHARE_TIMEOUT_MS = 30_000;
+
 export async function createShare(
   id: string,
-  opts: { isExtension?: boolean } = {},
+  opts: { isExtension?: boolean; timeoutMs?: number } = {},
 ): Promise<{ url: string; md5: string }> {
   const token = await getIdToken();
   const origin = shareOrigin({ isExtension: opts.isExtension ?? detectFromEnv().isExtension });
-  const res = await fetch('/create-share', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, token, origin }),
-  });
-  if (!res.ok) {
-    let msg = 'Failed to create share link';
-    try { msg = (await res.json()).error || msg; } catch { /* ignore */ }
-    throw new Error(msg);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? CREATE_SHARE_TIMEOUT_MS);
+  try {
+    const res = await fetch('/create-share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, token, origin }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      let msg = 'Failed to create share link';
+      try { msg = (await res.json()).error || msg; } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+    const { page_share, md5 } = (await res.json()) as { page_share: string; md5: string };
+    const sep = page_share.includes('?') ? '&' : '?';
+    return { url: `${page_share}${sep}v=${md5}`, md5 };
+  } catch (e: unknown) {
+    if (controller.signal.aborted) throw new Error('Creating the share link timed out. Try again.');
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  const { page_share, md5 } = (await res.json()) as { page_share: string; md5: string };
-  const sep = page_share.includes('?') ? '&' : '?';
-  return { url: `${page_share}${sep}v=${md5}`, md5 };
 }
 
 // GET /get-shared-item?id=&share-token= → Item (isReadOnly:true). Public read.
