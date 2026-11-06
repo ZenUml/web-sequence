@@ -1,11 +1,12 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { cn } from './cn';
+import { surfaceClass, type UISurface } from './surface';
+import './tokens.css';
 
-// Design-system Tooltip over Radix Tooltip. Unlike menus/popovers (which float on
-// the light paper surface), tooltips are tiny explanatory chips rendered on the
-// DARK ink surface so they read as transient chrome annotations rather than
-// content. Radix makes the trigger keyboard-focusable, so the microcopy these
-// carry is reachable without a pointer (the native `title=""` attribute is not).
+// Design-system Tooltip over Radix Tooltip. The content is portaled and carries
+// its own surface (default dark). Radix makes the trigger keyboard-focusable, so
+// the microcopy is reachable without a pointer (the native `title=""` attribute
+// is not).
 //
 // `Tooltip` bundles its own single-trigger Provider so callers can drop one in
 // without wiring a top-level provider. For a header full of tooltips this means
@@ -23,6 +24,8 @@ export interface TooltipProps {
   sideOffset?: number;
   /** Delay before showing on hover/focus (ms). */
   delayDuration?: number;
+  /** Portaled chip surface. Default dark, matching the previous ink chip. */
+  surface?: UISurface;
 }
 
 export function Tooltip({
@@ -32,6 +35,7 @@ export function Tooltip({
   align = 'center',
   sideOffset = 6,
   delayDuration = 300,
+  surface = 'dark',
 }: TooltipProps) {
   return (
     <RadixTooltip.Provider delayDuration={delayDuration}>
@@ -42,15 +46,11 @@ export function Tooltip({
             side={side}
             align={align}
             sideOffset={sideOffset}
-            className={cn(
-              // Dark surface chip, small mono-adjacent text, soft depth.
-              'bg-ink-800 text-ondark-strong border border-ink-line/60 rounded',
-              'px-2 py-1 text-[11px] leading-snug max-w-[220px]',
-              'shadow-pop-dark animate-pop-in z-50 select-none',
-            )}
+            data-ui-surface={surface}
+            className={cn('ui-tooltip', surfaceClass(surface), 'animate-pop-in')}
           >
             {label}
-            <RadixTooltip.Arrow className="fill-ink-800" />
+            <RadixTooltip.Arrow className="ui-tooltip-arrow" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>

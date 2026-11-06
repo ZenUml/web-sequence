@@ -7,6 +7,7 @@ import zenumlUrl from '@zenuml/core/dist/zenuml?url';
 // <script src=...> on the same `?url` rail as zenumlUrl is `'self'`-compliant in
 // both web and extension contexts.
 import bootstrapUrl from './previewBootstrap.runtime.js?url';
+import type { RenderOptions } from './previewProtocol';
 
 // The fixed ZenUML mount structure (ported from legacy computes.js). The DSL is
 // NOT inlined — it arrives via `render` postMessages, so the iframe is built
@@ -25,6 +26,8 @@ export interface PreviewParts {
   // patching @zenuml/core by display:none-ing its own DOM hooks from inside the
   // isolated srcdoc iframe.
   embed?: boolean;
+  initialTheme?: RenderOptions['theme'];
+  initialPalette?: Record<string, string>;
 }
 
 // Embed-only chrome suppression. Targets @zenuml/core's rendered DOM hooks:
@@ -48,10 +51,13 @@ export function getCompleteHtml(parts: PreviewParts = {}): string {
   const embedStyle = parts.embed
     ? `<style id="zenuml-embed-suppress">${EMBED_CHROME_SUPPRESS_CSS}</style>`
     : '';
+  const initialPalette = parts.initialPalette ? encodeURIComponent(JSON.stringify(parts.initialPalette)) : '';
+  const initialTheme = parts.initialTheme ?? 'theme-default';
   return `<!DOCTYPE html>
-<html>
+<html data-zenuml-initial-theme="${initialTheme}" data-zenuml-initial-palette="${initialPalette}">
 <head>
 <meta charset="UTF-8" />
+<style id="zenuml-host-backing">html,body{background:transparent}</style>
 <style id="zenumlstyle"></style>
 ${embedStyle}</head>
 <body>

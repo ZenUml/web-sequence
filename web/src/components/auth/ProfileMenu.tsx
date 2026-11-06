@@ -1,6 +1,6 @@
 import { Menu, MenuTrigger, MenuContent, MenuItem, MenuLabel, MenuSeparator } from '../../ui';
 import { ProBadge } from '../subscription/ProBadge';
-import type { AppUser, PlanType } from '../../domain/types';
+import type { AppUser, PlanType, Appearance } from '../../domain/types';
 
 export interface ProfileMenuProps {
   user: AppUser;
@@ -13,6 +13,12 @@ export interface ProfileMenuProps {
   paymentEnabled?: boolean;
   onUpgrade?(): void;
   onManagePlan?(): void;
+  // Opens the informational plans dialog (not checkout). Payment-gated like the
+  // billing items.
+  onOpenPricing?(): void;
+  // Extra class for the menu surface (the editor passes its themed menu class).
+  menuClassName?: string;
+  surface?: Appearance;
 }
 
 function Avatar({ user }: { user: AppUser }) {
@@ -41,6 +47,9 @@ export function ProfileMenu({
   paymentEnabled = false,
   onUpgrade,
   onManagePlan,
+  onOpenPricing,
+  menuClassName,
+  surface = 'dark',
 }: ProfileMenuProps) {
   // REQ-AC-3: displayName fallback to "Anonymous Creator" when absent.
   const displayName = user.displayName ?? 'Anonymous Creator';
@@ -58,16 +67,21 @@ export function ProfileMenu({
           {subscribed && <ProBadge planType={planType} />}
         </button>
       </MenuTrigger>
-      <MenuContent>
+      <MenuContent surface={surface} className={menuClassName}>
         <MenuLabel>
-          <span className="block text-ondark-strong">{displayName}</span>
+          <span className="block profile-identity-name">{displayName}</span>
           {user.email && (
-            <span className="block text-[11px] font-normal text-ondark-muted normal-case tracking-normal">
+            <span className="block text-[11px] font-normal profile-identity-email normal-case tracking-normal">
               {user.email}
             </span>
           )}
         </MenuLabel>
         <MenuSeparator />
+        {paymentEnabled && (
+          <MenuItem data-testid="profile-pricing" onSelect={() => onOpenPricing?.()}>
+            Pricing
+          </MenuItem>
+        )}
         {paymentEnabled && subscribed && (
           <MenuItem data-testid="profile-plan" onSelect={() => onManagePlan?.()}>
             My Plan ({planType})

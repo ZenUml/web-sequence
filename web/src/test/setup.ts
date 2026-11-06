@@ -18,6 +18,29 @@ if (typeof Range !== 'undefined') {
   }
 }
 
+// jsdom's getClientRects() is always empty. A browser returns at least one box for
+// rendered inline text and spans, and CodeMirror's click-to-position scan relies on
+// that for highlighted (multi-span) lines; with no rects it throws inside the
+// mousedown handler. Inside CodeMirror content, return the (zero) bounding box as
+// one rect, for elements and for text ranges. Other components keep jsdom's
+// behaviour.
+const oneRect = (rect: DOMRect) =>
+  ({ length: 1, 0: rect, item: (i: number) => (i === 0 ? rect : null), [Symbol.iterator]: function* () { yield rect; } }) as unknown as DOMRectList;
+const inCmContent = (node: Node | null) =>
+  !!(node && (node.nodeType === 1 ? (node as Element) : node.parentElement)?.closest('.cm-content'));
+if (typeof Element !== 'undefined') {
+  const nativeGetClientRects = Element.prototype.getClientRects;
+  Element.prototype.getClientRects = function getClientRects(this: Element) {
+    return inCmContent(this) ? oneRect(this.getBoundingClientRect()) : nativeGetClientRects.call(this);
+  };
+}
+if (typeof Range !== 'undefined') {
+  const rangeGetClientRects = Range.prototype.getClientRects;
+  Range.prototype.getClientRects = function getClientRects(this: Range) {
+    return inCmContent(this.startContainer) ? oneRect(this.getBoundingClientRect()) : rangeGetClientRects.call(this);
+  };
+}
+
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class {
     observe() {}

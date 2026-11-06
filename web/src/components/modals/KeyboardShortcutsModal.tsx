@@ -38,15 +38,15 @@ const EDITOR: Shortcut[] = [
 function Section({ title, items }: { title: string; items: Shortcut[] }) {
   return (
     <div>
-      <h3 className="mb-2 font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
+      <h3 className="mb-2 font-mono uppercase tracking-[0.12em] text-[11px] text-ondark-muted">
         {title}
       </h3>
       <table className="w-full border-collapse text-[13px]">
         <tbody>
           {items.map((s) => (
-            <tr key={s.action} className="border-b border-paper-line/60">
-              <td className="py-1.5 pr-3 text-onlight-muted">{s.action}</td>
-              <td className="py-1.5 pl-3 text-right font-mono text-[12px] text-onlight-strong whitespace-nowrap">
+            <tr key={s.action} className="border-b border-ink-line/60">
+              <td className="py-1.5 pr-3 text-ondark-muted">{s.action}</td>
+              <td className="py-1.5 pl-3 text-right font-mono text-[12px] text-ondark-strong whitespace-nowrap">
                 {s.keys}
               </td>
             </tr>

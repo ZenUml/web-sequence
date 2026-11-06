@@ -40,10 +40,13 @@ describe('Textarea', () => {
     expect(el).toBe(screen.getByLabelText('Atomic CSS'));
   });
 
-  it('light surface uses the paper field tokens, not the dark ink ones', () => {
+  it('light surface uses the light control surface, not the dark one', () => {
     render(<Textarea data-testid="acss" surface="light" />);
     const el = screen.getByTestId('acss');
-    expect(el.className).toContain('bg-paper-50');
+    expect(el).toHaveAttribute('data-ui-surface', 'light');
+    expect(el.className).toContain('ui-surface-light');
+    expect(el.className).toContain('ui-field');
+    expect(el.className).not.toContain('ui-surface-dark');
     expect(el.className).not.toContain('bg-ink-800');
   });
 });

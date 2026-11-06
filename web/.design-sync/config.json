@@ -1,0 +1,34 @@
+{
+  "projectId": "ffa534fb-665d-47a6-af0d-7dbbc27d5e88",
+  "shape": "package",
+  "pkg": "web-sequence-web",
+  "globalName": "DraftingTable",
+  "srcDir": "src/ui",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/.cache/ds-tailwind.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "runtimeFontPrefixes": ["Hanken Grotesk", "IBM Plex Mono", "Instrument Serif"],
+  "componentSrcMap": {
+    "Button": "src/ui/Button.tsx",
+    "IconButton": "src/ui/IconButton.tsx",
+    "BrandLogo": "src/ui/BrandLogo.tsx",
+    "Dialog": "src/ui/Dialog.tsx",
+    "TextInput": "src/ui/TextInput.tsx",
+    "Textarea": "src/ui/Textarea.tsx",
+    "Switch": "src/ui/Switch.tsx",
+    "Select": "src/ui/Select.tsx",
+    "SearchInput": "src/ui/SearchInput.tsx",
+    "Popover": "src/ui/Popover.tsx",
+    "Tooltip": "src/ui/Tooltip.tsx",
+    "Menu": "src/ui/Menu.tsx"
+  },
+  "provider": { "component": "TooltipProvider" },
+  "overrides": {
+    "Dialog": { "cardMode": "single", "viewport": "480x360" },
+    "Select": { "cardMode": "single", "viewport": "360x320" },
+    "Popover": { "cardMode": "single", "viewport": "400x300" },
+    "Menu": { "cardMode": "single", "viewport": "360x340" },
+    "Tooltip": { "cardMode": "single", "viewport": "360x200" },
+    "Textarea": { "cardMode": "column" }
+  }
+}

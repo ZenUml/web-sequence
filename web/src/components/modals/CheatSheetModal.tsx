@@ -44,24 +44,24 @@ export function CheatSheetModal({ open, onOpenChange }: CheatSheetModalProps) {
         <div data-testid="cheatsheet-modal" className="max-h-[60vh] overflow-y-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-paper-line">
-                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
+              <tr className="border-b border-ink-line">
+                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-ondark-muted">
                   Feature
                 </th>
-                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted">
+                <th className="px-3 py-2 text-left font-mono uppercase tracking-[0.12em] text-[11px] text-ondark-muted">
                   Example
                 </th>
               </tr>
             </thead>
             <tbody>
               {ROWS.map((row) => (
-                <tr key={row.feature} className="border-b border-paper-line/60">
-                  <td className="px-3 py-2 align-top text-onlight-strong">
+                <tr key={row.feature} className="border-b border-ink-line/60">
+                  <td className="px-3 py-2 align-top text-ondark-strong">
                     {row.feature}
                   </td>
                   <td className="px-3 py-2 align-top">
-                    <pre className="rounded bg-paper-200 p-2">
-                      <code className="font-mono text-[12px] text-onlight-strong whitespace-pre">
+                    <pre className="rounded bg-ink-900 p-2">
+                      <code className="font-mono text-[12px] text-ondark-strong whitespace-pre">
                         {row.example}
                       </code>
                     </pre>

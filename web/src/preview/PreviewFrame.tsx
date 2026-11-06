@@ -3,16 +3,33 @@ import { getCompleteHtml } from './previewHtml';
 import { isFrameMessage, type RenderOptions } from './previewProtocol';
 import { PREVIEW_DEBOUNCE } from '../config/constants';
 import { detectFromEnv } from '../app/runtimeMode';
+import { ACTUAL_SIZE, resolveZoom, type PreviewZoom, type Size } from './previewZoom';
+import { documentPaletteFor } from './documentPalette';
 
 export interface PreviewHandle {
   getPng(): Promise<string | null>;
+  getExportSnapshot(): PreviewExportSnapshot | null;
   evalConsole(expr: string): Promise<{ ok: boolean; value: string }>;
+  // #824: force a one-shot re-render of the CURRENT code, bypassing the autoPreview
+  // gate. Powers the manual "Refresh" control shown when auto-preview is OFF, so the
+  // preview stays usable without the debounced auto re-render. No-op until `ready`.
+  render(): void;
+}
+
+export interface PreviewExportSnapshot {
+  code: string;
+  css: string;
+  theme: RenderOptions['theme'];
+  renderMode: 'html' | 'svg';
 }
 
 export interface PreviewFrameProps {
   code: string;
   css: string;
+  readOnly?: boolean;
   stickyOffset: number;
+  /** Native HTML and SVG renderer theme. */
+  theme?: RenderOptions['theme'];
   autoPreview?: boolean;
   /**
    * Embed mode: suppress @zenuml/core's interactive chrome (toolbar/zoom/info/
@@ -30,19 +47,39 @@ export interface PreviewFrameProps {
    * Has no effect in embed mode (embed sizing stays byte-identical). Default false.
    */
   fit?: boolean;
+  /**
+   * Render the native vector SVG instead of the HTML diagram. Used on mobile, where
+   * @zenuml/core's fixed-px HTML layout overflows the narrow viewport with no reflow.
+   * The SVG carries a viewBox and is sized fit-to-width inside the iframe, so the full
+   * diagram width is visible by default (tall diagrams scroll vertically; vector stays
+   * crisp at any zoom). Nonempty custom CSS uses fit-width HTML so existing
+   * diagram selectors remain effective; empty CSS keeps native SVG. Default false.
+   */
+  svgMode?: boolean;
+  /**
+   * Editor-mode zoom (ignored in embed and present modes). Applied app-side by
+   * scaling the iframe; see previewZoom.ts. Default: actual size.
+   */
+  zoom?: PreviewZoom;
+  /** Reports the effective editor-mode scale whenever it changes. */
+  onZoomChange?(scale: number): void;
   onCodeChange?: (code: string) => void;
   onConsole?: (entry: { level: string; args: string[] }) => void;
   onError?: (message: string) => void;
+  onExitPresentation?: () => void;
 }
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(function PreviewFrame(
-  { code, css, stickyOffset, autoPreview = true, embed, fit = false, onCodeChange, onConsole, onError },
+  { code, css, stickyOffset, theme = 'theme-default', autoPreview = true, embed, fit = false, svgMode = false, readOnly = false, zoom = ACTUAL_SIZE, onZoomChange, onCodeChange, onConsole, onError, onExitPresentation },
   ref,
 ) {
   // Self-determine embed from the runtime mode (same source AppRoot reads) so the
   // embed iframe suppresses core chrome without any AppRoot edit. An explicit
   // `embed` prop overrides.
   const embedMode = embed ?? detectFromEnv().isEmbed;
+  // Custom CSS targets the interactive HTML DOM (including the styled templates).
+  // Native SVG has a different structure and cannot apply arbitrary HTML selectors.
+  const renderSvg = svgMode && css.trim().length === 0;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(false);
@@ -64,17 +101,68 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   const codeRef = useRef(code); codeRef.current = code;
   const cssRef = useRef(css); cssRef.current = css;
   const stickyRef = useRef(stickyOffset); stickyRef.current = stickyOffset;
-  const cbRef = useRef({ onCodeChange, onConsole, onError });
-  cbRef.current = { onCodeChange, onConsole, onError };
+  const svgModeRef = useRef(renderSvg); svgModeRef.current = renderSvg;
+  const themeRef = useRef(theme); themeRef.current = theme;
+  const participantStyleEditingRef = useRef(!embedMode && !fit && !svgMode && !readOnly);
+  participantStyleEditingRef.current = !embedMode && !fit && !svgMode && !readOnly;
+  const presentingRef = useRef(false);
+  presentingRef.current = fit && !embedMode;
+  const cbRef = useRef({ onCodeChange, onConsole, onError, onExitPresentation });
+  cbRef.current = { onCodeChange, onConsole, onError, onExitPresentation };
   // Build srcdoc ONCE with an EMPTY style; css is pushed via updateCss after
   // `ready` (and on subsequent css changes) rather than baked into the document.
   // The embed chrome-suppression CSS IS baked here (not via updateCss) so there is
   // no chrome flash on first paint.
-  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode }), [embedMode]);
+  const initialAppearance = useRef({ theme, palette: documentPaletteFor(theme) });
+  const srcdoc = useMemo(() => getCompleteHtml({ embed: embedMode, initialTheme: initialAppearance.current.theme, initialPalette: initialAppearance.current.palette }), [embedMode]);
 
-  const renderOptions = (): RenderOptions => ({ enableMultiTheme: false, theme: 'theme-default', stickyOffset: stickyRef.current });
+  const renderOptions = (): RenderOptions => ({
+    enableMultiTheme: false,
+    enableParticipantStyleEditing: participantStyleEditingRef.current,
+    theme: themeRef.current,
+    palette: documentPaletteFor(themeRef.current),
+    stickyOffset: stickyRef.current,
+    renderMode: svgModeRef.current ? 'svg' : 'html',
+  });
 
   const post = (msg: unknown) => iframeRef.current?.contentWindow?.postMessage(msg, '*');
+
+  // Acknowledged render delivery (WebKit fix). A single fire-and-forget render
+  // postMessage to the srcdoc iframe is silently dropped by WebKit/Safari under tight
+  // prod-build timing, leaving the preview stale (it never re-renders after first paint).
+  // So each render carries a token; the iframe echoes it in `rendered`; if the ack does
+  // not arrive within RENDER_ACK_MS we re-post (up to RENDER_MAX_RETRIES). Idempotent —
+  // a duplicate render that did land just re-renders the same code. Chromium acks on the
+  // first try, so the retry path is WebKit-only in practice.
+  const RENDER_ACK_MS = 250;
+  const RENDER_MAX_RETRIES = 4;
+  const renderSeq = useRef(0);
+  const lastRenderedCode = useRef(code);
+  const pendingRender = useRef<{ token: number; code: string; options: RenderOptions; tries: number } | null>(null);
+  const lastAcknowledged = useRef<PreviewExportSnapshot | null>(null);
+  const ackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armAck = () => {
+    if (ackTimer.current) clearTimeout(ackTimer.current);
+    ackTimer.current = setTimeout(() => {
+      const p = pendingRender.current;
+      // Exhausting delivery retries does not prove the last render failed: core
+      // may still be committing it. Keep the token so its late ack can establish
+      // the export snapshot and stop any stale surface from taking over.
+      if (!p || p.tries >= RENDER_MAX_RETRIES) return;
+      p.tries += 1;
+      post({ type: 'render', code: p.code, options: p.options, token: p.token });
+      armAck();
+    }, RENDER_ACK_MS);
+  };
+  const postRender = (code: string) => {
+    lastRenderedCode.current = code;
+    const token = ++renderSeq.current;
+    const options = renderOptions();
+    if (lastAcknowledged.current?.renderMode !== options.renderMode) lastAcknowledged.current = null;
+    pendingRender.current = { token, code, options, tries: 0 };
+    post({ type: 'render', code, options, token });
+    armAck();
+  };
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
@@ -82,13 +170,30 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       if (!isFrameMessage(e.data)) return;
       const msg = e.data;
       switch (msg.type) {
+        case 'escape':
+          if (presentingRef.current) cbRef.current.onExitPresentation?.();
+          break;
         case 'ready':
           readyRef.current = true;
-          post({ type: 'render', code: codeRef.current, options: renderOptions() });
+          postRender(codeRef.current);
           // Push the LATEST css on ready so css that resolved before the heavy
           // @zenuml bundle fired `ready` (e.g. async-transpiled SCSS/LESS) is not
           // dropped — the empty initial <style> would otherwise stay empty.
           post({ type: 'updateCss', css: cssRef.current });
+          break;
+        case 'rendered':
+          // Ack for acknowledged render delivery: the iframe applied this token's render,
+          // so stop retrying it (only when it matches the latest in-flight render).
+          if (pendingRender.current && msg.token === pendingRender.current.token) {
+            lastAcknowledged.current = {
+              code: pendingRender.current.code,
+              css: cssRef.current,
+              theme: pendingRender.current.options.theme,
+              renderMode: pendingRender.current.options.renderMode ?? 'html',
+            };
+            pendingRender.current = null;
+            if (ackTimer.current) clearTimeout(ackTimer.current);
+          }
           break;
         case 'codeChange': cbRef.current.onCodeChange?.(msg.code); break;
         case 'console': cbRef.current.onConsole?.({ level: msg.level, args: msg.args }); break;
@@ -113,29 +218,49 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       }
     }
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      if (ackTimer.current) clearTimeout(ackTimer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debounced re-render on DSL change (only once ready + autoPreview on).
   useEffect(() => {
     if (!readyRef.current || !autoPreview) return;
-    const t = setTimeout(() => post({ type: 'render', code: codeRef.current, options: renderOptions() }), PREVIEW_DEBOUNCE);
+    const t = setTimeout(() => postRender(codeRef.current), PREVIEW_DEBOUNCE);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, stickyOffset, autoPreview]);
+  }, [code, stickyOffset, autoPreview, renderSvg]);
+
+  // A theme switch restyles the last visible diagram even when auto-preview is
+  // disabled. Keep unsaved DSL edits hidden until the user presses Refresh.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    postRender(autoPreview ? codeRef.current : lastRenderedCode.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
+
+  // Presentation mode must reset core's stored participant-editor flag even when
+  // auto-preview is off. The iframe DOM stays mounted across this transition.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    postRender(autoPreview ? codeRef.current : lastRenderedCode.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fit, readOnly, embedMode, renderSvg]);
 
   // CSS-only fast path (REQ-PRV-5): once ready, push CSS via postMessage on css
   // changes instead of rebuilding/reloading the iframe.
   useEffect(() => {
     if (!readyRef.current) return;
     post({ type: 'updateCss', css });
+    if (lastAcknowledged.current) lastAcknowledged.current = { ...lastAcknowledged.current, css };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [css]);
 
   // srcdoc is now stable for the component's life, so this is a one-time no-op;
   // kept as a safety net should the iframe ever reload and re-fire `ready`.
-  useEffect(() => { readyRef.current = false; }, [srcdoc]);
+  useEffect(() => { readyRef.current = false; lastAcknowledged.current = null; }, [srcdoc]);
 
   // Present-mode fit: compute scale = min(containerW/contentW, containerH/contentH, 1)
   // and keep it current as the wrapper resizes (window resize / orientation change).
@@ -163,7 +288,35 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
     return () => ro.disconnect();
   }, [fit, contentSize]);
 
+  // Editor-mode zoom: track the wrapper (viewport) size so fit modes stay current
+  // as the card resizes or the split is dragged. Feature-detected like present fit.
+  const [viewport, setViewport] = useState<Size | null>(null);
+  const editorZoomActive = !embedMode && !fit;
+  useEffect(() => {
+    if (!editorZoomActive) return;
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const measure = () => {
+      const width = wrapper.clientWidth;
+      const height = wrapper.clientHeight;
+      setViewport((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, [editorZoomActive]);
+  const effectiveZoom: PreviewZoom = svgMode && !renderSvg ? { kind: 'fit-width' } : zoom;
+  const zoomScale = editorZoomActive ? resolveZoom(effectiveZoom, contentSize, viewport) : 1;
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
+  useEffect(() => {
+    if (editorZoomActive) onZoomChangeRef.current?.(zoomScale);
+  }, [editorZoomActive, zoomScale]);
+
   useImperativeHandle(ref, () => ({
+    getExportSnapshot() { return lastAcknowledged.current && { ...lastAcknowledged.current }; },
     getPng() {
       return new Promise((resolve) => {
         const id = ++pngId.current;
@@ -180,6 +333,13 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
         setTimeout(() => { if (evalWaiters.current.delete(id)) resolve({ ok: false, value: 'timeout' }); }, 5000);
       });
     },
+    render() {
+      // Only meaningful once the iframe has reported `ready` (its bootstrap registered
+      // the render listener). Before that, the `ready` handler renders the current code
+      // anyway, so dropping an early manual render is correct, not a missed update.
+      if (!readyRef.current) return;
+      postRender(codeRef.current);
+    },
   }));
 
   const iframeEl = (className: string, style?: CSSProperties) => (
@@ -189,7 +349,10 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
       title="ZenUML preview"
       srcDoc={srcdoc}
       className={className}
-      style={style}
+      // A dark host color-scheme with a default-scheme srcdoc makes Chromium
+      // composite an opaque white iframe canvas even when both backgrounds
+      // compute as transparent. Keep the embedded canvas transparent too.
+      style={{ backgroundColor: 'transparent', colorScheme: 'normal', ...style }}
       allowFullScreen
     />
   );
@@ -211,13 +374,22 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
   // ResizeObserver measures in fit mode.
   //  - present fit (fit && contentSize known): iframe sized to natural px + scaled to
   //    fit, centred. overflow-hidden clips any sub-pixel rounding.
-  //  - editor (else): iframe fills the wrapper h-full w-full; contentSize, if
-  //    reported, is stored but intentionally not applied.
+  //  - editor (else): iframe fills the wrapper h-full w-full at actual size. Other
+  //    zoom levels size the iframe to wrapper/scale and scale it back up from the
+  //    top-left corner, so the diagram scrolls inside the iframe at any zoom and
+  //    pointer input maps through the transform.
   const presenting = fit && contentSize !== null;
+  const zoomed = !presenting && zoomScale !== 1;
   return (
     <div
       ref={wrapperRef}
-      className={presenting ? 'h-full w-full flex items-center justify-center overflow-hidden' : 'h-full w-full'}
+      className={
+        presenting
+          ? 'h-full w-full flex items-center justify-center overflow-hidden'
+          : zoomed
+            ? 'relative h-full w-full overflow-hidden'
+            : 'h-full w-full'
+      }
     >
       {presenting
         ? iframeEl('border-0', {
@@ -226,7 +398,14 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewFrameProps>(functio
             transform: `scale(${fitScale})`,
             transformOrigin: 'center center',
           })
-        : iframeEl('h-full w-full border-0')}
+        : zoomed
+          ? iframeEl('absolute left-0 top-0 border-0', {
+              width: `${100 / zoomScale}%`,
+              height: `${100 / zoomScale}%`,
+              transform: `scale(${zoomScale})`,
+              transformOrigin: '0 0',
+            })
+          : iframeEl('h-full w-full border-0')}
     </div>
   );
 });

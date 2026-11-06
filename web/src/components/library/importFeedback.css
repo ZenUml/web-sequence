@@ -1,0 +1,246 @@
+/* Library import feedback (Figma 36:8435). Scoped to .import-feedback; colours come
+   only from the shared :root editor tokens in globals.css, which switch with
+   <html data-appearance="dark">. */
+
+/* Fixed stack for import and Export all panels. Clears the fixed Report a bug button
+   (bottom 48px + 36px tall, z-30); z-35 keeps panels above that button but below
+   modal overlays (z-40/50). Empty stack area lets clicks through. */
+.library-feedback-stack {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.import-feedback {
+  pointer-events: auto;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 24px;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  background: var(--editor-surface);
+  color: var(--editor-text);
+  box-shadow: var(--editor-shadow);
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
+}
+
+:root[data-appearance='dark'] .import-feedback {
+  color-scheme: dark;
+}
+
+.import-feedback__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-feedback__status {
+  display: inline-flex;
+  flex: none;
+  color: var(--editor-primary);
+}
+
+:root[data-appearance='dark'] .import-feedback__status {
+  color: var(--editor-focus);
+}
+
+.import-feedback__status.is-error {
+  color: var(--editor-danger);
+}
+
+.import-feedback__icon {
+  display: block;
+}
+
+.import-feedback__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 21px;
+  color: var(--editor-text);
+}
+
+.import-feedback__file {
+  margin: 28px 0 0;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--editor-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.import-feedback__message {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--editor-text);
+}
+
+.import-feedback__file + .import-feedback__message {
+  margin-top: 16px;
+}
+
+.import-feedback__header + .import-feedback__message {
+  margin-top: 28px;
+}
+
+.import-feedback__detail {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--editor-text-secondary);
+}
+
+.import-feedback__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.import-feedback__actions.is-end {
+  justify-content: flex-end;
+}
+
+.import-feedback__primary,
+.import-feedback__secondary,
+.import-feedback__cancel {
+  box-sizing: border-box;
+  min-height: 36px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 17px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.import-feedback__primary {
+  padding: 0 16px;
+  border: 1px solid var(--editor-primary);
+  background: var(--editor-primary);
+  color: var(--editor-on-primary);
+}
+
+.import-feedback__primary:hover {
+  border-color: var(--editor-primary-hover);
+  background: var(--editor-primary-hover);
+}
+
+.import-feedback__primary:active {
+  background: var(--editor-primary-press);
+}
+
+.import-feedback__primary:disabled {
+  border-color: var(--editor-disabled-bg);
+  background: var(--editor-disabled-bg);
+  color: var(--editor-disabled-text);
+  cursor: default;
+}
+
+.import-feedback__secondary {
+  min-width: 96px;
+  padding: 0 16px;
+  border: 1px solid var(--editor-secondary-border);
+  background: var(--editor-secondary-bg);
+  color: var(--editor-secondary-text);
+}
+
+.import-feedback__secondary:hover {
+  background: var(--editor-secondary-hover);
+}
+
+.import-feedback__secondary:active {
+  background: var(--editor-secondary-press);
+}
+
+/* Quiet text action; keeps a full 36px hit area. */
+.import-feedback__cancel {
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--editor-text-secondary);
+  font-size: 13px;
+}
+
+.import-feedback__cancel:hover {
+  background: var(--editor-hover);
+  color: var(--editor-text);
+}
+
+.import-feedback__primary:focus-visible,
+.import-feedback__secondary:focus-visible,
+.import-feedback__cancel:focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: 2px;
+}
+
+.import-feedback__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .library-feedback-stack {
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  .import-feedback {
+    padding: 20px;
+  }
+}
+
+/* Quiet in-panel progress text (no percentage: preparation length is unknown). */
+.import-feedback__pending {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-size: 13px;
+  color: var(--editor-text-secondary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .import-feedback__spin {
+    animation: import-feedback-spin 900ms linear infinite;
+  }
+}
+
+@keyframes import-feedback-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .import-feedback {
+    animation: import-feedback-in 160ms ease-out;
+  }
+}
+
+@keyframes import-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

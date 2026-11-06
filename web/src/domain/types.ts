@@ -81,7 +81,7 @@ export interface Settings {
   cssMode: CssMode;
   editorTheme: string;              // default 'ink' (matches editor DEFAULT_THEME)
   keymap: 'sublime' | 'vim';
-  fontSize: number;                 // 12–18, default 16
+  fontSize: number;                 // 12–18, default 15
   editorFont: string;              // 'FiraCode' | 'Inconsolata' | 'Monoid' | 'FixedSys' | 'other'
   editorCustomFont: string;
   indentWith: 'spaces' | 'tabs';
@@ -94,19 +94,23 @@ export interface Settings {
   preserveConsoleLogs: boolean;
   refreshOnResize: boolean;
   lightVersion: boolean;
+  appearance: Appearance;           // global light/dark app chrome, default 'light'
 }
+
+export type Appearance = 'light' | 'dark';
 
 export const DEFAULT_SETTINGS: Settings = {
   preserveLastCode: true, replaceNewTab: false,
   htmlMode: 'html', jsMode: 'js', cssMode: 'css',
-  editorTheme: 'ink', keymap: 'sublime', fontSize: 16,
+  editorTheme: 'ink', keymap: 'sublime', fontSize: 15,
   editorFont: 'FiraCode', editorCustomFont: '',
   indentWith: 'spaces', indentSize: 2,
   lineWrap: true, autoCloseTags: true, autoComplete: true,
   // autoSave defaults ON: the redesign retires the explicit Save button for a
   // passive Saved/Saving…/Unsaved indicator, so auto-save must be on by default
-  // or the indicator would read "Unsaved" forever. Manual save stays on ⌘S +
-  // the app menu. (Anonymous/read-only saves are still guarded inside save().)
+  // or the indicator would read "Unsaved" forever. Manual save stays on ⌘S.
+  // (Anonymous/read-only saves are still guarded inside save().)
   autoPreview: true, autoSave: true, preserveConsoleLogs: true,
   refreshOnResize: false, lightVersion: false,
+  appearance: 'light',
 };

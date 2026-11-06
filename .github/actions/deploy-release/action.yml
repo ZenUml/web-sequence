@@ -1,0 +1,60 @@
+name: Deploy release
+description: Deploy a release attachment or rebuild the release tag, as conf-app does
+inputs:
+  firebase-service-account:
+    required: true
+    description: Production Firebase service account JSON
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+    - name: Install locked dependencies and build extension frontend
+      shell: bash
+      run: pnpm install --frozen-lockfile && pnpm build
+    - name: Download prebuilt frontend from release
+      id: bundle
+      shell: bash
+      run: node .release-policy/scripts/release/download.mjs
+    - name: Rebuild missing frontend from release tag
+      if: steps.bundle.outputs.prebuilt != 'true'
+      shell: bash
+      working-directory: web
+      run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
+    - name: Package Chrome extension
+      shell: bash
+      run: bash .release-policy/scripts/release/package-extension.sh
+    - name: Install locked deployment tools and functions
+      shell: bash
+      working-directory: functions
+      run: pnpm install --frozen-lockfile --ignore-workspace
+    - name: Configure production credentials
+      shell: bash
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ inputs.firebase-service-account }}
+      run: |
+        printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp-key.json"
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-key.json" >> "$GITHUB_ENV"
+    - name: Deploy functions config
+      shell: bash
+      working-directory: functions
+      run: pnpm deploy:config:prod
+    - name: Deploy hosting, functions and rules
+      shell: bash
+      run: node functions/node_modules/firebase-tools/lib/bin/firebase.js deploy --project web-sequence-local --config firebase.json --non-interactive
+    - name: Install smoke-test browser
+      shell: bash
+      run: pnpm exec playwright install --with-deps chromium
+    - name: Production smoke test
+      shell: bash
+      env:
+        PW_BASE_URL: https://app.zenuml.com
+      run: pnpm exec playwright test --grep @smoke --project=chromium
+    - name: Remove credentials
+      if: always()
+      shell: bash
+      run: rm -f "$RUNNER_TEMP/gcp-key.json"

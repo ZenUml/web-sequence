@@ -1,0 +1,173 @@
+/* Share link panel (Figma F18/F19/F26 light, F29/F30/F31 dark). Rendered in a Radix
+   portal with `.editor-hifi-menu` (surface/border/text from --editor-* tokens on
+   :root), so it follows <html data-appearance>. Two-class selectors win over the
+   PopoverContent Tailwind defaults without touching global CSS. */
+
+.editor-hifi-menu.share-panel {
+  width: min(360px, calc(100vw - 2rem));
+  padding: 16px;
+  border-radius: 10px;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.editor-hifi-menu.share-panel--create {
+  width: min(320px, calc(100vw - 2rem));
+}
+
+.share-panel .share-panel__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.share-panel .share-panel__eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editor-text-secondary);
+}
+
+.share-panel .share-panel__sentence {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--editor-text-secondary);
+}
+
+.share-panel .share-panel__icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+/* Menu-like action row (create / creating / try again). */
+.share-panel .share-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  margin: 10px -6px 0;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--editor-toolbar);
+  color: var(--editor-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.share-panel .share-panel__row:hover:not(:disabled) {
+  background: var(--editor-hover);
+  color: var(--editor-link);
+}
+
+.share-panel .share-panel__row:disabled {
+  cursor: progress;
+  color: var(--editor-text-secondary);
+}
+
+.share-panel .share-panel__row .share-panel__icon {
+  color: var(--editor-text-secondary);
+}
+
+.share-panel .share-panel__url {
+  width: 100%;
+  height: 32px;
+  margin-top: 12px;
+  padding: 0 10px;
+  border: 1px solid var(--editor-border);
+  border-radius: 6px;
+  background: var(--editor-toolbar);
+  color: var(--editor-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.share-panel .share-panel__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.share-panel .share-panel__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.share-panel .share-panel__button--primary {
+  flex: 1 1 auto;
+  background: var(--editor-primary);
+  color: var(--editor-on-primary);
+}
+
+.share-panel .share-panel__button--primary:hover:not(:disabled) {
+  background: var(--editor-primary-hover);
+}
+
+.share-panel .share-panel__button--primary:active:not(:disabled) {
+  background: var(--editor-primary-press);
+}
+
+.share-panel .share-panel__button--secondary {
+  flex: 0 0 auto;
+  min-width: 112px;
+  border-color: var(--editor-secondary-border);
+  background: var(--editor-secondary-bg);
+  color: var(--editor-secondary-text);
+}
+
+.share-panel .share-panel__button--secondary:hover:not(:disabled) {
+  background: var(--editor-secondary-hover);
+}
+
+.share-panel .share-panel__button--secondary:active:not(:disabled) {
+  background: var(--editor-secondary-press);
+}
+
+.share-panel .share-panel__button:disabled {
+  border-color: var(--editor-disabled-bg);
+  background: var(--editor-disabled-bg);
+  color: var(--editor-disabled-text);
+  cursor: not-allowed;
+}
+
+.share-panel .share-panel__button[aria-busy='true'] {
+  cursor: progress;
+}
+
+.share-panel :focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: 2px;
+}
+
+.share-panel .share-panel__feedback {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--editor-text-secondary);
+}
+
+.share-panel .share-panel__feedback--empty {
+  /* Kept mounted (polite live region) but takes no space when silent. */
+  margin: 0;
+  min-height: 0;
+}
+
+.share-panel .share-panel__feedback--error {
+  color: var(--editor-danger);
+}

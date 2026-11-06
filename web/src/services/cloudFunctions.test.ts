@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { getSharedItem, createShare, trackEvent } from './cloudFunctions';
+import { SharedItemError, classifySharedItemFailure } from './sharedItemError';
 
 vi.mock('./firebase', () => ({ getIdToken: vi.fn(async () => 'fresh-token') }));
 
@@ -36,6 +37,45 @@ describe('getSharedItem', () => {
     server.use(http.get(`${BASE}/get-shared-item`, () =>
       HttpResponse.json({ error: 'Sharing disabled' }, { status: 403 })));
     await expect(getSharedItem('abc', 'xyz')).rejects.toThrow(/Sharing disabled/);
+  });
+
+  // Provenance: the visitor UI may only call a link unavailable when the backend
+  // explicitly said so. Each case asserts the typed status + classification.
+  it.each([
+    [400, 'unavailable'],
+    [403, 'unavailable'],
+    [404, 'unavailable'],
+    [500, 'retryable'],
+    [503, 'retryable'],
+    [429, 'retryable'],
+  ] as const)('HTTP %i rejects with SharedItemError classified %s', async (status, failure) => {
+    server.use(http.get(`${BASE}/get-shared-item`, () =>
+      HttpResponse.json({ error: 'server said no' }, { status })));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect((err as SharedItemError).status).toBe(status);
+    expect(classifySharedItemFailure(err)).toBe(failure);
+  });
+
+  it('a network failure (fetch rejects) is retryable, never unavailable', async () => {
+    server.use(http.get(`${BASE}/get-shared-item`, () => HttpResponse.error()));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect((err as SharedItemError).status).toBeNull();
+    expect(classifySharedItemFailure(err)).toBe('retryable');
+  });
+
+  it('a 200 with a non-JSON body (e.g. an HTML error page) is retryable', async () => {
+    server.use(http.get(`${BASE}/get-shared-item`, () =>
+      new HttpResponse('<html>gateway</html>', { status: 200, headers: { 'Content-Type': 'text/html' } })));
+    const err = await getSharedItem('abc', 'xyz').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SharedItemError);
+    expect(classifySharedItemFailure(err)).toBe('retryable');
+  });
+
+  it('an error without SharedItemError provenance is classified retryable', () => {
+    expect(classifySharedItemFailure(new Error('not found'))).toBe('retryable');
+    expect(classifySharedItemFailure(undefined)).toBe('retryable');
   });
 });
 
@@ -116,8 +156,8 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('Event tracked successfully');
     }));
-    await trackEvent({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
-    expect(received).toEqual({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+    await trackEvent({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
+    expect(received).toEqual({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
   });
   it('carries userId:null for anonymous events', async () => {
     let received: Record<string, unknown> | null = null;
@@ -125,8 +165,14 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('ok');
     }));
-    await trackEvent({ event: 'pageView', userId: null });
+    await trackEvent({ event: 'app_opened', userId: null });
     expect(received!.userId).toBeNull();
+  });
+  it('sends with keepalive so an event fired on pagehide survives the unload', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+    await trackEvent({ event: 'editor_session_ended', userId: null });
+    expect(spy).toHaveBeenCalledWith('/track', expect.objectContaining({ keepalive: true }));
+    spy.mockRestore();
   });
   it('never throws on a network/non-ok error (non-blocking)', async () => {
     server.use(http.post(`${window.location.origin}/track`, () => HttpResponse.error()));

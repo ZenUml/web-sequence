@@ -1,26 +1,35 @@
-// M03 Task 15 — Library panel E2E (signed-out / local flows only).
+// M03 Task 15 — Library E2E (signed-out / local flows only).
+//
+// f023f89 "no-rail layout": the in-editor Library PANEL was retired — the
+// Sidebar icon rail (sidebar-library) and LibraryPanel no longer render anywhere.
+// The web library IS the HomeView page, reached at '/?view=diagrams' under
+// editor-as-landing (2026-06-13; bare '/' boots the editor again). Rows are
+// home-card-<id> cards in home-grid, search is home-search (same SearchInput
+// component, so the clear affordance is still search-clear), and the bulk
+// Export-all / Import controls (lib-export-all / lib-import-input) were re-homed
+// into the HomeView header (see web/src/components/home/HomeView.tsx). Each
+// test's INTENT is unchanged — list, filter, export, import — only the surface
+// the library lives on moved.
 //
 // What this covers WITHOUT the Firebase emulator:
-//   1. Library panel renders the user's locally-saved diagrams.
-//   2. SearchInput filters the rendered list (client-side, in memory).
+//   1. HomeView grid renders the user's locally-saved diagrams.
+//   2. SearchInput filters the rendered grid (client-side, in memory).
 //   3. Export-all triggers a JSON file download.
-//   4. Importing a small JSON adds a new row.
+//   4. Importing a small JSON adds a new card.
 //
 // DEFERRED to the staging gate (require Firebase auth/emulator, NOT testable
 // signed-out): folder CRUD (writes users/{uid}.folders) and create-share (POST
 // /create-share reads the cloud item doc + needs a fresh ID token). Same auth
 // note as persistence.spec.js / M02.
 //
-// Load-bearing implementation fact (verified against web/src/hooks/useItems.ts):
-// signed-out, `useItems` reads the localItems index EXACTLY ONCE per mount
-// (effect deps [uid, svc], no storage listener). Items saved/imported *after*
-// page load do NOT appear until the next full page load. So the seed → reload →
-// open-library shape below is required, not incidental — mirroring how
-// persistence.spec.js reloads to read restored state. Search/export operate on
-// the already-loaded list and need no reload.
+// Navigation note: seeding happens in the EDITOR (bare '/' boots it directly
+// under editor-as-landing — openEditor); reading the library back happens by a
+// FULL navigation to '/?view=diagrams' (gotoHome), which freshly mounts useItems
+// and re-reads the localItems index regardless of in-page subscription timing.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor, gotoHome } from './helpers/hub';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
 
@@ -45,7 +54,7 @@ function isThirdPartyError(err) {
   return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
 }
 
-/** Navigate to the app with a clean localStorage slate (see persistence.spec.js). */
+/** Navigate to the EDITOR with a clean localStorage slate (see persistence.spec.js). */
 async function gotoFresh(page) {
   // M04: the first load would open the Onboarding/Support-pledge one-time modals on
   // a clean slate; seed their flags via an init script before any goto so the
@@ -54,7 +63,9 @@ async function gotoFresh(page) {
   await suppressOneTimeModals(page);
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  await page.goto('/');
+  // Editor-as-landing: bare '/' boots the editor (cleared storage → seeds a fresh
+  // sample diagram), so openEditor lands straight on the CM6 surface here.
+  await openEditor(page);
 }
 
 function editorLocator(page) {
@@ -117,24 +128,28 @@ async function seedItem(page, { title, dsl, firstSave = false }) {
   await setTitle(page, title);
   await typeDsl(page, dsl);
   await expect(editorLocator(page)).toContainText(dsl.split('\n')[0]);
-  // Save lives inside the header-menu dropdown — open it first.
-  await page.locator('[data-testid="header-menu"]').click();
-  await page.locator('[data-testid="header-save"]').click();
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
   await dismissSaveNoticeIfPresent(page, { expected: firstSave });
 }
 
-/** Reload, then re-open the Library panel (uiStore.activePanel resets on reload). */
+/**
+ * Navigate to the library. The library is no longer an in-editor side panel
+ * (sidebar-library + library-panel are gone — f023f89 removed the rail and
+ * LibraryPanel was retired); it is the HomeView page. Editor-as-landing
+ * (2026-06-13): the hub moved off bare '/' and is now opt-in at '/?view=diagrams'.
+ * gotoHome navigates there (a FULL navigation), so useItems freshly re-reads the
+ * localItems index — same guarantee the old reload-then-open-panel shape gave.
+ */
 async function reloadIntoLibrary(page) {
-  await page.reload();
-  await expect(editorLocator(page)).toBeVisible({ timeout: 15_000 });
-  await page.locator('[data-testid="sidebar-library"]').click();
-  await expect(page.locator('[data-testid="library-panel"]')).toBeVisible({ timeout: 10_000 });
+  await gotoHome(page);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Test 1: Library lists locally-saved diagrams; search filters them.
 // ──────────────────────────────────────────────────────────────────────────────
-test('library lists local items and SearchInput filters them', async ({ page }) => {
+test('library lists local items and SearchInput filters them', async ({
+  page,
+}) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -149,8 +164,7 @@ test('library lists local items and SearchInput filters them', async ({ page }) 
     firstSave: true,
   });
 
-  // New lives inside the header-menu dropdown — open it first.
-  await page.locator('[data-testid="header-menu"]').click();
+  // New is the primary toolbar button (the logo app menu is gone).
   await page.locator('[data-testid="header-new"]').click();
   await expect(editorLocator(page)).toBeVisible();
   await seedItem(page, {
@@ -158,31 +172,33 @@ test('library lists local items and SearchInput filters them', async ({ page }) 
     dsl: 'GammaActor\nDeltaActor\nGammaActor->DeltaActor: gammaCall',
   });
 
-  // Reload so useItems re-reads the now-populated local index, then open Library.
+  // Navigate to the library (hub: the HomeView page) so useItems re-reads the
+  // now-populated local index.
   await reloadIntoLibrary(page);
 
-  // Both saved items appear as rows.
-  await expect(page.locator('[data-testid="library-list"]')).toBeVisible();
+  // Both saved items appear as cards in the home grid (hub PRs: library-list /
+  // lib-row-* became home-grid / home-card-* — see HomeView.tsx + DiagramCard.tsx).
+  await expect(page.locator('[data-testid="home-grid"]')).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.getByText('AlphaDiagram', { exact: true })).toBeVisible();
   await expect(page.getByText('GammaDiagram', { exact: true })).toBeVisible();
 
-  // Count the real item rows (exclude the per-row kebab menu testids).
-  const rowCount = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('[data-testid^="lib-row-"]')).filter(
-      (el) => !el.getAttribute('data-testid')?.startsWith('lib-row-menu-'),
-    ).length,
-  );
-  expect(rowCount).toBe(2);
+  // Count the item cards (DiagramCard's only testid is home-card-<id> — the kebab
+  // trigger carries none, so a bare prefix count is exact).
+  await expect(page.locator('[data-testid^="home-card-"]')).toHaveCount(2);
 
-  // Type into the search field → list filters to the matching item only.
-  const search = page.locator('[data-testid="lib-search"]');
+  // Type into the search field → grid filters to the matching item only.
+  // (hub PRs: lib-search became home-search — same SearchInput component.)
+  const search = page.locator('[data-testid="home-search"]');
   await search.click();
   await search.pressSequentially('Alpha');
 
   await expect(page.getByText('AlphaDiagram', { exact: true })).toBeVisible();
   await expect(page.getByText('GammaDiagram', { exact: true })).toHaveCount(0);
 
-  // Clearing the search restores both rows.
+  // Clearing the search restores both cards (SearchInput's clear affordance kept
+  // its search-clear testid through the hub move).
   await page.locator('[data-testid="search-clear"]').click();
   await expect(page.getByText('AlphaDiagram', { exact: true })).toBeVisible();
   await expect(page.getByText('GammaDiagram', { exact: true })).toBeVisible();
@@ -206,10 +222,14 @@ test('export-all triggers a JSON file download', async ({ page }) => {
   });
 
   await reloadIntoLibrary(page);
-  await expect(page.getByText('ExportableDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('ExportableDiagram', { exact: true }),
+  ).toBeVisible();
 
   // Clicking export-all builds a Blob and triggers a download (handleExportAll →
   // downloadText('zenuml-diagrams.json', …)). Assert the download event fires.
+  // (hub PRs: lib-export-all kept its testid but now lives in the HomeView
+  // header's ImportExportBar — the retired LibraryPanel no longer renders it.)
   const downloadPromise = page.waitForEvent('download', { timeout: 10_000 });
   await page.locator('[data-testid="lib-export-all"]').click();
   const download = await downloadPromise;
@@ -236,7 +256,9 @@ test('importing a JSON file adds a new library row', async ({ page }) => {
   });
 
   await reloadIntoLibrary(page);
-  await expect(page.getByText('PreexistingDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('PreexistingDiagram', { exact: true }),
+  ).toBeVisible();
 
   // Build a minimal import payload matching the { items: Item[] } shape that
   // exportAllItemsJson produces and parseImportJson accepts. The migrate step
@@ -259,17 +281,24 @@ test('importing a JSON file adds a new library row', async ({ page }) => {
     ],
   });
 
-  // setInputFiles on the hidden file input — no fixture file needed.
+  // setInputFiles on the hidden file input — no fixture file needed. (hub PRs:
+  // lib-import-input kept its testid but now lives in the HomeView header's
+  // ImportExportBar.)
   await page.locator('[data-testid="lib-import-input"]').setInputFiles({
     name: 'import.json',
     mimeType: 'application/json',
     buffer: Buffer.from(payload, 'utf-8'),
   });
 
-  // handleImport calls itemService.saveItems (writes localItems) but does NOT
-  // reload — so the new row only appears after the next mount. Reload + reopen.
+  // handleImport calls itemService.saveItems (writes localItems). Re-navigate to
+  // the library so a fresh useItems mount reads the updated index — deterministic
+  // regardless of in-page subscription timing.
   await reloadIntoLibrary(page);
 
-  await expect(page.getByText('ImportedDiagram', { exact: true })).toBeVisible();
-  await expect(page.getByText('PreexistingDiagram', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('ImportedDiagram', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('PreexistingDiagram', { exact: true }),
+  ).toBeVisible();
 });

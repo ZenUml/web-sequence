@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 268 86" width="268" height="86" fill="none">
+  <title>Classic UML sequence diagram theme</title>
+  <rect width="268" height="86" fill="#fffef6"/>
+  <g transform="translate(42.5 0)" stroke-linecap="butt" stroke-linejoin="miter">
+    <!-- lifelines -->
+    <path d="M57.37 26v60M146.1 26v60" stroke="#b94065" stroke-opacity="0.45" stroke-width="0.8" stroke-dasharray="1.6 2"/>
+    <!-- participant headers -->
+    <rect x="32.8" y="6.83" width="49.14" height="19.11" rx="0" fill="#fffec8" stroke="#b94065" stroke-width="1.4"/>
+    <rect x="121.53" y="6.83" width="49.14" height="19.11" rx="0" fill="#fffec8" stroke="#b94065" stroke-width="1.4"/>
+    <path d="M47.82 17.06h19.1M136.56 17.06h19.1" stroke="#b94065" stroke-width="1"/>
+    <!-- call into left activation, call into right activation top -->
+    <path d="M0 34.6h48.5M60.79 46.2h76.4" stroke="#b94065" stroke-width="1.1"/>
+    <path d="M53.96 34.6l-6.1-2.9v5.8zM142.69 46.2l-6.1-2.9v5.8z" fill="#b94065"/>
+    <!-- activations -->
+    <rect x="53.96" y="34.13" width="6.83" height="42.32" fill="#ffffff" stroke="#b94065" stroke-width="1.1"/>
+    <rect x="142.69" y="45.73" width="6.83" height="18.43" fill="#ffffff" stroke="#b94065" stroke-width="1.1"/>
+    <!-- dashed returns from activation bottoms -->
+    <path d="M142.69 64.16H66.6M53.96 76.44H6" stroke="#b94065" stroke-width="1.1" stroke-dasharray="3 2"/>
+    <path d="M60.79 64.16l6.1-2.9v5.8zM0 76.44l6.1-2.9v5.8z" fill="#b94065"/>
+  </g>
+</svg>

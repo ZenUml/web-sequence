@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -29,5 +30,17 @@ describe('SearchInput', () => {
   it('honors an overridable data-testid', () => {
     render(<SearchInput value="" onChange={vi.fn()} data-testid="library-search" />);
     expect(screen.getByTestId('library-search')).toBeInTheDocument();
+  });
+
+  it('forwards the ref to the input and keeps className on the wrapper', () => {
+    const ref = createRef<HTMLInputElement>();
+    render(
+      <SearchInput ref={ref} value="" onChange={vi.fn()} className="w-64" surface="light" />,
+    );
+    const input = screen.getByTestId('search-input');
+    expect(ref.current).toBe(input);
+    expect(input).toHaveAttribute('data-ui-surface', 'light');
+    expect(input.parentElement?.className).toContain('w-64');
+    expect(input.parentElement?.className).toContain('ui-search');
   });
 });

@@ -49,4 +49,20 @@ describe('Tooltip', () => {
     expect(trigger.tagName).toBe('BUTTON');
     expect(trigger.closest('button:not([data-testid="trigger"])')).toBeNull();
   });
+
+  it('puts the dark surface on the portaled tooltip', async () => {
+    render(
+      <Tooltip label="Explain this control" delayDuration={0}>
+        <button data-testid="trigger">Do thing</button>
+      </Tooltip>,
+    );
+    await userEvent.tab();
+    // Radix exposes role="tooltip" on a visually hidden copy. The visible chip
+    // is the portaled content, which carries the surface contract.
+    await screen.findByRole('tooltip');
+    const tip = document.querySelector('.ui-tooltip');
+    expect(tip).not.toBeNull();
+    expect(tip).toHaveAttribute('data-ui-surface', 'dark');
+    expect(tip?.className).toContain('ui-surface-dark');
+  });
 });

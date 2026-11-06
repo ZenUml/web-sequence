@@ -92,6 +92,8 @@ function BlankThumb() {
         'border border-dashed border-paper-line bg-white',
       )}
     >
+      {/* On the white "blank canvas" thumbnail the + must stay DARK (onlight), even
+          though the modal chrome is now dark — this preview represents a paper canvas. */}
       <span className="grid h-6 w-6 place-items-center rounded-full border border-onlight-faint text-[15px] leading-none text-onlight-muted">
         +
       </span>
@@ -100,12 +102,12 @@ function BlankThumb() {
 }
 
 const cardClass = cn(
-  'flex flex-col items-stretch gap-2 rounded-md border border-paper-line bg-paper-50',
+  'flex flex-col items-stretch gap-2 rounded-md border border-ink-line bg-ink-700',
   'p-3 text-left transition hover:border-accent hover:shadow-pop',
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
 );
 
-const eyelabelClass = 'mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-onlight-faint';
+const eyelabelClass = 'mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ondark-faint';
 
 // Presentational "Create New" picker (REQ-MOD-4 / §04). Two labelled sections —
 // Start (Blank + the 'basic' starter) and Styles (the themed templates) — each on
@@ -140,7 +142,7 @@ export function CreateNewModal({ open, onOpenChange, onSelect }: CreateNewModalP
                 className={cardClass}
               >
                 <BlankThumb />
-                <span className="font-serif text-[15px] text-onlight-strong">Blank</span>
+                <span className="font-serif text-[15px] text-ondark-strong">Blank</span>
               </button>
 
               {startTemplates.map((t) => (
@@ -152,7 +154,7 @@ export function CreateNewModal({ open, onOpenChange, onSelect }: CreateNewModalP
                   className={cardClass}
                 >
                   <Thumb tint={THUMB_TINTS[t.id]} />
-                  <span className="font-serif text-[15px] text-onlight-strong">{t.title}</span>
+                  <span className="font-serif text-[15px] text-ondark-strong">{t.title}</span>
                 </button>
               ))}
             </div>
@@ -171,7 +173,7 @@ export function CreateNewModal({ open, onOpenChange, onSelect }: CreateNewModalP
                   className={cardClass}
                 >
                   <Thumb tint={THUMB_TINTS[t.id]} />
-                  <span className="font-serif text-[15px] text-onlight-strong">{t.title}</span>
+                  <span className="font-serif text-[15px] text-ondark-strong">{t.title}</span>
                 </button>
               ))}
             </div>

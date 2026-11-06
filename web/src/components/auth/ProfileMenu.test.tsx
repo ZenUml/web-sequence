@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProfileMenu } from './ProfileMenu';
+import { installUiCascade, contrastRatio, tokenColor } from '../../ui/computedCascade';
 import type { AppUser } from '../../domain/types';
 
 // Radix DropdownMenu uses pointer events that jsdom doesn't implement.
@@ -31,6 +32,23 @@ const mockUser: AppUser = {
 };
 
 describe('ProfileMenu', () => {
+  it.each(['light', 'dark'] as const)('keeps actual profile identity readable on the %s portal', async (surface) => {
+    installUiCascade();
+    const utilities = document.createElement('style');
+    utilities.textContent = '.text-ondark-strong {color:#E8EEF7} .text-ondark-muted {color:#9AA5B5}';
+    document.head.appendChild(utilities);
+    render(<ProfileMenu user={mockUser} onLogout={() => {}} surface={surface} menuClassName="editor-hifi-account-menu" />);
+    fireEvent.pointerDown(screen.getByTestId('profile-trigger'), {button:0, ctrlKey:false});
+    const menu = await screen.findByRole('menu');
+    for (const [text, token] of [['Test User','--ui-text'], ['test@example.com','--ui-text-secondary']]) {
+      const actual = getComputedStyle(screen.getByText(text)).color;
+      expect(actual).toBe(`var(${token})`);
+      const fg = tokenColor(menu, token), bg = tokenColor(menu, '--ui-surface');
+      expect(contrastRatio(fg.slice(0,3) as [number,number,number], bg.slice(0,3) as [number,number,number])).toBeGreaterThanOrEqual(4.5);
+    }
+    utilities.remove();
+  });
+
   it('renders the profile trigger button', () => {
     render(<ProfileMenu user={mockUser} onLogout={() => {}} />);
     expect(screen.getByTestId('profile-trigger')).toBeInTheDocument();
@@ -132,6 +150,35 @@ describe('ProfileMenu', () => {
     await screen.findByTestId('profile-logout');
     expect(screen.queryByTestId('profile-upgrade')).not.toBeInTheDocument();
     expect(screen.queryByTestId('profile-plan')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('profile-pricing')).not.toBeInTheDocument();
+  });
+
+  // Pricing (informational plans) moved here from the retired logo menu. It sits
+  // above the plan action and only opens the plans dialog — never checkout.
+  it('shows Pricing above the plan action and fires onOpenPricing (not onUpgrade)', async () => {
+    const onOpenPricing = vi.fn();
+    const onUpgrade = vi.fn();
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed={false} paymentEnabled onUpgrade={onUpgrade} onOpenPricing={onOpenPricing} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    const pricing = await screen.findByTestId('profile-pricing');
+    expect(pricing).toHaveTextContent('Pricing');
+    const ids = Array.from(document.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute('data-testid'));
+    expect(ids).toEqual(['profile-pricing', 'profile-upgrade', 'profile-logout']);
+    fireEvent.click(pricing);
+    expect(onOpenPricing).toHaveBeenCalledTimes(1);
+    expect(onUpgrade).not.toHaveBeenCalled();
+  });
+
+  it('keeps Pricing for a subscribed user alongside My Plan', async () => {
+    render(
+      <ProfileMenu user={mockUser} onLogout={() => {}} subscribed planType="plus-monthly" paymentEnabled onOpenPricing={vi.fn()} />,
+    );
+    open(screen.getByTestId('profile-trigger'));
+    await screen.findByTestId('profile-pricing');
+    const ids = Array.from(document.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute('data-testid'));
+    expect(ids).toEqual(['profile-pricing', 'profile-plan', 'profile-logout']);
   });
 
   it('falls back to "Anonymous Creator" when displayName is absent', async () => {

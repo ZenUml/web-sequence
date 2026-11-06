@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 // DSL spot-check: type DSL into the CodeMirror 6 editor of the NEW app and prove
 // the full render path works end to end:
@@ -43,7 +44,9 @@ test.beforeEach(async ({ page }) => {
     throw err;
   });
   await suppressOneTimeModals(page); // M04: keep onboarding/pledge from trapping focus
-  await page.goto('/');
+  // Hub (PRs #800/#801): '/' renders the HomeView library, not the editor —
+  // click through the hub's New CTA to reach the editor surface.
+  await openEditor(page);
 });
 
 test('typed DSL renders an SVG diagram in the preview iframe', async ({ page }) => {

@@ -59,7 +59,7 @@ export function AtomicCssSettingsModal({
       >
         <div className="space-y-3" data-testid="acss-modal">
           <Textarea
-            surface="light"
+            surface="dark"
             rows={10}
             spellCheck={false}
             className="w-full font-mono text-[12px]"
@@ -76,7 +76,7 @@ export function AtomicCssSettingsModal({
           <div className="flex justify-end">
             <Button
               variant="primary"
-              surface="light"
+              surface="dark"
               data-testid="acss-save"
               onClick={handleSave}
             >

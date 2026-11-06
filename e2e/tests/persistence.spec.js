@@ -3,12 +3,18 @@
 //
 // Tests the local-persistence layer (localStorage) that survives page reloads
 // and across tabs — without any Firebase auth:
-//   1. last-code restore on reload (preserveLastCode default true)
+//   1. typed DSL survives a reload of the editor URL (last-code restore — see test 1)
 //   2. per-page content is isolated across multi-page tabs
 //   3. "New" resets to the default starter DSL
+//
+// Editor-as-landing (2026-06-13): bare '/' boots the EDITOR directly (no ?id),
+// so every test reaches the editor via openEditor() landing straight on '/'. A
+// reload of bare '/' re-enters the boot resolver, which (with preserveLastCode,
+// default true) reads localStorage['code'] back into the editor — see test 1.
 
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
+import { openEditor } from './helpers/hub';
 
 // Default starter DSL, from web/src/state/editorStore.ts DEFAULT_STARTER.
 const STARTER_DSL_FRAGMENT = 'Alice -> Bob: Hello';
@@ -40,24 +46,24 @@ function isThirdPartyError(err) {
 }
 
 /**
- * Navigate to the app with a clean localStorage slate.
- * Uses a two-step approach: navigate to /empty-storage-sentinel (any path the
- * app serves — its own origin), clear localStorage, THEN go to '/'. This avoids
- * addInitScript which re-runs on every page.reload() and would wipe the storage
- * that the reload is supposed to read.
+ * Navigate to the EDITOR with a clean localStorage slate.
+ * Lands on the app origin first to clear storage, then clicks through the hub
+ * (openEditor) — this avoids addInitScript-based clearing, which re-runs on every
+ * page.reload() and would wipe the storage that the reload is supposed to read.
  */
 async function gotoFresh(page) {
   // M04: seed ONLY the one-time-modal flags (onboarded / lastSeenVersion) via an
   // init script so Onboarding/Support-pledge don't trap focus. This is safe with
   // this spec's reload-reads-storage approach: the init script ADDS two unrelated
-  // keys on each navigation but never touches the `code` slot the reload reads.
+  // keys on each navigation but never touches the item/`code` slots reloads read.
   await suppressOneTimeModals(page);
   // Step 1: land on the app origin so we can write to its localStorage.
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  // Step 2: reload — localStorage user-data is empty; the init script re-seeds only
-  // the one-time flags. We do NOT re-clear here.
-  await page.goto('/');
+  // Step 2: editor-as-landing — bare '/' boots the editor directly. With storage
+  // cleared, boot seeds a fresh sample diagram; openEditor lands on the CM6
+  // surface. The init script re-seeds only the one-time flags. We do NOT re-clear.
+  await openEditor(page);
 }
 
 /** Type a replacement DSL into the CM6 editor (select-all → Delete → type). */
@@ -76,9 +82,26 @@ function editorLocator(page) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Test 1: Last-code restore on reload
+// Test 1: Typed DSL survives a page reload of the editor URL (last-code restore).
+//
+// EDITOR-AS-LANDING RE-GROUND (2026-06-13): bare '/' boots the EDITOR directly,
+// and with preserveLastCode (default true) a reload of '/' re-enters the boot
+// resolver's last-code branch (resolveBootItem branch 3) — reading
+// localStorage['code'] back into the editor. This reinstates the original
+// last-code-restore contract that the interim hub layout had displaced (under the
+// hub bare '/' rendered the library, so that read branch was unreachable from any
+// editor URL). The user-visible contract is again: edit at '/' → the code slot is
+// written on tab-hide/unload → reload '/' restores it.
+//
+// We ALSO save the diagram first. That keeps two things guarded:
+//   - the signed-out Save path (and its one-time "Saved on this device" notice),
+//   - the local item slot write (itemService.setItem → localStorage[<id>]).
+// But the RESTORE on reload rides on the last-code 'code' slot, because bare '/'
+// carries no ?id (save() does not navigate), so boot takes branch 3, not getItem.
 // ──────────────────────────────────────────────────────────────────────────────
-test('last-code restore: typed DSL persists across a page reload', async ({ page }) => {
+test('reload persistence: typed DSL is restored when the editor URL reloads', async ({
+  page,
+}) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -96,42 +119,59 @@ test('last-code restore: typed DSL persists across a page reload', async ({ page
   // Confirm the text landed in the editor before triggering the reload.
   await expect(editorLocator(page)).toContainText(UNIQUE_PARTICIPANT);
 
-  // Ensure last-code is written to localStorage. The AppRoot writes it on
-  // `beforeunload` AND on `visibilitychange` (document.hidden → true).
-  // Dispatch the visibilitychange event explicitly so the async write resolves
-  // before we check — the storage call is void-ed but localStorage.setItem is
-  // synchronous under localStore, so the value is available immediately after
-  // the event fires.
+  // Save the diagram (signed-out). Manual save is ⌘S; the
+  // FIRST signed-out save opens the one-time "Saved on this device" notice (fresh
+  // slate → loginAndSaveMessageSeen is false, so it shows with certainty) — dismiss
+  // it. This guards the Save path; the reload restore itself rides on the last-code
+  // slot below (bare '/' boot reads 'code', not an item id).
+  await page.keyboard.press('ControlOrMeta+s'); // manual save (⌘S; the logo menu is gone)
+  const noticeCancel = page.locator('[data-testid="confirm-cancel"]');
+  await expect(noticeCancel).toBeVisible();
+  await noticeCancel.click();
+  await expect(noticeCancel).toBeHidden();
+
+  // REQ-PST write path: AppRoot writes the last-code 'code' slot on `beforeunload`
+  // AND on `visibilitychange` (document.hidden → true). Dispatch visibilitychange
+  // explicitly and poll until localStorage['code'] contains our token — proving
+  // the slot the bare-'/' boot reads back is populated before we reload.
   await page.evaluate(() => {
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: true,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-
-  // Poll until localStorage['code'] contains our token — proves the write
-  // happened before we reload (handles any async wrapper overhead).
   await page.waitForFunction(
     (participant) => {
       const raw = localStorage.getItem('code');
       if (!raw) return false;
-      try { return JSON.parse(raw)?.js?.includes(participant); } catch { return false; }
+      try {
+        return JSON.parse(raw)?.js?.includes(participant);
+      } catch {
+        return false;
+      }
     },
     UNIQUE_PARTICIPANT,
     { timeout: 5_000 },
   );
 
-  // Reload: boot reads localStorage['code'] (preserveLastCode=true by default)
-  // and restores the item — no addInitScript runs this time.
+  // Reload bare '/': boot takes the preserveLastCode branch, reads localStorage
+  // ['code'], and restores the item — no addInitScript clearing runs this time.
   await page.reload();
 
   // Wait for the editor to re-hydrate with the restored content.
   await expect(editorLocator(page)).toBeVisible({ timeout: 15_000 });
-  await expect(editorLocator(page)).toContainText(UNIQUE_PARTICIPANT, { timeout: 15_000 });
+  await expect(editorLocator(page)).toContainText(UNIQUE_PARTICIPANT, {
+    timeout: 15_000,
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Test 2: Multi-page — per-page content is isolated
 // ──────────────────────────────────────────────────────────────────────────────
-test('multi-page: each page stores its own DSL independently', async ({ page }) => {
+test('multi-page: each page stores its own DSL independently', async ({
+  page,
+}) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -140,7 +180,8 @@ test('multi-page: each page stores its own DSL independently', async ({ page }) 
   await gotoFresh(page);
 
   // Page 1: type distinctive DSL.
-  const DSL_PAGE1 = 'AliceService\nBobService\nAliceService->BobService: Page1Call';
+  const DSL_PAGE1 =
+    'AliceService\nBobService\nAliceService->BobService: Page1Call';
   await typeDsl(page, DSL_PAGE1);
   await expect(editorLocator(page)).toContainText('AliceService');
 
@@ -149,7 +190,8 @@ test('multi-page: each page stores its own DSL independently', async ({ page }) 
 
   // The editor remounts (CodeEditor key=`dsl-${item.currentPageId}`) for the new
   // empty page. Re-focus and type page-2 DSL. Allow more time for the remount.
-  const DSL_PAGE2 = 'CharlieService\nDaveService\nCharlieService->DaveService: Page2Call';
+  const DSL_PAGE2 =
+    'CharlieService\nDaveService\nCharlieService->DaveService: Page2Call';
   await typeDsl(page, DSL_PAGE2, { timeout: 15_000 });
   await expect(editorLocator(page)).toContainText('CharlieService');
 
@@ -158,21 +200,27 @@ test('multi-page: each page stores its own DSL independently', async ({ page }) 
   await page1Tab.click();
 
   // Editor remounts again — wait for it to show page-1 content.
-  await expect(editorLocator(page)).toContainText('AliceService', { timeout: 10_000 });
+  await expect(editorLocator(page)).toContainText('AliceService', {
+    timeout: 10_000,
+  });
   await expect(editorLocator(page)).not.toContainText('CharlieService');
 
   // Switch back to page 2 tab.
   const page2Tab = page.locator('[data-testid^="page-tab-"]').nth(1);
   await page2Tab.click();
 
-  await expect(editorLocator(page)).toContainText('CharlieService', { timeout: 10_000 });
+  await expect(editorLocator(page)).toContainText('CharlieService', {
+    timeout: 10_000,
+  });
   await expect(editorLocator(page)).not.toContainText('AliceService');
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Test 3: "New" resets to the default starter DSL
+// Test 3: toolbar "New" opens a blank diagram
 // ──────────────────────────────────────────────────────────────────────────────
-test('header-new: clicking New resets editor to the default starter DSL', async ({ page }) => {
+test('header-new: clicking New opens a blank diagram', async ({
+  page,
+}) => {
   page.on('pageerror', (err) => {
     if (isThirdPartyError(err)) return;
     throw err;
@@ -180,21 +228,30 @@ test('header-new: clicking New resets editor to the default starter DSL', async 
 
   await gotoFresh(page);
 
-  // Type content that is distinctly NOT the starter so New has something to replace.
-  const CUSTOM_DSL = 'CustomActor\nOtherActor\nCustomActor->OtherActor: CustomMessage';
+  // Type content that is distinctly NOT blank so New has something to replace.
+  const CUSTOM_DSL =
+    'CustomActor\nOtherActor\nCustomActor->OtherActor: CustomMessage';
   await typeDsl(page, CUSTOM_DSL);
   await expect(editorLocator(page)).toContainText('CustomActor');
 
-  // Open the app menu then click "New" (New lives inside the header-menu dropdown).
-  await page.locator('[data-testid="header-menu"]').click();
+  // New is the primary toolbar button (the logo app menu is gone).
   await page.locator('[data-testid="header-new"]').click();
 
-  // #8: with unsaved edits, New first asks to confirm discarding them. Confirm the
-  // discard so New proceeds (a clean diagram would skip this dialog entirely).
-  await page.locator('[data-testid="confirm-ok"]').click();
-
-  // After New, the editor should show the default starter DSL, not our custom content.
-  // DEFAULT_STARTER.js = 'Alice -> Bob: Hello\nBob -> Alice: Hi back' (editorStore.ts)
-  await expect(editorLocator(page)).toContainText(STARTER_DSL_FRAGMENT, { timeout: 10_000 });
+  // #952: with unsaved edits, New saves them first and then proceeds. The discard
+  // confirm (#8) is only for a save that failed, so it must not appear here.
+  // After New, the editor holds a blank Untitled diagram (same as the hub's New
+  // diagram), not our custom content.
+  await expect(page.locator('[data-testid="header-title"]')).toHaveValue('Untitled');
+  await expect.poll(async () => (await editorLocator(page).innerText()).trim(), { timeout: 10_000 }).toBe('');
   await expect(editorLocator(page)).not.toContainText('CustomActor');
+  await expect(page.locator('[data-testid="confirm-ok"]')).toHaveCount(0);
+
+  // The edited diagram reached this device's storage before New replaced it.
+  const storedJs = await page.evaluate(() => {
+    const index = JSON.parse(localStorage.getItem('items') || '{}');
+    return Object.keys(index).map((id) => {
+      try { return JSON.parse(localStorage.getItem(id) || 'null')?.js ?? null; } catch { return null; }
+    });
+  });
+  expect(storedJs).toContain(CUSTOM_DSL);
 });

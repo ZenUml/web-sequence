@@ -1,0 +1,157 @@
+/* Inline code appearance bar (CodeAppearanceBar.tsx). Scoped to its own classes;
+   colors come from the shared editor tokens in globals.css, so dark appearance
+   uses their dark values. Figma node 35:6604: one light-blue rounded group, no
+   outer border, one faint short divider. */
+
+.code-appearance-bar {
+  /* One slot at the bottom of the left workspace (.editor-source-pane), 12px
+     above the Custom CSS row: that row is 44px tall with a 12px bottom margin
+     (globals.css), so 44 + 12 + 12 = 68. The same slot is kept when Custom CSS
+     expands. left/right are set inline from the live code text edge and code
+     column; these are fallbacks before the first measurement. */
+  position: absolute;
+  right: 12px;
+  bottom: 68px;
+  left: 24px;
+  /* Above the code (CodeMirror keeps its gutters inside .cm-scroller's own
+     stacking context), below app dialogs/menus (z-50) and CM tooltips (z 500). */
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--editor-secondary-press);
+  color: var(--editor-text);
+  font-size: 13px;
+  line-height: 16px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* Hidden: invisible and click-through, but still in the tab order — keyboard
+   focus reveals it (data-state flips to visible on focus). */
+.code-appearance-bar[data-state='hidden'] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+}
+
+.code-appearance-theme {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--editor-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.code-appearance-theme-label {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.code-appearance-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: var(--editor-text-secondary);
+}
+
+.code-appearance-chevron {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-left: -2px;
+  color: var(--editor-text-secondary);
+}
+
+.code-appearance-divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 16px;
+  margin: 0 4px 0 auto;
+  background: var(--editor-text-faint);
+  opacity: 0.35;
+}
+
+.code-appearance-size {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.code-appearance-size-cue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-right: 4px;
+  color: var(--editor-text-secondary);
+  font-weight: 400;
+  line-height: 1;
+  user-select: none;
+}
+
+.code-appearance-size-cue-small {
+  font-size: 12px;
+}
+
+.code-appearance-size-cue-large {
+  font-size: 16px;
+}
+
+.code-appearance-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--editor-text);
+}
+
+.code-appearance-step .code-appearance-icon {
+  color: currentColor;
+}
+
+.code-appearance-size-value {
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-appearance-theme[data-state='open'] {
+  background: var(--editor-hover);
+}
+
+/* Hover tint only where hover exists, so a tap does not leave a sticky tint. */
+@media (hover: hover) {
+  .code-appearance-theme:hover,
+  .code-appearance-step:hover:not(:disabled) {
+    background: var(--editor-hover);
+  }
+}
+
+.code-appearance-step:active:not(:disabled) {
+  background: var(--editor-press);
+}
+
+.code-appearance-step:disabled {
+  color: var(--editor-disabled-text);
+  cursor: not-allowed;
+}
+
+.code-appearance-theme:focus-visible,
+.code-appearance-step:focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: -2px;
+}

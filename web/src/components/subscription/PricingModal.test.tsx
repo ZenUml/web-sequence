@@ -93,13 +93,13 @@ describe('PricingModal', () => {
   it('has exactly ONE primary Button (the Plus tier)', () => {
     setup();
     const plusBtn = screen.getByTestId('pricing-upgrade-plus');
-    // The design-system primary variant is the only one carrying bg-accent.
-    expect(plusBtn.className).toContain('bg-accent');
+    // The design-system primary variant is the only one carrying ui-button--primary.
+    expect(plusBtn.className).toContain('ui-button--primary');
     const basicBtn = screen.getByTestId('pricing-upgrade-basic');
-    expect(basicBtn.className).not.toContain('bg-accent');
+    expect(basicBtn.className).not.toContain('ui-button--primary');
     const allButtons = screen.getByTestId('pricing-modal').querySelectorAll('button');
     const primaries = Array.from(allButtons).filter((b) =>
-      b.className.includes('bg-accent'),
+      b.className.includes('ui-button--primary'),
     );
     expect(primaries.length).toBe(1);
   });

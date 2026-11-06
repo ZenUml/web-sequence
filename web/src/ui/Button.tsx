@@ -1,67 +1,58 @@
 import { forwardRef } from 'react';
 import { cn } from './cn';
+import { surfaceClass, type UISurface } from './surface';
+import './tokens.css';
 
-// Design-system Button ("Drafting Table"). Variants map to intent, not color names.
-// Default surface is the dark ink chrome (the app header lives there). For the
-// light paper surface, pass `surface="light"` so the focus ring contrasts.
+// Shared button. `surface` stays explicit: dark is the legacy default.
+// Sizes: md is the 36px control; sm is the 32px compact control. 28px cards and
+// 48px provider buttons are caller utilities (h-7 / h-12). Control height is
+// in :where() so those utilities win when this file is unlayered as well as
+// when it sits in the components layer.
 type Variant = 'primary' | 'subtle' | 'ghost' | 'danger';
 type Size = 'sm' | 'md';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
-  surface?: 'dark' | 'light';
+  surface?: UISurface;
 }
 
-const base =
-  'inline-flex items-center justify-center gap-1.5 font-medium select-none ' +
-  'rounded transition-colors duration-150 ease-draft disabled:opacity-40 ' +
-  'disabled:pointer-events-none whitespace-nowrap';
+// Light danger text uses danger-strong (#B23A33). The default danger red is
+// about 3.6:1 on a light surface and fails WCAG AA for button text. Dark danger
+// stays on the default danger color, which passes on the dark surface.
+const LIGHT_DANGER =
+  'bg-transparent text-danger-strong hover:bg-danger/10 border border-danger-strong/40';
+const DARK_DANGER = 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30';
 
-const sizes: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-[12px]',
-  md: 'h-9 px-3.5 text-[13px]',
-};
-
-// Variants are surface-aware: the same intent reads correctly on the dark `ink`
-// chrome and on the light `paper` surface (modals/menus). `primary` (the cobalt
-// signal) is identical on both; the quiet variants flip their neutrals.
-const variants: Record<'dark' | 'light', Record<Variant, string>> = {
-  dark: {
-    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
-    subtle: 'bg-ink-700/70 text-ondark-strong hover:bg-ink-700 border border-ink-line/50',
-    ghost: 'bg-transparent text-ondark-muted hover:text-ondark-strong hover:bg-white/5',
-    danger: 'bg-transparent text-danger hover:bg-danger/10 border border-danger/30',
-  },
-  light: {
-    primary: 'bg-accent text-white hover:bg-accent-press active:bg-accent-press shadow-inset',
-    subtle: 'bg-paper-100 text-onlight-strong hover:bg-paper-200 border border-paper-line',
-    ghost: 'bg-transparent text-onlight-muted hover:text-onlight-strong hover:bg-black/5',
-    // On the light paper surface the DEFAULT danger red (#E0524A) is only ~3.6:1 on
-    // paper-50 — fails WCAG AA for button TEXT. Use danger-strong (#B23A33, ~5.5:1)
-    // for the label/border so the quiet outlined style still reads accessibly.
-    // (dark.danger keeps DEFAULT: it sits on ink and passes AA.)
-    danger:
-      'bg-transparent text-danger-strong hover:bg-danger/10 border border-danger-strong/40',
-  },
+// Full class strings, not a template. Tailwind only emits @layer rules for
+// classes it can see in source.
+const variantClass: Record<Variant, string> = {
+  primary: 'ui-button--primary',
+  subtle: 'ui-button--subtle',
+  ghost: 'ui-button--ghost',
+  danger: 'ui-button--danger',
 };
 
 // Shared class computation so non-button elements (e.g. an <a> that must LOOK like
 // a button) can adopt identical design-system styling WITHOUT nesting a <button>
 // inside another interactive element (invalid HTML / a11y defect). Used by the
 // Support-pledge "Sponsor" link, which is semantically an anchor, not a button.
+// Callers of this helper must keep the returned `ui-surface-*` class: that class
+// is what resolves the palette. An ancestor surface does not style the anchor.
 export function buttonClassName(opts?: {
   variant?: Variant;
   size?: Size;
-  surface?: 'dark' | 'light';
+  surface?: UISurface;
   className?: string;
 }): string {
   const { variant = 'subtle', size = 'md', surface = 'dark', className } = opts ?? {};
   return cn(
-    base,
-    sizes[size],
-    variants[surface][variant],
-    surface === 'light' ? 'ring-draft-light' : 'ring-draft',
+    'ui-button',
+    surfaceClass(surface),
+    size === 'sm' && 'ui-button--sm',
+    variantClass[variant],
+    variant === 'danger' && (surface === 'light' ? LIGHT_DANGER : DARK_DANGER),
+    'disabled:pointer-events-none',
     className,
   );
 }
@@ -73,9 +64,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      type={type}
-      className={buttonClassName({ variant, size, surface, className })}
       {...rest}
+      type={type}
+      data-ui-surface={surface}
+      className={buttonClassName({ variant, size, surface, className })}
     />
   );
 });

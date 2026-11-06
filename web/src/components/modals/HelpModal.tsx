@@ -23,12 +23,12 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
       >
         <div
           data-testid="help-modal"
-          className="space-y-5 text-[14px] text-onlight-muted"
+          className="space-y-5 text-[14px] text-ondark-muted"
         >
           {version ? (
             <p
               data-testid="help-version"
-              className="font-mono uppercase tracking-[0.12em] text-[11px] text-onlight-muted"
+              className="font-mono uppercase tracking-[0.12em] text-[11px] text-ondark-muted"
             >
               Version {version}
             </p>
@@ -43,7 +43,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
           <ul className="space-y-2">
             <li>
               <a
-                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft"
                 href={DOCS_URL}
                 target="_blank"
                 rel="noreferrer noopener"
@@ -53,7 +53,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
             </li>
             <li>
               <a
-                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft"
                 href={CONTACT_URL}
                 target="_blank"
                 rel="noreferrer noopener"
@@ -63,7 +63,7 @@ export function HelpModal({ open, onOpenChange, version }: HelpModalProps) {
             </li>
             <li>
               <a
-                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft-light"
+                className="text-accent-press hover:text-accent underline underline-offset-2 rounded ring-draft"
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noreferrer noopener"

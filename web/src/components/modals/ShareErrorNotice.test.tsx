@@ -12,7 +12,7 @@ beforeAll(() => {
 const base = {
   open: true,
   onOpenChange: vi.fn(),
-  onStartFresh: vi.fn(),
+  onGoHome: vi.fn(),
 };
 
 describe('ShareErrorNotice', () => {
@@ -27,10 +27,10 @@ describe('ShareErrorNotice', () => {
     expect(screen.getByText('This shared link is no longer available.')).toBeInTheDocument();
   });
 
-  it('clicking start-fresh calls onStartFresh', async () => {
-    const onStartFresh = vi.fn();
-    render(<ShareErrorNotice {...base} onStartFresh={onStartFresh} />);
-    await userEvent.click(await screen.findByTestId('share-error-fresh'));
-    expect(onStartFresh).toHaveBeenCalledTimes(1);
+  it('clicking Go to Diagrams calls onGoHome', async () => {
+    const onGoHome = vi.fn();
+    render(<ShareErrorNotice {...base} onGoHome={onGoHome} />);
+    await userEvent.click(await screen.findByTestId('share-error-home'));
+    expect(onGoHome).toHaveBeenCalledTimes(1);
   });
 });

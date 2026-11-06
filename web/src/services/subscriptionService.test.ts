@@ -22,8 +22,8 @@ describe('subscriptionService', () => {
     fs.getDoc.mockResolvedValueOnce({ exists: () => false, data: () => undefined });
     expect(await retrieveSubscription('u1')).toBeNull();
   });
-  it('returns null on a read error (legacy swallow-to-null)', async () => {
+  it('rejects on a read error so callers can distinguish it from a free account', async () => {
     fs.getDoc.mockRejectedValueOnce(new Error('permission-denied'));
-    expect(await retrieveSubscription('u1')).toBeNull();
+    await expect(retrieveSubscription('u1')).rejects.toThrow('permission-denied');
   });
 });

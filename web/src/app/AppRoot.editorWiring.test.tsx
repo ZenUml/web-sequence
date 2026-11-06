@@ -21,6 +21,30 @@ vi.mock('../editor/CodeEditor', () => ({
 // ─── Boot harness (mirrors AppRoot.test.tsx) ──────────────────────────────────
 vi.mock('@zenuml/core/dist/zenuml?url', () => ({ default: '/zenuml-test-url.js' }));
 
+// Router harness (hub PRs #800/#801) — same partial mock as AppRoot.test.tsx:
+// AppRoot reads the URL via useSearch/useNavigate, which crash without a
+// RouterProvider. useSearch parses window.location.search in the shape of
+// router.tsx's indexRoute validateSearch; useNavigate is exercised nowhere here
+// but must exist. See AppRoot.test.tsx for the full rationale.
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    useSearch: () => {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        id: p.get('id') ?? undefined,
+        'share-token': p.get('share-token') ?? undefined,
+        embed: p.has('embed') ? true : undefined,
+        code: p.get('code') ?? undefined,
+        title: p.get('title') ?? undefined,
+        stickyOffset: p.has('stickyOffset') ? Number(p.get('stickyOffset')) : undefined,
+      };
+    },
+    useNavigate: () => () => Promise.resolve(),
+  };
+});
+
 vi.mock('../services/firebase', () => ({
   login: vi.fn(async () => {}),
   logout: vi.fn(async () => {}),
@@ -81,13 +105,16 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  // Hub view gating (PRs #800/#801): '/' now renders HomeView, not the editor.
+  // An inline payload reaches the editor without requiring a stored owned item.
+  // A missing ?id= now correctly shows an unavailable-diagram notice.
+  window.history.replaceState({}, '', '/?code=A%3AB');
   for (const k of Object.keys(captured)) delete captured[k];
   useAuthStore.setState({ user: null, online: true, authReady: false });
   useEditorStore.getState().reset();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   window.localStorage.clear();
-  // Suppress the one-time onboarding/pledge triggers (they'd perturb boot).
-  window.localStorage.setItem(LS_KEYS.onboarded, JSON.stringify(true));
+  // Suppress the one-time upgrade-pledge trigger (it would perturb boot).
   window.localStorage.setItem(LS_KEYS.lastSeenVersion, JSON.stringify(APP_VERSION));
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { makeItemService } from '../services/itemService';
 import * as localItems from '../services/localItems';
 import { localStore } from '../services/storage';
@@ -9,9 +9,40 @@ function sortDescByUpdatedOn(items: Item[]): Item[] {
   return [...items].sort((a, b) => (b.updatedOn ?? 0) - (a.updatedOn ?? 0));
 }
 
-export function useItems(): { items: Item[]; loading: boolean } {
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface ItemsState {
+  items: Item[];
+  loading: boolean;
+  // Read provenance (IE-F2). `owner` is the identity whose read produced this state
+  // (uid, or null for the signed-out local library); undefined before any read
+  // settled. `error` is set when that read FAILED: `items` is then [] for display
+  // only and is NOT a known-empty library. Only a successful read (error null) for
+  // the current uid is authoritative.
+  owner: string | null | undefined;
+  error: unknown;
+  // Load attempt that produced this state; increases on every (re)subscription.
+  attempt: number;
+  // Re-subscribes for the current identity and returns the attempt id to wait for.
+  retry(): number;
+}
+
+interface ReadState {
+  items: Item[];
+  loading: boolean;
+  owner: string | null | undefined;
+  error: unknown;
+  attempt: number;
+}
+
+export function useItems(): ItemsState {
+  const [state, setState] = useState<ReadState>({
+    items: [],
+    loading: true,
+    owner: undefined,
+    error: null,
+    attempt: 0,
+  });
+  const [retryNonce, setRetryNonce] = useState(0);
+  const attempts = useRef(0);
 
   const uid = useAuthStore((s) => s.user?.uid ?? null);
 
@@ -25,12 +56,19 @@ export function useItems(): { items: Item[]; loading: boolean } {
   );
 
   useEffect(() => {
+    const attempt = (attempts.current += 1);
     if (uid) {
-      // Signed-in: use Firestore onSnapshot subscription.
-      const unsub = svc.subscribeAllItems(uid, (incoming) => {
-        setItems(sortDescByUpdatedOn(incoming));
-        setLoading(false);
-      });
+      // Signed-in: use Firestore onSnapshot subscription. A snapshot error keeps its
+      // provenance instead of looking like an empty library.
+      const unsub = svc.subscribeAllItems(
+        uid,
+        (incoming) => {
+          setState({ items: sortDescByUpdatedOn(incoming), loading: false, owner: uid, error: null, attempt });
+        },
+        (error) => {
+          setState({ items: [], loading: false, owner: uid, error: error ?? new Error('Library read failed'), attempt });
+        },
+      );
       return unsub;
     } else {
       // Signed-out: load from the local storage index, and re-load on every local
@@ -39,19 +77,29 @@ export function useItems(): { items: Item[]; loading: boolean } {
       // branch needs an explicit same-tab subscription (adversarial review).
       let cancelled = false;
       async function load() {
-        const ids = await localItems.list();
-        const settled = await Promise.all(ids.map((id) => localStore.get<Item | null>(id, null)));
-        const owned = settled.filter((it): it is Item => it !== null);
-        if (!cancelled) {
-          setItems(sortDescByUpdatedOn(owned));
-          setLoading(false);
+        try {
+          const ids = await localItems.list();
+          const settled = await Promise.all(ids.map((id) => localStore.get<Item | null>(id, null)));
+          const owned = settled.filter((it): it is Item => it !== null);
+          if (!cancelled) {
+            setState({ items: sortDescByUpdatedOn(owned), loading: false, owner: null, error: null, attempt });
+          }
+        } catch (error) {
+          if (!cancelled) {
+            setState({ items: [], loading: false, owner: null, error: error ?? new Error('Library read failed'), attempt });
+          }
         }
       }
       void load();
       const unsub = localItems.subscribe(() => { void load(); });
       return () => { cancelled = true; unsub(); };
     }
-  }, [uid, svc]);
+  }, [uid, svc, retryNonce]);
 
-  return { items, loading };
+  const retry = useCallback(() => {
+    setRetryNonce((n) => n + 1);
+    return attempts.current + 1;
+  }, []);
+
+  return { ...state, retry };
 }

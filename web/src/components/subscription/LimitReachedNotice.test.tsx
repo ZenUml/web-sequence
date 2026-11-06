@@ -40,6 +40,6 @@ describe('LimitReachedNotice', () => {
 
   it('the upgrade action is the primary Button', () => {
     setup();
-    expect(screen.getByTestId('limit-upgrade').className).toContain('bg-accent');
+    expect(screen.getByTestId('limit-upgrade').className).toContain('ui-button--primary');
   });
 });

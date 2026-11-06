@@ -16,7 +16,28 @@
 // (no type=module / no defer) so it sees the window.zenuml global and runs in order.
 (function () {
   var app = null;
+  var currentRenderMode = 'html';
+  var currentSvgResult = null;
+  var currentSvgCode = null;
+  var currentSvgOptions = null;
+  var renderGeneration = 0;
   function post(msg) { parent.postMessage(msg, '*'); }
+  // The initial appearance is part of srcdoc, so core's constructor never paints
+  // a default-theme frame while waiting for the first render postMessage.
+  function initialOptions() {
+    var root = document.documentElement;
+    var theme = root.getAttribute('data-zenuml-initial-theme') || 'theme-default';
+    var rawPalette = root.getAttribute('data-zenuml-initial-palette');
+    var palette;
+    if (rawPalette) {
+      try { palette = JSON.parse(decodeURIComponent(rawPalette)); } catch (e) {}
+    }
+    return { theme: theme, palette: palette };
+  }
+  // Keyboard events in an iframe do not bubble to the host window.
+  window.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') post({ type: 'escape' });
+  }, true);
 
   // ---- Diagram natural-size measurement ----------------------------------------
   // WIDTH: .bg-skin-canvas.scrollWidth — the DiagramFrame's inline-block root, which
@@ -51,6 +72,110 @@
     }
   }
 
+  // ---- SVG render mode (mobile) ------------------------------------------------
+  // On mobile the HTML diagram (fixed-px React layout) overflows the narrow viewport.
+  // renderMode:'svg' renders @zenuml/core's NATIVE vector SVG (window.zenuml.renderToSvg)
+  // into a SEPARATE container (#svg-mount) — never the app's React root (#mounting-point),
+  // which must stay React-owned so a later switch back to HTML mode re-renders cleanly.
+  // The injected <svg> is sized fit-to-width (width:100% + height:auto on its viewBox) so
+  // the full diagram width shows by default; tall diagrams scroll vertically, and vector
+  // output stays crisp at any zoom.
+  function showSvgMount(svgString) {
+    var diagram = document.getElementById('diagram');
+    var mount = document.getElementById('mounting-point');
+    if (!diagram) return;
+    var svgMount = document.getElementById('svg-mount');
+    if (!svgMount) {
+      svgMount = document.createElement('div');
+      svgMount.id = 'svg-mount';
+      diagram.appendChild(svgMount);
+    }
+    svgMount.innerHTML = svgString || '';
+    var svgEl = svgMount.querySelector('svg');
+    if (svgEl) {
+      // Drop the intrinsic width/height attributes so the viewBox drives the aspect
+      // ratio and the style fit-to-width takes effect.
+      svgEl.removeAttribute('width');
+      svgEl.removeAttribute('height');
+      svgEl.style.width = '100%';
+      svgEl.style.maxWidth = '100%';
+      svgEl.style.height = 'auto';
+      svgEl.style.display = 'block';
+    }
+    svgMount.style.display = 'block';
+    if (mount) mount.style.display = 'none';
+  }
+  function showHtmlMount() {
+    var mount = document.getElementById('mounting-point');
+    var svgMount = document.getElementById('svg-mount');
+    if (mount) mount.style.display = '';
+    if (svgMount) svgMount.style.display = 'none';
+  }
+
+  function visibleSvgResult(backingColor) {
+    if (!currentSvgResult || !currentSvgResult.svg) return null;
+    // Let core validate and paint an explicit client backing. The normal view
+    // remains transparent and uses the already rendered SVG.
+    var source = backingColor
+      ? window.zenuml.renderToSvg(currentSvgCode, {
+          theme: currentSvgOptions.theme,
+          palette: currentSvgOptions.palette,
+          backingColor: backingColor
+        })
+      : currentSvgResult;
+    var svgMount = document.getElementById('svg-mount');
+    var visibleSvg = svgMount && svgMount.querySelector('svg');
+    if (backingColor) {
+      var holder = document.createElement('div');
+      holder.innerHTML = source.svg;
+      visibleSvg = holder.querySelector('svg');
+    }
+    if (!visibleSvg) return source;
+    var clone = visibleSvg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(source.width));
+    clone.setAttribute('height', String(source.height));
+    clone.style.removeProperty('width');
+    clone.style.removeProperty('max-width');
+    clone.style.removeProperty('height');
+    clone.style.removeProperty('display');
+    if (!clone.getAttribute('style')) clone.removeAttribute('style');
+    var customStyle = document.getElementById('zenumlstyle');
+    if (customStyle && customStyle.textContent) {
+      var embeddedStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      embeddedStyle.textContent = customStyle.textContent;
+      clone.insertBefore(embeddedStyle, clone.firstChild);
+    }
+    return { svg: new XMLSerializer().serializeToString(clone), width: source.width, height: source.height };
+  }
+
+  function svgToPngDataUrl(result) {
+    return new Promise(function (resolve, reject) {
+      if (!result || !result.svg) { resolve(null); return; }
+      var width = Math.max(1, Number(result.width) || 1);
+      var height = Math.max(1, Number(result.height) || 1);
+      var preferredScale = Math.max(1, Math.min(2, Number(window.devicePixelRatio) || 1));
+      var scale = Math.min(preferredScale, Math.sqrt(16000000 / (width * height)));
+      scale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+      var url = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml;charset=utf-8' }));
+      var image = new Image();
+      image.onload = function () {
+        try {
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(width * scale));
+          canvas.height = Math.max(1, Math.round(height * scale));
+          var context = canvas.getContext('2d');
+          if (!context) throw new Error('Canvas is unavailable');
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (err) { reject(err); }
+        finally { URL.revokeObjectURL(url); }
+      };
+      image.onerror = function () { URL.revokeObjectURL(url); reject(new Error('SVG could not be rasterised')); };
+      image.src = url;
+    });
+  }
+
   ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
     var orig = console[level];
     console[level] = function () {
@@ -67,9 +192,23 @@
     post({ type: 'error', message: String((e && e.message) || e) });
   });
 
+  // User CSS must be able to override the core stylesheet at equal specificity.
+  // @zenuml/core appends its own <style> to <head> at runtime, after the srcdoc's
+  // #zenumlstyle rail, so move the rail back to the end of <head> whenever core may
+  // have injected styles (engine created, each render) and on every CSS update.
+  function keepUserCssLast() {
+    var rail = document.getElementById('zenumlstyle');
+    var head = document.head;
+    if (rail && head && typeof head.appendChild === 'function' && head.lastElementChild !== rail) {
+      head.appendChild(rail);
+    }
+  }
+
   window.addEventListener('load', function () {
     try {
-      app = new window.zenuml.default('#mounting-point');
+      var initial = initialOptions();
+      app = new window.zenuml.default('#mounting-point', false, initial);
+      keepUserCssLast();
       post({ type: 'ready' });
     } catch (e) {
       post({ type: 'error', message: String((e && e.message) || e) });
@@ -82,15 +221,52 @@
     if (!msg || typeof msg !== 'object') return;
 
     if (msg.type === 'render' && app) {
+      var generation = ++renderGeneration;
       (async function () {
         try {
-          await app.render(msg.code, {
-            enableMultiTheme: false,
-            theme: 'theme-default',
-            onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
-            stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
-          });
-          post({ type: 'rendered' });
+          var renderMode = (msg.options && msg.options.renderMode) || 'html';
+          var theme = (msg.options && msg.options.theme) || 'theme-default';
+          if (renderMode === 'svg' && window.zenuml && typeof window.zenuml.renderToSvg === 'function') {
+            // Native vector SVG (mobile). Pure render — no React commit, no
+            // onContentChange (the editor pane stays the source of truth on mobile).
+            // renderToSvg is synchronous and measures text with canvas, so the
+            // core's bundled font must be loaded first (app.render does this
+            // itself). Loads once, never rejects; absent before @zenuml/core 4.4.
+            if (typeof window.zenuml.ensureDiagramFontsLoaded === 'function') {
+              await window.zenuml.ensureDiagramFontsLoaded();
+            }
+            if (typeof window.zenuml.ensureDiagramIconsLoaded === 'function') {
+              await window.zenuml.ensureDiagramIconsLoaded(msg.code);
+            }
+            if (generation !== renderGeneration) return;
+            var result = window.zenuml.renderToSvg(msg.code, { theme: theme, palette: msg.options && msg.options.palette });
+            showSvgMount(result && result.svg);
+            currentSvgResult = result || null;
+            currentSvgCode = msg.code;
+            currentSvgOptions = { theme: theme, palette: msg.options && msg.options.palette };
+            currentRenderMode = 'svg';
+          } else {
+            // HTML diagram (desktop / default). Unhide the React mount in case we are
+            // switching back from SVG mode, then render as before.
+            showHtmlMount();
+            currentSvgResult = null;
+            currentSvgCode = null;
+            currentSvgOptions = null;
+            currentRenderMode = 'html';
+            await app.render(msg.code, {
+              enableMultiTheme: false,
+              enableParticipantStyleEditing: !!(msg.options && msg.options.enableParticipantStyleEditing),
+              theme: theme,
+              palette: msg.options && msg.options.palette,
+              onContentChange: function (code) { post({ type: 'codeChange', code: code }); },
+              stickyOffset: Number((msg.options && msg.options.stickyOffset) || 0)
+            });
+          }
+          if (generation !== renderGeneration) return;
+          keepUserCssLast();
+          // Echo the token so the host can confirm THIS render landed (ack+retry for
+          // WebKit's dropped-postMessage race). undefined when the host sent no token.
+          post({ type: 'rendered', token: msg.token });
           // Report the diagram's natural content size (width × height) in ALL modes
           // (embed shrink-wraps the iframe card; present/fit scales+centers; editor
           // stores-but-ignores). Measure now AND re-measure once @zenuml's async layout
@@ -106,13 +282,28 @@
     } else if (msg.type === 'updateCss') {
       var styleEl = document.getElementById('zenumlstyle');
       if (styleEl) styleEl.textContent = msg.css || '';
+      keepUserCssLast();
     } else if (msg.type === 'getPng') {
       (async function () {
         try {
-          var dataUrl = app ? await app.getPng() : null;
+          var dataUrl = currentRenderMode === 'svg'
+            ? await svgToPngDataUrl(visibleSvgResult(msg.backingColor))
+            : (app ? await app.getPng({ backingColor: msg.backingColor }) : null);
           post({ type: 'png', id: msg.id, dataUrl: dataUrl });
         } catch (err) {
           post({ type: 'png', id: msg.id, dataUrl: null });
+        }
+      })();
+    } else if (msg.type === 'getSvg') {
+      (async function () {
+        try {
+          var visibleResult = currentRenderMode === 'svg' ? visibleSvgResult(msg.backingColor) : null;
+          var svg = currentRenderMode === 'svg'
+            ? (visibleResult && visibleResult.svg)
+            : (app ? await app.getSvg({ backingColor: msg.backingColor }) : null);
+          post({ type: 'svg', id: msg.id, svg: svg });
+        } catch (err) {
+          post({ type: 'svg', id: msg.id, svg: null });
         }
       })();
     } else if (msg.type === 'evalConsole') {

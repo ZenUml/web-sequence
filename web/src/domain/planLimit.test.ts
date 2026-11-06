@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isOverFileLimit, limitFor } from './planLimit';
+import { isOverFileLimit, isImportOverFileLimit, limitFor } from './planLimit';
 import type { Subscription } from './types';
 
 const plus: Subscription = { status: 'active', passthrough: '{"planType":"plus-monthly"}' };
@@ -41,5 +41,24 @@ describe('isOverFileLimit', () => {
   });
   it('plus user never over the limit', () => {
     expect(isOverFileLimit({ subscription: plus, ownedIds: Array.from({ length: 9999 }, (_, i) => `i${i}`), itemId: 'new' })).toBe(false);
+  });
+});
+
+describe('isImportOverFileLimit', () => {
+  it('checks the projected distinct ownership set against the exact free/basic cap', () => {
+    expect(isImportOverFileLimit({ subscription: null, ownedIds: ['a', 'b'], importedIds: ['c'] })).toBe(false);
+    expect(isImportOverFileLimit({ subscription: null, ownedIds: ['a', 'b'], importedIds: ['c', 'd'] })).toBe(true);
+    const basic: Subscription = { status: 'active', passthrough: '{"planType":"basic-monthly"}' };
+    expect(isImportOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 19 }, (_, i) => `i${i}`), importedIds: ['new'] })).toBe(false);
+    expect(isImportOverFileLimit({ subscription: basic, ownedIds: Array.from({ length: 20 }, (_, i) => `i${i}`), importedIds: ['new'] })).toBe(true);
+  });
+
+  it('does not charge capacity for imported IDs already owned, and active Plus stays unlimited', () => {
+    const ownedIds = Array.from({ length: 3 }, (_, i) => `i${i}`);
+    expect(isImportOverFileLimit({ subscription: null, ownedIds, importedIds: ['i0', 'i1'] })).toBe(false);
+    const plus: Subscription = { status: 'active', passthrough: '{"planType":"plus-monthly"}' };
+    expect(isImportOverFileLimit({ subscription: plus, ownedIds: Array.from({ length: 500 }, (_, i) => `i${i}`), importedIds: ['new'] })).toBe(false);
+    const expiredPlus: Subscription = { status: 'cancelled', passthrough: '{"planType":"plus-monthly"}' };
+    expect(isImportOverFileLimit({ subscription: expiredPlus, ownedIds, importedIds: ['new'] })).toBe(true);
   });
 });

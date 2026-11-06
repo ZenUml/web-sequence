@@ -30,9 +30,12 @@ describe('Switch', () => {
     expect(screen.getByTestId('auto-save')).toBe(screen.getByLabelText('Auto save'));
   });
 
-  it('checked track fills with the accent (not left at the paper-200 rest state)', () => {
+  it('checked track uses the shared primary action token, not the old accent utility', () => {
     render(<Switch checked aria-label="Auto save" onCheckedChange={vi.fn()} />);
-    // data-[state=checked]:bg-accent is what carries the "on" affordance.
-    expect(screen.getByRole('switch').className).toContain('data-[state=checked]:bg-accent');
+    const el = screen.getByRole('switch');
+    expect(el.className).toContain('ui-switch');
+    expect(el.className).not.toContain('bg-accent');
+    expect(el).toHaveAttribute('data-state', 'checked');
+    expect(el).toHaveAttribute('data-ui-surface', 'light');
   });
 });

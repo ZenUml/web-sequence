@@ -73,6 +73,39 @@ describe('useSubscription', () => {
     );
   });
 
+  it('keeps a failed read distinct from a legitimate free account and retries to the verified plan', async () => {
+    svc.retrieveSubscription.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(PLUS);
+    signIn('u1');
+    const { result } = renderHook(() => useSubscription());
+    await waitFor(() => expect(result.current.loadFailed).toBe(true));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.planType).toBe('free');
+
+    let retried: Subscription | null = null;
+    await act(async () => { retried = await result.current.retryFailedLoad('u1'); });
+    expect(retried).toEqual(PLUS);
+    expect(result.current.loadFailed).toBe(false);
+    expect(result.current.planType).toBe('plus-monthly');
+    expect(svc.retrieveSubscription).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not apply a failed old-account retry to the next account', async () => {
+    const oldRetry = deferred<Subscription | null>();
+    svc.retrieveSubscription.mockRejectedValueOnce(new Error('offline'))
+      .mockReturnValueOnce(oldRetry.promise).mockResolvedValueOnce(null);
+    signIn('u1');
+    const { result } = renderHook(() => useSubscription());
+    await waitFor(() => expect(result.current.loadFailed).toBe(true));
+    const retry = result.current.retryFailedLoad('u1').catch((error: unknown) => error);
+    await act(async () => { signIn('u2'); });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { oldRetry.resolve(PLUS); });
+    expect(await retry).toEqual(new Error('Account changed'));
+    expect(result.current.subscription).toBeNull();
+    expect(result.current.loadFailed).toBe(false);
+    expect(result.current.planType).toBe('free');
+  });
+
   // (i) mount-with-uid: loading is true on the first render before the read settles.
   it('mount-with-uid: loading=true until the read settles, then false', async () => {
     const d = deferred<Subscription | null>();

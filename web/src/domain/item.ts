@@ -1,4 +1,5 @@
 import type { Item, Page } from './types';
+import { upgradeLegacyTemplateCss } from './templates';
 
 // Collision-resistant page id. MUST NOT derive from a session-local counter:
 // page ids are persisted and restored across reloads (REQ-PG-2), so a
@@ -12,7 +13,21 @@ function genId(prefix = 'p'): string {
 }
 
 export function migrateToPages(item: Item): Item {
-  if (Array.isArray(item.pages) && item.pages.length > 0) return item;
+  if (item.cssMode === 'less') {
+    const css = upgradeLegacyTemplateCss(item.css ?? '');
+    const pages = item.pages?.map(page => ({ ...page, css: upgradeLegacyTemplateCss(page.css ?? '') }));
+    item = { ...item, css, ...(pages ? { pages } : {}) };
+  }
+  if (Array.isArray(item.pages) && item.pages.length > 0) {
+    // Pages are the source of truth (REQ-DM-1); the top-level js/css are only a mirror
+    // of the CURRENT page. A persisted/legacy item may carry a STALE mirror (saved out
+    // of sync, or currentPageId pointing at a page whose content differs). Re-derive the
+    // mirror from currentPageId on load — otherwise the editor + preview (both read
+    // item.js) render a different page than the active tab ("page 2 shows page 1").
+    // Fall back to the first page when currentPageId is missing/invalid.
+    const current = item.pages.find((p) => p.id === item.currentPageId) ?? item.pages[0];
+    return { ...item, currentPageId: current.id, js: current.js, css: current.css };
+  }
   const page: Page = { id: genId(), title: 'Page 1', js: item.js ?? '', css: item.css ?? '', isDefault: true };
   return { ...item, pages: [page], currentPageId: page.id };
 }

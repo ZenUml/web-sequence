@@ -18,8 +18,11 @@ export async function computeCss(code: string, mode: CssMode, settings: unknown)
         return { code: out.css };
       } catch (e) {
         // sass exposes the error span; span.start.line is already 0-based.
+        // sassMessage is the bare message: `message` appends a code frame that
+        // the browser build colours with ANSI escapes, unreadable in a tooltip.
         const line = (e as any)?.span?.start?.line ?? 0;
-        return { code: '', errors: [{ lineNumber: line, message: (e as any)?.message ?? String(e) }] };
+        const message = (e as any)?.sassMessage ?? (e as any)?.message ?? String(e);
+        return { code: '', errors: [{ lineNumber: line, message }] };
       }
     }
     case 'less': {

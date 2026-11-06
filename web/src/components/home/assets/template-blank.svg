@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 268 86" width="268" height="86" fill="none">
+  <title>Blank sequence diagram</title>
+  <rect width="268" height="86" fill="#f8fbfe"/>
+  <g transform="translate(42.5 0)">
+    <path d="M57.37 26v57.3M146.1 26v57.3" stroke="#acc7dd" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="32.8" y="6.83" width="49.14" height="19.11" rx="3" stroke="#acc7dd" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="121.53" y="6.83" width="49.14" height="19.11" rx="3" stroke="#acc7dd" stroke-width="1" stroke-dasharray="2 2"/>
+    <path d="M57.37 12.29v8.19" stroke="#2e94d4" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+</svg>

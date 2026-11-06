@@ -4,6 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { router } from './app/router';
 import './styles/globals.css';
+import { applyAppearance, readStoredAppearance } from './app/appearance';
+
+applyAppearance(readStoredAppearance());
 
 const queryClient = new QueryClient();
 const el = document.getElementById('app')!;

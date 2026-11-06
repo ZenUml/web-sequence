@@ -15,10 +15,16 @@ jobs:
       actions: write
 
     steps:
-      - name: Remove old artifacts
-        uses: c-hive/gha-remove-artifacts@v1
+      - name: Remove old non-release artifacts
+        uses: actions/github-script@v7
         with:
-          age: '1 month' # '<number> <unit>', e.g. 5 days, 2 years, 90 seconds, parsed by Moment.js
-          # Optional inputs
-          # skip-tags: true
-          # skip-recent: 5
+          script: |
+            const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
+              ...context.repo, per_page: 100,
+            });
+            for (const artifact of artifacts) {
+              // Release attachments, not transient Actions artifacts, serve production.
+              if (Date.parse(artifact.created_at) >= cutoff) continue;
+              await github.rest.actions.deleteArtifact({ ...context.repo, artifact_id: artifact.id });
+            }

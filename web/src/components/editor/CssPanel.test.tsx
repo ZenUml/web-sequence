@@ -6,16 +6,20 @@ import { CssPanel } from './CssPanel';
 const headerControls = <button data-testid="hc">mode</button>;
 
 describe('CssPanel', () => {
-  it('defaults to collapsed when CSS is empty, showing the strip + hint', () => {
+  it('defaults to collapsed when CSS is empty: label + chevron only, no filler hint', () => {
     render(
-      <CssPanel isEmpty headerControls={headerControls}>
+      <CssPanel isEmpty headerControls={headerControls} trailing={<button data-testid="trail">Report a bug</button>}>
         <div data-testid="editor">editor</div>
       </CssPanel>,
     );
     const strip = screen.getByTestId('css-panel-strip');
     expect(strip).toBeInTheDocument();
-    expect(strip).toHaveTextContent('Custom CSS');
-    expect(strip).toHaveTextContent('empty · click to expand');
+    expect(strip).toHaveTextContent(/^Custom CSS$/);
+    expect(strip.querySelector('svg')).toBeInTheDocument();
+    expect(screen.queryByText(/click to expand/i)).not.toBeInTheDocument();
+    // The trailing action shares the collapsed row (not nested in the toggle).
+    expect(screen.getByTestId('trail')).toBeInTheDocument();
+    expect(strip).not.toContainElement(screen.getByTestId('trail'));
     // Collapsed: neither the header controls nor the editor are mounted.
     expect(screen.queryByTestId('hc')).not.toBeInTheDocument();
     expect(screen.queryByTestId('editor')).not.toBeInTheDocument();

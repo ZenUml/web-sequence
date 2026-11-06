@@ -24,6 +24,12 @@ describe('computeCss', () => {
     expect(r.errors![0].lineNumber).toBeGreaterThan(0);
     expect(r.errors![0].message.length).toBeGreaterThan(0);
   });
+  it('reports the plain sass message, without the code frame or terminal colour codes', async () => {
+    // The lint tooltip shows this text; the browser build of sass colours its
+    // code frame with ANSI escapes, which rendered as "[34m … [0m" noise.
+    const r = await computeCss('.a {\n  color: ;\n}', 'scss', undefined);
+    expect(r.errors![0].message).toBe('Expected expression.');
+  });
 });
 
 describe('computeJs', () => {
