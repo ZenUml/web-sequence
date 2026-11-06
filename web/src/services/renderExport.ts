@@ -1,6 +1,7 @@
 import { getCompleteHtml } from '../preview/previewHtml';
 import type { PreviewExportSnapshot } from '../preview/PreviewFrame';
-import type { FrameMessage, RenderOptions } from '../preview/previewProtocol';
+import type { RenderOptions } from '../preview/previewProtocol';
+import { createPreviewRpc, PreviewRpcError } from '../preview/previewRpc';
 import { documentPaletteFor } from '../preview/documentPalette';
 
 export type ExportThemeChoice = 'light' | 'match';
@@ -36,36 +37,17 @@ export async function renderDiagramExport(
   const theme = resolveExportTheme(snapshot, choice);
   const palette = documentPaletteFor(theme);
 
-  const waitFor = (predicate: (message: FrameMessage) => boolean, timeoutMs = 15000) => new Promise<FrameMessage>((resolve, reject) => {
-    if (abort.signal.aborted) {
-      reject(new Error('Diagram export cancelled.'));
-      return;
-    }
-    const cleanup = () => { clearTimeout(timer); window.removeEventListener('message', receive); abort.signal.removeEventListener('abort', cancelled); };
-    const cancelled = () => { cleanup(); reject(new Error('Diagram export cancelled.')); };
-    const timer = setTimeout(() => { cleanup(); reject(new Error('Diagram export timed out.')); }, timeoutMs);
-    function receive(event: MessageEvent) {
-      if (event.source !== iframe.contentWindow || !event.data || typeof event.data.type !== 'string') return;
-      const message = event.data as FrameMessage;
-      if (message.type === 'error') {
-        cleanup(); reject(new Error(message.message));
-      } else if (predicate(message)) {
-        cleanup(); resolve(message);
-      }
-    }
-    window.addEventListener('message', receive);
-    abort.signal.addEventListener('abort', cancelled, { once: true });
-  });
+  const rpc = createPreviewRpc(() => iframe.contentWindow);
+  const options = { signal: abort.signal, timeoutMs: 15000 };
 
   try {
-    const ready = waitFor((message) => message.type === 'ready');
+    const ready = rpc.wait((message) => message.type === 'ready', options);
     iframe.srcdoc = getCompleteHtml({ initialTheme: theme, initialPalette: palette });
     document.body.appendChild(iframe);
     await ready;
-    const post = (message: unknown) => iframe.contentWindow?.postMessage(message, '*');
     const token = 1;
-    const rendered = waitFor((message) => message.type === 'rendered' && message.token === token);
-    const options: RenderOptions = {
+    const rendered = rpc.wait((message) => message.type === 'rendered' && message.token === token, options);
+    const renderOptions: RenderOptions = {
       enableMultiTheme: false,
       theme,
       palette,
@@ -73,18 +55,21 @@ export async function renderDiagramExport(
       renderMode: snapshot.renderMode,
       enableParticipantStyleEditing: false,
     };
-    post({ type: 'updateCss', css: snapshot.css, revision: 1 });
-    post({ type: 'render', code: snapshot.code, options, token });
+    rpc.post({ type: 'updateCss', css: snapshot.css, revision: 1 });
+    rpc.post({ type: 'render', code: snapshot.code, options: renderOptions, token });
     await rendered;
-    const output = waitFor((message) => format === 'png'
-      ? message.type === 'png' && message.id === 2
-      : message.type === 'svg' && message.id === 2);
-    post({ type: format === 'png' ? 'getPng' : 'getSvg', id: 2, backingColor });
-    const result = await output;
+    const result = format === 'png'
+      ? await rpc.request((id) => ({ type: 'getPng', id, backingColor }), (message, id) => message.type === 'png' && message.id === id, options)
+      : await rpc.request((id) => ({ type: 'getSvg', id, backingColor }), (message, id) => message.type === 'svg' && message.id === id, options);
     const value = result.type === 'png' ? result.dataUrl : result.type === 'svg' ? result.svg : null;
     if (!value) throw new Error('Diagram export returned no image.');
     return value;
+  } catch (error) {
+    if (error instanceof PreviewRpcError && error.reason === 'aborted') throw new Error('Diagram export cancelled.');
+    if (error instanceof PreviewRpcError && error.reason === 'timeout') throw new Error('Diagram export timed out.');
+    throw error;
   } finally {
+    rpc.dispose();
     abort.abort();
     signal?.removeEventListener('abort', cancelExternal);
     iframe.remove();
