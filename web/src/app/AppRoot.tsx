@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { indexRoute } from './router';
 import { CodeEditor } from '../editor/CodeEditor';
 import { PreviewFrame, type PreviewHandle, type PreviewExportSnapshot } from '../preview/PreviewFrame';
+import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { ACTUAL_SIZE, formatZoom, zoomIn, zoomOut, type PreviewZoom } from '../preview/previewZoom';
 import { applyAppearance, previewThemeFor } from './appearance';
 import { Console, type ConsoleEntry } from '../preview/Console';
@@ -345,6 +346,29 @@ export function AppRoot() {
 
   // State for the one-time "saved locally, sign in to sync" notice (signed-out first save)
   const [noticeOpen, setNoticeOpen] = useState(false);
+  // #941/#942: hand keyboard focus to the DSL editor after an action that leaves it
+  // elsewhere (New remounts the editor via its key; a preview-originated edit leaves
+  // focus inside the renderer iframe). A nonce lets the request ride the same render
+  // as the store change, so the effect runs after the (re)mounted editor attached.
+  const dslEditorRef = useRef<ReactCodeMirrorRef>(null);
+  const [editorFocusNonce, setEditorFocusNonce] = useState(0);
+  const requestEditorFocus = () => setEditorFocusNonce((n) => n + 1);
+  useEffect(() => {
+    if (!editorFocusNonce) return;
+    // Caret at the end of the document: a preview-originated edit appends a line, and
+    // the user's next keystrokes must continue after it, not land at offset 0.
+    const focusAtEnd = (view: NonNullable<ReactCodeMirrorRef['view']>) => {
+      view.focus();
+      view.dispatch({ selection: { anchor: view.state.doc.length } });
+    };
+    const view = dslEditorRef.current?.view;
+    if (view) { focusAtEnd(view); return; }
+    const raf = requestAnimationFrame(() => {
+      const late = dslEditorRef.current?.view;
+      if (late) focusAtEnd(late);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [editorFocusNonce]);
   // REQ-LIB-8: surface a parse/import failure instead of swallowing it (advisor fix #6).
 
 
@@ -359,7 +383,7 @@ export function AppRoot() {
 
   // Save pipeline (#848): limit check, ensureUser, setItem, membership, feedback,
   // signed-out notice, one-shot fork on a foreign-owned id. `save` is stable.
-  const { save, saveFeedback, cloudConfirmed } = useSaveItem({
+  const { save, saveBeforeNew, saveFeedback, cloudConfirmed } = useSaveItem({
     itemService,
     subscription,
     subLoading,
@@ -527,6 +551,43 @@ export function AppRoot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedByValue]);
 
+  // editor_session_ended: one event per editor visit. A visit starts when the
+  // editor surface shows (boot, or arriving from the hub) and ends when the user
+  // goes back to the hub (close_source 'hub') or the page is hidden for good
+  // (pagehide, close_source 'unload'). It carries how long the editor was open and
+  // how many DSL edits it saw. Not sent from the hub or an embed. /track uses
+  // keepalive, so the unload POST survives the page going away.
+  const onEditorSurface = !isHomeMode && !isEmbed;
+  const editorSession = useRef<{ openedAt: number; edits: number } | null>(null);
+  const latestTrack = useRef(track);
+  latestTrack.current = track;
+  const endEditorSession = useRef((closeSource: 'hub' | 'unload') => {
+    const session = editorSession.current;
+    if (!session) return;
+    editorSession.current = null;
+    const state = useEditorStore.getState();
+    if (!state.currentItem) return;
+    latestTrack.current('editor_session_ended', {
+      feature_area: 'editor',
+      close_source: closeSource,
+      editor_open_duration_ms: Date.now() - session.openedAt,
+      edit_count: session.edits,
+      had_unsaved_changes: state.dirty,
+    });
+  });
+  useEffect(() => {
+    if (onEditorSurface) {
+      editorSession.current = { openedAt: Date.now(), edits: 0 };
+    } else {
+      endEditorSession.current('hub');
+    }
+  }, [onEditorSurface]);
+  useEffect(() => {
+    const onPageHide = () => endEditorSession.current('unload');
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, []);
+
   // Lifecycle: save last code on tab hide / window unload (REQ-PST)
   useEffect(() => {
     function persist() {
@@ -566,10 +627,10 @@ export function AppRoot() {
     if (!currentUser) {
       setLoginModalOpen(true); // anonymous → open sign-in (plan §8)
       // NOTE (adversarial review, REQ-ANL-1): no analytics emitted here. Legacy has
-      // NO 'Free Limit' (or any) event on the custom-CSS gate — that envelope is
-      // reserved for the '3 diagrams limit' storage cap. Emitting a custom-css
-      // 'Free Limit' invented a payload with no legacy analog, polluting the
-      // existing limit-reached segment. A dedicated custom-css gate event would be a
+      // NO free_limit_reached (legacy 'Free Limit') or other event on the custom-CSS
+      // gate — that event is reserved for the '3 diagrams limit' storage cap.
+      // Emitting it here would invent a payload with no legacy analog and pollute
+      // the limit-reached segment. A dedicated custom-css gate event would be a
       // NEW analytics requirement (out of M04 scope) — deferred, not faked here.
       return true;
     }
@@ -581,7 +642,7 @@ export function AppRoot() {
     }
     if (isPlus(subscription)) return false;
     openModal('pricing');
-    // See note above: no legacy 'Free Limit' analog for the custom-CSS gate.
+    // See note above: no free_limit_reached for the custom-CSS gate.
     return true;
   }
 
@@ -610,10 +671,11 @@ export function AppRoot() {
     void syncStore.set(key, value);
     const uid = useAuthStore.getState().user?.uid;
     if (uid) void setUserSetting(uid, key, value).catch(() => {});
-    // REQ-ANL-1: legacy category is 'ui' (app.jsx:989 trackEvent('ui',
-    // 'updatePref-'+settingName, value)); the value is the label. Match the
-    // envelope so updatePref-* reports keep matching after cutover (adversarial review).
-    track('updatePref-' + key, { category: 'ui', label: String(value) });
+    // REQ-ANL-1: legacy sent 'updatePref-'+settingName with category 'ui' and the
+    // value as the label (app.jsx:989). It is now one preference_updated event with
+    // the setting in `pref`; /track maps old extensions' updatePref-* the same way.
+    // Saved reports filter preference_updated by `pref`.
+    track('preference_updated', { category: 'ui', label: String(value), pref: key });
   }
 
   // M04: Paddle checkout from the pricing modal. Non-logged-in upgrade → sign-in
@@ -651,8 +713,15 @@ export function AppRoot() {
   // tick picks the still-dirty item up.
   function persistNewDiagram() {
     useEditorStore.setState({ dirty: true, unsavedCount: 1 });
-    void save();
+    void save({ silent: true });
   }
+
+  // #943: a blank diagram from New is NOT persisted on creation — that wrote an empty
+  // `Untitled` to Firestore / localStorage on every click of +. It is persisted the
+  // moment it gets content (no 15 s auto-save wait, keeping the intent of
+  // "save new diagrams immediately" for diagrams that have something to lose).
+  // Holds the id of the blank diagram still awaiting its first content.
+  const blankAwaitingContent = useRef<string | null>(null);
 
   // M04: Create-New → load the chosen template as a fresh owned item.
   function handleCreateNew(partial: Partial<Item>) {
@@ -722,7 +791,8 @@ export function AppRoot() {
       isReadOnly: false,
     } as Item));
     setActivePanel('editor');
-    persistNewDiagram();
+    blankAwaitingContent.current = newId;
+    requestEditorFocus();
     // The blank diagram is not the shared or ?code=-seeded one: drop those params
     // so a reload does not look the new id up as a share or re-seed the old code.
     void navigate({ to: '/', search: (prev) => ({
@@ -765,12 +835,25 @@ export function AppRoot() {
   // action). CSS/HTML editors use separate handlers and are NOT tracked here.
   const firstEditFired = useRef(false);
   function handleDslChange(next: string) {
-    if (useEditorStore.getState().currentItem?.isReadOnly) return;
+    const current = useEditorStore.getState().currentItem;
+    if (current?.isReadOnly) return;
+    if (editorSession.current) editorSession.current.edits += 1;
     if (!firstEditFired.current) {
       firstEditFired.current = true;
       track('first_edit', { category: 'fn' });
     }
     setDsl(next);
+    // First content on a blank New: persist now (see blankAwaitingContent).
+    if (current && blankAwaitingContent.current === current.id && next.trim() !== '') {
+      blankAwaitingContent.current = null;
+      persistNewDiagram();
+    }
+  }
+  // #942: an edit that originates in the preview (the add-your-first-participant
+  // placeholder) leaves focus inside the renderer iframe; bring it back to the editor.
+  function handlePreviewCodeChange(code: string) {
+    handleDslChange(code);
+    requestEditorFocus();
   }
 
   async function handleDeleteItem(id: string) {
@@ -806,7 +889,7 @@ export function AppRoot() {
       identity: library.identity,
       getItems: library.getLibraryItems,
       download: (name, json) => downloadText(name, json, 'application/json'),
-      onStart: () => track('exportItems', { category: 'fn' }),
+      onStart: () => track('items_exported', { category: 'fn' }),
     });
   }
 
@@ -822,7 +905,7 @@ export function AppRoot() {
       identity: library.identity,
       token: context?.token,
       saveItems: (records, guard) => itemService.saveItems(records, guard),
-      onItemsAdded: (count) => track('itemsImported', { category: 'fn', label: String(count) }),
+      onItemsAdded: (count) => track('items_imported', { category: 'fn', label: String(count) }),
     });
   }
 
@@ -988,7 +1071,7 @@ export function AppRoot() {
         <LoginModal
           open={loginModalOpen}
           onOpenChange={handleLoginOpenChange}
-          onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); }}
+          onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
           lastProvider={lastProvider}
           error={loginError}
           pendingProvider={pendingProvider}
@@ -1010,7 +1093,7 @@ export function AppRoot() {
           onBrowseTemplates={() => openModal('createNew')}
           onCreateFromTemplate={handleCreateAndOpen}
           onOpenSignIn={() => setLoginModalOpen(true)}
-          onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+          onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
           onCreateFolder={createFolder}
           onRenameFolder={renameFolder}
           onDeleteFolder={deleteFolder}
@@ -1057,13 +1140,13 @@ export function AppRoot() {
         onToggleAppearance={() => handleSettingChange('appearance', settings.appearance === 'dark' ? 'light' : 'dark')}
         onGoHome={goHome}
         user={user}
-        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+        onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
         // No billing items here: PricingModal is only mounted with the editor/hub.
         profile={{ subscribed, planType, paymentEnabled: false }}
         login={{
           open: loginModalOpen,
           onOpenChange: handleLoginOpenChange,
-          onLogin: (provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); },
+          onLogin: (provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); },
           lastProvider,
           error: loginError,
           pendingProvider,
@@ -1193,7 +1276,7 @@ export function AppRoot() {
           // back to localStorage); the split matters only in the extension.
           void localStore.set(LS_KEYS.pledgeModalSeen, true);
           void syncStore.set(LS_KEYS.lastSeenVersion, APP_VERSION);
-          track('pledgeModalSeen', { category: 'ui', label: APP_VERSION });
+          track('pledge_modal_shown', { category: 'ui', label: APP_VERSION });
           closeModal();
         }}
       />
@@ -1240,9 +1323,10 @@ export function AppRoot() {
         readOnly={!!item.isReadOnly}
         onTitleChange={setTitle}
         onNew={handleNewDiagram}
+        onSaveBeforeNew={saveBeforeNew}
         onFork={() => handleForkItem(item)}
-        onLogin={(provider) => { track('loggedIn', { category: 'fn', label: provider }); return login(provider); }}
-        onLogout={() => { track('loggedOut', { category: 'fn' }); logout(); }}
+        onLogin={(provider) => { track('user_logged_in', { category: 'fn', label: provider }); return login(provider); }}
+        onLogout={() => { track('user_logged_out', { category: 'fn' }); logout(); }}
         loginError={loginError}
         pendingProvider={pendingProvider}
         loginOpen={loginModalOpen}
@@ -1272,7 +1356,7 @@ export function AppRoot() {
             stopping={share.stopping}
             failure={share.failure}
             copyFailed={share.copyFailed}
-            onShare={() => { track('shareLink', { category: 'ui' }); void share.share(); }}
+            onShare={() => { track('share_link_created', { category: 'ui' }); void share.share(); }}
             onStop={() => void share.stop()}
             onCopy={() => void share.copy()}
           />
@@ -1297,7 +1381,7 @@ export function AppRoot() {
                   are live (computeCss feeds previewCss); the DSL is rendered by
                   @zenuml/core and has no JS pre-processor, so no js-mode Select. */}
               <div className="editor-source-stack flex flex-1 min-h-0 flex-col">
-                <div className="flex-1 min-h-0"><CodeEditor key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" readOnly={!!item.isReadOnly} onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
+                <div className="flex-1 min-h-0"><CodeEditor ref={dslEditorRef} key={`dsl-${item.currentPageId}`} value={item.js} language="dsl" readOnly={!!item.isReadOnly} onChange={handleDslChange} testId="dsl-editor" themeId={settings.editorTheme} fontSize={settings.fontSize} fontFamily={editorFontFamily} keymap={settings.keymap} indentWith={settings.indentWith} indentSize={settings.indentSize} /></div>
               </div>
               {/* Shared code theme + font size for the DSL and CSS editors: one slot at
                   the bottom of this workspace, revealed on demand. */}
@@ -1451,7 +1535,7 @@ export function AppRoot() {
                   // Mobile editor preview: native SVG fit-to-width (see isMobile above).
                   svgMode={isMobile && !fullscreen}
                   stickyOffset={stickyOffset}
-                  onCodeChange={handleDslChange}
+                  onCodeChange={handlePreviewCodeChange}
                   onConsole={(e) => setConsoleEntries((prev) => [...prev, e])}
                   onError={(m) => setConsoleEntries((p) => [...p, { level: 'error', args: [m] }])}
                 />
@@ -1478,7 +1562,7 @@ export function AppRoot() {
         onOpenChange={(open) => { if (!open) setExportRequest(null); }}
         snapshot={exportRequest?.snapshot ?? null}
         title={exportRequest?.title ?? 'diagram'}
-        onExported={(format) => track(format === 'png' ? 'downloadPng' : 'downloadSvg', { category: 'ui' })}
+        onExported={(format) => track('diagram_downloaded', { category: 'ui', format })}
       />
     </div>
   );

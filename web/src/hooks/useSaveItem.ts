@@ -30,8 +30,18 @@ export interface UseSaveItemOpts {
 }
 
 export interface UseSaveItemResult {
-  /** Stable across renders. Resolves true when the save reached a confirmed (non-queued) state. */
-  save(): Promise<boolean>;
+  /**
+   * Stable across renders. Resolves true when the save reached a confirmed (non-queued) state.
+   * `silent`: not a user-visible "I saved" moment (the first-content persist of a New
+   * diagram, #951), so it must not open the one-time signed-out notice.
+   */
+  save(opts?: { silent?: boolean }): Promise<boolean>;
+  /**
+   * #952: header New saves first. Resolves true when it is safe to create the new
+   * diagram (the edit reached storage, or is retained locally with a cloud sync queued);
+   * false only when the save really failed. Stable across renders.
+   */
+  saveBeforeNew(): Promise<boolean>;
   saveFeedback: SaveFeedback;
   cloudConfirmed: boolean;
 }
@@ -74,7 +84,7 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
     return () => { offAuth(); offItem(); saveGeneration.current += 1; saveAttempt.current = null; };
   }, []);
 
-  async function save(): Promise<boolean> {
+  async function save(saveOpts: { silent?: boolean } = {}): Promise<boolean> {
     const it = useEditorStore.getState().currentItem;
     if (!it || it.isReadOnly || saveAttempt.current) return false;
     const attempt = {};
@@ -90,7 +100,7 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
     let forkOnForeignOwner = false;
     useEditorStore.getState().setSaving(true);
     setSaveFeedback({error:false, queued:false});
-    track('saveBtnClick', {category:'ui', label:!uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new'});
+    track('diagram_save_clicked', {category:'ui', label:!uid ? 'not-logged-in' : itemToSave.id ? 'saved' : 'new'});
     try {
       // Preserve the legacy fail-open cap check, sampled before membership insertion.
       let overLimit = false;
@@ -113,7 +123,7 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
         if (limitNotifiedRef.current !== itemToSave.id) {
           limitNotifiedRef.current = itemToSave.id;
           onLimitReached();
-          track('Free Limit', {category:'3 diagrams limit', label:'Save'});
+          track('free_limit_reached', {category:'3 diagrams limit', label:'Save'});
         }
         return false; // locally retained, deliberately not cloud-synced or clean
       }
@@ -132,9 +142,15 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
       limitNotifiedRef.current = null;
       setSaveFeedback({error:false, queued:outcome?.status === 'queued'});
       setCloudConfirmed(outcome?.status === 'cloud');
+      track('diagram_save_succeeded', {feature_area:'editor', destination:outcome?.status ?? 'local'});
       // The saved snapshot owns this completion. Edits made while it waited stay dirty.
       if (useEditorStore.getState().currentItem === it) useEditorStore.getState().markSaved();
-      if (!uid) {
+      // #941: a diagram with no content has nothing worth the sign-in nudge; New saves
+      // an empty item right away, so without this gate the one-time notice would be
+      // spent on a blank page (and its focus trap would steal the editor focus).
+      // #951: the first-content persist is silent, or the modal opens on the first
+      // keystroke and steals focus; the next ordinary save (Ctrl+S / auto-save) shows it.
+      if (!uid && !saveOpts.silent && itemToSave.js.trim() !== '') {
         // Informational notice preferences are separate from document persistence.
         // If acknowledgement storage fails, defer the notice to a later successful save.
         try {
@@ -150,7 +166,7 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
     } catch (err) {
       const code = (err as { code?: string } | null)?.code;
       if (current()) {
-        track('saveFailed', {category:'error', label:code ?? 'unknown'});
+        track('diagram_save_failed', {category:'error', label:code ?? 'unknown'});
         // Firestore only denies an update to a doc another account created, so this id
         // is taken (a local copy that outlived a sign-in switch). Retry once under a
         // fresh id the user owns, after finally releases the in-flight guard.
@@ -182,11 +198,50 @@ export function useSaveItem(opts: UseSaveItemOpts): UseSaveItemResult {
     try { return await save(); } finally { forkRetrying.current = false; }
   }
 
+  // #952: header New saves first.
+  //
+  // Ordering matters: handleNewDiagram() swaps currentItem synchronously and save()
+  // aborts before itemService.setItem whenever currentItem.id changed mid-flight, so
+  // New must never run while a save is pending, or the edit is silently lost.
+  async function saveBeforeNew(): Promise<boolean> {
+    const startId = useEditorStore.getState().currentItem?.id;
+    if (!startId) return true;
+    // A save already in flight (the 15 s auto-save tick, or Cmd+S) would make save()
+    // return false at once without writing. Wait for it to settle instead of treating
+    // that as a failure. saveAttempt and `saving` are set and cleared together; the
+    // `saving` check also keeps a stale attempt from spinning this loop.
+    while (saveAttempt.current && useEditorStore.getState().saving) {
+      await new Promise<void>((resolve) => {
+        const off = useEditorStore.subscribe((s) => {
+          if (!s.saving) { off(); resolve(); }
+        });
+        if (!useEditorStore.getState().saving) { off(); resolve(); }
+      });
+    }
+    const after = useEditorStore.getState();
+    if (after.currentItem?.id !== startId) return false;
+    // The awaited attempt already stored everything (it marks the item clean).
+    if (!after.dirty) return true;
+    // Silent (#951): New is a navigation step, not a "you saved" moment. The
+    // one-time notice would otherwise open on top of the fresh blank editor and
+    // take the focus New just gave it; the next ordinary save still shows it.
+    const saved = await save({ silent: true });
+    if (saved) return true;
+    // save() returns false for a queued (offline, signed-in) save as well, but it
+    // calls markSaved() first because the item is retained locally. Failures keep
+    // the item dirty: errors, read-only items, and over-limit (which re-marks it).
+    const now = useEditorStore.getState();
+    return now.currentItem?.id === startId && !now.dirty;
+  }
+
   // Callers (auto-save interval, the ⌘S listener) hold `save` across renders; route
   // through a ref so they always run this render's closure (latest subscription etc.).
   const saveImpl = useRef(save);
   saveImpl.current = save;
-  const stableSave = useCallback(() => saveImpl.current(), []);
+  const stableSave = useCallback((o?: { silent?: boolean }) => saveImpl.current(o), []);
+  const saveBeforeNewImpl = useRef(saveBeforeNew);
+  saveBeforeNewImpl.current = saveBeforeNew;
+  const stableSaveBeforeNew = useCallback(() => saveBeforeNewImpl.current(), []);
 
-  return { save: stableSave, saveFeedback, cloudConfirmed };
+  return { save: stableSave, saveBeforeNew: stableSaveBeforeNew, saveFeedback, cloudConfirmed };
 }

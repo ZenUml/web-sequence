@@ -199,7 +199,7 @@ Fetch a shared item read-only, **no auth required** (admin SDK bypasses rules).
 
 ### 5.5 `POST /track` → `track`
 - **Request:** `{ event, userId, ...properties }` (frontend also sends `category`, `label`, `value`).
-- **Behavior:** sends to Mixpanel with `distinct_id=userId`, `displayProductName="FireWeb"`, plus all extra properties. Non-blocking.
+- **Behavior:** sends to Mixpanel with `distinct_id=userId`, `displayProductName="FireWeb"`, plus all extra properties. Non-blocking. (Superseded 2026-10-29: see `2026-10-28-analytics-event-design.md` section 9.)
 - **Response:** `200 "Event tracked successfully"`; `400` if `event` missing.
 
 ### 5.6 `GET /info` → `info`
