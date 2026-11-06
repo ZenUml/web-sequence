@@ -47,6 +47,9 @@ jobs:
         # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
         working-directory: web
         run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
+      - name: Check web/ for unused dependencies
+        working-directory: web
+        run: pnpm check:deps
       - name: Package Chrome extension
         # gulp release is incompatible with Node 20+; replicate its steps directly.
         run: bash scripts/release/package-extension.sh
