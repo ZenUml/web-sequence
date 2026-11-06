@@ -36,3 +36,6 @@ extension.zip
 ### Local MCP server config (contains PLAYWRIGHT_MCP_EXTENSION_TOKEN)
 .mcp.json
 functions/package-lock.json
+
+# Local review evidence (screenshots, export matrices). Attach to the PR or issue instead (#876).
+/artifacts/
