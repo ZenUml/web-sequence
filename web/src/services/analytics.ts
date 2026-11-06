@@ -1,4 +1,5 @@
 import { trackEvent as cloudTrackEvent } from './cloudFunctions';
+import { APP_VERSION } from '../config/constants';
 
 // Client-side analytics fan-out (REQ-ANL-1). Framework-agnostic: the debug /
 // isExtension / userId context is computed by the caller (the `useAnalytics`
@@ -18,6 +19,9 @@ declare global {
 export interface AnalyticsContext {
   // The signed-in user's uid, or `null` for anonymous events.
   userId: string | null;
+  // Stable anonymous id (services/anonId). /track uses it as distinct_id when
+  // userId is null.
+  anonId: string;
   // Route to console instead of any network/CDN side effect.
   debug: boolean;
   // Running inside the Chrome extension (`chrome-extension:` protocol). Still
@@ -34,7 +38,7 @@ export function emit(
   props: Record<string, unknown>,
   ctx: AnalyticsContext,
 ): void {
-  const { userId, debug, isExtension } = ctx;
+  const { userId, anonId, debug, isExtension } = ctx;
 
   // Debug mode: route to console and short-circuit — no POST, no CDN push.
   if (debug) {
@@ -43,9 +47,18 @@ export function emit(
     return;
   }
 
-  // Server path: POST /track via the non-blocking cloud-function wrapper. Plain
-  // spread only — adding defaulted keys would break the strict-equality assertions.
-  void cloudTrackEvent({ event, userId, ...props });
+  // Server path: POST /track via the non-blocking cloud-function wrapper. The
+  // body always carries anonId, app_version, is_authenticated and runtime; caller
+  // props follow.
+  void cloudTrackEvent({
+    event,
+    userId,
+    anonId,
+    app_version: APP_VERSION,
+    is_authenticated: userId != null,
+    runtime: isExtension ? 'extension' : 'web',
+    ...props,
+  });
 
   // Client CDN path: push to GTM/Mixpanel when their snippets are present. Skipped
   // under the extension, where the CDN scripts are never injected.
