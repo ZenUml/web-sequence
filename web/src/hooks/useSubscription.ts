@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { retrieveSubscription } from '../services/subscriptionService';
 import { useAuthStore } from '../state/authStore';
+import { useOperationScope } from '../state/operationScope';
 import { getPlanType, isSubscribed } from '../domain/plan';
 import type { PlanType, Subscription } from '../domain/types';
 
@@ -33,12 +34,12 @@ export function useSubscription(): UseSubscription {
   const [loadedForUid, setLoadedForUid] = useState<string | null>(null);
   const [failedForUid, setFailedForUid] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
-  const requestGeneration = useRef(0);
+  // A new uid, a reload or unmount makes every in-flight read stale.
+  const { begin, isCurrent, invalidate } = useOperationScope({ invalidateOn: [uid, reloadTick] });
 
   const loading = uid !== null && loadedForUid !== uid;
 
   useEffect(() => {
-    const generation = ++requestGeneration.current;
     if (uid === null) {
       // Signed out — clear synchronously; nothing to load.
       setSubscription(null);
@@ -46,7 +47,7 @@ export function useSubscription(): UseSubscription {
       setFailedForUid(null);
       return;
     }
-    let cancelled = false;
+    const token = begin(uid);
     void (async () => {
       let sub: Subscription | null = null;
       let failed = false;
@@ -55,48 +56,41 @@ export function useSubscription(): UseSubscription {
       } catch {
         failed = true;
       } finally {
-        if (!cancelled && requestGeneration.current === generation) {
+        if (isCurrent(token)) {
           setSubscription(sub);
           setFailedForUid(failed ? uid : null);
           setLoadedForUid(uid);
         }
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [uid, reloadTick]);
+  }, [uid, reloadTick, begin, isCurrent]);
 
   // reload() re-reports loading (resets loadedForUid) then re-reads — used after a
   // successful Paddle checkout to pick up the new subscription.
   const reload = useCallback(() => {
-    requestGeneration.current += 1;
+    invalidate();
     setLoadedForUid(null);
     setFailedForUid(null);
     setReloadTick((t) => t + 1);
-  }, []);
+  }, [invalidate]);
 
   // Import retries need the verified result in the same attempt. Returning it
   // avoids using a stale render's free fallback after the retry resolves.
   const retryFailedLoad = useCallback(async (expectedUid: string): Promise<Subscription | null> => {
-    if (useAuthStore.getState().user?.uid !== expectedUid) throw new Error('Account changed');
-    const generation = requestGeneration.current;
+    const token = begin(expectedUid);
+    if (!isCurrent(token)) throw new Error('Account changed');
     try {
       const result = await retrieveSubscription(expectedUid);
-      if (useAuthStore.getState().user?.uid !== expectedUid || requestGeneration.current !== generation) {
-        throw new Error('Account changed');
-      }
+      if (!isCurrent(token)) throw new Error('Account changed');
       setSubscription(result);
       setFailedForUid(null);
       setLoadedForUid(expectedUid);
       return result;
     } catch (error) {
-      if (useAuthStore.getState().user?.uid === expectedUid && requestGeneration.current === generation) {
-        setFailedForUid(expectedUid);
-      }
+      if (isCurrent(token)) setFailedForUid(expectedUid);
       throw error;
     }
-  }, []);
+  }, [begin, isCurrent]);
 
   return {
     subscription,

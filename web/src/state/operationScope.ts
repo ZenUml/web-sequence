@@ -7,7 +7,8 @@ import type { SaveItemsGuard } from '../services/identityGuard';
 // begins. The generation moves on:
 // - any uid change, including A → B → A (so a token from the first A is stale),
 // - unmount of the owning component,
-// - a change in the caller's `invalidateOn` deps (e.g. the open item).
+// - a change in the caller's `invalidateOn` deps (e.g. the open item),
+// - an explicit invalidate() call.
 // isCurrent(token) is true only for the same generation, while mounted, with the
 // token's uid still the live uid.
 export interface OperationToken {
@@ -21,6 +22,8 @@ export interface OperationScope {
   isCurrent(token: OperationToken): boolean;
   /** Adapter for itemService.saveItems / setItem. */
   guard(token: OperationToken): SaveItemsGuard;
+  /** Make every outstanding token stale now (e.g. a caller-driven reload). */
+  invalidate(): void;
 }
 
 const liveUid = () => useAuthStore.getState().user?.uid ?? null;
@@ -66,5 +69,8 @@ export function useOperationScope({ invalidateOn = [] }: { invalidateOn?: unknow
     (token: OperationToken): SaveItemsGuard => ({ expectedUid: token.uid, isCurrent: () => isCurrent(token) }),
     [isCurrent],
   );
-  return useMemo(() => ({ begin, isCurrent, guard }), [begin, isCurrent, guard]);
+  const invalidate = useCallback(() => {
+    generation.current += 1;
+  }, []);
+  return useMemo(() => ({ begin, isCurrent, guard, invalidate }), [begin, isCurrent, guard, invalidate]);
 }

@@ -153,3 +153,30 @@ describe('useSubscription', () => {
     expect(result.current.subscribed).toBe(true);
   });
 });
+
+describe('useSubscription — reload race (#867)', () => {
+  it('a read that resolves after reload() but before React commits is dropped', async () => {
+    const first = deferred<Subscription | null>();
+    const second = deferred<Subscription | null>();
+    svc.retrieveSubscription.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    signIn('u1');
+    const { result } = renderHook(() => useSubscription());
+    expect(result.current.loading).toBe(true);
+
+    // reload() and the late first read land in the same batch, before the commit
+    // that would re-run the load effect.
+    await act(async () => {
+      result.current.reload();
+      first.resolve(null);
+      await first.promise;
+    });
+
+    // The stale "free" answer must not end the reload's loading window.
+    expect(result.current.loading).toBe(true);
+    expect(svc.retrieveSubscription).toHaveBeenCalledTimes(2);
+
+    await act(async () => { second.resolve(PLUS); await second.promise; });
+    expect(result.current.loading).toBe(false);
+    expect(result.current.subscription).toEqual(PLUS);
+  });
+});
