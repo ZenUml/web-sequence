@@ -83,7 +83,7 @@ function RenderedThumbnail({ item }: { item: Item }) {
     // changed is dropped (disposed), so it cannot overwrite newer rules.
     async function pushCss() {
       const it = latest.current;
-      let css = '';
+      let css: string;
       if (it.cssMode === 'css' || !it.cssMode) css = it.css ?? '';
       else {
         const source = it.cssMode === 'acss' ? it.html ?? '' : it.css ?? '';
