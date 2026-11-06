@@ -21,8 +21,8 @@ concurrency:
 
 jobs:
   build:
-    name: Build and local E2E
-    runs-on: ubuntu-latest
+    name: Build and deploy staging
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -47,16 +47,6 @@ jobs:
         # Vite places .vite-temp in root node_modules where @vitejs/plugin-react is absent.
         working-directory: web
         run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
-      # Pre-deploy guard: serve the built dist statically and verify the diagram
-      # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
-      # path) that the dev-server suite can't see, BEFORE anything ships to
-      # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
-      - name: Install Playwright (chromium)
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Verify production build and application E2E
-        env:
-          PW_PROD_BUILD: '1'
-        run: pnpm exec playwright test --project=chromium
       - name: Package Chrome extension
         # gulp release is incompatible with Node 20+; replicate its steps directly.
         run: bash scripts/release/package-extension.sh
@@ -105,6 +95,41 @@ jobs:
           name: extension-zip
           path: extension.zip
 
+  # Runs beside the build/deploy job, not before it: staging is a shared test
+  # site, and production is only ever drafted after this job AND the staging gate pass.
+  local-e2e:
+    name: Local E2E (shard ${{ matrix.shard }}/2)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build web/dist
+        working-directory: web
+        run: pnpm install --frozen-lockfile --ignore-workspace && pnpm build
+      # Pre-deploy guard: serve the built dist statically and verify the diagram
+      # renders. Catches deploy-only bundling bugs (e.g. a dev-only /@fs/ asset
+      # path) that the dev-server suite can't see, BEFORE anything ships to
+      # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
+      - name: Install Playwright (chromium)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Verify production build and application E2E
+        env:
+          PW_PROD_BUILD: '1'
+        run: pnpm exec playwright test --project=chromium --shard=${{ matrix.shard }}/2
+
   # Hard gate: run the full Playwright suite against the *deployed* staging site.
   # A red gate blocks the draft release, so a production release can only ever be
   # created from a build already proven green on staging.
@@ -112,7 +137,7 @@ jobs:
     name: E2E gate (staging)
     needs: build
     if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -132,7 +157,7 @@ jobs:
       - name: Verify staging commit before E2E
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
       # Chromium is the configured release-gating browser for web-sequence.
       - name: Run full E2E suite against staging
         env:
@@ -145,17 +170,19 @@ jobs:
     # A deduplicated push may be cancelled by the PR run. It must not leave
     # a failed check with the same name as the required PR merge gate.
     name: ${{ github.event_name == 'pull_request' && 'Release validation' || 'Branch validation' }}
-    needs: [build, staging-gate]
+    needs: [build, local-e2e, staging-gate]
     if: ${{ always() && !cancelled() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require build and applicable staging E2E
         env:
           BUILD_RESULT: ${{ needs.build.result }}
+          LOCAL_E2E_RESULT: ${{ needs.local-e2e.result }}
           GATE_RESULT: ${{ needs.staging-gate.result }}
           EXPECT_GATE: ${{ github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           test "$BUILD_RESULT" = success
+          test "$LOCAL_E2E_RESULT" = success
           if [ "$EXPECT_GATE" = true ]; then
             test "$GATE_RESULT" = success
           fi
@@ -165,9 +192,9 @@ jobs:
   # deploy-prod.yml (on: release: released/prereleased).
   draft-release:
     name: Create draft release
-    needs: staging-gate
+    needs: [local-e2e, staging-gate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
