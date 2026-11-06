@@ -156,8 +156,8 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('Event tracked successfully');
     }));
-    await trackEvent({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
-    expect(received).toEqual({ event: 'saveBtnClick', userId: 'u1', category: 'ui', label: 'saved' });
+    await trackEvent({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
+    expect(received).toEqual({ event: 'diagram_save_clicked', userId: 'u1', category: 'ui', label: 'saved' });
   });
   it('carries userId:null for anonymous events', async () => {
     let received: Record<string, unknown> | null = null;
@@ -165,8 +165,14 @@ describe('trackEvent', () => {
       received = (await request.json()) as Record<string, unknown>;
       return HttpResponse.text('ok');
     }));
-    await trackEvent({ event: 'pageView', userId: null });
+    await trackEvent({ event: 'app_opened', userId: null });
     expect(received!.userId).toBeNull();
+  });
+  it('sends with keepalive so an event fired on pagehide survives the unload', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+    await trackEvent({ event: 'editor_session_ended', userId: null });
+    expect(spy).toHaveBeenCalledWith('/track', expect.objectContaining({ keepalive: true }));
+    spy.mockRestore();
   });
   it('never throws on a network/non-ok error (non-blocking)', async () => {
     server.use(http.post(`${window.location.origin}/track`, () => HttpResponse.error()));
