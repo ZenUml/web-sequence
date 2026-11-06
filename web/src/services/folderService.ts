@@ -8,16 +8,13 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Folder } from '../domain/types';
+import { randomId } from '../domain/id';
 
 function userRef(uid: string) {
   return doc(db, `users/${uid}`);
 }
 function genFolderId(): string {
-  const rnd =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-  return `folder-${rnd}`;
+  return randomId('folder');
 }
 
 export async function getFolders(uid: string): Promise<Folder[]> {
