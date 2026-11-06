@@ -7,8 +7,11 @@ permissions:
   contents: read
 
 on:
+  # Push only on master (ADR 0001 item 7). Feature branches are covered by the
+  # pull_request trigger; a second push run shared this concurrency group, got
+  # cancelled by the PR run, and showed as a failed check on every PR.
   push:
-    branches: ['**']
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
