@@ -14,16 +14,7 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
-
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js', 'gtm.js', 'googletagmanager', 'google-analytics',
-  'analytics.js', 'clarity.js', 'clarity.ms', 'paddle.js', 'cdn.paddle.com',
-  'zaraz', 'cloudflareinsights',
-];
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
+import { isThirdPartyError } from './helpers/console';
 
 async function gotoFresh(page) {
   // Seed the one-time-modal flags via an init script (before any goto) so
