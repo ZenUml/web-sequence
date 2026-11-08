@@ -3,7 +3,9 @@ import * as localItems from '../../services/localItems';
 import { localStore } from '../../services/storage';
 import type { Item } from '../../domain/types';
 import { useExportFeedbackStore } from './exportFeedbackStore';
-import { useImportFeedbackStore } from './importFeedbackStore';
+// Loaded for its transferSlot registration, so identityChanged() reaches it.
+import './importFeedbackStore';
+import { transferSlot } from './transferSlot';
 import {
   LIBRARY_CANCELLED,
   type IdentityBinding,
@@ -121,8 +123,7 @@ export function useLibraryReader(source: LibrarySource) {
     if (notifiedGeneration.current !== generation.current) {
       notifiedGeneration.current = generation.current;
       // Results and failed retries of the previous identity must not stay actionable.
-      useImportFeedbackStore.getState().identityChanged();
-      useExportFeedbackStore.getState().identityChanged();
+      transferSlot.identityChanged();
     }
     // Publish the settled library size for the Export all disabled state.
     useExportFeedbackStore.getState().setLibraryCount(ready() ? latest.current.items.length : null);
