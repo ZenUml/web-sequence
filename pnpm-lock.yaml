@@ -33,8 +33,8 @@ importers:
         specifier: ^1.0.7
         version: 1.2.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@zenuml/core':
-        specifier: 4.12.1
-        version: 4.12.1(@babel/core@7.28.3)(@babel/template@7.27.2)
+        specifier: 4.13.1
+        version: 4.13.1(@babel/core@7.28.3)(@babel/template@7.27.2)
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -2442,9 +2442,9 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
-  '@zenuml/core@4.12.1':
-    resolution: {integrity: sha512-HY4Jdl9QhepRYGIB4UJAuaWbfQWp2SobDRmj+Zg77KtWsV1X92sA+oeAKsy8MF10mCweUc8PCoVr4z5sgr9tDg==}
-    engines: {node: '>=20'}
+  '@zenuml/core@4.13.1':
+    resolution: {integrity: sha512-eHJ2Mb5CYtQ3fhQFKKXnhWTWhMBQcSPx0TvrEuWLZXfNMgSwdGzPIbLB3OO0oz3mH8WTkEH7+p0ToiF8o1UIBg==}
+    engines: {node: '>=22.12.0'}
     hasBin: true
     peerDependencies:
       playwright-core: 1.57.0
@@ -3283,7 +3283,7 @@ packages:
     engines: {iojs: '>= 1.0.0', node: '>= 0.12.0'}
 
   code-blast-codemirror@https://codeload.github.com/chinchang/code-blast-codemirror/tar.gz/d6d5366ff04e25b6973eb0fdf6d6c16cfc478054:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/chinchang/code-blast-codemirror/tar.gz/d6d5366ff04e25b6973eb0fdf6d6c16cfc478054}
+    resolution: {gitHosted: true, integrity: sha512-rD9nJAS54P973rl6e3x0ASI66jW0o6TmTA7CZUxlZdWR3/MpdMgLO3V317Yz6a2j5WO1Bxz4yfF9lA2R1aw6FQ==, tarball: https://codeload.github.com/chinchang/code-blast-codemirror/tar.gz/d6d5366ff04e25b6973eb0fdf6d6c16cfc478054}
     version: 1.0.0
 
   codemirror@5.65.20:
@@ -3686,7 +3686,7 @@ packages:
     resolution: {integrity: sha512-g6RpyWXzl0RR6OTElHKBl7nwnK87GUyZMYC7JWsB/IA73vpqK2K6LT39x4VepLxlSsWBFrPVLnsSR5Jyty0+2Q==}
 
   dom-to-image@https://codeload.github.com/MichalBryxi/dom-to-image/tar.gz/faf186c308f0707aab3c6fc1d58c65ffc5f49db4:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/MichalBryxi/dom-to-image/tar.gz/faf186c308f0707aab3c6fc1d58c65ffc5f49db4}
+    resolution: {gitHosted: true, integrity: sha512-GtZHQGnCJ1UTgyrEsu6WkWQFezwCcyxlfpO8TXFz8x5HkifzomiAdQVscs8kLwK1AuaVex4GYP8cvLvCGZJw5g==, tarball: https://codeload.github.com/MichalBryxi/dom-to-image/tar.gz/faf186c308f0707aab3c6fc1d58c65ffc5f49db4}
     version: 2.6.0
 
   domelementtype@1.3.1:
@@ -10780,7 +10780,7 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
-  '@zenuml/core@4.12.1(@babel/core@7.28.3)(@babel/template@7.27.2)':
+  '@zenuml/core@4.13.1(@babel/core@7.28.3)(@babel/template@7.27.2)':
     dependencies:
       '@floating-ui/react': 0.27.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       antlr4: 4.11.0
