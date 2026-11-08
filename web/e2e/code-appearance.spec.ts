@@ -370,13 +370,18 @@ test.describe('desktop 1440', () => {
     await clearEditor(page);
     await page.keyboard.type('A->B: hi\nif(x) {\n');
     await page.keyboard.type('}}}');
+    // One diagnostic per stray `}` since @zenuml/core 4.13.1, so pin the counts
+    // seen before the appearance change rather than a fixed number.
     const errors = page.getByTestId('dsl-editor').locator('.cm-lintRange-error');
-    await expect(errors).toHaveCount(1, { timeout: 10000 });
+    const markers = page.getByTestId('dsl-editor').locator('.cm-lint-marker-error');
+    await expect(errors).toHaveCount(3, { timeout: 10000 });
+    const markerCount = await markers.count();
+    expect(markerCount).toBeGreaterThan(0);
     await hoverNearBottom(page);
     await page.getByTestId('code-font-increase').click();
     await chooseTheme(page, 'dracula');
-    await expect(errors).toHaveCount(1);
-    await expect(page.getByTestId('dsl-editor').locator('.cm-lint-marker-error')).toHaveCount(1);
+    await expect(errors).toHaveCount(3);
+    await expect(markers).toHaveCount(markerCount);
   });
 
   test('code tooltips that extend over the preview are not clipped by the code column', async ({ page }) => {
