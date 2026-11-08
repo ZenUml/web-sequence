@@ -3,7 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { Folder, Item, Appearance } from '../../domain/types';
 import { Tooltip } from '../../ui';
 import { DiagramThumbnail } from './DiagramThumbnail';
-import { CheckIcon, ForkIcon, MoveToFolderIcon, TrashIcon } from './icons';
+import { CheckIcon, ForkIcon, MoveToFolderIcon, TrashIcon } from '../../ui/icons';
 
 interface DiagramCardProps {
   item: Item;
