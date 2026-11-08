@@ -17,7 +17,6 @@
 //
 // Only REAL node names from grammar/zenuml-parser.terms.js are referenced.
 
-import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import {
   snippetCompletion,
@@ -32,92 +31,18 @@ import {
   type CompletionResult,
 } from '@codemirror/autocomplete'
 import type { KeyBinding } from '@codemirror/view'
-import type { SyntaxNode } from '@lezer/common'
 import { commandsForZone, type SlashZone } from './slashCommands'
 import { getParticipants } from './participantManager'
-import { isFreeTextSpan } from './cjkAutocorrect'
+import { isFreeTextSpan, isInsideMessageContent, isNamingDeclaration, resolveZone } from './cursorContext'
 import { CLOUD_ANNOTATIONS, CORE_ANNOTATIONS } from './annotations'
 
+// resolveZone moved to cursorContext.ts (#903); re-exported for existing callers.
+export { resolveZone }
+
 // ---------------------------------------------------------------------------
-// 1. Zone resolution
+// 1. Zone resolution: resolveZone, isNamingDeclaration and
+//    isInsideMessageContent live in cursorContext.ts (#903).
 // ---------------------------------------------------------------------------
-
-/**
- * Derive the cursor's zone from the syntax tree.
- *
- *  - inside a StatementBraceBlock (the body of a sync message / control-flow
- *    block) => 'block'
- *  - everywhere else — the document Head, a group's participant list, or before
- *    the first statement => 'head'
- *
- * Robust to partial/empty docs: an empty or whitespace-only document, or a
- * cursor that resolves to no meaningful container, defaults to 'head' (the
- * place you start a diagram — declaring participants).
- */
-export function resolveZone(state: EditorState, pos: number): SlashZone {
-  const tree = syntaxTree(state)
-  // resolveInner(pos, -1): bias toward the node ending at pos, so that a cursor
-  // sitting just inside a freshly-typed `{` lands in the brace block, and a
-  // cursor at the very end of a token is associated with that token.
-  let node: SyntaxNode | null = tree.resolveInner(pos, -1)
-  while (node) {
-    // The body of a message/control-flow block. This is the authoritative
-    // 'block' container. (Group's body is GroupBraceBlock — still 'head',
-    // because only participant declarations live there.)
-    if (node.name === 'StatementBraceBlock') return 'block'
-    // Once we hit the document Head or a group's participant list, we're in
-    // 'head' territory and can stop climbing.
-    if (node.name === 'Head' || node.name === 'GroupBraceBlock' || node.name === 'Group') {
-      return 'head'
-    }
-    node = node.parent
-  }
-  // Not inside a Head/Group/brace → the document TOP LEVEL, where both
-  // declarations and statements (messages, control flow) are valid. 'top' offers
-  // the union of head + block commands/keywords (fixes the top-level slash gap
-  // where `/sync` used to insert literal text — ADR 0002 open work #2).
-  return 'top'
-}
-
-/**
- * True when the cursor sits in the NAME slot of a declaration that already has a
- * leading marker before the name — an `@annotation`/`<<stereotype>>` (participant,
- * e.g. `@Actor a`) or the `group` keyword (e.g. `group a`). In that slot a NAME is
- * expected, so head keywords (title/group/as) must NOT be offered: `as` is a label
- * modifier that only follows a complete name, and title/group are statement-start
- * keywords. A BARE leading identifier (`t`) is statement-start, not a name slot, so
- * keyword completions stay available there. Once the cursor moves past the name
- * (the modifier slot, or a group's `{ }` body) the keywords are valid again.
- */
-function isNamingDeclaration(state: EditorState, pos: number): boolean {
-  // Text guard FIRST: when the name being typed is itself a reserved keyword
-  // (`group if`, `@Actor while`), the lexer emits a keyword token that escapes the
-  // Participant/Group subtree, so the tree walk below finds no declaration ancestor
-  // and wrongly reports "not naming" — leaking block keywords into the name slot
-  // (#806). A same-line marker (`group `/`@Annotation `/`<<stereo>> `) immediately
-  // before the cursor word is an unambiguous NAME slot regardless of how the token
-  // lexed. The line-start anchor keeps a NEXT-line `group\nif` (a real top-level `if`
-  // statement) offering keywords. The marker must be the FIRST word on the line, so a
-  // completed name + modifier slot (`@Actor Alice a`) does NOT match (Alice intervenes).
-  const before = state.doc.sliceString(Math.max(0, pos - 80), pos)
-  if (/(?:^|\n)[ \t]*(?:group|@\w+|<<[^>]+>>)[ \t]+\w*$/.test(before)) return true
-
-  let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1)
-  while (node && node.name !== 'Participant' && node.name !== 'Group') node = node.parent
-  if (!node) return false
-  const nameNode = node.getChild('Name')
-  // Past the name (a participant's modifier slot, or inside a group's `{ }` body)
-  // → no longer naming.
-  if (nameNode && pos > nameNode.to) return false
-  // The slot is a NAME (not a fresh statement-start token) only if the declaration
-  // has a leading marker before the name. `@Actor ` with no name yet parses as
-  // ParticipantType + error and still counts (nameNode is null → naming).
-  return !!(
-    node.getChild('ParticipantType') ||
-    node.getChild('Stereotype') ||
-    node.getChild('GroupKeyword')
-  )
-}
 
 // ---------------------------------------------------------------------------
 // 2. Participant names
@@ -223,18 +148,6 @@ function atMessageEndpoint(state: EditorState, pos: number): boolean {
   return false
 }
 
-// True when the cursor sits inside an async-message LABEL (the free-text Content of
-// `A->B: …`). A label is neither a declaration nor a statement-start, so participant
-// annotations (`@Actor`, …) must never be offered there — even though the label sits
-// at document top level where `resolveZone` returns 'top' (#805). Walks ancestors
-// for a Content / AsyncMessage node.
-function isInsideMessageContent(state: EditorState, pos: number): boolean {
-  for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) {
-    if (n.name === 'Content' || n.name === 'AsyncMessage') return true
-  }
-  return false
-}
-
 export function zenumlCompletions(context: CompletionContext): CompletionResult | null {
   const { state, pos } = context
 
@@ -253,7 +166,7 @@ export function zenumlCompletions(context: CompletionContext): CompletionResult 
   //  - an EMPTY free-text region (#814): right after `A->B: ` / `title ` / `== ` the
   //    Content node does not exist yet, so a plain ancestor walk finds nothing and
   //    completions leak into a slot the user is about to fill with prose. The shared
-  //    classifier isFreeTextSpan (cjkAutocorrect.ts, grown for the same empty-region
+  //    classifier isFreeTextSpan (cursorContext.ts, grown for the same empty-region
   //    class in 961a221) covers the node set above PLUS those zero-width regions —
   //    one source of truth for "is this slot free text?".
   if (isFreeTextSpan(state, pos)) return null
