@@ -6,6 +6,13 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/ZenUML_Sequence_Diagram_addon_help.html",
+        "destination": "/help.html",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "/sync-diagram",
