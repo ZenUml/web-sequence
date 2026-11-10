@@ -25,6 +25,8 @@ function description(h: string): string {
 describe('static HTML head', () => {
   it.each([
     ['web/index.html', resolve(webRoot, 'index.html'), 'https://app.zenuml.com/'],
+    // Legacy app entry; production still serves this build until the rewrite ships.
+    ['src/index.html', resolve(repoRoot, 'src', 'index.html'), 'https://app.zenuml.com/'],
     ['help.html', resolve(repoRoot, 'help.html'), 'https://app.zenuml.com/help.html'],
   ])('%s has a canonical URL and a meta description', (_name, file, url) => {
     const h = head(file);
