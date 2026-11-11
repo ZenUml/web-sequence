@@ -3,3 +3,8 @@
 allowBuilds:
   protobufjs: true
   re2: true
+
+# Keep this override in sync with package.json for pnpm 10 --ignore-workspace.
+# pnpm 11 Cloud Functions builds read their overrides from this file.
+overrides:
+  'protobufjs@>=7.0.0 <7.6.6': 7.6.6
