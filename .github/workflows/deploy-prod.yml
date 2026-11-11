@@ -11,7 +11,7 @@ concurrency:
 jobs:
   deploy:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: production
     steps:
       # Source and functions come from the published tag, as in conf-app.
