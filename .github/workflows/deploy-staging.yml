@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   build:
+    timeout-minutes: 25
     name: Build and deploy staging
     runs-on: ubuntu-24.04
 
@@ -98,6 +99,7 @@ jobs:
   # Runs beside the build/deploy job, not before it: staging is a shared test
   # site, and production is only ever drafted after this job AND the staging gate pass.
   local-e2e:
+    timeout-minutes: 30
     name: Local E2E (shard ${{ matrix.shard }}/2)
     runs-on: ubuntu-24.04
     strategy:
@@ -124,6 +126,8 @@ jobs:
       # path) that the dev-server suite can't see, BEFORE anything ships to
       # staging. Runs on PRs too. See e2e/tests/production-build.spec.js.
       - name: Install Playwright (chromium)
+        # Allow slow browser/apt downloads; fail a stuck install before the job cap.
+        timeout-minutes: 20
         run: pnpm exec playwright install --with-deps chromium
       - name: Verify production build and application E2E
         env:
@@ -134,6 +138,7 @@ jobs:
   # A red gate blocks the draft release, so a production release can only ever be
   # created from a build already proven green on staging.
   staging-gate:
+    timeout-minutes: 30
     name: E2E gate (staging)
     needs: build
     if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
@@ -157,6 +162,8 @@ jobs:
       - name: Verify staging commit before E2E
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
       - name: Install Playwright browsers
+        # Allow slow browser/apt downloads; fail a stuck install before the job cap.
+        timeout-minutes: 20
         run: pnpm exec playwright install --with-deps chromium
       # Chromium is the configured release-gating browser for web-sequence.
       - name: Run full E2E suite against staging
@@ -167,6 +174,7 @@ jobs:
         run: node scripts/release/check-live.mjs https://staging.zenuml.com release-bundle/manifest.json
 
   validation:
+    timeout-minutes: 3
     # A deduplicated push may be cancelled by the PR run. It must not leave
     # a failed check with the same name as the required PR merge gate.
     name: ${{ github.event_name == 'pull_request' && 'Release validation' || 'Branch validation' }}
@@ -191,6 +199,7 @@ jobs:
   # remaining human action is clicking "Publish" on the draft, which fires
   # deploy-prod.yml (on: release: released/prereleased).
   draft-release:
+    timeout-minutes: 5
     name: Create draft release
     needs: [local-e2e, staging-gate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
