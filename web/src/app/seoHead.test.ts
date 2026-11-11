@@ -25,7 +25,7 @@ function description(h: string): string {
 describe('static HTML head', () => {
   it.each([
     ['web/index.html', resolve(webRoot, 'index.html'), 'https://app.zenuml.com/'],
-    // Legacy app entry; production still serves this build until the rewrite ships.
+    // Legacy app entry retained for rollback.
     ['src/index.html', resolve(repoRoot, 'src', 'index.html'), 'https://app.zenuml.com/'],
     ['help.html', resolve(repoRoot, 'help.html'), 'https://app.zenuml.com/help.html'],
   ])('%s has a canonical URL and a meta description', (_name, file, url) => {
@@ -44,4 +44,21 @@ describe('firebase hosting redirects', () => {
       type: 301,
     });
   });
+});
+
+describe('help page headings', () => {
+  it('has one page heading and preserves all language-reference section anchors', () => {
+    const page = document.createElement('div');
+    page.innerHTML = readFileSync(resolve(repoRoot, 'help.html'), 'utf8');
+    expect([...page.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['ZenUML language reference']);
+    const sections = ['introduction', 'a-few-examples', 'send-a-message', 'nested-message', 'send-a-self-message', 'alt', 'loop', 'new', 'async', 'errors'];
+    expect([...page.querySelectorAll('.content h2')].map((h) => h.id)).toEqual(sections);
+    for (const id of sections) expect(page.querySelector(`#toc a[href="#${id}"]`)).not.toBeNull();
+  });
+});
+
+it('serves the app heading before JavaScript renders', () => {
+  const page = document.createElement('div');
+  page.innerHTML = readFileSync(resolve(webRoot, 'index.html'), 'utf8');
+  expect([...page.querySelectorAll('#app h1')].map((h) => h.textContent)).toEqual(['ZenUML']);
 });

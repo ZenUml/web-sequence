@@ -54,6 +54,12 @@ beforeEach(() => {
   useLibraryStore.setState({ query: '', activeFolderId: null, sort: 'updated' });
 });
 
+it('has one page heading named ZenUML above the library sections', () => {
+  render(<HomeView {...makeProps()} />);
+  expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  expect(screen.getByRole('heading', { level: 1, name: 'ZenUML' })).toBeVisible();
+});
+
 describe('Start something new', () => {
   it('offers Blank, Black & White, Blue and Classic UML — not Basic, and no Hide action', () => {
     render(<HomeView {...makeProps()} />);

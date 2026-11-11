@@ -107,6 +107,7 @@
   flex-shrink: 0;
 }
 .dh-brand-name {
+  margin: 0;
   font-size: 18px;
   font-weight: 600;
   line-height: 22px;

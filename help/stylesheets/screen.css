@@ -514,7 +514,8 @@ body {
 .content > div {
   clear: both;
 }
-.content h1 {
+.content h1,
+.content h2.reference-section {
   font-size: 25px;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
@@ -529,7 +530,7 @@ body {
   border-top-width: 0;
   margin-top: 0;
 }
-.content h2 {
+.content h2:not(.reference-section) {
   font-size: 19px;
   margin-top: 4em;
   margin-bottom: 0;
@@ -542,8 +543,8 @@ body {
     rgba(255, 255, 255, 0)
   );
 }
-.content h1 + h2,
-.content h1 + div + h2 {
+.content h1 + h2:not(.reference-section),
+.content h1 + div + h2:not(.reference-section) {
   margin-top: -21px;
   border-top: none;
 }
