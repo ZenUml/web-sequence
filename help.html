@@ -8,6 +8,11 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <title>ZenUML language Reference</title>
+    <meta
+      name="description"
+      content="ZenUML language reference: syntax for participants, messages, return values, conditions, loops and comments in text-based sequence diagrams."
+    />
+    <link rel="canonical" href="https://app.zenuml.com/help.html" />
 
     <style>
       .highlight table td {
@@ -309,7 +314,8 @@
     <div class="page-wrapper">
       <div class="dark-box"></div>
       <div class="content">
-        <h1 id="introduction">Introduction</h1>
+        <h1 id="language-reference">ZenUML language reference</h1>
+        <h2 class="reference-section" id="introduction">Introduction</h2>
         <p>
           With ZenUML, you can create and edit sequence diagrams with ease.
           Since ZenUML auto-generates a sequence diagram from the text you
@@ -324,13 +330,13 @@
             >Web Sequence Chrome Extension</a
           >.
         </p>
-        <h1 id="a-few-examples">A few examples</h1>
+        <h2 class="reference-section" id="a-few-examples">A few examples</h2>
         <p><img src="help/images/Sample1.png" alt="Sample1" /></p>
 
         <p><img src="help/images/Sample2-Alt.png" alt="Sample2" /></p>
 
         <p><img src="help/images/Sample4-Async.png" alt="Sample4" /></p>
-        <h1 id="send-a-message">Send a message</h1>
+        <h2 class="reference-section" id="send-a-message">Send a message</h2>
         <blockquote>
           <p>To send a simple message, use this code:</p>
         </blockquote>
@@ -352,7 +358,7 @@
           <li><code>methodA</code> - the name of the message</li>
           <li><code>p1, p2</code> - the parameters of this method.</li>
         </ol>
-        <h1 id="nested-message">Nested message</h1>
+        <h2 class="reference-section" id="nested-message">Nested message</h2>
         <blockquote>
           <p><code>B.methodB(p3, p4)</code> is the nested message</p>
         </blockquote>
@@ -366,7 +372,7 @@
           A nested message can be considered as the implementation of its parent
           message (method). It must be wrapped within <code>{}</code>.
         </p>
-        <h1 id="send-a-self-message">Send a self message</h1>
+        <h2 class="reference-section" id="send-a-self-message">Send a self message</h2>
         <blockquote>
           <p>To send a message to the participant itself</p>
         </blockquote>
@@ -388,7 +394,7 @@
         <aside class="notice">
           An internal message must be wrapped within `{}` as *nested message*.
         </aside>
-        <h1 id="alt">Alt</h1>
+        <h2 class="reference-section" id="alt">Alt</h2>
         <pre
           class="highlight javascript tab-javascript"
         ><code><span class="k">if</span> <span class="p">(</span><span class="nx">condition1</span><span class="p">)</span> <span class="p">{</span>
@@ -403,7 +409,7 @@
           <code>condition</code> can be of a <code>word</code> or a simple
           expression such as <code>a &lt; b</code>.
         </p>
-        <h1 id="loop">Loop</h1>
+        <h2 class="reference-section" id="loop">Loop</h2>
         <pre
           class="highlight javascript tab-javascript"
         ><code><span class="k">while</span><span class="p">(</span><span class="nx">condition</span><span class="p">)</span> <span class="p">{</span>
@@ -416,7 +422,7 @@
           be of a <code>word</code> or a simple expression such as
           <code>a &lt; b</code>.
         </p>
-        <h1 id="new">New</h1>
+        <h2 class="reference-section" id="new">New</h2>
         <pre
           class="highlight javascript tab-javascript"
         ><code><span class="nx">instance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AClass</span><span class="p">()</span>
@@ -425,11 +431,11 @@
           Use <code>new</code> keyword for object creation.
           <code>instance =</code> is optional.
         </p>
-        <h1 id="async">Async</h1>
+        <h2 class="reference-section" id="async">Async</h2>
         <pre class="highlight plaintext"><code>Alice-&gt;Bob: How are you?
 </code></pre>
         <p>Asyc message does not have a message bar on the lifeline.</p>
-        <h1 id="errors">Errors</h1>
+        <h2 class="reference-section" id="errors">Errors</h2>
         <aside class="notice">
           If you see any errors, try to cut a small piece of code and test it.
         </aside>

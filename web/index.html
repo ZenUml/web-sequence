@@ -13,6 +13,14 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#2e94d4" />
     <title>ZenUML — Sequence Diagrams</title>
+    <meta
+      name="description"
+      content="Free online sequence diagram tool. Write ZenUML text and get a UML sequence diagram instantly, then export it as PNG or SVG or share a link."
+    />
+    <!-- Share links (/?code=..., /?id=...) render this same page. Point them all at
+         the root so search engines index one URL instead of every shared diagram;
+         staging.zenuml.com also consolidates to production through this tag. -->
+    <link rel="canonical" href="https://app.zenuml.com/" />
     <!-- Design system "Drafting Table": Hanken Grotesk (UI), IBM Plex Mono
          (code-adjacent metadata), Instrument Serif (editorial accents). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,7 +31,9 @@
     />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <h1>ZenUML</h1>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

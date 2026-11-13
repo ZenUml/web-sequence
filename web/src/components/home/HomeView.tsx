@@ -231,7 +231,7 @@ export function HomeView({
           <span className="dh-brand-mark" aria-hidden="true">
             <BrandLogo className="dh-brand-logo" />
           </span>
-          <span className="dh-brand-name">ZenUML</span>
+          <h1 className="dh-brand-name">ZenUML</h1>
         </div>
         <div className="dh-topbar-actions">
           {narrow && <button type="button" className="dh-button dh-button--secondary dh-folders-trigger" aria-haspopup="dialog" aria-expanded={foldersOpen} onClick={() => setFoldersOpen(true)}><FolderOutlineIcon />Folders</button>}

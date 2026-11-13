@@ -39,3 +39,6 @@ functions/package-lock.json
 
 # Local review evidence (screenshots, export matrices). Attach to the PR or issue instead (#876).
 /artifacts/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

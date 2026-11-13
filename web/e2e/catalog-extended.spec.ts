@@ -21,6 +21,7 @@ import {
   baseColor,
   errorMarkerCount,
   errorMessages,
+  gutterErrorCount,
 } from './helpers/editor';
 
 test.beforeEach(async ({ page }) => {
@@ -1073,8 +1074,11 @@ test.describe("U. Negative / edge / comments / no-false-positives", () => {
       await page.keyboard.type('@@@ <<>> ::');
       await page.keyboard.press('Enter');
       await page.keyboard.type('}}} ))) ...');
-      await expect.poll(() => errorMarkerCount(page)).toBe(2); // 1 inline range + 1 gutter marker
-      expect(await errorMessages(page)).toEqual([expect.stringContaining('Expecting end of file but found `!`.')]);
+      // Since @zenuml/core 4.13.1 the language server keeps parsing after a stray
+      // top-level token and reports each one; the first still names the leading `!`.
+      await expect.poll(() => errorMarkerCount(page)).toBeGreaterThan(0);
+      const messages = await errorMessages(page);
+      expect(messages[0]).toContain('Expecting end of file but found `!`.');
       await expect.poll(() => getEditorText(page)).toContain('!!!');
     });
 
@@ -1252,8 +1256,14 @@ test.describe('W. i18n / quotes / special chars / long DSL', () => {
     // edae7b6e the @zenuml/core language server flags the same rejection at the same
     // position as one lint diagnostic (this test predates it and said "no linter is
     // wired"). The editor stays responsive: a follow-up line still parses and completes.
-    await expect.poll(() => errorMarkerCount(page)).toBe(2); // 1 inline range + 1 gutter marker
-    expect(await errorMessages(page)).toEqual([expect.stringContaining('Expecting end of file but found `\ud83d`.')]);
+    // Since @zenuml/core 4.13.1 each half of the emoji's surrogate pair is its own
+    // stray token, so the line carries one gutter marker over two inline ranges.
+    await expect.poll(() => gutterErrorCount(page)).toBe(1);
+    // Hover only the first range: the second covers the low surrogate alone and
+    // shows no tooltip of its own.
+    await page.getByTestId('dsl-editor').locator('.cm-lintRange-error').first().hover();
+    await expect(page.locator('.cm-tooltip-lint').first()).toContainText('Expecting end of file but found `\ud83d`.');
+    await page.mouse.move(0, 0);
     await page.keyboard.press('Enter');
     await page.keyboard.type('@Actor Bob');
     await page.keyboard.press('Enter');

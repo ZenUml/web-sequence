@@ -284,7 +284,8 @@ body {
   text-decoration: none;
   color: #000;
 }
-.content h1 {
+.content h1,
+.content h2.reference-section {
   font-size: 2.5em;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
@@ -294,14 +295,14 @@ body {
   border-width: 2px 0;
   text-align: center;
 }
-.content h2 {
+.content h2:not(.reference-section) {
   font-size: 1.8em;
   margin-top: 2em;
   border-top: 2px solid #ccc;
   padding-top: 0.8em;
 }
-.content h1 + h2,
-.content h1 + div + h2 {
+.content h1 + h2:not(.reference-section),
+.content h1 + div + h2:not(.reference-section) {
   border-top: none;
   padding-top: 0;
   margin-top: 0;

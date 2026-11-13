@@ -133,6 +133,11 @@ export async function errorMarkerCount(page: Page): Promise<number> {
   return inline + gutter;
 }
 
+/** Gutter error markers: one per line that carries at least one error. */
+export async function gutterErrorCount(page: Page): Promise<number> {
+  return editorRoot(page).locator('.cm-lint-marker-error').count();
+}
+
 /**
  * Texts of the lint tooltips for each inline error range, read by hovering it.
  * Used to pin WHICH diagnostic is shown, not just that one exists.

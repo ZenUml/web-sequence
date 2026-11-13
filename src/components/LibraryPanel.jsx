@@ -452,7 +452,13 @@ export default class LibraryPanel extends Component {
               this.renderTree()
             )}
             
-            {!this.items.length ? (
+            {!this.items.length && this.props.isLoading ? (
+              <div data-testid="library-loading" class="text-white/50 text-center py-8">
+                <span class="material-symbols-outlined text-3xl mb-2 block">hourglass_empty</span>
+                <p class="text-sm">Loading your diagrams…</p>
+              </div>
+            ) : null}
+            {!this.items.length && !this.props.isLoading ? (
               <div class="text-white/50 text-center py-8">
                 <span class="material-symbols-outlined text-3xl mb-2 block">folder_off</span>
                 <p class="text-sm">Nothing saved yet.</p>

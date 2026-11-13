@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
 import { render, screen, act, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -262,6 +264,20 @@ describe('AppRoot', () => {
     window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);
     expect(await screen.findByTestId('home-view')).toBeInTheDocument();
+  });
+
+  it.each(['/', '/?view=diagrams'])('replaces the static heading when %s boots', async (url) => {
+    window.history.replaceState({}, '', url);
+    const page = document.createElement('div');
+    page.innerHTML = readFileSync(resolve(__dirname, '../../index.html'), 'utf8');
+    const container = page.querySelector<HTMLDivElement>('#app')!;
+    const fallback = container.querySelector('h1')!;
+    expect(fallback.textContent).toBe('ZenUML');
+    document.body.append(container);
+    render(<AppRoot />, { container });
+    await screen.findByTestId(url === '/' ? 'editor-region' : 'home-view');
+    expect(container).not.toContainElement(fallback);
+    if (url !== '/') expect(within(container).getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   it('seeds the DSL editor and mounts the preview iframe', async () => {

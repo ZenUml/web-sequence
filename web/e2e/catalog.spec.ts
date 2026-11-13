@@ -19,6 +19,7 @@ import {
   baseColor,
   errorMarkerCount,
   errorMessages,
+  gutterErrorCount,
 } from './helpers/editor';
 
 test.beforeEach(async ({ page }) => {
@@ -477,8 +478,12 @@ test.describe('J. negative / edge', () => {
   test('J2 — garbage does not crash; shows exactly the parser error', async ({ page }) => {
     await clearEditor(page);
     await page.keyboard.type('!!!@@@###');
-    await expect.poll(() => errorMarkerCount(page)).toBe(2); // 1 inline range + 1 gutter marker
-    expect(await errorMessages(page)).toEqual([expect.stringContaining('Expecting end of file but found `!`.')]);
+    // Since @zenuml/core 4.13.1 the language server keeps parsing after a stray
+    // top-level token, so it reports one diagnostic per stray token, all on this line.
+    await expect.poll(() => gutterErrorCount(page)).toBe(1);
+    const messages = await errorMessages(page);
+    expect(messages[0]).toContain('Expecting end of file but found `!`.');
+    for (const m of messages) expect(m).toContain('Expecting end of file but found');
     await expect.poll(() => getEditorText(page)).toContain('!!!');
   });
 
