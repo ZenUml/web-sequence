@@ -1,1 +1,9 @@
 minimumReleaseAge: 0
+
+# Keep protobufjs overrides in sync with package.json for pnpm 10.
+# pnpm 11 reads its overrides from this file.
+# Keep the existing graceful-fs resolution used by the legacy build.
+overrides:
+  graceful-fs: ^4.2.4
+  'protobufjs@>=6.0.0 <6.11.6': 6.11.6
+  'protobufjs@>=7.0.0 <7.6.6': 7.6.6
