@@ -76,10 +76,10 @@ test('built dist serves the legacy /help.html page and its assets', async ({
     resp?.status(),
     'GET /help.html must return 200 from the built dist',
   ).toBe(200);
-  // The slate page's all.js rewrites document.title to "<section> – ZenUML
-  // language Reference" on load, so match the stable suffix rather than the exact
-  // string.
-  await expect(page).toHaveTitle(/ZenUML language Reference$/);
+  // The slate page prefixes the active section to document.title on load.
+  await expect(page).toHaveTitle(
+    /ZenUML Language Reference - Sequence Diagram Syntax$/,
+  );
 });
 
 // The legal pages (privacy policy + EULA) are linked from external store/
