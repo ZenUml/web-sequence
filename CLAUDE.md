@@ -88,6 +88,25 @@ PW_PROD_BUILD=1 yarn test:e2e
 
 Unit test files follow the pattern `*.test.js` and are located either in `/src/tests/` or alongside the components they test. E2E tests live in `/e2e/tests/`.
 
+### Test locally, cheapest layer first
+
+Validate the same candidate in this order, and start the next layer only after the one before it passes:
+
+| Layer | Cost | Typical check |
+|---|---|---|
+| 1. Unit / component | seconds | `yarn test`, Storybook story |
+| 2. Local app | minutes | `yarn dev` or a local production build, driven by Playwright (`yarn test:e2e`, `PW_PROD_BUILD=1`), with screenshots |
+| 3. CI-deployed staging | one deploy, shared site | staging E2E on the branch's CI deployment |
+| 4. Production release or store build (e.g. a TestFlight upload) | slowest, partly irreversible | only for what layers 1-3 cannot show |
+
+- Do not upload, deploy or release to find out something a lower layer can show. A build, deploy or store upload that only reveals a visual or behavior bug you could have seen locally is wasted cost.
+- Packaged artifacts (installer, signed app, extension zip): inspect the built artifact itself before delivery. Check its icons, version and a real launch with an isolated data directory and port, never the user's live data.
+- At each layer record the tested commit or build and where the visible UI is served from. Keep real UI evidence (screenshots or snapshots). A blocked or skipped UI assertion is not a pass, and unit tests do not replace UI evidence.
+- If a layer fails, fix the issue and repeat the affected layer; final acceptance uses the final candidate.
+- Pure documentation changes and changes with no UI impact skip the UI layers; say so and give the reason.
+
+This follows the Conf App ordering (Storybook, then Forge Tunnel, then CI-deployed staging) in `zenuml/conf-app/CLAUDE.md`, section "Confluence UI changes require ordered visual validation".
+
 ## Important Development Notes
 
 1. **Package managers**: Use **Yarn** for most tasks (install, dev, test, build, lint). Use **pnpm** when running Playwright E2E — `playwright.config.js` boots the dev server via `pnpm dev`. Do not use npm.
