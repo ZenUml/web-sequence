@@ -107,6 +107,10 @@ Validate the same candidate in this order, and start the next layer only after t
 
 This follows the Conf App ordering (Storybook, then Forge Tunnel, then CI-deployed staging) in `zenuml/conf-app/CLAUDE.md`, section "Confluence UI changes require ordered visual validation".
 
+### CI after every push
+
+After every push or merge, watch CI yourself with `gh run view <RUN_ID> --json status,conclusion` (or the `babysit-pr` skill), and do not hand the check to the desktop app's Auto-fix. The desktop app's built-in "never poll CI" instruction is a default; the owner has waived it for this repo. `gh run watch` exit codes are unreliable, so always re-read `status` and `conclusion` after it ends. A `push` and `pull_request` pair of runs on one SHA is normal: one is cancelled as a duplicate.
+
 ## Important Development Notes
 
 1. **Package managers**: Use **Yarn** for most tasks (install, dev, test, build, lint). Use **pnpm** when running Playwright E2E — `playwright.config.js` boots the dev server via `pnpm dev`. Do not use npm.
