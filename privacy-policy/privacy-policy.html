@@ -148,7 +148,7 @@
   <h1>ZenUML Privacy Policy</h1>
 
   <div class="policy-meta">
-    <strong>Effective date:</strong> February 23, 2019 &nbsp; <strong>Last updated:</strong> July 23, 2026
+    <strong>Effective date:</strong> February 23, 2019 &nbsp; <strong>Last updated:</strong> November 20, 2026
   </div>
 
   <div class="intro">
@@ -174,7 +174,7 @@
         <td>Via Confluence</td>
         <td>No</td>
         <td>Atlassian Confluence is the system of record; a verbatim copy of each saved diagram is also mirrored to our backend (Cloudflare).</td>
-        <td>Pseudonymous usage metadata via Mixpanel (no diagram content). Optional opt-in AI features and Live Agent Link. Session replay for a percentage of sessions.</td>
+        <td>Pseudonymous usage metadata via Mixpanel (no diagram content). Optional opt-in AI features and Live Agent Link. Session replay for a percentage of sessions. Masked session replay of the diagram editor via Microsoft Clarity, not collected in the EEA, UK or Switzerland.</td>
       </tr>
       <tr>
         <td><strong>IntelliJ IDEA &amp; VS Code Plugins</strong></td>
@@ -250,7 +250,7 @@
   </div>
 
   <div class="section">
-    <h2>6. Analytics (Mixpanel)</h2>
+    <h2>6. Analytics (Mixpanel and Microsoft Clarity)</h2>
     <p>We use <strong>Mixpanel</strong> to understand how the Confluence app is used. The events we send contain <strong>metadata only</strong> — for example an opaque Atlassian account identifier, your Confluence site domain, space key, macro identifiers, opaque page/content identifiers, product type, timings, and counts. We do <strong>not</strong> send diagram source content to Mixpanel; where the size of your input matters we send only length values (such as prompt length or the size of a text change).</p>
     <p>These identifiers are <strong>pseudonymous, not anonymous</strong>: an opaque account identifier combined with a site domain can relate to an individual or an organization. We therefore describe this data as pseudonymous rather than claiming it contains no personal data.</p>
     <p>Two features send limited <strong>free text</strong>:</p>
@@ -259,6 +259,21 @@
       <li><strong>Feedback</strong>: if you submit feedback, your free-text feedback is recorded.</li>
     </ul>
     <p><strong>Session replay</strong>: For a configurable percentage of sessions, Mixpanel records a replay of the session (a reconstruction of on-screen interactions). This is controlled by a server-side setting and uses Mixpanel's default masking behaviour. Session replay is separate from the event analytics described above.</p>
+    <h3>Microsoft Clarity session replay</h3>
+    <p>In the Confluence app's diagram editor and fullscreen view, we use <strong>Microsoft Clarity</strong> to record how the page is used, so we can find usability problems. Clarity records clicks, scrolls, mouse movement and page layout, plus browser and device type and a random Clarity visitor ID.</p>
+    <ul>
+      <li><strong>All text and images are masked</strong> in the browser before anything is sent. Diagram source, diagram titles, rendered diagram labels and page content are not collected.</li>
+      <li>We send <strong>no Atlassian account ID, email or site name</strong> to Clarity, and Clarity sets <strong>no cookies</strong> in our app.</li>
+      <li>Clarity is <strong>not used for visitors in the European Economic Area, the United Kingdom or Switzerland</strong>. We check the visitor's country before recording starts; if the check fails, nothing is recorded.</li>
+      <li>Recordings are sent through our own server (stats.zenuml.com) to Microsoft.</li>
+      <li>Recording does not run in the inline diagram viewer on Confluence pages.</li>
+    </ul>
+    <p><strong>Microsoft acts as an independent controller</strong> of the data Clarity collects. Microsoft may use it for its own purposes, including to improve its products and for advertising, under the <a href="https://privacy.microsoft.com/en-us/privacystatement" target="_blank" rel="noopener">Microsoft Privacy Statement</a>. For details on how Clarity works, see <a href="https://clarity.microsoft.com" target="_blank" rel="noopener">Microsoft Clarity</a>.</p>
+    <p><strong>How to opt out</strong></p>
+    <ul>
+      <li>Turn on <strong>Global Privacy Control</strong> in your browser. When it is on, Clarity does not record.</li>
+      <li>Or email <a href="mailto:support@zenuml.com">support@zenuml.com</a> with your Confluence site or account, and we will exclude it from Clarity recording.</li>
+    </ul>
   </div>
 
   <div class="section">
@@ -370,6 +385,7 @@
       </tbody>
     </table>
     </div>
+    <p>Microsoft Clarity is not listed above because Microsoft acts as an independent controller, not as our sub-processor. See Section 6.</p>
     <p>We may also use Google Analytics for anonymous web-traffic analysis on our marketing website only (not inside the Confluence app). You can opt out of Google Analytics tracking by installing the Google Analytics opt-out browser add-on.</p>
   </div>
 
