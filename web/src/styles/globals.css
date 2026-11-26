@@ -266,6 +266,13 @@ body {
   outline-offset: 2px;
 }
 
+/* The code editor's editable area shows focus with its caret and current-line
+   band. The ring above drew a tall blue line between the fold column and the
+   code once the gutter became transparent (F55, release-20261126111315). */
+.editor-hifi-shell .cm-content:focus-visible {
+  outline: none;
+}
+
 .editor-hifi-shell * {
   scrollbar-color: var(--editor-divider) transparent;
 }
