@@ -141,3 +141,19 @@ test('lint tooltip is readable in dark appearance (dark surface, light text)', a
   // --editor-surface / --code-fg in dark appearance (globals.css).
   expect(colors).toEqual({ bg: 'rgb(52, 63, 75)', fg: 'rgb(237, 240, 245)' });
 });
+
+// The shell's generic :focus-visible ring (2px outline, 2px offset) also matched the
+// editable .cm-content. It sat hidden under the opaque line-number band; once the
+// gutter shares the editor background (F55) it showed as a tall blue line between
+// the fold column and the code after any key press. The caret and the current-line
+// band already show focus, so the code area must not draw that ring.
+test('gutter: keyboard focus draws no outline line beside the code', async ({ page }) => {
+  await setDoc(page, 'A->B: one\nB->C: two');
+  await page.keyboard.press('ArrowDown');
+  const outline = await editorRoot(page).locator('.cm-content').evaluate((el) => ({
+    focusVisible: el.matches(':focus-visible'),
+    style: getComputedStyle(el).outlineStyle,
+  }));
+  expect(outline.focusVisible).toBe(true);
+  expect(outline.style).toBe('none');
+});
