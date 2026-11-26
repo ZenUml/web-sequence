@@ -10,6 +10,7 @@ import { Console, type ConsoleEntry } from '../preview/Console';
 import { filterStarterNoise } from '../preview/consoleFilter';
 import { useEditorStore } from '../state/editorStore';
 import { useAuthStore } from '../state/authStore';
+import { updateClarityUser } from '../services/clarityIdentity';
 import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore } from '../state/uiStore';
 import type { Item, CssMode } from '../domain/types';
@@ -118,6 +119,10 @@ export function AppRoot() {
 
   const user = useAuthStore((s) => s.user);
   const authReady = useAuthStore((s) => s.authReady);
+  const clarityUid = user?.uid ?? null;
+  useEffect(() => {
+    if (authReady) updateClarityUser(clarityUid);
+  }, [authReady, clarityUid]);
 
   const preserveLastCode = useSettingsStore((s) => s.settings.preserveLastCode);
   const autoSave = useSettingsStore((s) => s.settings.autoSave);
