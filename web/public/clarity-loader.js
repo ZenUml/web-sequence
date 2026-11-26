@@ -15,6 +15,7 @@ if (
   window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'denied' });
 
   const script = document.createElement('script');
+  script.id = 'fireweb-clarity';
   script.async = true;
   script.src = 'https://www.clarity.ms/tag/ml3oonlmsx';
   document.head.append(script);
