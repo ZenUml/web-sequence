@@ -187,7 +187,6 @@ export default class App extends Component {
   }
 
   componentWillMount() {
-    var lastCode;
     window.onunload = () => {
       this.saveCode('code');
       if (this.detachedWindow) {
@@ -195,29 +194,30 @@ export default class App extends Component {
       }
     };
 
-    db.local.get(
-      {
-        layoutMode: 1,
-        code: '',
-      },
-      (result) => {
-        // Layout mode is now fixed to 1 (horizontal with preview on right)
-        this.state.prefs.layoutMode = 1;
-        let urlCode;
-        try {
-          urlCode = JSON.parse(
-            decodeURIComponent(this.searchParams.get('code')),
-          );
-        } catch (err) {
-          console.error(err);
-        }
-        if (urlCode || result.code) {
-          lastCode = urlCode || result.code;
-        }
-      },
-    );
-    // Get synced `preserveLastCode` setting to get back last code (or not).
-    db.getSettings(this.defaultSettings).then(async (result) => {
+    // Read local code and settings in parallel to eliminate the timing race
+    // that existed when both operations used separate 1ms faux-timers
+    // (critical in Chrome extension where chrome.storage.local/sync are real
+    // async APIs with no guaranteed ordering).
+    Promise.all([
+      new Promise((resolve) => db.local.get({ layoutMode: 1, code: '' }, resolve)),
+      db.getSettings(this.defaultSettings),
+    ]).then(async ([localResult, result]) => {
+      // Layout mode is now fixed to 1 (horizontal with preview on right)
+      this.state.prefs.layoutMode = 1;
+
+      let urlCode;
+      try {
+        urlCode = JSON.parse(
+          decodeURIComponent(this.searchParams.get('code')),
+        );
+      } catch (err) {
+        console.error(err);
+      }
+      // Track source so we only show the restoration banner for local drafts,
+      // not for URL-imported diagrams.
+      const isLocalDraft = !urlCode && !!(localResult.code && localResult.code.js);
+      const lastCode = urlCode || localResult.code || null;
+
       const getQueryParameter = (key) => {
         let search = window.location.search;
         if (search.length < 1) return;
@@ -291,14 +291,31 @@ export default class App extends Component {
           db.local.get(lastCode.id, (itemResult) => {
             if (itemResult[lastCode.id]) {
               log('Load item ', lastCode.id);
-              this.setCurrentItem(itemResult[lastCode.id]).then(() =>
-                this.refreshEditor(),
-              );
+              this.setCurrentItem(itemResult[lastCode.id]).then(() => {
+                this.refreshEditor();
+                if (isLocalDraft) alertsService.add('Previous work restored');
+              });
+            } else {
+              // Per-item key is stale but the draft payload is in lastCode itself
+              // (saveCode stores the full item under 'code'). Strip the stale id,
+              // persist the cleaned payload back to 'code' so subsequent reloads
+              // don't re-enter this branch, then restore.
+              log('Stale draft id, restoring from code payload', lastCode.id);
+              const draftPayload = { ...lastCode };
+              delete draftPayload.id;
+              db.local.set({ code: draftPayload }, () => {});
+              this.setCurrentItem(draftPayload).then(() => {
+                this.refreshEditor();
+                if (isLocalDraft) alertsService.add('Previous work restored');
+              });
             }
           });
         } else {
           log('Load last unsaved item', lastCode);
-          this.setCurrentItem(lastCode).then(() => this.refreshEditor());
+          this.setCurrentItem(lastCode).then(() => {
+            this.refreshEditor();
+            if (isLocalDraft) alertsService.add('Previous work restored');
+          });
         }
       } else {
         this.createNewItem();
