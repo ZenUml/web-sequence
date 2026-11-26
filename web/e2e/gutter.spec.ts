@@ -44,11 +44,11 @@ async function measure(page: Page, lastLine: string) {
 
 const lines = (n: number) => Array.from({ length: n }, (_, i) => `A->B: m${i}`).join('\n');
 
-test('gutter: 1-digit doc starts code within 50px of the editor edge, numbers readable', async ({ page }) => {
+test('gutter: 1-digit doc starts code within 62px of the editor edge, numbers readable', async ({ page }) => {
   await setDoc(page, 'Alice->Bob: Hello\nBob->Alice: Hi back');
   const m = await measure(page, '2');
   // Bounds include the 16px lint column (a 16x16 marker hover target).
-  expect(m.codeOffset).toBeLessThanOrEqual(50);
+  expect(m.codeOffset).toBeLessThanOrEqual(62); // F55: +12px fold column
   expect(m.numberFontPx).toBeGreaterThanOrEqual(12);
   expect(m.numberInside).toBe(true);
   expect(m.numberUnclipped).toBe(true);
@@ -59,7 +59,7 @@ test('gutter: 2- and 3-digit line numbers stay fully visible and compact', async
   const two = await measure(page, '12');
   expect(two.numberInside).toBe(true);
   expect(two.numberUnclipped).toBe(true);
-  expect(two.codeOffset).toBeLessThanOrEqual(58);
+  expect(two.codeOffset).toBeLessThanOrEqual(70);
 
   await setDoc(page, lines(120));
   // Line 120 is off-screen until scrolled; the gutter width is set by the widest
@@ -68,14 +68,15 @@ test('gutter: 2- and 3-digit line numbers stay fully visible and compact', async
   const three = await measure(page, '120');
   expect(three.numberInside).toBe(true);
   expect(three.numberUnclipped).toBe(true);
-  expect(three.codeOffset).toBeLessThanOrEqual(66);
+  expect(three.codeOffset).toBeLessThanOrEqual(78);
 });
 
 test('gutter: fold toggle keeps a >=12px target and still folds a block', async ({ page }) => {
   await setDoc(page, 'A.b() {\n  C.d()\n  E.f()\n}');
   const root = editorRoot(page);
-  // The fold gutter takes no width (it overlays the number lane's right edge), so
-  // the hit target is the "Fold line" toggle element itself: measure that.
+  // The fold column is 16px wide (Figma F55); the chevron hides until the pointer
+  // is over the editor, so hover the editor first, then measure the toggle itself.
+  await root.locator('.cm-content').hover();
   const marker = root.locator('.cm-foldGutter span[title="Fold line"]').first();
   await expect(marker).toBeVisible();
   const box = (await marker.boundingBox())!;
