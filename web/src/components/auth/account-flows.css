@@ -11,12 +11,12 @@
   --af-surface: var(--editor-surface, #ffffff);
   --af-text: var(--editor-text, #1c2024);
   --af-text-secondary: var(--editor-text-secondary, #60646c);
-  --af-border: var(--editor-border, #e3e8ed);
+  --af-border: var(--editor-border, #e6e8eb);
   --af-secondary-bg: var(--editor-secondary-bg, #ffffff);
   --af-secondary-text: var(--editor-secondary-text, #1c2024);
-  --af-secondary-border: var(--editor-secondary-border, #d5dce5);
-  --af-secondary-hover: var(--editor-secondary-hover, #eaf2f8);
-  --af-secondary-press: var(--editor-secondary-press, #dce8f1);
+  --af-secondary-border: var(--editor-secondary-border, #d9dce1);
+  --af-secondary-hover: var(--editor-secondary-hover, #f0f1f4);
+  --af-secondary-press: var(--editor-secondary-press, #e6e8ec);
   --af-primary: var(--editor-primary, #217bb3);
   --af-primary-hover: var(--editor-primary-hover, #1c6d9f);
   --af-primary-press: var(--editor-primary-press, #175d89);

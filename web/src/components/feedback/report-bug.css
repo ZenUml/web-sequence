@@ -1,6 +1,6 @@
 /* Report a bug owns its portaled shell; shared controls retain explicit surfaces. */
 .rb-dialog {
-  --rb-pocket: #f7fafd;
+  --rb-pocket: #fafafb;
   box-sizing: border-box;
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
