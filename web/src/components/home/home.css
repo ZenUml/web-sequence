@@ -9,26 +9,26 @@
 .diagrams-home,
 .dh-dialog,
 .dh-menu {
-  --dh-card: #f7fafd;
-  --dh-card-border: #e3e8ed;
-  --dh-template-border: #d9e3ec;
-  --dh-pocket-line: #e6edf3;
-  --dh-pocket-lip: rgba(28, 54, 80, 0.09);
+  --dh-card: #fafafb;
+  --dh-card-border: #e6e8eb;
+  --dh-template-border: #dfe1e5;
+  --dh-pocket-line: #e9ebee;
+  --dh-pocket-lip: rgba(17, 24, 39, 0.07);
   --dh-selected: #e5f1fa;
   --dh-selected-text: #176593;
-  --dh-sort-track: #f5f8fb;
+  --dh-sort-track: #f3f4f6;
   --dh-sort-selected: #dfeffa;
   --dh-sort-selected-text: #216b9d;
-  --dh-sort-text: #657585;
+  --dh-sort-text: #6b6f76;
   --dh-search-bg: #ffffff;
   --dh-search-border: #d9dde3;
-  --dh-tool-label: #687d8d;
-  --dh-tool-icon: #607386;
+  --dh-tool-label: #6b6f76;
+  --dh-tool-icon: #60646c;
   --dh-icon: #60646c;
   --dh-danger: #b63c32;
   --dh-danger-hover: #a0342b;
-  --dh-placeholder-icon: #9cb6cb;
-  --dh-placeholder-text: #687d8d;
+  --dh-placeholder-icon: #a0a4ab;
+  --dh-placeholder-text: #6b6f76;
   --dh-drop: #e5f1fa;
   --dh-drop-border: #2b84c0;
   --dh-error-text: #b63c32;
@@ -362,12 +362,12 @@
   flex-direction: column;
   gap: 4px;
   padding: 12px 16px;
-  border: 1px solid #d9e3ec;
+  border: 1px solid #dfe1e5;
   border-radius: 8px;
-  background: #f7fafd;
+  background: #fafafb;
   color: #1f2a37;
   font: 600 13px/16px 'Inter', ui-sans-serif, system-ui, sans-serif;
-  box-shadow: 0 8px 20px rgba(28, 54, 80, 0.16);
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.14);
 }
 .dh-drag-ghost span {
   font-weight: 400;
@@ -1005,8 +1005,8 @@
 }
 /* The preview stays light in dark mode, so keep the light placeholder colours. */
 :root[data-appearance='dark'] .dh-thumb--empty {
-  --dh-placeholder-icon: #9cb6cb;
-  --dh-placeholder-text: #687d8d;
+  --dh-placeholder-icon: #a0a4ab;
+  --dh-placeholder-text: #6b6f76;
 }
 
 /* ---- Empty library and no-results (existing behaviour, page typography) --- */
