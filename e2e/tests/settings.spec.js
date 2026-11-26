@@ -106,15 +106,15 @@ test('SET-1: changing the editor theme applies live to CodeMirror', async ({
   const before = await editor.evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
-  // Default ink theme: the light editor surface (--code-bg = --editor-bg #EFF6FB).
-  expect(before).toBe('rgb(239, 246, 251)');
+  // Default ink theme: the light editor surface (--code-bg #FFFFFF).
+  expect(before).toBe('rgb(255, 255, 255)');
 
   await openSettings(page);
-  await chooseSetting(page, 'setting-editorTheme', 'GitHub Light');
+  await chooseSetting(page, 'setting-editorTheme', 'Solarized Light');
   await page.keyboard.press('Escape'); // close modal; theme already applied live
   await expect(page.locator('[data-testid="settings-modal"]')).toBeHidden();
 
-  // The light theme repaints the editor surface white — a LIVE compartment swap,
+  // Solarized Light repaints the editor surface cream — a LIVE compartment swap,
   // no reload. Poll until the computed background actually changes.
   await expect
     .poll(async () =>
@@ -124,8 +124,8 @@ test('SET-1: changing the editor theme applies live to CodeMirror', async ({
   const after = await editor.evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
-  // GitHub Light paints a white editor surface.
-  expect(after).toBe('rgb(255, 255, 255)');
+  // Solarized Light paints a #FDF6E3 editor surface.
+  expect(after).toBe('rgb(253, 246, 227)');
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

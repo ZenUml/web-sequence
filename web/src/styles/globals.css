@@ -167,12 +167,12 @@ body {
   --editor-primary-press: #175d89;
   --editor-on-primary: #ffffff;
 
-  --editor-bg: #eff6fb;
+  --editor-bg: #f7f8fa;
   --editor-surface: #ffffff;
   --editor-toolbar: #f8f9fa;
   --editor-canvas: #ffffff;
-  --editor-border: #e3e8ed;
-  --editor-divider: #d9dde3;
+  --editor-border: #e6e8eb;
+  --editor-divider: #dfe1e5;
   --editor-text: #1c2024;
   --editor-text-secondary: #60646c;
   --editor-text-faint: #8b8d98;
@@ -182,18 +182,18 @@ body {
   --editor-danger: #b42318;
   --editor-danger-soft: rgba(180, 35, 24, 0.1);
   --editor-focus: #176593;
-  --editor-shadow: 0 6px 24px -4px rgba(28, 54, 80, 0.12), 0 0 0 1px rgba(28, 54, 80, 0.04);
+  --editor-shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 0 0 1px #e6e8eb;
 
   --editor-secondary-bg: #ffffff;
   --editor-secondary-text: #1c2024;
-  --editor-secondary-border: #d5dce5;
-  --editor-secondary-hover: #eaf2f8;
-  --editor-secondary-press: #dce8f1;
-  --editor-disabled-bg: #e8edf2;
+  --editor-secondary-border: #d9dce1;
+  --editor-secondary-hover: #f0f1f4;
+  --editor-secondary-press: #e6e8ec;
+  --editor-disabled-bg: #eceef1;
   --editor-disabled-text: #7a8794;
 
   /* `ink` code theme palette (light). */
-  --code-bg: var(--editor-bg);
+  --code-bg: #ffffff;
   --code-fg: #1c2024;
   --code-muted: #60646c;
   --code-keyword: #176593;
@@ -204,9 +204,9 @@ body {
   --code-caret: #2e94d4;
   --code-selection: rgba(46, 148, 212, 0.22);
   --code-selection-match: rgba(46, 148, 212, 0.12);
-  --code-line-highlight: #e6edf5;
+  --code-line-highlight: #f5f8fe;
   /* Line-number lane (Figma 32:4370 gutter fill). */
-  --code-gutter-bg: #e5f1fa;
+  --code-gutter-bg: #ffffff;
 }
 
 :root[data-appearance='dark'] {
@@ -235,6 +235,7 @@ body {
   --editor-disabled-bg: #39424d;
   --editor-disabled-text: #8794a3;
 
+  --code-bg: var(--editor-bg);
   --code-fg: #edf0f5;
   --code-muted: #a8b0bd;
   --code-keyword: #9acdfa;
@@ -572,6 +573,16 @@ body {
    apply). The default `ink` theme reads --code-* and so matches this surface. */
 .editor-hifi-shell .editor-source-stack .cm-editor {
   height: 100%;
+}
+
+/* Light: the code sits on a white card inside the gray frame, like the preview
+   panel. An inset outline, not a border, so the code keeps its exact position;
+   it also replaces CodeMirror's dotted focus outline. No overflow clipping:
+   a clipped corner would also cut the line-1 lint marker's hover target. */
+:root:not([data-appearance='dark']) .editor-hifi-shell .editor-source-stack .cm-editor {
+  border-radius: 10px;
+  outline: 1px solid var(--editor-border) !important;
+  outline-offset: -1px;
 }
 
 .editor-hifi-shell .editor-css-panel-strip,
