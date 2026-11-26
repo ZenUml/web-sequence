@@ -10,6 +10,7 @@ import { vim } from '@replit/codemirror-vim';
 import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DEFAULT_THEME, resolveTheme } from './themes';
 import { languageExtension, type EditorLanguage } from './modes';
+import { gutterStyleExtension, type GutterStyle } from './gutterStyle';
 import { editorKeymap, formatCss } from './keymap';
 import { resolveZone, zenumlCompletions, zenumlCompletionKeymap } from './zenumlAutocomplete';
 import type { SlashZone } from './slashCommands';
@@ -45,6 +46,9 @@ export interface CodeEditorProps {
   // Called before a user edit lands in the buffer; return false to drop it (e.g. the
   // Custom CSS sign-in / Plus gate). Value syncs from the parent are never guarded.
   editGuard?: () => boolean;
+  // Fold-gutter look (Figma F55). 'text' keeps today's text-glyph markers;
+  // 'chevron' is the SVG chevron in its own column. See ./gutterStyle.ts.
+  gutterStyle?: GutterStyle;      // default 'chevron' (F55, shipped 2026-11-26)
 }
 
 // Resolve a stored editor-font setting to a real CSS font stack that ALWAYS ends in a
@@ -73,7 +77,8 @@ function fontTheme(family: string, size: number): Extension {
   const row = Math.round(size * ROW_PER_FONT);
   const markerPad = (row - 16) / 2; // centres the lint marker's 16px glyph box in the row
   return EditorView.theme({
-    '&': { fontSize: size + 'px' },
+    // --cm-code-font lets other themes (chevron fold gutter) reuse the code font stack.
+    '&': { fontSize: size + 'px', '--cm-code-font': fontStack(family) },
     '.cm-scroller': { lineHeight: row + 'px' },
     '.cm-gutter-lint .cm-lint-marker': { paddingTop: markerPad + 'px', paddingBottom: markerPad + 'px' },
     '.cm-content': { fontFamily: fontStack(family) },
@@ -155,6 +160,23 @@ const compactGutterTheme = EditorView.theme({
   '.cm-gutter-lint .cm-lint-marker-info': { backgroundColor: 'var(--code-function, #3e8fd6)' },
 });
 
+// Keep the selection visible on the cursor head's line. CodeMirror draws the
+// selection in a layer BEHIND the text; .cm-activeLine paints the theme's opaque
+// line-highlight colour on top of it. So the head's line (line 1 after an upward
+// drag, the last line after a downward one) looked unselected. While any range is
+// non-empty, drop the band on the line itself (the gutter cell keeps it, so the
+// head's line number stays marked), as VS Code does. Works for every theme.
+const HAS_SELECTION_ATTRS: Record<string, string> = { class: 'cm-hasSelection' };
+const NO_ATTRS: Record<string, string> = {};
+const selectionOverActiveLine: Extension = [
+  EditorView.editorAttributes.compute(['selection'], (state) =>
+    state.selection.ranges.some((r) => !r.empty) ? HAS_SELECTION_ATTRS : NO_ATTRS,
+  ),
+  EditorView.theme({
+    '&.cm-hasSelection .cm-activeLine': { backgroundColor: 'transparent' },
+  }),
+];
+
 // #825: resolve the indent setting to the string CM6's `indentUnit` facet expects:
 // a run of `n` spaces, or a single tab. The facet's combine() validates that the
 // string is whitespace and homogeneous, so a tab is always exactly '\t' (one level =
@@ -182,7 +204,9 @@ const NO_DIAGNOSTICS: { lineNumber: number; message: string }[] = [];
 // reconfigure so appended snippet state survives.
 const BASIC_SETUP_BASE = {
   lineNumbers: true,
-  foldGutter: true,
+  // The fold gutter is added by gutterStyleExtension() (gutter compartment) so its
+  // marker style can switch; basicSetup's own copy would add a second gutter.
+  foldGutter: false,
   bracketMatching: true,
   closeBrackets: true,
   highlightActiveLine: true,
@@ -220,6 +244,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     diagnostics = NO_DIAGNOSTICS,
     onZoneChange,
     editGuard,
+    gutterStyle = 'chevron',
   },
   ref,
 ) {
@@ -228,6 +253,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
   const keymapCompartment = useRef(new Compartment());
   const indentCompartment = useRef(new Compartment());
   const lintCompartment = useRef(new Compartment());
+  const gutterCompartment = useRef(new Compartment());
   const viewRef = useRef<EditorView | null>(null);
   // Keep latest onChange without rebuilding extensions (used by the CSS format command).
   const onChangeRef = useRef(onChange);
@@ -338,6 +364,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
     return [
       EditorView.lineWrapping,
       compactGutterTheme,
+      selectionOverActiveLine,
       // Drop a guarded user edit before it changes the doc. Gating in onChange was
       // too late: the keystroke was already in the buffer while the store and
       // preview stayed unchanged, so the editor showed text that was never saved.
@@ -347,6 +374,7 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
         return guard() ? tr : [];
       }),
       lintGutter(),
+      gutterCompartment.current.of(gutterStyleExtension(gutterStyle)),
       lintCompartment.current.of(diagnosticsLinter(diagnostics)),
       themeCompartment.current.of(resolveTheme(themeId)),
       fontCompartment.current.of(fontTheme(fontFamily, fontSize)),
@@ -393,6 +421,12 @@ export const CodeEditor = forwardRef<ReactCodeMirrorRef, CodeEditorProps>(functi
       effects: lintCompartment.current.reconfigure(diagnosticsLinter(diagnostics)),
     });
   }, [diagnostics]);
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: gutterCompartment.current.reconfigure(gutterStyleExtension(gutterStyle)),
+    });
+  }, [gutterStyle]);
 
   // Own the ZenUML LSP worker lifecycle for the DSL editor. Created in an effect
   // (not in the render-phase `extensions` memo) so React StrictMode's

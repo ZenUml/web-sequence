@@ -3,8 +3,9 @@
 // - Code workspace x16..368, y68..948; preview card x392, y68..948.
 // - The DSL code area ends at y904, where the Custom CSS footer (and its divider,
 //   x16..368) begins.
-// - A 32px line-number lane starts at the code area's left edge; code starts 40px
-//   right of it (x56), for 1, 2 and 3 digit line numbers alike.
+// - A 32px line-number lane starts at the code area's left edge, then a 16px fold
+//   column (Figma F55, 128:5164); code starts 52px right of the edge (x68), for
+//   1, 2 and 3 digit line numbers alike.
 // - The first row starts at the code area's top. Rows are 24px; code 15px, numbers
 //   13px. The current-row highlight is one 24px band across lane and code.
 // Light and dark must measure the same.
@@ -127,14 +128,14 @@ for (const appearance of ['light', 'dark'] as const) {
     expect(g.numberLineHeight).toBe('24px');
   });
 
-  test(`${appearance}: 32px number lane, code at x56 for 1/2/3 digits, numbers right-aligned`, async ({ page }) => {
+  test(`${appearance}: 32px number lane + 16px fold column, code at x68 for 1/2/3 digits, numbers right-aligned`, async ({ page }) => {
     await setAppearance(page, appearance);
     const seen: number[] = [];
     for (const n of [2, 12, 120]) {
       await setDoc(page, lines(n));
       const g = await geometry(page);
-      expect(g.gutters).toMatchObject({ x: 16, w: 32 });
-      expect(g.codeX).toBe(56);
+      expect(g.gutters).toMatchObject({ x: 16, w: 48 });
+      expect(g.codeX).toBe(68);
       // Right-aligned: every visible number ends at the same x, inside the lane.
       expect(new Set(g.numberRights.map((v) => Math.round(v * 10))).size).toBe(1);
       expect(g.numberRights[0]).toBeLessThanOrEqual(48);
@@ -149,7 +150,7 @@ for (const appearance of ['light', 'dark'] as const) {
     await setDoc(page, SAMPLE);
     let g = await geometry(page);
     expect(g.activeGutter).toMatchObject({ x: 16, y: 68, w: 32, h: 24 });
-    expect(g.activeLine).toMatchObject({ x: 48, y: 68, h: 24 });
+    expect(g.activeLine).toMatchObject({ x: 64, y: 68, h: 24 });
     expect(g.activeLine!.right).toBe(368);
     expect(g.activeLineBg).toBe(g.activeGutterBg);
     expect(g.activeRadius).toBe('0px');
@@ -181,7 +182,7 @@ test('99 -> 100 lines: code start and number edge do not move', async ({ page })
   const after = await geometry(page);
   expect(after.codeX).toBe(before.codeX);
   expect(after.numberRights[0]).toBe(before.numberRights[0]);
-  expect(after.gutters!.w).toBe(32);
+  expect(after.gutters!.w).toBe(48);
 });
 
 test('long lines wrap; the current-row band covers the wrapped row in lane and code', async ({ page }) => {
@@ -190,15 +191,15 @@ test('long lines wrap; the current-row band covers the wrapped row in lane and c
   expect(g.activeLine!.h).toBeGreaterThan(24);
   expect(g.activeLine!.h % 24).toBe(0);
   expect(g.activeGutter!.h).toBe(g.activeLine!.h);
-  expect(g.codeX).toBe(56);
+  expect(g.codeX).toBe(68);
 });
 
 test('narrow view keeps the lane and code offset relative to the editor', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 700 });
   await setDoc(page, lines(12));
   const g = await geometry(page);
-  expect(g.gutters!.w).toBe(32);
-  expect(g.codeX - g.editor!.x).toBe(40);
+  expect(g.gutters!.w).toBe(48);
+  expect(g.codeX - g.editor!.x).toBe(52);
   expect(g.firstLine!.y).toBe(g.editor!.y);
   // The collapsed footer fits: toggle and "Report a bug" neither clip nor overlap.
   const footer = await page.locator('.editor-css-panel-strip').evaluate((el) => {
