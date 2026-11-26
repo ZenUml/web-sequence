@@ -202,8 +202,9 @@ body {
   --code-invalid: #b42318;
   --code-warning: #b4690e;
   --code-caret: #2e94d4;
-  --code-selection: rgba(46, 148, 212, 0.22);
-  --code-selection-match: rgba(46, 148, 212, 0.12);
+  /* Soft desaturated blue, as in VS Code / JetBrains light (#ADD6FF family). */
+  --code-selection: rgba(173, 214, 255, 0.6);
+  --code-selection-match: rgba(173, 214, 255, 0.4);
   --code-line-highlight: #f5f8fe;
   /* Line-number lane (Figma 32:4370 gutter fill). */
   --code-gutter-bg: #ffffff;
@@ -581,8 +582,26 @@ body {
    a clipped corner would also cut the line-1 lint marker's hover target. */
 :root:not([data-appearance='dark']) .editor-hifi-shell .editor-source-stack .cm-editor {
   border-radius: 10px;
-  outline: 1px solid var(--editor-border) !important;
-  outline-offset: -1px;
+  outline: none !important;
+}
+
+/* The border and the rounded corners are drawn on a layer ABOVE the code, so the
+   current-line band, the selection and scrolled rows can never paint square
+   corners over them (the gutters are sticky at z-index 200 and used to cover the
+   top border on line 1). The layer takes no pointer events, so the line-1 lint
+   marker stays hoverable right up to its corner. Its spread shadow fills only
+   the area outside the curve with the frame colour; clip-path keeps that shadow
+   inside the card's box. */
+:root:not([data-appearance='dark']) .editor-hifi-shell .editor-source-stack .cm-editor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  border: 1px solid var(--editor-border);
+  border-radius: 10px;
+  box-shadow: 0 0 0 12px var(--editor-bg);
+  clip-path: inset(0);
 }
 
 .editor-hifi-shell .editor-css-panel-strip,
