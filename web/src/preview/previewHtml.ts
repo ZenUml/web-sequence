@@ -60,7 +60,7 @@ export function getCompleteHtml(parts: PreviewParts = {}): string {
 <style id="zenuml-host-backing">html,body{background:transparent}</style>
 <style id="zenumlstyle"></style>
 ${embedStyle}</head>
-<body>
+<body data-clarity-mask="true">
 ${MOUNT_HTML}
 <script src="${zenumlUrl}"></script>
 <script src="${bootstrapUrl}"></script>
