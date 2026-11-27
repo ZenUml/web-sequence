@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
+import { isThirdPartyError } from './helpers/console';
 
 // Smoke: the NEW app (web/) loads, the editor + preview shells are present, and
 // the preview iframe's srcdoc carries the @zenuml/core mount point. This proves
@@ -10,29 +11,6 @@ import { openEditor } from './helpers/hub';
 // Editor-as-landing (2026-06-13): bare '/' boots the EDITOR (resume last-code,
 // else seed a sample diagram); the HomeView library is opt-in at '/?view=diagrams'.
 // openEditor lands on the editor surface either way (a no-op click-through on '/').
-
-// Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
-// analytics/CDN scripts (GTM, Cloudflare Zaraz, Clarity, Paddle) that throw
-// their own uncaught errors we neither own nor can fix. Treat those as noise;
-// genuine app errors still fail the test. Locally there are no such scripts.
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js', // Cloudflare Zaraz wraps third-party tools in userscript.js
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
 
 test.beforeEach(async ({ page }) => {
   // Fail the test on genuine uncaught app errors, except known third-party noise.

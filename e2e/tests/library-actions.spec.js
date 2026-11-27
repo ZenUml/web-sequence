@@ -34,29 +34,9 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor, gotoHome } from './helpers/hub';
+import { isThirdPartyError } from './helpers/console';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
-
-// Deployed sites load third-party analytics/CDN scripts that throw uncaught errors
-// we don't own; treat those as noise (copied verbatim from smoke/library specs).
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js',
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {

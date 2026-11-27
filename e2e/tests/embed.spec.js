@@ -37,19 +37,10 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
+import { isThirdPartyError } from './helpers/console';
 
 const CANONICAL_APP_ORIGIN = 'https://app.zenuml.com';
 const EMBED_URL = '/?embed&code=A.method()&title=Demo';
-
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js', 'gtm.js', 'googletagmanager', 'google-analytics',
-  'analytics.js', 'clarity.js', 'clarity.ms', 'paddle.js', 'cdn.paddle.com',
-  'zaraz', 'cloudflareinsights',
-];
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => { if (!isThirdPartyError(err)) throw err; });

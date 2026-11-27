@@ -24,32 +24,11 @@
 import { test, expect } from '@playwright/test';
 import { suppressOneTimeModals } from './helpers/onetime';
 import { openEditor } from './helpers/hub';
+import { isThirdPartyError } from './helpers/console';
 
 const selectAll = process.platform === 'darwin' ? 'Meta+a' : 'Control+a';
 // A local override still runs local-only assertions; staging URLs remain excluded.
 const isRemoteTarget = !!process.env.PW_BASE_URL && !/^https?:\/\/(localhost|127\.0\.0\.1)(?::|\/|$)/.test(process.env.PW_BASE_URL);
-
-// Deployed sites (staging/prod, reached via PW_BASE_URL) load third-party
-// analytics/CDN scripts that throw uncaught errors we don't own; treat those as
-// noise so this spec stays usable against the live staging E2E gate.
-const THIRD_PARTY_ERROR_SOURCES = [
-  'userscript.js',
-  'gtm.js',
-  'googletagmanager',
-  'google-analytics',
-  'analytics.js',
-  'clarity.js',
-  'clarity.ms',
-  'paddle.js',
-  'cdn.paddle.com',
-  'zaraz',
-  'cloudflareinsights',
-];
-
-function isThirdPartyError(err) {
-  const haystack = `${err?.message || ''}\n${err?.stack || ''}`;
-  return THIRD_PARTY_ERROR_SOURCES.some((src) => haystack.includes(src));
-}
 
 function editorLocator(page) {
   return page.locator('[data-testid="dsl-editor"] .cm-content');
