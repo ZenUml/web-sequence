@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { exportAllItemsJson } from '../../services/exportImport';
-import { useImportFeedbackStore } from './importFeedbackStore';
+import { captureReturnFocus, transferSlot } from './transferSlot';
 import type { Item } from '../../domain/types';
 import { LIBRARY_CANCELLED, type IdentityBinding, type LibraryCancelled, type OperationIdentity } from './libraryIdentity';
 
@@ -57,6 +57,12 @@ export const useExportFeedbackStore = create<ExportFeedbackState>((set, get) => 
 
 const store = useExportFeedbackStore;
 
+transferSlot.register('export', {
+  busy: () => store.getState().busy(),
+  release: () => store.getState().clearResult(),
+  identityChanged: () => store.getState().identityChanged(),
+});
+
 export function useExportBusy(): boolean {
   return useExportFeedbackStore((s) => s.phase === 'preparing');
 }
@@ -85,15 +91,11 @@ export async function runExportAll(deps: RunExportDeps): Promise<void> {
   const s = store.getState();
   if (s.phase === 'preparing') return;
   if (s.phase === 'started' && Date.now() - s.startedAt < DOUBLE_CLICK_MS) return;
-  const active = document.activeElement;
-  const fromPanel = active instanceof HTMLElement && active.closest('[data-export-feedback]') != null;
-  const returnFocus = fromPanel
-    ? s.returnFocus
-    : active instanceof HTMLElement && active !== document.body ? active : null;
+  const returnFocus = captureReturnFocus('[data-export-feedback]', s.returnFocus);
   const token = deps.identity ? deps.identity.current() : null;
   const stillCurrent = () => !deps.identity || deps.identity.isCurrent(token!);
   store.setState({ ...initialResult, phase: 'preparing', returnFocus });
-  if (!useImportFeedbackStore.getState().busy()) useImportFeedbackStore.getState().dismiss();
+  transferSlot.claim('export');
   try {
     deps.onStart();
   } catch {
