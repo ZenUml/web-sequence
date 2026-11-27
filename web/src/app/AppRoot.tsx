@@ -907,6 +907,7 @@ export function AppRoot() {
 
   // M04: Create-New → load the chosen template as a fresh owned item.
   function handleCreateNew(partial: Partial<Item>) {
+    track('diagram_create_started', { category: 'fn', creation_origin: 'template' });
     const base = useEditorStore.getState().currentItem;
     const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID() : String(Date.now());
@@ -962,6 +963,7 @@ export function AppRoot() {
   // Create a blank diagram and open it in the editor (?id=). Shared by the hub's
   // New diagram and the editor toolbar's New, so both create the same document.
   function handleNewDiagram() {
+    track('diagram_create_started', { category: 'fn', creation_origin: 'new_button' });
     const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID() : String(Date.now());
     useEditorStore.getState().loadItem(migrateToPages({
