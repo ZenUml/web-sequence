@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import type { Folder } from '../../domain/types';
 import { ConfirmActionDialog } from './ConfirmActionDialog';
-import { ExportIcon, ImportIcon, PencilIcon, TrashIcon } from './icons';
+import { ExportIcon, ImportIcon, PencilIcon, TrashIcon } from '../../ui/icons';
 
 export type FolderFilter = string | null | 'unfiled';
 

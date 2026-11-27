@@ -9,7 +9,7 @@ import { ProfileMenu, type ProfileMenuProps } from '../auth/ProfileMenu';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { HomeSidebar } from './HomeSidebar';
 import { MoveStatusPanel, useMoveController } from './moveController';
-import { FolderOutlineIcon, MoonIcon, PlusIcon, SunIcon } from './icons';
+import { FolderOutlineIcon, MoonIcon, PlusIcon, SunIcon } from '../../ui/icons';
 import blankArt from './assets/template-blank.svg';
 import blackWhiteArt from './assets/template-black-white.svg';
 import blueArt from './assets/template-blue.svg';

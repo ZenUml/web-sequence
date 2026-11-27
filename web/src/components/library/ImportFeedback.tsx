@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { AlertIcon } from '../../ui/icons';
 import { readImportFile, useImportFeedbackStore, type ImportPhase, type ImportFileContext } from './importFeedbackStore';
 import './importFeedback.css';
 
@@ -138,16 +139,6 @@ function CheckIcon() {
   );
 }
 
-function AlertIcon() {
-  return (
-    <svg className="import-feedback__icon" viewBox="0 0 22 22" width="22" height="22" fill="none" aria-hidden="true">
-      <circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M11 6.6v5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="11" cy="15.2" r="0.95" fill="currentColor" />
-    </svg>
-  );
-}
-
 // Nonmodal library import feedback (Figma "Diagrams · 导入反馈", node 36:8435):
 // success, invalid/unreadable file, and save failure. Fixed to the viewport corner so
 // browsing continues underneath; no overlay, no focus trap. Rendered once by AppRoot
@@ -216,7 +207,7 @@ export function ImportFeedback({ onImport, inHost = false }: ImportFeedbackProps
       >
         <div className="import-feedback__header">
           <span className={failed ? 'import-feedback__status is-error' : 'import-feedback__status'}>
-            {failed ? <AlertIcon /> : <CheckIcon />}
+            {failed ? <AlertIcon className="import-feedback__icon" /> : <CheckIcon />}
           </span>
           <h2 id={titleId} className="import-feedback__title">{title}</h2>
         </div>
