@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, Button, cn } from '../../ui';
 import type { PlanType } from '../../domain/types';
+import { FILE_LIMITS } from '../../config/constants';
 
 // REQ-SUB-1/7: the four-tier pricing surface. Presentational only — the parent
 // owns the billing period (controlled via `billingPeriod`/`onPeriodChange`) and
@@ -56,7 +57,7 @@ const TIERS: TierSpec[] = [
       'Real time sequence diagram editor',
       'Export diagrams to PNG',
       'Sharable online diagrams',
-      'Up to 3 saved diagram files',
+      `Up to ${FILE_LIMITS.free} saved diagram files`,
     ],
   },
   {
@@ -67,7 +68,7 @@ const TIERS: TierSpec[] = [
     priceNote: { monthly: ' ', yearly: 'Billed yearly' },
     savings: 'Save 49.92 USD',
     includeDesc: 'All features from Free Tier',
-    features: ['Up to 20 saved diagram files'],
+    features: [`Up to ${FILE_LIMITS.basic} saved diagram files`],
   },
   {
     key: 'plus',
