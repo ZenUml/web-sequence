@@ -459,6 +459,34 @@ describe('AppRoot', () => {
     await waitFor(() => expect(itemSvc.setItem).toHaveBeenCalledWith(created.id, expect.objectContaining({ id: created.id }), expect.anything()));
   });
 
+  // The Web App dashboard's "new diagram" reports need a create event; the legacy
+  // WA:create_diagram stopped when the React editor shipped.
+  function createdEvents() {
+    return trackMock.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((p) => p && p.event === 'diagram_create_started');
+  }
+
+  it("header New fires one 'diagram_create_started' with creation_origin 'new_button'", async () => {
+    render(<AppRoot />);
+    await screen.findByTestId('header-title');
+    trackMock.mockClear();
+    await userEvent.click(screen.getByTestId('header-new'));
+    await waitFor(() => expect(createdEvents()).toHaveLength(1));
+    expect(createdEvents()[0]).toEqual(expect.objectContaining({ category: 'fn', creation_origin: 'new_button' }));
+    expect(createdEvents()[0]).not.toHaveProperty('diagramCode');
+  });
+
+  it("a hub template fires one 'diagram_create_started' with creation_origin 'template'", async () => {
+    window.history.replaceState({}, '', '/?view=diagrams');
+    render(<AppRoot />);
+    const tpl = await screen.findByTestId('home-template-blue');
+    trackMock.mockClear();
+    await userEvent.click(tpl);
+    await waitFor(() => expect(createdEvents()).toHaveLength(1));
+    expect(createdEvents()[0]).toEqual(expect.objectContaining({ category: 'fn', creation_origin: 'template' }));
+  });
+
   it('the template first-save is silent: no "Saved on this device" notice, seen-flag unset (#951)', async () => {
     window.history.replaceState({}, '', '/?view=diagrams');
     render(<AppRoot />);

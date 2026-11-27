@@ -178,7 +178,7 @@ Every `/track` body now also carries `is_authenticated` (uid present) and `runti
 
 `/track` is sent with `fetch(..., { keepalive: true })` so the `pagehide` POST finishes after the page unloads. A reload of the editor also ends a session; that is intended.
 
-Not yet built from section 5: `diagram_create_started`, `diagram_opened`, `diagram_flow_id`, render health (5.3), export outcomes (5.4), login and billing outcomes (5.5), `surface`, `plan`, `viewport`, `is_internal`.
+Built: `diagram_create_started` (`new_button`, `template`). Not yet built from section 5: `diagram_opened`, `diagram_flow_id`, render health (5.3), export outcomes (5.4), login and billing outcomes (5.5), `surface`, `plan`, `viewport`, `is_internal`.
 
 Weekly activity query (project 3373228): filter `product_type = web-sequence`; count unique users of `diagram_save_succeeded`, and sum `editor_open_duration_ms` of `editor_session_ended` per user.
 
