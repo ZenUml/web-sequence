@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '../state/editorStore';
 import { parseEmbedCode } from '../app/runtimeMode';
 import type { Item } from '../domain/types';
+import { randomId } from '../domain/id';
 import { classifySharedItemFailure, type SharedItemFailure } from '../services/sharedItemError';
 
 export interface BootDeps {
@@ -68,7 +69,7 @@ export async function resolveBootItem(deps: BootDeps): Promise<BootResult> {
   // both the contract raw-DSL form and legacy `JSON.stringify(item)` links.
   if (codeParam) {
     const payload = parseEmbedCode(codeParam, codeTitle);
-    const id = (globalThis.crypto?.randomUUID?.()) ?? `code-${Date.now()}`;
+    const id = randomId();
     const item: Item = {
       id,
       title: payload.title ?? 'Untitled',
