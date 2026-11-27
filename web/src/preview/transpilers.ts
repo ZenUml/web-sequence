@@ -49,7 +49,7 @@ export async function computeCss(code: string, mode: CssMode, settings: unknown)
       const found = instance.findClassNames(code);
       // Malformed acssConfig must degrade gracefully (legacy fell back to {}),
       // not throw and leave the preview unstyled with an unhandled rejection.
-      let parsed: Parameters<typeof instance.getConfig>[1] = {};
+      let parsed: Parameters<typeof instance.getConfig>[1];
       try { parsed = JSON.parse(s.acssConfig); } catch { parsed = {}; }
       const config = instance.getConfig(found, parsed);
       return { code: instance.getCss(config) };

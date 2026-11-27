@@ -65,8 +65,8 @@ export async function renderDiagramExport(
     if (!value) throw new Error('Diagram export returned no image.');
     return value;
   } catch (error) {
-    if (error instanceof PreviewRpcError && error.reason === 'aborted') throw new Error('Diagram export cancelled.');
-    if (error instanceof PreviewRpcError && error.reason === 'timeout') throw new Error('Diagram export timed out.');
+    if (error instanceof PreviewRpcError && error.reason === 'aborted') throw new Error('Diagram export cancelled.', { cause: error });
+    if (error instanceof PreviewRpcError && error.reason === 'timeout') throw new Error('Diagram export timed out.', { cause: error });
     throw error;
   } finally {
     rpc.dispose();

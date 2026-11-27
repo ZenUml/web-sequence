@@ -296,7 +296,7 @@ function tryPairedCorrection(
   // Delete the typed original, then ask insertBracket what ASCII typing would do here.
   const deletion = view.state.changes({ from: region.from, to: region.to, insert: '' })
   const afterDelete = view.state.update({ changes: deletion }).state
-  let paired: Transaction | null = null
+  let paired: Transaction | null
   try {
     paired = insertBracket(afterDelete, ascii)
   } catch {
