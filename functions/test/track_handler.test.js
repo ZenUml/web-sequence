@@ -23,14 +23,14 @@ require.cache[mixpanelPath] = {
 
 const { track } = require('../index');
 
-function call(body) {
+function call(body, headers = {}) {
   return new Promise((resolve) => {
     const res = {
       statusCode: 200,
       status(code) { this.statusCode = code; return this; },
       send(text) { resolve({ status: this.statusCode, text }); },
     };
-    track({ method: 'POST', body, headers: {} }, res);
+    track({ method: 'POST', body, headers }, res);
   });
 }
 
@@ -60,4 +60,33 @@ test('POST /track without an event is rejected and sends nothing', async () => {
   const res = await call({ userId: 'u1' });
   assert.equal(res.status, 400);
   assert.equal(sent.length, 0);
+});
+
+test('POST /track marked automated:true responds 200 and sends nothing', async () => {
+  sent.length = 0;
+  const res = await call({ event: 'app_opened', anonId: 'anon-2', automated: true });
+  assert.equal(res.status, 200);
+  assert.equal(res.text, 'Event ignored (automated)');
+  assert.equal(sent.length, 0);
+});
+
+test('POST /track from a HeadlessChrome user agent sends nothing', async () => {
+  sent.length = 0;
+  const res = await call(
+    { event: 'app_opened', anonId: 'anon-3' },
+    { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36' },
+  );
+  assert.equal(res.status, 200);
+  assert.equal(sent.length, 0);
+});
+
+test('POST /track with automated:false from a normal browser is still sent, without the marker', async () => {
+  sent.length = 0;
+  const res = await call(
+    { event: 'app_opened', anonId: 'anon-4', automated: false },
+    { 'user-agent': 'Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36' },
+  );
+  assert.equal(res.status, 200);
+  assert.equal(sent.length, 1);
+  assert.equal('automated' in sent[0].properties, false);
 });

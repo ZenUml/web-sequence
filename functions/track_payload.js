@@ -60,6 +60,14 @@ function usableId(value) {
   return trimmed;
 }
 
+// True for traffic from browser automation: the client sets `automated: true`
+// (navigator.webdriver), and a HeadlessChrome user agent covers older builds.
+function isAutomatedRequest(req) {
+  if (req.body && req.body.automated === true) return true;
+  const ua = req.headers && req.headers['user-agent'];
+  return typeof ua === 'string' && ua.includes('HeadlessChrome');
+}
+
 // Build the Mixpanel event for a POST /track body. Caller properties pass
 // through, with the legacy `category` / `label` renamed to `feature_area` /
 // `event_label`. The reserved keys are set last so a caller cannot override them.
@@ -80,6 +88,8 @@ function buildTrackPayload(body, firebaseProject) {
     $device_id: _ignoredDeviceId,
     $insert_id: _ignoredInsertId,
     time: _ignoredTime,
+    // Automation marker: consumed by isAutomatedRequest, never forwarded.
+    automated: _automated,
     ip: _ignoredIp,
     token: _ignoredToken,
     ...eventProperties
@@ -104,4 +114,4 @@ function buildTrackPayload(body, firebaseProject) {
   return { event, properties };
 }
 
-module.exports = { MIXPANEL_TOKEN, buildTrackPayload, mapEventName };
+module.exports = { MIXPANEL_TOKEN, buildTrackPayload, isAutomatedRequest, mapEventName };

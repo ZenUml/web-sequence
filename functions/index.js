@@ -13,7 +13,11 @@ if (process.env.FUNCTIONS_EMULATOR === 'true') {
 }
 const db = admin.firestore();
 
-const { MIXPANEL_TOKEN, buildTrackPayload } = require('./track_payload');
+const {
+  MIXPANEL_TOKEN,
+  buildTrackPayload,
+  isAutomatedRequest,
+} = require('./track_payload');
 const mixpanel = Mixpanel.init(MIXPANEL_TOKEN);
 
 const webhook = require('./webhook');
@@ -254,6 +258,14 @@ exports.track = functions.https.onRequest(async (req, res) => {
   if (!req.body.event) {
     console.log('missing req.body.event');
     res.status(400).send('invalid request');
+    return;
+  }
+
+  // Browser automation (Playwright E2E) must not create fake users in Mixpanel.
+  // The client marks its body `automated: true` when navigator.webdriver is set;
+  // HeadlessChrome covers older client builds. Respond 200 so the client is happy.
+  if (isAutomatedRequest(req)) {
+    res.status(200).send('Event ignored (automated)');
     return;
   }
 

@@ -33,6 +33,22 @@ describe('analytics.emit', () => {
     expect(cf.trackEvent).toHaveBeenCalledWith({ event: 'app_opened', userId: null, anonId: 'anon-1', app_version: APP_VERSION, is_authenticated: false, runtime: 'web' });
   });
 
+  it('marks the /track body automated:true when navigator.webdriver is true', () => {
+    Object.defineProperty(navigator, 'webdriver', { value: true, configurable: true });
+    try {
+      emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false });
+      expect(cf.trackEvent).toHaveBeenCalledWith(expect.objectContaining({ event: 'app_opened', automated: true }));
+    } finally {
+      delete (navigator as { webdriver?: unknown }).webdriver;
+    }
+  });
+
+  it('omits the automated marker for a normal browser', () => {
+    emit('app_opened', {}, { userId: null, anonId: 'anon-1', debug: false, isExtension: false });
+    const body = (cf.trackEvent.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect('automated' in body).toBe(false);
+  });
+
   it('routes to console and does NOT POST in debug mode', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     emit('x', { a: 1 }, { userId: 'u1', anonId: 'anon-1', debug: true, isExtension: false });
