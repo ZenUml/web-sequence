@@ -98,6 +98,12 @@ describe('createShare', () => {
     server.use(http.post(`${window.location.origin}/create-share`, () => HttpResponse.json({ error: 'Forbidden' }, { status: 403 })));
     await expect(createShare('item-1')).rejects.toThrow(/Forbidden/);
   });
+  // #615: a /create-share request that never answers left the Share spinner running
+  // forever. The request must give up and reject so useShare can show Try again.
+  it('rejects with a timeout error when the server never responds', async () => {
+    server.use(http.post(`${window.location.origin}/create-share`, () => new Promise<never>(() => {})));
+    await expect(createShare('item-1', { timeoutMs: 50 })).rejects.toThrow(/timed out/);
+  });
 });
 
 describe('createShare — origin source (M05)', () => {
