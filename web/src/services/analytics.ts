@@ -29,6 +29,17 @@ export interface AnalyticsContext {
   isExtension: boolean;
 }
 
+// True when a browser automation driver (Playwright, Selenium) controls the page.
+// The server drops these events instead of forwarding them to Mixpanel. Must never
+// throw: emit is fire-and-forget.
+function isAutomated(): boolean {
+  try {
+    return typeof navigator !== 'undefined' && navigator.webdriver === true;
+  } catch {
+    return false;
+  }
+}
+
 // Emit an analytics event. Synchronous by design: callers (e.g. test 1) assert
 // the cloud call landed immediately after `emit(...)`, so we must NOT `await`
 // anything before firing `cloudTrackEvent`. The cloud call is fire-and-forget
@@ -57,6 +68,7 @@ export function emit(
     app_version: APP_VERSION,
     is_authenticated: userId != null,
     runtime: isExtension ? 'extension' : 'web',
+    ...(isAutomated() ? { automated: true } : {}),
     ...props,
   });
 
